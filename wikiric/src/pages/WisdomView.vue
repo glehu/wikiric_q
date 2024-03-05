@@ -1,0 +1,660 @@
+<template>
+  <q-page class="full-height full-width flex items-center justify-center">
+    <q-layout
+      view="lhh LpR lff"
+      container
+      style="height: calc(100dvh - 52px)"
+      class="overflow-hidden no-scroll">
+      <q-drawer
+        side="left"
+        v-model="sidebarLeft"
+        show-if-above
+        :width="300"
+        :breakpoint="768"
+        class="surface-variant hfit">
+        <q-scroll-area class="fit">
+          <q-toolbar class="fmt_border_bottom md:hidden">
+            <q-btn flat dense icon="sym_o_left_panel_close"
+                   align="left" class="wfull"
+                   no-caps label="Hide Sidebar"
+                   @click="sidebarLeft = !sidebarLeft">
+            </q-btn>
+          </q-toolbar>
+          <q-btn flat icon="sym_o_arrow_left_alt"
+                 align="left" class="wfull pl4 mt2"
+                 no-caps
+                 @click="clickedBack">
+            <span class="ml4 text-body1">Back</span>
+          </q-btn>
+          <div class="hfull px4 py2">
+            <q-input label="Filter" filled dense
+                     color="brand-p"
+                     class="mb1"
+                     v-model="contentQuery"/>
+            <q-tree ref="contentTree"
+                    :nodes="contentTree"
+                    :filter="contentQuery"
+                    node-key="label"
+                    text-color="brand-p"
+                    color="brand-p"
+                    class="non-selectable text-subtitle2"
+                    dense
+                    default-expand-all
+                    no-transition/>
+          </div>
+        </q-scroll-area>
+      </q-drawer>
+      <q-page-container>
+        <q-page style="padding-top: 60px" class="background pb20">
+          <q-page-sticky position="top" expand class="background z-fab">
+            <q-toolbar>
+              <q-btn flat round dense icon="sym_o_dock_to_right"
+                     @click="sidebarLeft = !sidebarLeft">
+                <q-tooltip class="text-body2">
+                  Toggle&nbsp;Contents
+                </q-tooltip>
+              </q-btn>
+              <q-toolbar-title class="text-subtitle1 sm:text-lg
+                                      flex items-center non-selectable">
+                <span>Wisdom Viewer</span>
+              </q-toolbar-title>
+            </q-toolbar>
+          </q-page-sticky>
+          <q-btn flat
+                 icon="sym_o_arrow_left_alt"
+                 label="Back"
+                 class="md:hidden fmt_border ml4 mb3 rounded-2
+                        surface-variant"
+                 @click="clickedBack">
+          </q-btn>
+          <div class="flex justify-center">
+            <div v-if="wisdom"
+                 class="max-w-screen-lg wfull hfull">
+              <div class="flex row wfull">
+                <q-btn-group flat class="mlauto">
+                  <q-btn icon="edit" label="Edit"
+                         @click="handleEditWisdom"/>
+                  <q-btn icon="delete" label="Delete"
+                         @click="handleDeleteWisdom"/>
+                  <q-btn icon="share" label="Share"/>
+                </q-btn-group>
+              </div>
+              <div class="hfull wfull surface
+                          rounded
+                          px4 pt2 pb4">
+                <p class="text-h4 fontbold">{{ wisdom.t }}</p>
+                <div class="wfull flex column
+                            my4 py1 px2 non-selectable
+                            background fmt_border rounded">
+                  <q-breadcrumbs active-color="brand-p">
+                    <q-breadcrumbs-el icon="person"
+                                      :label="wisdom.usr"/>
+                    <q-breadcrumbs-el :label="wisdom._ts"/>
+                    <template v-if="knowledge">
+                      <q-breadcrumbs-el icon="school"
+                                        :label="knowledge.t"/>
+                      <q-breadcrumbs-el :label="knowledge.desc"/>
+                    </template>
+                  </q-breadcrumbs>
+                  <div v-if="wisdom._keys"
+                       class="flex items-center">
+                    <q-icon name="sym_o_tag" size="1.2rem" class="mr1.5"/>
+                    <p>{{ wisdom._keys }}</p>
+                  </div>
+                </div>
+                <div v-html="wisdom.desc"></div>
+              </div>
+              <q-editor id="wisdom_desc"
+                        ref="wisdom_desc"
+                        v-model="comment"
+                        min-height="5rem"
+                        max-height="60dvh"
+                        class="mt8 fmt_border mx4"
+                        flat
+                        content-class="markedView"
+                        :toolbar="toolbarConfig"
+                        :fonts="toolbarFonts"/>
+              <div class="flex row wfull mt2 pr4">
+                <q-btn icon="sym_o_send" label="Post Comment"
+                       color="primary"
+                       class="mlauto"
+                       no-caps
+                       @click="postComment"/>
+              </div>
+              <div v-if="related" class="mx4">
+                <template v-if="related.replies && related.replies.length > 0">
+                  <p class="mt4 mb2 text-subtitle2">
+                    Comments:
+                    <span class="ml1">{{ related.replies.length }}</span>
+                  </p>
+                  <div class="wfull flex column gap-2">
+                    <template v-for="reply in related.replies" :key="reply.uid">
+                      <div class="surface p4 rounded">
+                        <p class="mb2">
+                          {{ reply.name }}, {{ reply._ts }}:
+                        </p>
+                        <div v-html="reply.desc"></div>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+                <template v-else>
+                  <div class="wfull flex items-center gap-2">
+                    <q-icon name="sym_o_chat_error" size="2rem" color="brand-p"/>
+                    <span class="text-subtitle2">No Comments</span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+          <wisdom-edit :is-open="isEditingWisdom"
+                       :knowledge-id="knowledge.uid"
+                       :wisdom-prop="wisdom"
+                       @update="handleWisdomUpdate"/>
+        </q-page>
+      </q-page-container>
+    </q-layout>
+  </q-page>
+</template>
+
+<script>
+import { api } from 'boot/axios'
+import { DateTime } from 'luxon'
+import WisdomEdit from 'components/knowledge/WisdomEdit.vue'
+import { dbGetDisplayName } from 'src/libs/wikistore'
+
+export default {
+  props: {
+    wisdomProp: {
+      type: Object,
+      required: false
+    },
+    knowledgeProp: {
+      type: Object,
+      required: false
+    }
+  },
+  name: 'WisdomView',
+  components: { WisdomEdit },
+  created () {
+    if (this.wisdomProp) {
+      this.wisdomId = this.wisdomProp.uid
+    } else {
+      const paramID = this.$route.query.id
+      if (paramID) this.wisdomId = paramID
+    }
+    this.getWisdom()
+  },
+  data () {
+    return {
+      sidebarLeft: false,
+      wisdomId: '',
+      wisdom: {
+        t: '',
+        desc: '',
+        keys: ''
+      },
+      knowledge: {
+        uid: ''
+      },
+      related: null,
+      isEditingWisdom: false,
+      contentTree: [],
+      contentQuery: '',
+      comment: '',
+      toolbarConfig: [
+        ['bold', 'italic', 'strike', 'underline'],
+        ['token', 'hr', 'link'],
+        [
+          {
+            label: this.$q.lang.editor.formatting,
+            icon: this.$q.iconSet.editor.formatting,
+            list: 'no-icons',
+            options: [
+              'h1',
+              'h2',
+              'h3',
+              'h4',
+              'h5',
+              'h6',
+              'p',
+              'code'
+            ]
+          },
+          {
+            label: this.$q.lang.editor.fontSize,
+            icon: this.$q.iconSet.editor.fontSize,
+            fixedLabel: true,
+            fixedIcon: true,
+            list: 'no-icons',
+            options: [
+              'size-1',
+              'size-2',
+              'size-3',
+              'size-4',
+              'size-5',
+              'size-6',
+              'size-7'
+            ]
+          }
+        ]
+      ],
+      toolbarFonts: {
+        arial: 'Arial',
+        arial_black: 'Arial Black',
+        comic_sans: 'Comic Sans MS',
+        courier_new: 'Courier New',
+        impact: 'Impact',
+        lucida_grande: 'Lucida Grande',
+        times_new_roman: 'Times New Roman',
+        verdana: 'Verdana'
+      }
+    }
+  },
+  methods: {
+    getWisdom: function () {
+      if (!this.wisdomId || this.wisdomId === '') return
+      return new Promise((resolve) => {
+        const url = 'wisdom/private/get/' + this.wisdomId
+        api({
+          url
+        }).then((response) => {
+          this.wisdom = response.data
+          this.wisdom._time = DateTime.fromISO(this.wisdom.ts)
+          this.wisdom._ts = this.getHumanReadableDateText(this.wisdom._time, true, true)
+          if (this.wisdom.keys) {
+            this.wisdom._keys = this.wisdom.keys.split(',').join(', ')
+          }
+          this.buildContentLinks()
+        }).then(() => {
+          this.getKnowledge()
+        }).then(() => {
+          this.getRelated()
+        })
+        .catch((err) => {
+          console.debug(err.message)
+        })
+        .finally(() => {
+          resolve()
+        })
+      })
+    },
+    /**
+     *
+     * @param {String} date
+     * @param {Boolean=false} withTime
+     * @param {Boolean=false} fullDate
+     * @returns {string}
+     */
+    getHumanReadableDateText: function (date, withTime = false, fullDate = false) {
+      const time = DateTime.fromISO(date).toLocaleString(DateTime.TIME_24_SIMPLE)
+      const start = DateTime.fromISO(DateTime.fromISO(date).toISODate())
+      const end = DateTime.fromISO(DateTime.now().toISODate())
+      const diffDays = Math.ceil(end.diff(start) / (1000 * 60 * 60 * 24))
+      let suffix = ''
+      if (withTime) {
+        suffix = ', ' + time
+      }
+      let returnString
+      switch (diffDays) {
+        case -5:
+          returnString = 'In 5 days' + suffix
+          break
+        case -4:
+          returnString = 'In 4 days' + suffix
+          break
+        case -3:
+          returnString = 'In 3 days' + suffix
+          break
+        case -2:
+          returnString = 'In 2 days' + suffix
+          break
+        case -1:
+          returnString = 'Tomorrow' + suffix
+          break
+        case 0:
+          returnString = 'Today' + suffix
+          break
+        case 1:
+          returnString = 'Yesterday' + suffix
+          break
+        case 2:
+          returnString = '2 days ago' + suffix
+          break
+        case 3:
+          returnString = '3 days ago' + suffix
+          break
+        default:
+          if (!fullDate) {
+            returnString = start.toLocaleString(DateTime.DATE_MED) + suffix
+          } else {
+            returnString = start.toLocaleString(DateTime.DATE_HUGE) + suffix
+          }
+      }
+      return returnString
+    },
+    getKnowledge: async function (fromChat = false) {
+      if (!this.wisdom || !this.wisdom.pid) return
+      return new Promise((resolve) => {
+        let url
+        if (fromChat) {
+          url = 'knowledge/private/chat/' + this.wisdom.pid
+        } else {
+          url = 'knowledge/private/get/' + this.wisdom.pid
+        }
+        api({
+          url
+        }).then((response) => {
+          this.knowledge = response.data
+        })
+        .catch((err) => {
+          console.debug(err.message)
+        })
+        .finally(() => {
+          resolve()
+        })
+      })
+    },
+    clickedBack: function () {
+      this.$router.back()
+    },
+    handleEditWisdom: function () {
+      this.isEditingWisdom = !this.isEditingWisdom
+    },
+    handleDeleteWisdom: function () {
+      if (this.wisdomId == null || this.wisdomId === '') return
+      return new Promise((resolve) => {
+        api({
+          url: 'wisdom/private/delete/' + this.wisdomId
+        })
+        .then(() => {
+          this.$router.back()
+        })
+        .then(() => {
+          this.$q.notify({
+            color: 'primary',
+            position: 'top-right',
+            message: 'Wisdom Deleted!',
+            caption: '',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          resolve()
+        })
+        .catch((err) => {
+          this.$q.notify({
+            color: 'negative',
+            position: 'top-right',
+            message: 'Error!',
+            caption: 'Maybe you aren\'t the owner of the Wisdom.',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          console.debug(err.message)
+        })
+      })
+    },
+    handleWisdomUpdate: function (wisdom) {
+      return new Promise((resolve) => {
+        api({
+          method: 'post',
+          url: 'wisdom/private/edit/' + wisdom.uid,
+          data: wisdom
+        }).then(() => {
+          this.$q.notify({
+            color: 'primary',
+            position: 'top-right',
+            message: 'Wisdom Updated!',
+            caption: '',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          this.getWisdom()
+          resolve()
+        }).catch((err) => {
+          this.$q.notify({
+            color: 'negative',
+            position: 'top-right',
+            message: 'Error!',
+            caption: 'Maybe you aren\'t the owner of the Wisdom.',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          console.debug(err.message)
+        })
+      })
+    },
+    buildContentLinks: function () {
+      if (!this.wisdom) return
+      const headers = [...this.wisdom.desc.matchAll(/<h([1-6])>([^<]+)<\/h[1-6]>/gm)]
+      console.log(this.wisdom.desc)
+      let level
+      let content
+      let lastLevel
+      let tmp = {
+        label: '',
+        children: []
+      }
+      const tree = []
+      // Add root node
+      tree.push({
+        label: this.wisdom.t,
+        children: []
+      })
+      // Add further nodes
+      for (let i = 0; i < headers.length; i++) {
+        level = parseInt(headers[i][1], 10)
+        content = headers[i][2]
+        if (!content) continue
+        if (content.length > 40) {
+          content = content.substring(0, 40) + '...'
+        }
+        if (level && content) {
+          if (lastLevel) {
+            if (level < lastLevel) {
+              // Lower level (more important) -> remember
+              if (tmp && tmp.label) {
+                tree[0].children.push(tmp)
+              }
+              tmp = {
+                label: content,
+                children: []
+              }
+            } else {
+              if (level > lastLevel) {
+                // Higher level (less important) -> insert as child
+                // Insert as child of child if possible
+                const len = tmp.children.length
+                if (len > 0) {
+                  // Allow for another level of child
+                  const len2 = tmp.children[len - 1].children.length
+                  if (len2 > 0) {
+                    tmp.children[len - 1].children[len2 - 1].children.push({
+                      label: content,
+                      children: []
+                    })
+                  } else {
+                    tmp.children[len - 1].children.push({
+                      label: content,
+                      children: []
+                    })
+                  }
+                } else {
+                  tmp.children.push({
+                    label: content,
+                    children: []
+                  })
+                }
+              } else if (level === lastLevel) {
+                // Same level -> remember
+                if (tmp && tmp.label) {
+                  tree[0].children.push(tmp)
+                }
+                tmp = {
+                  label: content,
+                  children: []
+                }
+              }
+            }
+          } else {
+            // First node -> remember
+            tmp = {
+              label: content,
+              children: []
+            }
+          }
+          lastLevel = level
+        }
+      }
+      if (tmp && tmp.label) {
+        tree[0].children.push(tmp)
+      }
+      this.contentTree = tree
+      console.log(tree[0].children)
+      if (tree[0].children.length > 0) {
+        setTimeout(() => {
+          this.$refs.contentTree.expandAll()
+        })
+      }
+    },
+    postComment: async function () {
+      if (this.comment.trim() === '') return
+      const payload = {
+        t: '',
+        desc: this.comment.trim(),
+        ref: this.wisdom.uid,
+        keys: '',
+        type: 'reply',
+        pid: this.knowledge.uid
+      }
+      return new Promise((resolve) => {
+        api({
+          method: 'post',
+          url: 'wisdom/private/reply',
+          data: payload
+        }).then(() => {
+          this.comment = ''
+          this.$q.notify({
+            color: 'primary',
+            position: 'top-right',
+            message: 'Comment sent!',
+            caption: 'Thanks for contributing.',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+        }).then(() => {
+          this.getRelated()
+        }).catch((err) => {
+          console.debug(err.message)
+        }).finally(() => {
+          resolve()
+        })
+      })
+    },
+    getRelated: async function (onlyTasks = false) {
+      return new Promise((resolve) => {
+        const guid = this.wisdom.uid
+        api({
+          url: 'wisdom/private/investigate/' + guid
+        })
+        .then(async (response) => {
+          if (!onlyTasks) {
+            this.related = response.data
+            let dName
+            if (this.related.replies) {
+              for (let i = 0; i < this.related.replies.length; i++) {
+                this.related.replies[i]._time = DateTime.fromISO(this.related.replies[i].ts)
+                this.related.replies[i]._ts = this.getHumanReadableDateText(this.related.replies[i]._time, true, true)
+                dName = await dbGetDisplayName(this.related.replies[i].usr)
+                if (dName == null) {
+                  dName = this.related.replies[i].usr
+                }
+                this.related.replies[i].name = dName
+              }
+            }
+            if (this.related.answers) {
+              for (let i = 0; i < this.related.answers.length; i++) {
+                this.related.answers[i].ts = DateTime.fromISO(this.related.answers[i].ts)
+                dName = await dbGetDisplayName(this.related.answers[i].usr)
+                if (dName == null) {
+                  dName = this.related.answers[i].usr
+                }
+                this.related.answers[i].name = dName
+              }
+            }
+            if (this.related.ref) {
+              this.related.ref.ts = DateTime.fromISO(this.related.ref.ts)
+              dName = await dbGetDisplayName(this.related.ref.usr)
+              if (dName == null) {
+                dName = this.related.ref.usr
+              }
+              this.related.ref.name = dName
+            }
+          } else {
+            if (response.data.tasks) {
+              this.related.tasks = []
+              let dName
+              for (let i = 0; i < response.data.tasks.length; i++) {
+                if (response.data.tasks[i].uid !== this.wisdom.uid) {
+                  response.data.tasks[i].t = this.formatTitle(response.data.tasks[i].t)
+                  response.data.tasks[i].ts = DateTime.fromISO(response.data.tasks[i].ts)
+                  dName = await dbGetDisplayName(response.data.tasks[i].usr)
+                  if (dName == null) {
+                    dName = response.data.tasks[i].usr
+                  }
+                  response.data.tasks[i].name = dName
+                  this.related.tasks.push(response.data.tasks[i])
+                }
+              }
+            }
+          }
+          console.log(this.related)
+        }).catch((err) => {
+          console.debug(err.message)
+        }).finally(() => {
+          resolve()
+        })
+      })
+    }
+  }
+}
+</script>
+
+<style scoped>
+
+</style>
