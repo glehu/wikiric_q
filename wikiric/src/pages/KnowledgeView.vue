@@ -456,6 +456,9 @@ export default {
     addResults: async function (results, type, questionsOnly, catColors) {
       let entry
       for (let i = 0; i < results.length; i++) {
+        // Ignore certain results
+        if (results[i].t === '%wikiric%Events%wkrg%') continue
+        // Further process result
         results[i].t = this.formatTitle(results[i].t)
         // Replace username with display name
         let dName = await dbGetDisplayName(results[i].usr)

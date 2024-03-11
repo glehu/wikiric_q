@@ -259,6 +259,50 @@ const wikiricSDK = {
     }
     return message
   },
+  /**
+   * Sends a message to the wikiric backend.
+   *
+   * Returns true if the message was sent, otherwise it will return false
+   *
+   * @param {Object|String} msg
+   * @returns {boolean}
+   */
+  sendConnectorMessage: function (msg) {
+    if (!this._isSynchronized) return false
+    let txt
+    if (typeof msg === 'object') {
+      txt = JSON.stringify(msg)
+    } else {
+      txt = msg
+    }
+    this._connector.send(txt)
+    return true
+  },
+  /**
+   * Forwards a message to a specific user.
+   *
+   * Returns true if the message was sent, otherwise it will return false
+   *
+   * @param {Object|String} message
+   * @param {String} type
+   * @param {String} username
+   * @returns {boolean}
+   */
+  forwardMessage: function (message, type, username) {
+    let txt
+    if (typeof message === 'object') {
+      txt = JSON.stringify(message)
+    } else {
+      txt = message
+    }
+    const payload = {
+      act: '[c:FWD]',
+      typ: type,
+      msg: txt,
+      usr: username
+    }
+    return this.sendConnectorMessage(payload)
+  },
   _processRawMessage: async function (message) {
     // Convert string message to object
     message = JSON.parse(message)

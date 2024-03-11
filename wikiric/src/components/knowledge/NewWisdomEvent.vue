@@ -1,9 +1,10 @@
 <template>
   <q-dialog v-model="show" class="">
-    <q-card class="surface p4 w-[75dvw] max-w-2xl" flat bordered>
-      <div class="surface sticky top-0 z-fab px4 pt4
-                  flex items-start justify-between">
-        <span class="text-h5 fontbold pl2">
+    <q-card class="background w-[75dvw] max-w-2xl" flat bordered>
+      <div class="background sticky top-0 z-fab p4
+                  fmt_border_bottom
+                  flex items-center justify-between">
+        <span class="text-h5 fontbold pointer-events-none">
           <template v-if="!isEdit">
             New Event
           </template>
@@ -16,19 +17,109 @@
             <q-btn color="brand-bg" text-color="brand-p"
                    icon="delete"
                    label="Delete Event" no-caps flat
-                   class="px6 py4 fontbold"
+                   class="px3 py2 fontbold"
                    @click="deleteDate"/>
           </template>
-          <q-btn color="primary"
+          <q-btn color="brand-bg" text-color="brand-p"
                  icon="save"
-                 label="Save Changes" no-caps
-                 class="px6 py4 fontbold"
+                 label="Save Changes" no-caps flat
+                 class="px3 py2 fontbold"
                  @click="createDate"/>
         </div>
       </div>
-      <div class="px4 pb4">
+      <div class="flex row gap-6 wfull px4 py2 surface items-start justify-between">
+        <div class="flex column gap-1">
+          <div class="flex row gap-2 items-center">
+            <p class="text-subtitle2 fontbold pointer-events-none w12">
+              From
+            </p>
+            <div class="flex row gap-2 items-center justify-between flex-grow">
+              <q-btn icon="event" flat dense no-caps
+                     class="wfit text-subtitle2 fontbold" :label="getHumanReadableDateText(date.due)">
+                <q-popup-proxy @before-show="updateProxyDueDate" cover transition-show="scale" transition-hide="scale">
+                  <q-date v-model="proxyDate">
+                    <div class="row items-center justify-end q-gutter-sm">
+                      <q-btn label="Cancel" color="primary" flat v-close-popup/>
+                      <q-btn label="OK" color="primary" flat @click="saveProxyDueDate" v-close-popup/>
+                    </div>
+                  </q-date>
+                </q-popup-proxy>
+              </q-btn>
+              <q-btn icon="access_time" flat dense no-caps
+                     class="wfit text-subtitle2 fontbold" :label="date._dueTimeFmt">
+                <q-popup-proxy @before-show="updateProxyDueTime" cover transition-show="scale" transition-hide="scale">
+                  <q-time v-model="proxyTime">
+                    <div class="row items-center justify-end q-gutter-sm">
+                      <q-btn label="Cancel" color="primary" flat v-close-popup/>
+                      <q-btn label="OK" color="primary" flat @click="saveProxyDueTime" v-close-popup/>
+                    </div>
+                  </q-time>
+                </q-popup-proxy>
+              </q-btn>
+            </div>
+          </div>
+          <div class="flex row gap-2 items-center">
+            <p class="text-subtitle2 fontbold pointer-events-none w12">
+              Until
+            </p>
+            <div class="flex row gap-2 items-center justify-between flex-grow">
+              <q-btn icon="event" flat dense no-caps
+                     class="wfit text-subtitle2 fontbold" :label="getHumanReadableDateText(date.duet)">
+                <q-popup-proxy @before-show="updateProxyDueDateUntil" cover transition-show="scale"
+                               transition-hide="scale">
+                  <q-date v-model="proxyDateUntil">
+                    <div class="row items-center justify-end q-gutter-sm">
+                      <q-btn label="Cancel" color="primary" flat v-close-popup/>
+                      <q-btn label="OK" color="primary" flat @click="saveProxyDueDateUntil" v-close-popup/>
+                    </div>
+                  </q-date>
+                </q-popup-proxy>
+              </q-btn>
+              <q-btn icon="access_time" flat dense no-caps
+                     class="wfit text-subtitle2 fontbold" :label="date._dueTimeUntilFmt">
+                <q-popup-proxy @before-show="updateProxyDueTimeUntil" cover transition-show="scale"
+                               transition-hide="scale">
+                  <q-time v-model="proxyTimeUntil">
+                    <div class="row items-center justify-end q-gutter-sm">
+                      <q-btn label="Cancel" color="primary" flat v-close-popup/>
+                      <q-btn label="OK" color="primary" flat @click="saveProxyDueTimeUntil" v-close-popup/>
+                    </div>
+                  </q-time>
+                </q-popup-proxy>
+              </q-btn>
+            </div>
+          </div>
+          <div class="flex row gap-2 items-center
+                      mt2 background p2 wfull
+                      rounded-2">
+            <q-icon name="watch" size="1rem"/>
+            <span class="text-body2 fontbold">{{ date._duration }}</span>
+          </div>
+        </div>
+        <div class="flex column gap-4 items-start mt1">
+          <template v-if="date.uid">
+            <div class="flex column gap-2 items-center">
+              <q-btn icon="check" dense no-caps
+                     align="left"
+                     label="Finish Task"
+                     color="primary"
+                     class="text-md fontbold px4 py2 wfull"
+                     @click="finishDate"/>
+              <q-btn icon="north_east" dense no-caps
+                     align="left"
+                     label="View Task"
+                     color="brand-bg"
+                     text-color="brand-p"
+                     class="text-md fontbold px4 py2 wfull"
+                     @click="gotoWisdom"/>
+            </div>
+          </template>
+        </div>
+      </div>
+      <div class="pb4 px3 surface">
         <q-input
           for="event_t"
+          ref="event_t"
           label="Title"
           color="brand-p"
           label-color="brand-p"
@@ -43,74 +134,36 @@
           label="Description"
           color="brand-p"
           label-color="brand-p"
-          v-model="date.desc"
+          v-model="date.keys"
           class="p2 text-xl">
           <template v-slot:prepend>
             <q-icon name="info"/>
           </template>
         </q-input>
-        <div class="flex row gap-4 wfull mt2">
-          <div class="flex column p2">
-            <p class="text-body1 fontbold mb2">From</p>
-            <q-btn icon="event" flat dense no-caps
-                   class="wfit text-lg" :label="getHumanReadableDateText(date.due)">
-              <q-popup-proxy @before-show="updateProxyDueDate" cover transition-show="scale" transition-hide="scale">
-                <q-date v-model="proxyDate">
-                  <div class="row items-center justify-end q-gutter-sm">
-                    <q-btn label="Cancel" color="primary" flat v-close-popup/>
-                    <q-btn label="OK" color="primary" flat @click="saveProxyDueDate" v-close-popup/>
-                  </div>
-                </q-date>
-              </q-popup-proxy>
-            </q-btn>
-            <q-btn icon="access_time" flat dense no-caps
-                   class="wfit text-lg" :label="date._dueTimeFmt">
-              <q-popup-proxy @before-show="updateProxyDueTime" cover transition-show="scale" transition-hide="scale">
-                <q-time v-model="proxyTime">
-                  <div class="row items-center justify-end q-gutter-sm">
-                    <q-btn label="Cancel" color="primary" flat v-close-popup/>
-                    <q-btn label="OK" color="primary" flat @click="saveProxyDueTime" v-close-popup/>
-                  </div>
-                </q-time>
-              </q-popup-proxy>
-            </q-btn>
-          </div>
-          <div class="flex column p2">
-            <p class="text-body1 fontbold mb2">Until</p>
-            <q-btn icon="event" flat dense no-caps
-                   class="wfit text-lg" :label="getHumanReadableDateText(date.duet)">
-              <q-popup-proxy @before-show="updateProxyDueDateUntil" cover transition-show="scale"
-                             transition-hide="scale">
-                <q-date v-model="proxyDateUntil">
-                  <div class="row items-center justify-end q-gutter-sm">
-                    <q-btn label="Cancel" color="primary" flat v-close-popup/>
-                    <q-btn label="OK" color="primary" flat @click="saveProxyDueDateUntil" v-close-popup/>
-                  </div>
-                </q-date>
-              </q-popup-proxy>
-            </q-btn>
-            <q-btn icon="access_time" flat dense no-caps
-                   class="wfit text-lg" :label="date._dueTimeUntilFmt">
-              <q-popup-proxy @before-show="updateProxyDueTimeUntil" cover transition-show="scale"
-                             transition-hide="scale">
-                <q-time v-model="proxyTimeUntil">
-                  <div class="row items-center justify-end q-gutter-sm">
-                    <q-btn label="Cancel" color="primary" flat v-close-popup/>
-                    <q-btn label="OK" color="primary" flat @click="saveProxyDueTimeUntil" v-close-popup/>
-                  </div>
-                </q-time>
-              </q-popup-proxy>
-            </q-btn>
-          </div>
-          <div class="flex column p2">
-            <p class="text-body1 fontbold mb2">Duration</p>
-            <div class="flex row gap-2 items-center p1">
-              <q-icon name="watch" size="1.5rem"/>
-              <span class="text-lg">{{ date._duration }} minutes</span>
-            </div>
-          </div>
-        </div>
       </div>
+      <q-select
+        label="Collaborators"
+        color="brand-p"
+        bg-color="brand-bg"
+        filled
+        v-model="date.coll"
+        :options="filterOptions"
+        @filter="filterCollaboratorOptions"
+        use-input
+        use-chips
+        multiple
+        input-debounce="50"
+        new-value-mode="add-unique"
+        class="wfull"
+      />
+      <q-editor id="wisdom_desc"
+                ref="wisdom_desc"
+                v-model="date.desc"
+                min-height="10rem"
+                class="mt2"
+                content-class="markedView"
+                :toolbar="toolbarConfig"
+                :fonts="toolbarFonts"/>
     </q-card>
   </q-dialog>
 </template>
@@ -135,7 +188,7 @@ export default {
     }
   },
   name: 'NewWisdomEvent',
-  emits: ['create', 'delete', 'update'],
+  emits: ['create', 'delete', 'update', 'finish'],
   watch: {
     isOpen () {
       this.show = true
@@ -159,11 +212,66 @@ export default {
       proxyTime: '',
       proxyDateUntil: '',
       proxyTimeUntil: '',
-      duration: ''
+      duration: '',
+      contributorOptions: [],
+      filterOptions: [],
+      toolbarConfig: [
+        ['bold', 'italic', 'strike', 'underline'],
+        ['token', 'hr', 'link'],
+        [
+          {
+            label: this.$q.lang.editor.formatting,
+            icon: this.$q.iconSet.editor.formatting,
+            list: 'no-icons',
+            options: [
+              'h1',
+              'h2',
+              'h3',
+              'h4',
+              'h5',
+              'h6',
+              'p',
+              'code'
+            ]
+          },
+          {
+            label: this.$q.lang.editor.fontSize,
+            icon: this.$q.iconSet.editor.fontSize,
+            fixedLabel: true,
+            fixedIcon: true,
+            list: 'no-icons',
+            options: [
+              'size-3',
+              'size-4',
+              'size-5',
+              'size-6',
+              'size-7'
+            ]
+          }
+        ]
+      ],
+      toolbarFonts: {
+        arial: 'Arial',
+        arial_black: 'Arial Black',
+        comic_sans: 'Comic Sans MS',
+        courier_new: 'Courier New',
+        impact: 'Impact',
+        lucida_grande: 'Lucida Grande',
+        times_new_roman: 'Times New Roman',
+        verdana: 'Verdana'
+      }
     }
   },
   methods: {
     handleDialogOpen: function () {
+      if (this.date.t === '') {
+        setTimeout(() => {
+          const elem = this.$refs.event_t
+          if (elem) {
+            elem.focus()
+          }
+        }, 0)
+      }
     },
     jsDateToQDate: function (date) {
       const lux = DateTime.fromISO(date.due)
@@ -174,7 +282,14 @@ export default {
       date._dueDateUntil = luxt.toISODate().replaceAll('-', '/')
       date._dueTimeUntil = luxt.toISOTime()
       date._dueTimeUntilFmt = luxt.toLocaleString(DateTime.TIME_24_SIMPLE)
-      date._duration = luxt.diff(lux).as('minutes').toString()
+      let dur = luxt.diff(lux).as('minutes')
+      if (dur >= 120) {
+        dur = dur / 60
+        date._duration = dur.toString() + ' hour'
+      } else {
+        date._duration = dur.toString() + ' minute'
+      }
+      if (dur > 1) date._duration += 's'
       return date
     },
     qDateToJSDate: function (date) {
@@ -192,8 +307,10 @@ export default {
         this.$emit('create', {
           t: this.date.t,
           desc: this.date.desc,
+          keys: this.date.keys,
           due: this.date.due.toJSDate().toISOString(),
-          duet: this.date.duet
+          duet: this.date.duet,
+          coll: this.date.coll
         })
       } else {
         delete this.date._dueTime
@@ -207,6 +324,13 @@ export default {
     deleteDate: function () {
       this.$emit('delete', this.date.uid)
       this.show = false
+    },
+    finishDate: function () {
+      this.$emit('finish', this.date.uid)
+      this.show = false
+    },
+    gotoWisdom: function () {
+      this.$router.push(`/q/wisdom?id=${this.date.uid}`)
     },
     updateProxyDueDate () {
       this.proxyDate = this.date._dueDate
@@ -286,6 +410,18 @@ export default {
           }
       }
       return returnString
+    },
+    filterCollaboratorOptions (val, update) {
+      update(() => {
+        if (val === '') {
+          this.filterOptions = this.contributorOptions
+        } else {
+          const needle = val.toLowerCase()
+          this.filterOptions = this.contributorOptions.filter(
+            v => v.toLowerCase().indexOf(needle) > -1
+          )
+        }
+      })
     }
   }
 }

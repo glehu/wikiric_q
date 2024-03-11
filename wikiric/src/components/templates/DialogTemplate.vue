@@ -1,6 +1,6 @@
 <template>
-  <q-dialog v-model="show" class="" full-width>
-    <q-card class="surface p4" flat bordered>
+  <q-dialog v-model="show" class="z-top">
+    <q-card class="surface p4 w-[99dvw] max-w-xl" flat bordered>
     </q-card>
   </q-dialog>
 </template>

@@ -2,8 +2,9 @@
   <div class="wfull relative">
     <div class="wfull relative">
       <q-menu v-if="!noInteraction && !fullscreen"
-              touch-position auto-close>
-        <q-btn-group flat class="surface">
+              touch-position auto-close cover
+              class="flex">
+        <q-btn-group flat class="surface flex justify-center flex-grow">
           <q-btn icon="reply" dense
                  v-on:click="$emit('reply', msg.uid)"/>
           <q-btn v-if="sent" icon="edit" dense
@@ -23,6 +24,17 @@
           <q-btn icon="content_copy" dense
                  v-on:click="$emit('copy', msg._msg)"/>
         </q-btn-group>
+        <template v-if="msg._isFile">
+          <a :href="msg._msgURL"
+             class="flex-grow"
+             download>
+            <q-btn icon="sym_o_file_download"
+                   color="brand-bg"
+                   text-color="brand-p"
+                   class="wfull"
+                   label="Download"/>
+          </a>
+        </template>
       </q-menu>
       <q-slide-item @left="onLeft" @right="onLeft"
                     left-color="positive" right-color="positive"
@@ -60,8 +72,8 @@
                     'surface': !sent}">
               <div v-html="replySrc.msg"></div>
               <span class="text-xs opacity-60 text-weight-medium">
-          {{ replySrc._ts }}
-        </span>
+                {{ replySrc._ts }}
+              </span>
             </div>
           </div>
           <template v-if="msg._mType === 'GIF' || msg._mType === 'Image'">
@@ -75,10 +87,10 @@
                   v-model:fullscreen="fullscreen">
                   <q-carousel-slide :name="1"
                                     class="flex column
-                                         items-center
-                                         justify-center
-                                         min-w-[300px]">
-                    <q-img :src="msg._msgURL"/>
+                                           items-center
+                                           justify-center
+                                           min-w-[300px]">
+                    <q-img :src="msg._msgURL" fit="contain" loading="eager"/>
                   </q-carousel-slide>
                   <template v-slot:control>
                     <q-carousel-control
@@ -87,7 +99,7 @@
                       position="bottom-left"
                       :offset="[0, 0]">
                       <div class="flex row gap-2 items-center
-                                surface wfull pl4 pr14">
+                                  surface wfull pl4 pr14">
                         <span class="text-subtitle2">{{ msg._ts }}:</span>
                         <template v-if="msg._fileName">
                           <span class="text-subtitle2">{{ msg._fileName }}</span>
@@ -112,6 +124,17 @@
                           <q-btn icon="content_copy" dense
                                  v-on:click="$emit('copy', msg._msg)"/>
                         </q-btn-group>
+                        <template v-if="msg._isFile">
+                          <a :href="msg._msgURL"
+                             class="flex-grow"
+                             download>
+                            <q-btn icon="sym_o_file_download"
+                                   color="brand-bg"
+                                   text-color="brand-p"
+                                   class="wfull"
+                                   label="Download"/>
+                          </a>
+                        </template>
                       </div>
                     </q-carousel-control>
                     <q-carousel-control
@@ -129,19 +152,33 @@
                 </q-carousel>
               </div>
             </div>
+            <div class="pt2" v-html="msg._msg"></div>
           </template>
           <template v-else-if="msg._mType === 'Audio'">
             <div class="clientMessage">
-              <p class="pointer-events-none text-sm rounded-md mb-2
-                                         font-bold">
-                {{ msg.fileName }}
+              <p class="pointer-events-none text-subtitle2
+                        font-bold">
+                {{ msg._fileName }}
               </p>
               <audio controls preload="auto"
                      class="uploadFileSnippet">
-                <source :src="msg.msgURL">
+                <source :src="msg._msgURL">
                 Your browser does not support playing audio.
               </audio>
             </div>
+            <div class="pt2" v-html="msg._msg"></div>
+          </template>
+          <template v-else-if="msg._isFile">
+            <div class="clientMessage">
+              <div class="flex gap-2 p2 rounded background items-center">
+                <q-icon name="sym_o_attachment" size="2rem"/>
+                <span class="pointer-events-none text-subtitle2
+                             font-bold">
+                  {{ msg._fileName }}
+                </span>
+              </div>
+            </div>
+            <div class="pt2" v-html="msg._msg"></div>
           </template>
           <template v-else>
             <div v-html="msg._msg"></div>

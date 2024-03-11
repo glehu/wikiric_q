@@ -17,7 +17,7 @@
             <q-btn flat dense icon="sym_o_left_panel_close"
                    align="left" class="wfull"
                    no-caps label="Hide Sidebar"
-                   @click="sidebarLeft = !sidebarLeft">
+                   @click="toggleSidebarLeft">
             </q-btn>
           </q-toolbar>
           <q-btn flat icon="sym_o_arrow_left_alt"
@@ -34,7 +34,7 @@
                          class="background z-fab">
             <q-toolbar>
               <q-btn flat round dense icon="sym_o_dock_to_right"
-                     @click="sidebarLeft = !sidebarLeft">
+                     @click="toggleSidebarLeft">
                 <q-tooltip class="text-body2">
                   Toggle&nbsp;Sidebar
                 </q-tooltip>
@@ -82,12 +82,13 @@
             </div>
           </template>
           <template v-else>
-            <div class="h-[calc(100dvh-175px)]
-                        md:h-[calc(100dvh-125px)]
-                        overflow-hidden relative px4">
+            <div class="h-[calc(100dvh-162px)]
+                        md:h-[calc(100dvh-112px)]
+                        overflow-hidden relative">
               <FullCalendar ref="fullCalendar"
                             :options="calendarOptions"
-                            class="wfull hfull surface-variant"/>
+                            class="wfull hfull background
+                                   overflow-hidden"/>
             </div>
           </template>
           <q-page-sticky position="bottom-right" :offset="[18, 18]"
@@ -110,7 +111,8 @@
                       :new-event="newEvent"
                       @create="createNewEvent"
                       @delete="deleteEvent"
-                      @update="updateEvent"/>
+                      @update="updateEvent"
+                      @finish="finishEvent"/>
   </q-page>
 </template>
 
@@ -119,7 +121,9 @@ import { api } from 'boot/axios'
 import FullCalendar from '@fullcalendar/vue3'
 import timeGridPlugin from '@fullcalendar/timegrid'
 import listPlugin from '@fullcalendar/list'
+import multiMonthPlugin from '@fullcalendar/multimonth'
 import interactionPlugin from '@fullcalendar/interaction'
+import deLocale from '@fullcalendar/core/locales/de'
 import { DateTime } from 'luxon'
 import { dbGetDisplayName } from 'src/libs/wikistore'
 import NewWisdomEvent from 'components/knowledge/NewWisdomEvent.vue'
@@ -173,13 +177,15 @@ export default {
     const eventOpener = this.eventClicked
     const dateClicker = this.dateClicked
     this.calendarOptions = {
-      plugins: [timeGridPlugin, interactionPlugin, listPlugin],
+      plugins: [timeGridPlugin, listPlugin, multiMonthPlugin, interactionPlugin],
       initialView: 'timeGridWeek',
+      multiMonthMaxColumns: 1,
       nowIndicator: true,
       editable: true,
       events: [],
       scrollTime: DateTime.now().toISOTime(),
-      locale: 'en-en',
+      locales: [deLocale],
+      locale: 'en-de',
       slotDuration: '00:15:00',
       slotLabelInterval: '00:15:00',
       slotLabelFormat: {
@@ -196,7 +202,7 @@ export default {
       headerToolbar: {
         left: 'prev,next',
         center: 'title',
-        right: 'timeGridWeek,listWeek'
+        right: 'timeGridWeek,listWeek,multiMonthYear'
       },
       eventDrop: function (info) {
         // alert(info.event.title + ' was dropped on ' + info.event.start.toISOString())
@@ -409,9 +415,11 @@ export default {
                   }
                   this.calendarOptions.events.push({
                     id: this.boxes[i].tasks[j].uid,
-                    title: this.boxes[i].tasks[j].t + ' - ' + this.boxes[i].tasks[j].desc,
+                    title: this.boxes[i].tasks[j].t + ' - ' + this.boxes[i].tasks[j].keys,
                     start: this.boxes[i].tasks[j].due,
-                    end: this.boxes[i].tasks[j].duet
+                    end: this.boxes[i].tasks[j].duet,
+                    color: 'var(--md-sys-color-primary)',
+                    textColor: 'var(--md-sys-color-on-primary)'
                   })
                 }
               }
@@ -431,15 +439,16 @@ export default {
       const payload = {
         t: date.t,
         desc: date.desc,
+        keys: date.keys,
         pid: this.knowledge.uid,
-        keys: '',
         copy: '',
         cats: [],
         type: 'task',
         row: 0,
         ref: this.eventsBox.uid,
         due: date.due,
-        duet: date.duet
+        duet: date.duet,
+        coll: date.coll
       }
       return new Promise((resolve) => {
         api({
@@ -461,6 +470,19 @@ export default {
           method: 'post',
           url: `wisdom/private/edit/${date.uid}`,
           data: date
+        }).then(() => {
+          this.getBoxes()
+        }).catch((err) => {
+          console.debug(err.message)
+        }).finally(() => {
+          resolve()
+        })
+      })
+    },
+    finishEvent: function (uid) {
+      return new Promise((resolve) => {
+        api({
+          url: `wisdom/private/finish/${uid}`
         }).then(() => {
           this.getBoxes()
         }).catch((err) => {
@@ -521,6 +543,12 @@ export default {
         }
       }
       return null
+    },
+    toggleSidebarLeft: function () {
+      this.sidebarLeft = !this.sidebarLeft
+      setTimeout(() => {
+        this.$refs.fullCalendar.getApi().updateSize()
+      }, 200)
     }
   }
 }
@@ -530,8 +558,9 @@ export default {
 
 :root {
   --fc-border-color: var(--md-sys-color-outline-variant) !important;
-  --fc-neutral-bg-color: var(--md-sys-color-surface) !important;
+  --fc-neutral-bg-color: var(--md-sys-color-surface-variant) !important;
   --fc-list-event-hover-bg-color: var(--md-sys-color-surface) !important;
+  --fc-page-bg-color: var(--md-sys-color-background) !important;
 }
 
 .fc .fc-timegrid-slot {

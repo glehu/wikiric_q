@@ -26,6 +26,22 @@
                  @click="clickedBack">
             <span class="ml4 text-body1">Back</span>
           </q-btn>
+          <template v-if="wisdom.coll && wisdom.coll.length > 0">
+            <div class="hfull px4 py2">
+              <p class="text-subtitle2 fontbold mt3">
+                Collaborators - {{ wisdom.coll.length }}
+              </p>
+              <div class="wfit px1 py1">
+                <div class="flex column">
+                  <div v-for="coll in wisdom.coll" :key="coll">
+                    <q-icon name="engineering" size="1.2rem"
+                            class="mr1.5"/>
+                    <span>{{ coll }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </template>
           <div class="hfull px4 py2">
             <q-input label="Filter" filled dense
                      color="brand-p"
@@ -72,6 +88,10 @@
                  class="max-w-screen-lg wfull hfull">
               <div class="flex row wfull">
                 <q-btn-group flat class="mlauto">
+                  <template v-if="wisdom.type === 'task' && wisdom.done === false">
+                    <q-btn icon="check" label="Done"
+                           @click="handleFinishWisdom"/>
+                  </template>
                   <q-btn icon="edit" label="Edit"
                          @click="handleEditWisdom"/>
                   <q-btn icon="delete" label="Delete"
@@ -83,23 +103,90 @@
                           rounded
                           px4 pt2 pb4">
                 <p class="text-h4 fontbold">{{ wisdom.t }}</p>
+                <template v-if="wisdom.due">
+                  <div class="flex row gap-6 px2 py1
+                              mt4 rounded-2 fmt_border
+                              items-start justify-between">
+                    <div class="flex column gap-1">
+                      <div class="flex row gap-2 items-center">
+                        <p class="text-subtitle2 fontbold pointer-events-none w12">
+                          From
+                        </p>
+                        <div class="flex row gap-2 items-center justify-between flex-grow">
+                          <q-btn icon="event" flat dense no-caps
+                                 class="wfit text-subtitle2 fontbold" :label="getHumanReadableDateText(wisdom.due)"/>
+                          <q-btn icon="access_time" flat dense no-caps
+                                 class="wfit text-subtitle2 fontbold" :label="wisdom._dueTimeFmt"/>
+                        </div>
+                      </div>
+                      <div class="flex row gap-2 items-center">
+                        <p class="text-subtitle2 fontbold pointer-events-none w12">
+                          Until
+                        </p>
+                        <div class="flex row gap-2 items-center justify-between flex-grow">
+                          <q-btn icon="event" flat dense no-caps
+                                 class="wfit text-subtitle2 fontbold" :label="getHumanReadableDateText(wisdom.duet)"/>
+                          <q-btn icon="access_time" flat dense no-caps
+                                 class="wfit text-subtitle2 fontbold" :label="wisdom._dueTimeUntilFmt"/>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="flex column gap-4 items-start mt1">
+                      <div class="flex row gap-2 items-center">
+                        <q-icon name="watch" size="1rem"/>
+                        <span class="text-subtitle2 fontbold">{{ wisdom._duration }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </template>
                 <div class="wfull flex column
                             my4 py1 px2 non-selectable
                             background fmt_border rounded">
-                  <q-breadcrumbs active-color="brand-p">
-                    <q-breadcrumbs-el icon="person"
-                                      :label="wisdom.usr"/>
-                    <q-breadcrumbs-el :label="wisdom._ts"/>
-                    <template v-if="knowledge">
-                      <q-breadcrumbs-el icon="school"
-                                        :label="knowledge.t"/>
-                      <q-breadcrumbs-el :label="knowledge.desc"/>
-                    </template>
-                  </q-breadcrumbs>
-                  <div v-if="wisdom._keys"
-                       class="flex items-center">
-                    <q-icon name="sym_o_tag" size="1.2rem" class="mr1.5"/>
-                    <p>{{ wisdom._keys }}</p>
+                  <div class="flex gap-2 items-start justify-between">
+                    <div>
+                      <div class="flex gap-x-2">
+                        <q-breadcrumbs active-color="brand-p" class="px1 mt1">
+                          <q-breadcrumbs-el icon="person"
+                                            :label="wisdom.usr"/>
+                          <q-breadcrumbs-el :label="wisdom._ts"/>
+                        </q-breadcrumbs>
+                        <template v-if="knowledge">
+                          <q-breadcrumbs active-color="brand-p" class="px1 mt1">
+                            <q-breadcrumbs-el icon="school"
+                                              :label="knowledge.t"/>
+                            <q-breadcrumbs-el :label="knowledge.desc"/>
+                          </q-breadcrumbs>
+                        </template>
+                      </div>
+                      <div v-if="wisdom._keys"
+                           class="flex items-center p1">
+                        <q-icon name="sym_o_tag" size="1.2rem" class="mr1.5"/>
+                        <p>{{ wisdom._keys }}</p>
+                      </div>
+                      <template v-if="wisdom.type === 'task'">
+                        <div class="flex gap-2 my1">
+                          <div class="flex items-center fmt_border
+                                  wfit rounded px2 py1">
+                            <template v-if="wisdom.done === true">
+                              <q-icon name="check" size="1.2rem" class="mr1.5"/>
+                              <span>Done</span>
+                            </template>
+                            <template v-else>
+                              <q-icon name="engineering" size="1.2rem" class="mr1.5"/>
+                              <span>In Progress</span>
+                            </template>
+                          </div>
+                          <template v-if="wisdom.due">
+                            <div class="flex items-center fmt_border
+                                    wfit rounded px2 py1">
+                              <q-icon name="access_time" size="1.2rem" class="mr1.5"/>
+                              <span v-if="wisdom.done !== true">Due&nbsp;</span>
+                              <span>{{ getHumanReadableDateText(wisdom.due, true, true) }}</span>
+                            </div>
+                          </template>
+                        </div>
+                      </template>
+                    </div>
                   </div>
                 </div>
                 <div v-html="wisdom.desc"></div>
@@ -129,9 +216,10 @@
                   </p>
                   <div class="wfull flex column gap-2">
                     <template v-for="reply in related.replies" :key="reply.uid">
-                      <div class="surface p4 rounded">
+                      <div class="surface px3 pt2 pb4 rounded">
                         <p class="mb2">
-                          {{ reply.name }}, {{ reply._ts }}:
+                          {{ reply.name }},
+                          <span class="text-subtitle2">{{ reply._ts }}:</span>
                         </p>
                         <div v-html="reply.desc"></div>
                       </div>
@@ -265,6 +353,7 @@ export default {
           if (this.wisdom.keys) {
             this.wisdom._keys = this.wisdom.keys.split(',').join(', ')
           }
+          this.wisdom = this.jsDateToQDate(this.wisdom)
           this.buildContentLinks()
         }).then(() => {
           this.getKnowledge()
@@ -357,6 +446,50 @@ export default {
     },
     clickedBack: function () {
       this.$router.back()
+    },
+    handleFinishWisdom: function () {
+      if (this.wisdomId == null || this.wisdomId === '') return
+      return new Promise((resolve) => {
+        api({
+          url: 'wisdom/private/finish/' + this.wisdomId
+        }).then(() => {
+          this.$q.notify({
+            color: 'primary',
+            position: 'top-right',
+            message: 'Task Finished!',
+            caption: '',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          this.getWisdom()
+        }).catch((err) => {
+          this.$q.notify({
+            color: 'negative',
+            position: 'top-right',
+            message: 'Error!',
+            caption: 'Maybe you aren\'t the owner or collaborator of this task.',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          console.debug(err.message)
+        }).finally(() => {
+          resolve()
+        })
+      })
     },
     handleEditWisdom: function () {
       this.isEditingWisdom = !this.isEditingWisdom
@@ -650,6 +783,26 @@ export default {
           resolve()
         })
       })
+    },
+    jsDateToQDate: function (date) {
+      if (!date.due) return date
+      const lux = DateTime.fromISO(date.due)
+      date._dueDate = lux.toISODate().replaceAll('-', '/')
+      date._dueTime = lux.toISOTime()
+      date._dueTimeFmt = lux.toLocaleString(DateTime.TIME_24_SIMPLE)
+      const luxt = DateTime.fromISO(date.duet)
+      date._dueDateUntil = luxt.toISODate().replaceAll('-', '/')
+      date._dueTimeUntil = luxt.toISOTime()
+      date._dueTimeUntilFmt = luxt.toLocaleString(DateTime.TIME_24_SIMPLE)
+      let dur = luxt.diff(lux).as('minutes')
+      if (dur >= 120) {
+        dur = dur / 60
+        date._duration = dur.toString() + ' hour'
+      } else {
+        date._duration = dur.toString() + ' minute'
+      }
+      if (dur > 1) date._duration += 's'
+      return date
     }
   }
 }

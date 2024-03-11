@@ -172,6 +172,20 @@ export default {
       // Prevent encryption if we're creating a community
       if (isEncrypted && this.newGroup.iscom) {
         this.newGroup.crypt = false
+        this.$q.notify({
+          color: 'primary',
+          position: 'top-right',
+          message: 'Encryption not possible!',
+          caption: 'Communities are unencrypted.',
+          actions: [
+            {
+              icon: 'close',
+              color: 'white',
+              round: true,
+              handler: () => {}
+            }
+          ]
+        })
       }
     },
     checkCommunity: function (isCommunity) {

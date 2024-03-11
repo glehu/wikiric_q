@@ -9,6 +9,16 @@
                       max-w-[min(500px,90dvw)]"/>
       </div>
     </q-slide-transition>
+    <q-slide-transition :duration="slideDuration">
+      <div v-show="showImage && fileValue && fileValue.type && fileValue.type.startsWith('audio')"
+           class="wfull">
+        <audio v-if="fileValue && fileValue.type && audioURL"
+               controls preload="auto">
+          <source :src="audioURL" :type="fileValue.type">
+          Your browser does not support playing audio.
+        </audio>
+      </div>
+    </q-slide-transition>
     <q-slide-transition duration="100">
       <template v-if="uploading">
         <div class="mt2 flex column gap2">
@@ -65,6 +75,9 @@ export default {
     uploadProgress: {
       type: Number,
       default: 0
+    },
+    fileRef: {
+      type: File
     }
   },
   name: 'FilePicker',
@@ -76,12 +89,18 @@ export default {
         this.fileValue = null
         this.showImage = false
       }
+    },
+    fileRef (newVal) {
+      if (!newVal) return
+      this.fileValue = newVal
+      this.showPreviewImage(newVal)
     }
   },
   data () {
     return {
       fileValue: null,
       base64: null,
+      audioURL: null,
       showImage: false,
       slideDuration: 0
     }
@@ -90,14 +109,23 @@ export default {
     showPreviewImage: function (file) {
       const reader = new FileReader()
       const vThis = this
+      const url = window.URL || window.webkitURL
+      if (this.fileValue !== file) {
+        this.fileValue = file
+      }
       reader.onload = function () {
         vThis.base64 = reader.result
         vThis.$emit('selected', {
           base64: vThis.base64,
-          type: vThis.fileValue.type
+          type: file.type,
+          name: file.name
         })
         vThis.slideDuration = 0
         vThis.showImage = true
+        if (file.type.startsWith('audio')) {
+          vThis.audioURL = url.createObjectURL(file)
+          console.log(vThis.audioURL)
+        }
       }
       reader.readAsDataURL(file)
     },
@@ -109,6 +137,9 @@ export default {
       this.slideDuration = 300
       this.fileValue = null
       this.showImage = false
+      setTimeout(() => {
+        this.$emit('selected', undefined)
+      }, 350)
     }
   }
 }

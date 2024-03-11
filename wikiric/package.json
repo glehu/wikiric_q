@@ -17,6 +17,7 @@
     "@fullcalendar/daygrid": "^6.1.10",
     "@fullcalendar/interaction": "^6.1.10",
     "@fullcalendar/list": "^6.1.11",
+    "@fullcalendar/multimonth": "^6.1.11",
     "@fullcalendar/timegrid": "^6.1.10",
     "@fullcalendar/vue3": "^6.1.10",
     "@heroicons/vue": "^2.1.1",
@@ -30,7 +31,8 @@
     "register-service-worker": "^1.7.2",
     "vue": "^3.2.29",
     "vue-i18n": "^9.0.0",
-    "vue-router": "^4.0.12"
+    "vue-router": "^4.0.12",
+    "webrtc-adapter": "^8.2.3"
   },
   "devDependencies": {
     "@intlify/vite-plugin-vue-i18n": "^3.3.1",

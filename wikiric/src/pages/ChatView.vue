@@ -40,6 +40,12 @@
                  @click="showGroupSettings">
             <span class="ml4 text-body1">Settings</span>
           </q-btn>
+          <q-btn icon="sym_o_folder" flat no-caps
+                 align="left"
+                 class="wfull"
+                 @click="showFiles">
+            <span class="ml4 text-body1">Files</span>
+          </q-btn>
           <q-toolbar>
             <q-toolbar-title class="text-lg">
               <span v-if="this.chatroom.subc">
@@ -135,7 +141,8 @@
         </q-scroll-area>
       </q-drawer>
       <q-page-container>
-        <q-page style="padding-top: 60px" class="background">
+        <q-page style="padding-top: 60px" class="background"
+                id="main_chat">
           <q-page-sticky position="top" expand class="">
             <q-toolbar>
               <q-btn flat round dense icon="speaker_notes"
@@ -168,11 +175,33 @@
               </q-btn>
             </q-toolbar>
           </q-page-sticky>
-          <div class="wfull hfull">
+          <div class="wfull hfull relative">
+            <template v-if="channel.type === 'video'">
+              <div class="h-[calc(100dvh-200px)] wfull overflow-hidden
+                          grid gap-2 lg:grid-cols-2 relative">
+                <div class="wfull hfull overflow-hidden">
+                  <video id="screenshare_video"
+                         autoplay playsinline muted
+                         class="conference_media_element wfull hfull"></video>
+                </div>
+                <template v-for="[key, username] of peerCons.entries()" :key="key">
+                  <div :id="'screenshare_container_' + username"
+                       class="wfull hfull overflow-hidden hidden">
+                    <video :id="'screenshare_video_' + username"
+                           autoplay playsinline muted
+                           class="conference_media_element wfull hfull"></video>
+                    <audio :id="'screenshare_audio_' + username"
+                           autoplay controls
+                           class="conference_media_element wfull hfull"></audio>
+                  </div>
+                </template>
+              </div>
+            </template>
             <div ref="ref_messages"
-                 class="hfull wfull p4 column reverse items-center scroll"
+                 v-if="channel.type !== 'video'"
+                 class="wfull p4 column reverse items-center scroll"
                  v-on:scroll="checkScroll">
-              <div class="wfull max-w-3xl pr12 column reverse no-wrap">
+              <div class="wfull max-w-3xl pr2 column reverse no-wrap">
                 <div v-for="msg in messages" :key="msg"
                      class="relative wfull">
                   <p v-if="msg._separator"
@@ -185,7 +214,7 @@
                       :stamp="msg._ts"
                       bg-color="primary"
                       text-color="white"
-                      class="markedView wfull">
+                      class="markedView wfull pl10">
                       <template v-for="txt in msg._msgs" :key="txt">
                         <chat-message-content :msg="txt"
                                               :sent="true"
@@ -205,7 +234,7 @@
                       :stamp="msg._ts"
                       bg-color="brand-bg"
                       text-color="brand-p"
-                      class="markedView">
+                      class="markedView wfull pr10">
                       <template v-slot:avatar>
                         <member-icon :iurl="msg._iurl"
                                      :iurla="msg._iurla"
@@ -229,10 +258,38 @@
               </div>
             </div>
             <q-page-sticky id="ref_editor_container"
+                           v-if="channel.type !== 'video'"
                            ref="ref_editor_container"
                            position="bottom"
                            expand
-                           class="p4">
+                           class="p4 flex column">
+              <template v-if="pickingFile">
+                <div class="flex column reverse items-center
+                            hfull relative surface rounded">
+                  <file-picker
+                    :uploading="isUploadingImage"
+                    :upload-progress="uploadingImageProgress"
+                    :file-ref="filePreference"
+                    @selected="handleGroupImageSelected"
+                    @upload="handleGroupImageUpload"/>
+                  <q-slide-transition :duration="pickDuration">
+                    <div v-show="selectedImage == null">
+                      <div class="surface p4 rounded-2 w84 min-h-42
+                                  flex column mbauto
+                                  items-center justify-center mt1">
+                        <q-toolbar-title
+                          class="flex column items-center justify-center
+                                   gap-4">
+                          <q-icon name="interests" size="4rem"/>
+                          <span class="text-subtitle2">
+                                  Select or drop a file to see a preview
+                                </span>
+                        </q-toolbar-title>
+                      </div>
+                    </div>
+                  </q-slide-transition>
+                </div>
+              </template>
               <div class="flex row justify-start items-center
                           wfull max-w-3xl py1 gap-4 h-[2.2rem]">
                 <div v-if="activeMembers.size > 0"
@@ -355,20 +412,33 @@
                   </q-btn-dropdown>
                 </template>
                 <template v-slot:uploader>
-                  <q-btn label="Upload" icon="upload" dense flat no-caps size="0.74em">
-                    <q-menu ref="uploader"
-                            touch-position
-                            class="flex column reverse h100">
-                      <file-picker
-                        :uploading="isUploadingImage"
-                        :upload-progress="uploadingImageProgress"
-                        @selected="handleGroupImageSelected"
-                        @upload="handleGroupImageUpload"/>
-                    </q-menu>
-                  </q-btn>
+                  <template v-if="!pickingFile">
+                    <q-btn icon="upload" dense flat no-caps size="1rem"
+                           @click="pickingFile = true">
+                    </q-btn>
+                  </template>
+                  <template v-else>
+                    <q-btn icon="close" dense flat no-caps size="1rem"
+                           @click="hideFilePicker">
+                    </q-btn>
+                  </template>
                 </template>
               </q-editor>
             </q-page-sticky>
+          </div>
+          <div v-show="isDragging"
+               class="absolute wfull hfull flex
+                      top-0 left-0 column
+                      items-center justify-center
+                      bg-primary p2">
+            <div class="wfull hfull flex column
+                        items-center justify-center"
+                 style="border: 4px dashed white">
+              <q-icon name="interests" size="4rem"/>
+              <p class="wfit text-h6 fontbold mt4">
+                Drop your files here.
+              </p>
+            </div>
           </div>
         </q-page>
       </q-page-container>
@@ -384,11 +454,14 @@
   <group-settings :is-open="isViewingSettings"
                   :group="chatroom"
                   @refresh="getChatroom"/>
+  <files-viewer :is-open="isViewingFiles"
+                :group-id="chatroom.uid"/>
 </template>
 
 <script>
 
 import WikiricSdk from 'src/libs/wikiric-sdk'
+import WRTC from 'src/libs/wRTC'
 import { api } from 'boot/axios'
 import {
   dbGetDisplayName,
@@ -409,11 +482,13 @@ import MemberCard from 'components/chat/MemberCard.vue'
 import ListPicker from 'components/ListPicker.vue'
 import GroupSettings from 'components/chat/GroupSettings.vue'
 import FilePicker from 'components/FilePicker.vue'
+import FilesViewer from 'components/chat/FilesViewer.vue'
 
 export default {
   name: 'ChatView',
   components: {
     FilePicker,
+    FilesViewer,
     GroupSettings,
     ListPicker,
     MemberCard,
@@ -425,6 +500,7 @@ export default {
   data () {
     return {
       sdk: WikiricSdk,
+      wrtc: WRTC,
       store: useStore(),
       sidebarLeft: false,
       sidebarRight: false,
@@ -457,13 +533,19 @@ export default {
       isAddingChannel: false,
       isInvitingToGroup: false,
       isViewingSettings: false,
+      isUploadingImage: false,
+      isDragging: false,
+      isViewingFiles: false,
+      dragTimer: null,
+      filePreference: null,
       lastActivity: undefined,
       activeMembers: new Map(),
       idleMembers: new Map(),
       replyingMessage: null,
       editingMessage: null,
+      pickDuration: 0,
       selectedImage: undefined,
-      isUploadingImage: false,
+      pickingFile: false,
       uploadingImageProgress: 0,
       toolbarConfig: [
         ['tag', 'uploader'],
@@ -512,14 +594,27 @@ export default {
         lucida_grande: 'Lucida Grande',
         times_new_roman: 'Times New Roman',
         verdana: 'Verdana'
-      }
+      },
+      peerCons: new Map(),
+      peerStreamOutgoing: null,
+      peerStreamOutgoingConstraints: {
+        video: false,
+        audio: false
+      },
+      peerStreamOutgoingPreferences: {
+        video: true,
+        audio: true
+      },
+      peerStreamScreenshare: null
     }
   },
   mounted () {
+    this.initWRTC()
     this.initFunction()
   },
   beforeUnmount () {
     this.manageKeyListeners(true)
+    this.manageDocumentListeners(true)
   },
   methods: {
     /**
@@ -580,6 +675,10 @@ export default {
           // Check unread messages
           for (let i = 0; i < this.chatroom.subc.length; i++) {
             await this.hasUnread(this.chatroom.subc[i].uid)
+            // Set channel type for active channel
+            if (this.chatroom.subc[i].uid === this.channel.id) {
+              this.channel.type = this.chatroom.subc[i].type
+            }
           }
           // Update store entry
           let chatEntry = await dbGetSession(this.chatID)
@@ -770,7 +869,13 @@ export default {
           // If the sources are identical, check if the time was similar
           let timeDiff
           if (this.last_message._time) {
-            timeDiff = message._time.toMillis() - this.last_message._time.toMillis()
+            try {
+              timeDiff = message._time.toMillis() - this.last_message._time.toMillis()
+            } catch (e) {
+              if (e) {
+                timeDiff = 999999
+              }
+            }
           } else {
             timeDiff = 999999
           }
@@ -915,11 +1020,23 @@ export default {
     },
     /**
      *
+     * @param {Boolean} forceRemove
      */
     manageKeyListeners: function (forceRemove = false) {
       document.removeEventListener('keydown', this.handleChatKeyDown, false)
       if (forceRemove) return
       document.addEventListener('keydown', this.handleChatKeyDown, false)
+    },
+    /**
+     *
+     * @param {Boolean} forceRemove
+     */
+    manageDocumentListeners: function (forceRemove = false) {
+      window.removeEventListener('dragover', this.dragOverHandler, false)
+      window.removeEventListener('drop', this.dropHandler, false)
+      if (forceRemove) return
+      window.addEventListener('dragover', this.dragOverHandler, false)
+      window.addEventListener('drop', this.dropHandler, false)
     },
     /**
      *
@@ -1341,9 +1458,18 @@ export default {
       }
       if (this.newMessage.trim() === '') return
       // Retrieve and limit the message's content
-      let messageContent = this.newMessage.substring(0, 5000)
+      let messageContent = this.newMessage
       messageContent = messageContent.replaceAll(
         '<i class="q-icon material-icons cursor-pointer" onclick="this.parentNode.parentNode.removeChild(this.parentNode)">close</i>', '')
+      messageContent = messageContent.substring(0, 5000)
+      // Are we sending a file?
+      if (this.selectedImage) {
+        this.uploadImage(messageContent)
+        // Clear activity
+        this.clearActivity(this.store.user.username, false, true)
+        this.newMessage = ''
+        return
+      }
       // Do we need to encrypt the message?
       if (this.chatroom.crypt) {
         messageContent = await this.sdk._wcrypt.encryptPayload(messageContent)
@@ -1393,10 +1519,13 @@ export default {
       await this.sdk.doConnect(this.channel.id, sesh.priv, '', this.chatPW)
       // Finish preparations
       this.manageKeyListeners()
+      this.manageDocumentListeners()
       this.inputResize()
       // Retrieve messages and prepare input field
       await this.getMessages()
-      this.$refs.ref_editor.focus()
+      if (this.$refs.ref_editor) {
+        this.$refs.ref_editor.focus()
+      }
       // Remember the current channel
       if (this.channel.id !== this.chatID) {
         sesh.lastChannelID = this.channel.id
@@ -1405,6 +1534,7 @@ export default {
           for (let i = 0; i < this.chatroom.subc.length; i++) {
             if (this.chatroom.subc[i].uid === this.channel.id) {
               this.channel.t = this.chatroom.subc[i].t
+              this.channel.type = this.chatroom.subc[i].type
               break
             }
           }
@@ -1417,6 +1547,17 @@ export default {
       await this.getActiveMembers()
       await this.getMessages(true)
       await this.addTimestampRead()
+      if (this.channel.type === 'video') {
+        await this.startCall(undefined, {
+          video: true,
+          audio: true
+        })
+      } else if (this.channel.type === 'audio') {
+        await this.startCall(undefined, {
+          video: false,
+          audio: true
+        })
+      }
     },
     /**
      *
@@ -1443,6 +1584,7 @@ export default {
       this.extraSkipCount = 0
       this.activeMembers.clear()
       this.idleMembers.clear()
+      this.stopOutgoingStreamTracks()
     },
     /**
      *
@@ -1606,9 +1748,11 @@ export default {
             emotes[i]._md = md
             this.emoteList.push(emotes[i])
           }
-          resolve()
         }).catch((e) => {
           console.debug(e.message)
+        })
+        .finally(() => {
+          resolve()
         })
       })
     },
@@ -1712,7 +1856,13 @@ export default {
               this.last_message.msgMonth = this.messages[i]._msgs[j]._time.day
               this.last_message.msgYear = this.messages[i]._msgs[j]._time.day
             }
-            this.$refs.ref_editor.focus()
+            if (this.$refs.ref_editor) {
+              try {
+                this.$refs.ref_editor.focus()
+              } catch (e) {
+                console.debug(e.message)
+              }
+            }
             done = true
             break
           }
@@ -1884,8 +2034,12 @@ export default {
       if (this.replyingMessage) {
         this.replyingMessage = null
       }
-      this.inputResize()
       this.$refs.ref_editor.focus()
+      this.pickingFile = false
+      this.selectedImage = undefined
+      setTimeout(() => {
+        this.inputResize()
+      }, 0)
     },
     /**
      *
@@ -1984,11 +2138,18 @@ export default {
     },
     handleGroupImageSelected: function (resp) {
       this.selectedImage = resp
+      if (resp != null) {
+        this.pickDuration = 0
+      }
+      setTimeout(() => {
+        this.pickDuration = 300
+        this.inputResize()
+      }, 300)
     },
     handleGroupImageUpload: function () {
       this.uploadImage()
     },
-    uploadImage: function () {
+    uploadImage: function (message = null) {
       this.isUploadingImage = true
       const vThis = this
       const config = {
@@ -1999,7 +2160,7 @@ export default {
       }
       const payload = {
         base64: this.selectedImage.base64,
-        name: '',
+        name: this.selectedImage.name,
         pid: this.chatID,
         emote: false
       }
@@ -2007,13 +2168,11 @@ export default {
         'files/private/create',
         payload,
         config
-      )
-      .then((response) => {
-        this.processUploadSnippetResponse(response.data)
-      })
-      .catch((err) => console.debug(err.message))
+      ).then((response) => {
+        this.processUploadSnippetResponse(response.data, this.selectedImage.name, message)
+      }).catch((err) => console.debug(err.message))
     },
-    processUploadSnippetResponse: async function (response) {
+    processUploadSnippetResponse: async function (response, name = '', message = null) {
       const contentURL = this.store.serverIP + 'files/public/get/' + response.trim()
       let prefix
       if (this.selectedImage.type.includes('audio')) {
@@ -2027,18 +2186,23 @@ export default {
       } else {
         prefix = '[c:FIL]'
       }
-      // Add the link as a message, so it shows up in the chat
+      let text = '<span></span>'
+      if (message) {
+        text = message
+      }
       const payload = JSON.stringify({
-        msg: '![Snippet](' + contentURL + ')',
+        msg: text,
         url: contentURL,
-        fileName: ''
+        fileName: name
       })
       this.sdk.sendMessage(prefix +
         await this.sdk._wcrypt.encryptPayload(payload)
       )
       this.isUploadingImage = false
       this.uploadingImageProgress = 0
-      this.$refs.uploader.hide()
+      this.selectedImage = undefined
+      this.pickingFile = false
+      this.inputResize()
     },
     hasUnread: async function (channelID) {
       let hasUnread = false
@@ -2068,12 +2232,222 @@ export default {
     gotoKnowledge: function () {
       if (!this.chatID) return
       this.manageKeyListeners(true)
+      this.manageDocumentListeners(true)
       this.$router.push(`/q/knowledge?id=${this.chatID}`)
     },
     gotoProjectManagement: function () {
       if (!this.chatID) return
       this.manageKeyListeners(true)
+      this.manageDocumentListeners(true)
       this.$router.push(`/q/projects?id=${this.chatID}`)
+    },
+    dragOverHandler: function (ev) {
+      ev.preventDefault()
+      this.isDragging = true
+      if (this.dragTimer) {
+        clearTimeout(this.dragTimer)
+      }
+      this.dragTimer = setTimeout(() => {
+        this.isDragging = false
+      }, 500)
+    },
+    dropHandler: function (ev) {
+      ev.preventDefault()
+      this.isDragging = false
+      if (this.dragTimer) {
+        clearTimeout(this.dragTimer)
+      }
+      const files = []
+      if (ev.dataTransfer.items) {
+        [...ev.dataTransfer.items].forEach((item) => {
+          if (item.kind === 'file') {
+            files.push(item.getAsFile())
+          }
+        })
+      } else {
+        [...ev.dataTransfer.files].forEach((file) => {
+          files.push(file)
+        })
+      }
+      if (files.length === 0) return
+      this.pickingFile = true
+      setTimeout(() => {
+        this.filePreference = files[0]
+        this.$refs.ref_editor.focus()
+        this.inputResize()
+      }, 200)
+    },
+    initWRTC: function () {
+      this.wrtc.initialize(this.$connector, this.store.user.username, true, true)
+      // Create BroadcastChannel to listen to wRTC events!
+      const eventChannel = new BroadcastChannel('wrtcevents')
+      eventChannel.onmessage = event => {
+        this.handleWRTCEvent(event)
+      }
+    },
+    handleWRTCEvent: async function (event) {
+      if (!event || !event.data) return
+      if (event.data.event === 'incoming_track') {
+        // Set user to add a video container
+        this.peerCons.set(event.data.remoteName, event.data.remoteName)
+        // Process and show tracks
+        setTimeout(() => {
+          let videoElem
+          let audioElem
+          let container
+          if (this.channel.type === 'screenshare') {
+            videoElem = document.getElementById('screenshare_video')
+          } else if (this.channel.type === 'webcam' || this.params) {
+            videoElem = document.getElementById('screenshare_video_' + event.data.remoteName)
+            audioElem = document.getElementById('screenshare_audio_' + event.data.remoteName)
+            container = document.getElementById('screenshare_container_' + event.data.remoteName)
+            if (!videoElem || !audioElem || !container) return
+            container.style.display = 'block'
+          }
+          const remoteStream = this.wrtc.getStream(event.data.remoteName)
+          let hasVideo = false
+          let hasAudio = false
+          remoteStream.getTracks().forEach(track => {
+            if (track.kind === 'audio') hasAudio = true
+            if (track.kind === 'video') hasVideo = true
+          })
+          // Show remote tracks
+          if (hasVideo) {
+            if (!videoElem.srcObject || videoElem.srcObject !== remoteStream) {
+              videoElem.srcObject = remoteStream
+            }
+            videoElem.setAttribute('controls', '')
+            if (hasAudio) {
+              audioElem.srcObject = null
+              audioElem.removeAttribute('controls')
+            }
+          } else {
+            videoElem.srcObject = null
+            if (hasAudio) {
+              if (!audioElem.srcObject || audioElem.srcObject !== remoteStream) {
+                audioElem.srcObject = remoteStream
+              }
+              audioElem.setAttribute('controls', '')
+            } else {
+              audioElem.srcObject = null
+            }
+          }
+          // ---
+          // if (!this.isStreamingVideo) {
+          //   this.isStreamingVideo = true
+          //   this.streamStartTime = Math.floor(Date.now() / 1000)
+          //   this.startTimeCounter()
+          //   this.enterCinemaMode()
+          // }
+        }, 500)
+      }
+    },
+    startCall: async function (userId, constraints = null) {
+      // Retrieve media stream
+      await this.callSetUserMedia(constraints)
+      this.peerStreamOutgoingPreferences = constraints
+      await this.createOutgoingPeerConnections(userId)
+    },
+    createOutgoingPeerConnections: async function (userId) {
+      let calleeList = []
+      if (userId) {
+        calleeList.push(userId)
+      } else {
+        // If no userId is provided, add everybody active
+        // ...except the current user as a callee
+        const guid = this.channel.id
+        const response = await api({
+          url: 'chat/private/users/active/' + guid
+        })
+        calleeList = response.data.active
+        const selfIx = calleeList.indexOf(this.store.user.username)
+        if (selfIx >= 0) {
+          calleeList.splice(selfIx, 1)
+        }
+      }
+      // Create a WebRTC Peer to Peer Connection for each callee
+      for (let i = 0; i < calleeList.length; i++) {
+        this.wrtc.initiatePeerConnection(this.peerStreamOutgoing, calleeList[i])
+      }
+    },
+    callSetUserMedia: async function (constraints = null) {
+      let constraintsT
+      if (constraints) {
+        constraintsT = constraints
+        // If video or audio is undefined, replace with preferences
+        if (constraintsT.video === undefined) {
+          constraintsT.video = this.peerStreamOutgoingPreferences.video
+        }
+        if (constraintsT.audio === undefined) {
+          constraintsT.audio = this.peerStreamOutgoingPreferences.audio
+        }
+        this.peerStreamOutgoingPreferences = constraintsT
+      } else {
+        // Defaults to preferences if no constraints were provided
+        constraintsT = this.peerStreamOutgoingPreferences
+      }
+      let stream
+      // Get user media if there is no stream or constraints have changed
+      if (!this.peerStreamOutgoing || this.peerStreamOutgoingConstraints !== constraintsT) {
+        if (constraintsT.video || constraintsT.audio) {
+          stream = await navigator.mediaDevices.getUserMedia(constraintsT)
+        } else {
+          stream = null
+        }
+        // this.stopOutgoingStreamTracks()
+        this.peerStreamOutgoing = stream
+        this.wrtc.addStreamTracks(stream)
+      } else {
+        stream = this.peerStreamOutgoing
+        this.wrtc.addStreamTracks(stream)
+      }
+      if (constraintsT.audio) {
+        this.wrtc.replaceTrack(stream, 'audio')
+      }
+      if (constraintsT.video) {
+        this.wrtc.replaceTrack(stream, 'video')
+        // Set local stream
+        const videoElem = document.getElementById('screenshare_video')
+        if (videoElem) {
+          videoElem.srcObject = stream
+        }
+      }
+      // Write back the constraints
+      this.peerStreamOutgoingConstraints = constraintsT
+      return new Promise((resolve) => {
+        resolve()
+      })
+    },
+    stopOutgoingStreamTracks: function (videoOnly = false, audioOnly = false) {
+      if (this.peerStreamOutgoingConstraints.audio && !videoOnly) {
+        this.wrtc.setAudio(false)
+        this.peerStreamOutgoingConstraints.audio = false
+      }
+      if (this.peerStreamOutgoingConstraints.video && !audioOnly) {
+        this.wrtc.setVideo(false)
+        this.peerStreamOutgoingConstraints.video = false
+      }
+      if (!this.peerStreamOutgoing) {
+        return
+      }
+      this.peerStreamOutgoing.getTracks().forEach(function (track) {
+        if ((track.kind === 'video' && !audioOnly) || (track.kind === 'audio' && !videoOnly)) {
+          track.enabled = false
+          track.stop()
+        }
+      })
+      if (!videoOnly && !audioOnly) {
+        this.peerStreamOutgoing = null
+      }
+    },
+    hideFilePicker: function () {
+      this.pickingFile = false
+      setTimeout(() => {
+        this.inputResize()
+      }, 0)
+    },
+    showFiles: function () {
+      this.isViewingFiles = !this.isViewingFiles
     }
   }
 }
