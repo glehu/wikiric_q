@@ -11,7 +11,10 @@
 const { configure } = require('quasar/wrappers')
 const path = require('path')
 const UnoCSS = require('unocss/vite').default
-const { presetAttributify, presetUno } = require('unocss')
+const {
+  presetAttributify,
+  presetUno
+} = require('unocss')
 
 module.exports = configure(function (/* ctx */) {
   return {
@@ -46,8 +49,7 @@ module.exports = configure(function (/* ctx */) {
 
       'roboto-font', // optional, you are not bound to it
       'material-icons', // optional, you are not bound to it
-      'material-symbols-outlined'
-    ],
+      'material-symbols-outlined'],
 
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
     build: {
@@ -72,17 +74,11 @@ module.exports = configure(function (/* ctx */) {
       // polyfillModulePreload: true,
       // distDir
 
-      extendViteConf(config) {
-        config.plugins.push(
-          ...UnoCSS({
-            presets: [
-              presetUno(),
-              presetAttributify(),
-            ]
-          })
-        )
-      },
-      // viteVuePluginOptions: {},
+      extendViteConf (config) {
+        config.plugins.push(...UnoCSS({
+          presets: [presetUno(), presetAttributify()]
+        }))
+      }, // viteVuePluginOptions: {},
 
       vitePlugins: [['@intlify/vite-plugin-vue-i18n', {
         // if you want to use Vue I18n Legacy API, you need to set `compositionOnly: false`
@@ -131,9 +127,7 @@ module.exports = configure(function (/* ctx */) {
       // directives: [],
 
       // Quasar plugins
-      plugins: [
-        'Notify'
-      ]
+      plugins: ['Notify']
     },
 
     // animations: 'all', // --- includes all animations
@@ -178,10 +172,13 @@ module.exports = configure(function (/* ctx */) {
       workboxMode: 'injectManifest',
       injectPwaMetaTags: true,
       swFilename: 'custom-service-worker.js',
+      extendGenerateSWOptions (cfg) {
+        cfg.theme_color = '#1e2123'
+      }
+
       // manifestFilename: 'manifest.json',
       // useCredentialsForManifestTag: false
       // useFilenameHashes: true,
-      // extendGenerateSWOptions (cfg) {}
       // extendInjectManifestOptions (cfg) {},
       // extendManifestJson (json) {}
       // extendPWACustomSWConf (esbuildConf) {}

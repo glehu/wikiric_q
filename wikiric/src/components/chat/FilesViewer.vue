@@ -1,9 +1,16 @@
 <template>
   <q-dialog v-model="show" class="z-top">
-    <q-card class="surface w-[99dvw] max-w-xl hfull"
+    <q-card class="background w-[99dvw] max-w-xl hfull"
             flat bordered>
-      <div class="flex gap-4 column relative">
-        <div class="sticky top-0 surface z-top p4">
+      <div class="flex column relative">
+        <div class="sticky top-0 surface z-top p4 fmt_border_bottom">
+          <q-btn flat
+                 icon="sym_o_arrow_left_alt"
+                 label="Back"
+                 class="fmt_border mb3 rounded-2
+                        surface-variant"
+                 @click="show = false">
+          </q-btn>
           <q-input ref="file_query_input"
                    clearable
                    filled label="Filter"
@@ -16,56 +23,71 @@
             </span>
           </div>
         </div>
-        <template v-for="file in snippets" :key="file">
-          <div v-if="queryValid(file)"
-               class="wfull hauto p4 background flex gap-4">
-            <div class="flex wfull justify-center">
-              <template v-if="file.mime.startsWith('image')">
-                <q-img :src="file.pth" size="200px"/>
-              </template>
-              <template v-else-if="file.mime.startsWith('audio')">
-                <audio controls>
-                  <source :src="file.pth" :type="file.mime">
-                </audio>
-              </template>
-              <template v-else>
-                <div class="h20 w20
+        <template v-if="snippets.length < 1">
+          <div class="flex wfull hfull items-center justify-center
+                      min-h-[200px]">
+            <p class="text-subtitle2">No Files</p>
+          </div>
+        </template>
+        <template v-else>
+          <template v-for="file in snippets" :key="file">
+            <div v-if="queryValid(file)"
+                 class="wfull hauto p4 background flex gap-4">
+              <div class="wfull">
+                <div class="rounded-2 fmt_border p3
+                            flex column surface">
+                  <div class="flex wfull justify-center">
+                    <template v-if="file.mime.startsWith('image')">
+                      <q-img :src="file.pth" size="200px"/>
+                    </template>
+                    <template v-else-if="file.mime.startsWith('audio')">
+                      <audio controls>
+                        <source :src="file.pth" :type="file.mime">
+                      </audio>
+                    </template>
+                    <template v-else>
+                      <div class="h20 w20
                             flex items-center
                             justify-center">
-                  <q-icon name="sym_o_attachment" size="4rem"></q-icon>
-                </div>
-              </template>
-            </div>
-            <div class="wfull">
-              <div class="rounded-2 fmt_border p3
-                          flex column surface">
-                <p class="text-subtitle1 fontbold">{{ file.t }}</p>
-                <p class="text-subtitle2">
-                  {{ getHumanReadableDateText(file.ts, true, true) }}
-                </p>
-                <p class="text-subtitle2">
-                  {{ file.mb }} MB
-                </p>
-                <div class="flex gap-2 mlauto mt2">
-                  <q-btn icon="sym_o_delete"
-                         flat
-                         color="brand-bg"
-                         text-color="brand-p"
-                         class="wfit"
-                         label="Delete"
-                         @click="deleteFile(file)"/>
-                  <a :href="file.pth"
-                     class="rounded"
-                     download>
-                    <q-btn icon="sym_o_file_download"
-                           color="primary"
+                        <q-icon name="sym_o_attachment" size="4rem"></q-icon>
+                      </div>
+                    </template>
+                  </div>
+                  <template v-if="file.type === 'emote'">
+                    <div class="flex gap-2 items-center mb2
+                                fmt_border rounded-2 p2 wfit">
+                      <q-icon name="sym_o_emoji_emotions" size="1.5rem"/>
+                      <p class="text-body1">Emote</p>
+                    </div>
+                  </template>
+                  <p class="text-subtitle1 fontbold">{{ file.t }}</p>
+                  <p class="text-subtitle2">
+                    {{ getHumanReadableDateText(file.ts, true, true) }}
+                  </p>
+                  <p class="text-subtitle2">
+                    {{ file.mb }} MB
+                  </p>
+                  <div class="flex gap-2 mlauto mt2">
+                    <q-btn icon="sym_o_delete"
+                           flat
+                           color="brand-bg"
+                           text-color="brand-p"
                            class="wfit"
-                           label="Download"/>
-                  </a>
+                           label="Delete"
+                           @click="deleteFile(file)"/>
+                    <a :href="file.pth"
+                       class="rounded"
+                       download>
+                      <q-btn icon="sym_o_file_download"
+                             color="primary"
+                             class="wfit"
+                             label="Download"/>
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          </template>
         </template>
       </div>
     </q-card>
@@ -187,6 +209,8 @@ export default {
     },
     queryValid (snippet) {
       if (!this.fileQuery || this.fileQuery === '') return true
+      if ((this.fileQuery === 'emote' || this.fileQuery === 'emotes') &&
+        snippet.type === 'emote') return true
       let valid = false
       valid = snippet.t.toLowerCase().includes(this.fileQuery)
       if (!valid && snippet.ph != null) {

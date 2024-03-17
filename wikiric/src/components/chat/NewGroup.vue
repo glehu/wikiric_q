@@ -226,7 +226,7 @@ export default {
             data: this.newGroup
           })
           .then((result) => {
-            let route = `/q/chat?id=${result.data}`
+            let route = `/chat?id=${result.data}`
             if (this.newGroup.pw && this.newGroup.pw !== '') {
               route += `&pw=${this.newGroup.pw}`
             }

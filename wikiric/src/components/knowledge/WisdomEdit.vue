@@ -334,10 +334,12 @@ export default {
       this.wisdom.desc = this.wisdom.desc.trim()
     },
     jsDateToQDate: function (date) {
+      if (!date.due) return date
       const lux = DateTime.fromISO(date.due)
       date._dueDate = lux.toISODate().replaceAll('-', '/')
       date._dueTime = lux.toISOTime()
       date._dueTimeFmt = lux.toLocaleString(DateTime.TIME_24_SIMPLE)
+      if (!date.duet) return date
       const luxt = DateTime.fromISO(date.duet)
       date._dueDateUntil = luxt.toISODate().replaceAll('-', '/')
       date._dueTimeUntil = luxt.toISOTime()

@@ -231,7 +231,7 @@ export default {
       if (!this.groupID) {
         return
       }
-      this.$router.push(`/q/knowledge?id=${this.groupID}`)
+      this.$router.push(`/knowledge?id=${this.groupID}`)
     },
     initFunction: async function () {
       await this.getChatroom()
@@ -569,6 +569,11 @@ export default {
 
 .fc-header-toolbar {
   padding: 0 1rem 0 1rem;
+}
+
+.fc-toolbar-title {
+  font-size: 1rem !important;
+  font-weight: bold !important;
 }
 
 </style>

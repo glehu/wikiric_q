@@ -156,14 +156,9 @@
         new-value-mode="add-unique"
         class="wfull"
       />
-      <q-editor id="wisdom_desc"
-                ref="wisdom_desc"
-                v-model="date.desc"
-                min-height="10rem"
-                class="mt2"
-                content-class="markedView"
-                :toolbar="toolbarConfig"
-                :fonts="toolbarFonts"/>
+      <div class="mt2">
+        <editor v-model="date.desc" ref="ref_editor"/>
+      </div>
     </q-card>
   </q-dialog>
 </template>
@@ -171,8 +166,10 @@
 <script>
 
 import { DateTime } from 'luxon'
+import Editor from 'components/EditorComponent.vue'
 
 export default {
+  components: { Editor },
   props: {
     isOpen: {
       type: Boolean,
@@ -330,7 +327,7 @@ export default {
       this.show = false
     },
     gotoWisdom: function () {
-      this.$router.push(`/q/wisdom?id=${this.date.uid}`)
+      this.$router.push(`/wisdom?id=${this.date.uid}`)
     },
     updateProxyDueDate () {
       this.proxyDate = this.date._dueDate

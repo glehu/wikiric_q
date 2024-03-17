@@ -12,30 +12,35 @@
         </div>
       </div>
       <div id="listPickerWrapper" ref="listPickerWrapper"
-           class="flex flex-col surface-variant pt-2 relative z-50">
-        <div v-for="(obj, ix) in list_obj" :key="obj"
-             v-show="!obj._isHidden"
-             v-on:click="confirmOnClick(obj)"
-             :id="'listPickObj_' + ix"
-             class="mx-2 mb-2 p-2 rounded flex flex-row gap-4 items-center
-                  surface hover:tertiary cursor-pointer"
-             :class="{'tertiary': ix === index}">
-          <p class="font-bold">
-            <template v-if="keyName === 't'">
-              {{ obj.t }}
-            </template>
-            <template v-else-if="keyName === 'usr'">
-              {{ obj.usr }}
-            </template>
-            <template v-else>
-              {{ obj }}
-            </template>
-          </p>
-          <template v-if="obj._hint">
-            <p class="font-bold text-sm">
-              {{ obj._hint }}
+           class="surface-variant pt-2 relative z-50
+                  max-h-[50dvh] overflow-y-auto">
+        <div class="flex column wfull hfull">
+          <q-item v-for="(obj, ix) in list_obj" :key="obj"
+                  clickable
+                  v-show="!obj._isHidden"
+                  v-on:click="confirmOnClick(obj)"
+                  :id="'listPickObj_' + ix"
+                  class="mb-2 p-2 rounded flex flex-row gap-4 items-center
+                       surface hover:tertiary cursor-pointer"
+                  :class="{'tertiary': ix === index}">
+            <q-img :src="obj._pth" size="48px" fit="contain"/>
+            <p class="font-bold">
+              <template v-if="keyName === 't'">
+                {{ obj.t }}
+              </template>
+              <template v-else-if="keyName === 'usr'">
+                {{ obj.usr }}
+              </template>
+              <template v-else>
+                {{ obj }}
+              </template>
             </p>
-          </template>
+            <template v-if="obj._hint">
+              <p class="font-bold text-sm">
+                {{ obj._hint }}
+              </p>
+            </template>
+          </q-item>
         </div>
       </div>
     </div>
@@ -85,7 +90,7 @@ export default {
     this.initFunction()
   },
   beforeUnmount () {
-    window.removeEventListener('keyup', this.handleKeyUpListPicker, false)
+    document.removeEventListener('keydown', this.handleKeyUpListPicker, false)
   },
   computed: {},
   methods: {
@@ -95,7 +100,7 @@ export default {
       if (this.prefix) {
         this.prefixString = this.prefix
       }
-      window.addEventListener('keyup', this.handleKeyUpListPicker, false)
+      document.addEventListener('keydown', this.handleKeyUpListPicker, false)
     },
     handleKeyUpListPicker: function (e) {
       if (this.list_obj.length < 1) return
@@ -146,7 +151,7 @@ export default {
     },
     clickedBack: function () {
       // Remove event listener just in case
-      window.removeEventListener('keyup', this.handleKeyUp, false)
+      window.removeEventListener('keydown', this.handleKeyUp, false)
       this.$emit('close')
     },
     filterResults: function (query) {

@@ -5,7 +5,7 @@
         Invite To Group
       </p>
       <p class="text-subtitle2">
-        Add another member to this group by sending him an invitation.
+        Add other members to this group by sending them an invitation.
       </p>
       <div class="flex column gap-4 mt4 background hfull wfull p4">
         <div class="flex row items-center gap-4">

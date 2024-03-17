@@ -104,20 +104,28 @@ export default {
       if (this.inviteID === '') return
       // Attempt to retrieve group
       const uuid = this.extractUUID()
+      const sdk = WikiricSdk
+      let chatID = ''
       this.getGroup(uuid)
       .then((chat) => {
-        const sdk = WikiricSdk
+        chatID = chat.uid
         sdk.doLogin(this.store.user._u, this.store.user._p)
-        sdk.doConnect(chat.uid, '', '', this.pw)
+      }).then(() => {
+        sdk.doConnect(chatID, '', '', this.pw)
+      }).then(() => {
         this.loginInterval = setInterval(() => {
           if (sdk._isAuthorized) {
-            this.$router.push(`/q/chat?id=${chat.uid}`)
+            this.$router.push(`/chat?id=${chatID.uid}`)
             clearTimeout(this.loginInterval)
+          } else {
+            this.handleJoinFailed()
           }
         }, 10)
       })
       .catch((e) => {
-        this.handleJoinFailed()
+        if (e) {
+          this.handleJoinFailed()
+        }
       })
       this.handleDialogOpen()
     },
@@ -142,29 +150,18 @@ export default {
       const invite = this.inviteID
       if (!invite) return
       // Extract UUID in case an invitation URL was provided
-      if (invite.includes('/chat?id=')) {
-        // URL provided -> Extract UUID
-        this.isURL = true
-      } else {
-        this.isURL = false
-      }
+      this.isURL = invite.includes('/chat?id=')
       // Check for UUID
       /*
       000000000011111111112222222222333333
       012345678901234567890123456789012345
       76f7fdc1-b699-4551-bb39-3719a25f23f3
        */
-      if ((invite.length === 36) &&
+      this.isLink = (invite.length === 36) &&
         (invite.substring(8, 9) === '-') &&
         (invite.substring(13, 14) === '-') &&
         (invite.substring(18, 19) === '-') &&
-        (invite.substring(23, 24) === '-')) {
-        // Valid UUID
-        this.isLink = true
-      } else {
-        // Invalid UUID
-        this.isLink = false
-      }
+        (invite.substring(23, 24) === '-')
     },
     extractUUID: function () {
       let uuid = null

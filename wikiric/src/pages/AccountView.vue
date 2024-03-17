@@ -54,7 +54,7 @@ export default {
           t: 'Chat',
           desc: 'Your E2EE communication platform',
           icon: 'code',
-          link: '/q/groups'
+          link: '/groups'
         }
       ]
     }

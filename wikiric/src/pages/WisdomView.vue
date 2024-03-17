@@ -96,7 +96,8 @@
                          @click="handleEditWisdom"/>
                   <q-btn icon="delete" label="Delete"
                          @click="handleDeleteWisdom"/>
-                  <q-btn icon="share" label="Share"/>
+                  <q-btn icon="share" label="Share"
+                         @click="isSharingTask = !isSharingTask"/>
                 </q-btn-group>
               </div>
               <div class="hfull wfull surface
@@ -191,16 +192,9 @@
                 </div>
                 <div v-html="wisdom.desc"></div>
               </div>
-              <q-editor id="wisdom_desc"
-                        ref="wisdom_desc"
-                        v-model="comment"
-                        min-height="5rem"
-                        max-height="60dvh"
-                        class="mt8 fmt_border mx4"
-                        flat
-                        content-class="markedView"
-                        :toolbar="toolbarConfig"
-                        :fonts="toolbarFonts"/>
+              <div class="mx4 mt4">
+                <editor v-model="comment" ref="ref_editor"/>
+              </div>
               <div class="flex row wfull mt2 pr4">
                 <q-btn icon="sym_o_send" label="Post Comment"
                        color="primary"
@@ -243,6 +237,9 @@
       </q-page-container>
     </q-layout>
   </q-page>
+  <template v-if="wisdom">
+    <task-share :wisdom-prop="wisdom" :is-open="isSharingTask"/>
+  </template>
 </template>
 
 <script>
@@ -250,6 +247,8 @@ import { api } from 'boot/axios'
 import { DateTime } from 'luxon'
 import WisdomEdit from 'components/knowledge/WisdomEdit.vue'
 import { dbGetDisplayName } from 'src/libs/wikistore'
+import TaskShare from 'components/knowledge/TaskShare.vue'
+import Editor from 'components/EditorComponent.vue'
 
 export default {
   props: {
@@ -263,7 +262,11 @@ export default {
     }
   },
   name: 'WisdomView',
-  components: { WisdomEdit },
+  components: {
+    Editor,
+    TaskShare,
+    WisdomEdit
+  },
   created () {
     if (this.wisdomProp) {
       this.wisdomId = this.wisdomProp.uid
@@ -290,53 +293,7 @@ export default {
       contentTree: [],
       contentQuery: '',
       comment: '',
-      toolbarConfig: [
-        ['bold', 'italic', 'strike', 'underline'],
-        ['token', 'hr', 'link'],
-        [
-          {
-            label: this.$q.lang.editor.formatting,
-            icon: this.$q.iconSet.editor.formatting,
-            list: 'no-icons',
-            options: [
-              'h1',
-              'h2',
-              'h3',
-              'h4',
-              'h5',
-              'h6',
-              'p',
-              'code'
-            ]
-          },
-          {
-            label: this.$q.lang.editor.fontSize,
-            icon: this.$q.iconSet.editor.fontSize,
-            fixedLabel: true,
-            fixedIcon: true,
-            list: 'no-icons',
-            options: [
-              'size-1',
-              'size-2',
-              'size-3',
-              'size-4',
-              'size-5',
-              'size-6',
-              'size-7'
-            ]
-          }
-        ]
-      ],
-      toolbarFonts: {
-        arial: 'Arial',
-        arial_black: 'Arial Black',
-        comic_sans: 'Comic Sans MS',
-        courier_new: 'Courier New',
-        impact: 'Impact',
-        lucida_grande: 'Lucida Grande',
-        times_new_roman: 'Times New Roman',
-        verdana: 'Verdana'
-      }
+      isSharingTask: false
     }
   },
   methods: {
@@ -585,10 +542,13 @@ export default {
         })
       })
     },
+    /**
+     * So much spaghetti you can call it italy!
+     * Never-nesters will cry! if'n'else-heaven!
+     */
     buildContentLinks: function () {
       if (!this.wisdom) return
       const headers = [...this.wisdom.desc.matchAll(/<h([1-6])>([^<]+)<\/h[1-6]>/gm)]
-      console.log(this.wisdom.desc)
       let level
       let content
       let lastLevel
@@ -671,7 +631,6 @@ export default {
         tree[0].children.push(tmp)
       }
       this.contentTree = tree
-      console.log(tree[0].children)
       if (tree[0].children.length > 0) {
         setTimeout(() => {
           this.$refs.contentTree.expandAll()
@@ -776,7 +735,6 @@ export default {
               }
             }
           }
-          console.log(this.related)
         }).catch((err) => {
           console.debug(err.message)
         }).finally(() => {
@@ -790,6 +748,7 @@ export default {
       date._dueDate = lux.toISODate().replaceAll('-', '/')
       date._dueTime = lux.toISOTime()
       date._dueTimeFmt = lux.toLocaleString(DateTime.TIME_24_SIMPLE)
+      if (!date.duet) return date
       const luxt = DateTime.fromISO(date.duet)
       date._dueDateUntil = luxt.toISODate().replaceAll('-', '/')
       date._dueTimeUntil = luxt.toISOTime()

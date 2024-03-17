@@ -102,7 +102,7 @@ const wikiricSDK = {
       .then(() => {
         if (response.httpCode === 200) {
           this._token = response.token
-          resolve(true)
+          resolve(response.token)
         } else {
           reject(Error('401'))
         }
@@ -170,10 +170,13 @@ const wikiricSDK = {
    */
   doConnect: async function (chatID, privateKey, channelID = '', pw = '') {
     return new Promise((resolve, reject) => {
+      // Disconnect from previous session
+      this.doDisconnect()
       this._key = {
         id: chatID,
         priv: privateKey
       }
+      // Construct connection URL and parameters
       let suffix = ''
       if (channelID !== '') {
         channelID = 'sub=' + channelID
@@ -187,31 +190,53 @@ const wikiricSDK = {
           suffix += `&${pw}`
         }
       }
+      // Connect to backend and listen for welcome and banned message
       this._websocket = new WebSocket('wss://wikiric.xyz/ws/chat/' + chatID + suffix)
       this._websocketState = 'CLOSED'
       this._websocket.onopen = async () => {
         this._websocket.onmessage = (event) => {
           const message = event.data
           if (message.substring(0, 8) === '[s:wlcm]') {
+            // Info message -> User authorized
             this._isAuthorized = true
+            // Notify users of chat session
+            this._websocket.send(`[c:SC][online]${this._username}`)
           } else if (message.substring(0, 10) === '[s:banned]') {
+            // Info message -> User banned from chat
             this._isAuthorized = false
             this._isBanned = true
             reject('banned')
           } else {
+            // User relevant message -> forward
             this._processRawMessage(message)
           }
         }
+        // Authorize session
         this._websocket.send(this._token)
         this._websocketState = 'OPEN'
       }
+      // Handle end of life for websocket connection
       this._websocket.onclose = async () => {
+        if (this._websocketState !== 'OPEN') return
         this._websocket = null
         this._websocketState = 'CLOSED'
         this._isAuthorized = false
       }
       resolve(true)
     })
+  },
+  /**
+   * Disconnects from the current wikiric chat session.
+   */
+  doDisconnect: function () {
+    // Check session
+    if (this._websocketState !== 'OPEN') return
+    this._websocketState = 'CLOSED'
+    if (this._websocket == null) return
+    // Notify users from chat session
+    this._websocket.send(`[c:SC][offline]${this._username}`)
+    // Close session
+    this._websocket.close()
   },
   /**
    * Sends a message to the wikiric chat session.
@@ -238,22 +263,21 @@ const wikiricSDK = {
   decryptMessage: async function (message) {
     // Decrypt message if it is encrypted, otherwise return the same message
     if (message.msg.startsWith('[c:MSG<ENCR]')) {
-      message.isEncrypted = true
+      message._isEncrypted = true
       try {
         message.msg = await this._wcrypt.decryptPayload(message, this._username, this._key)
         if (message.msg == null) {
           message.msg = 'The message could not be decrypted.'
-          message.mType = 'CryptError'
-          message.apiResponse = false
-          message.decryptionFailed = true
+          message._mType = 'CryptError'
+          message._isApi = false
+          message._decryptionFailed = true
           message.reacts = []
         }
-        message.decryptionFailed = false
       } catch (e) {
         message.msg = 'The message could not be decrypted.'
-        message.mType = 'CryptError'
-        message.apiResponse = false
-        message.decryptionFailed = true
+        message._mType = 'CryptError'
+        message._isApi = false
+        message._decryptionFailed = true
         message.reacts = []
       }
     }

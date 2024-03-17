@@ -4,15 +4,18 @@
       <q-header class="surface"
                 style="border-bottom: 1px solid var(--md-sys-color-outline-variant)">
         <q-toolbar>
-          <div v-if="$q.platform.is.mac" class="flex row items-center ml1">
-            <q-btn dense flat round icon="lens" size="8.5px" color="red"
-                   @click="closeApp"/>
-            <q-btn dense flat round icon="lens" size="8.5px" color="yellow"
-                   @click="minimize"/>
-            <q-btn dense flat round icon="lens" size="8.5px" color="green"
-                   @click="toggleMaximize"
-                   class="mr4"/>
-          </div>
+          <template v-if="$q.platform.is.electron && !forceWinLook">
+            <div v-if="$q.platform.is.mac || forceMacLook"
+                 class="flex row items-center ml1">
+              <q-btn dense flat round icon="lens" size="8.5px" color="red"
+                     @click="closeApp"/>
+              <q-btn dense flat round icon="lens" size="8.5px" color="amber"
+                     @click="minimize"/>
+              <q-btn dense flat round icon="lens" size="8.5px" color="green"
+                     @click="toggleMaximize"
+                     class="mr4"/>
+            </div>
+          </template>
           <q-btn
             flat
             dense
@@ -39,11 +42,13 @@
               ⌘K
             </kbd>
           </q-btn>
-          <template v-if="$q.platform.is.win || $q.platform.is.linux">
-            <q-space></q-space>
-            <q-btn dense flat icon="minimize" @click="minimize"/>
-            <q-btn dense flat icon="crop_square" @click="toggleMaximize"/>
-            <q-btn dense flat icon="close" @click="closeApp"/>
+          <template v-if="$q.platform.is.electron && !forceMacLook">
+            <template v-if="$q.platform.is.win || $q.platform.is.linux || forceWinLook">
+              <q-space></q-space>
+              <q-btn dense flat icon="minimize" @click="minimize"/>
+              <q-btn dense flat icon="crop_square" @click="toggleMaximize"/>
+              <q-btn dense flat icon="close" @click="closeApp"/>
+            </template>
           </template>
         </q-toolbar>
       </q-header>
@@ -136,8 +141,9 @@
 import { defineComponent, ref } from 'vue'
 import EssentialLink from 'components/EssentialLink.vue'
 import { debounce } from 'quasar'
-import { dbGetData, values } from 'src/libs/wikistore'
+import { dbGetData, dbGetGroups, dbGetTimestamp, dbSetTimestamp } from 'src/libs/wikistore'
 import { api } from 'boot/axios'
+import { useStore } from 'stores/wikistate'
 
 const linksList = [
   {
@@ -150,13 +156,13 @@ const linksList = [
     title: 'Account & Settings',
     caption: 'An overview of apps and settings',
     icon: 'person',
-    link: '/q/account'
+    link: '/account'
   },
   {
     title: 'Chat',
     caption: 'Your E2EE communication platform',
     icon: 'code',
-    link: '/q/groups'
+    link: '/groups'
   }
 ]
 
@@ -176,19 +182,32 @@ export default defineComponent({
   methods: {
     checkToken: async function () {
       let token = null
+      let autoStart = false
+      // Retrieve previous token
       try {
         token = await dbGetData('token')
       } catch (e) {
         console.debug(e.message)
         token = null
       }
-      if (!token) {
-        this.ready = true
-        return
+      // Add user info and auto-login if desired to renew token just in case
+      const usr = await dbGetData('usr')
+      if (usr && usr._u) {
+        if (usr.instantLogin) {
+          this.store.logIn(usr)
+          token = await this.$connector.doLogin(usr._u, usr._p)
+          autoStart = true
+        }
       }
-      // Add token as global header for authorization
-      api.defaults.headers.common.Authorization = 'Bearer ' + token
+      if (token) {
+        // Add token as global header for authorization
+        api.defaults.headers.common.Authorization = 'Bearer ' + token
+      }
       this.ready = true
+      // Is an auto-start view defined?
+      if (autoStart && usr && usr.startingView && usr.startingView !== '/') {
+        this.$router.push(usr.startingView)
+      }
     },
     manageKeyListeners: function () {
       document.removeEventListener('keydown', this.handleKeyDownM, false)
@@ -239,7 +258,7 @@ export default defineComponent({
         }
       }
       // Check if user has searched for a group
-      const groups = await values()
+      const groups = await dbGetGroups()
       const groupResults = groups.filter((group) =>
         group.t
         .toLowerCase()
@@ -249,7 +268,7 @@ export default defineComponent({
       if (groupResults.length > 0) {
         // Display results
         for (const result of groupResults) {
-          let linkURL = `/q/chat?id=${result.id}`
+          let linkURL = `/chat?id=${result.id}`
           // Rejoin last channel if it exists
           if (result.lastChannelID && result.lastChannelID !== '') {
             linkURL += `&chan=${result.lastChannelID}`
@@ -290,6 +309,9 @@ export default defineComponent({
     const isProcessingQuery = ref(false)
     const queryResults = ref([])
     const queryGroupResults = ref([])
+    const forceMacLook = ref(false)
+    const forceWinLook = ref(false)
+    const store = useStore()
 
     // *** BACKEND CONNECTOR ***
     function handleConnectorMessage (msg) {
@@ -310,13 +332,57 @@ export default defineComponent({
             }
           ]
         })
+      } else if (msg.typ === '[s:chat]') {
+        if (msg.act === 'mark') {
+          // Check if we're already connected to this channel
+          const subchatID = this.$route.query.chan
+          if (subchatID) {
+            if (this.$route.fullPath.includes('?chan=' + msg.pid)) {
+              return
+            }
+          } else {
+            if (this.$route.fullPath.includes('/' + msg.pid)) {
+              return
+            }
+          }
+          addTimestampNew(msg.pid)
+        }
       }
+    }
+
+    /**
+     *
+     * @returns {Promise<void>}
+     */
+    async function addTimestampNew (channelID) {
+      const ts = new Date().getTime()
+      const timestamp = await dbGetTimestamp(channelID)
+      if (timestamp) {
+        if (timestamp.tsNew >= ts) return
+        timestamp.tsNew = ts
+        await dbSetTimestamp(channelID, {
+          tsRead: timestamp.tsRead,
+          tsNew: ts
+        })
+        return
+      }
+      await dbSetTimestamp(channelID, {
+        tsNew: ts
+      })
     }
 
     const connectorMsg = new BroadcastChannel('wikiric_connector')
     connectorMsg.onmessage = event => {
       handleConnectorMessage(event.data)
     }
+
+    dbGetData('usr').then((usr) => {
+      if (usr && usr._u) {
+        forceMacLook.value = usr.forceMac
+        forceWinLook.value = usr.forceWin
+      }
+    })
+
     // *** RETURN ***
     return {
       ready,
@@ -327,6 +393,9 @@ export default defineComponent({
       isProcessingQuery,
       queryResults,
       queryGroupResults,
+      forceMacLook,
+      forceWinLook,
+      store,
       toggleLeftDrawer () {
         leftDrawerOpen.value = !leftDrawerOpen.value
       }

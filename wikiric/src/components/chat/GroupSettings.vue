@@ -24,18 +24,18 @@
           <q-icon name="info"/>
         </template>
       </q-input>
-      <q-expansion-item class="mt2 background">
+      <q-expansion-item class="mt4 background">
         <template v-slot:header>
           <p class="text-h6 wfull">
             Visuals
           </p>
         </template>
-        <q-card class="mb2 background">
+        <q-card class="background">
           <q-card-section>
-            <p class="text-h6 fontbold mb2">
+            <p class="text-h6 fontbold mb4">
               Group Image
             </p>
-            <div class="wfull flex justify-center">
+            <div class="wfull flex px2">
               <group-icon :iurla="null"
                           :iurl="newGroup.iurl"
                           :t="newGroup.t"
@@ -48,9 +48,9 @@
               @upload="handleGroupImageUpload"/>
           </q-card-section>
         </q-card>
-        <q-card class="my2 background">
+        <q-card class="background">
           <q-card-section>
-            <p class="text-h6 fontbold mb2">
+            <p class="text-h6 fontbold mb4">
               Group Banner
             </p>
             <div v-if="newGroup.burl"
@@ -119,50 +119,143 @@
               General channel is not shown here.
             </span>
           </div>
-          <template v-for="chat in newGroup.subc" :key="chat">
-            <q-item v-if="chat.uid !== newGroup.uid" clickable dense>
-              <template v-if="chat._hasUnread">
-                <div class="w[6px] h-[90%] bg-orange rounded-r absolute left-0"></div>
-              </template>
-              <q-item-section class="rounded">
-                <q-item-label class="fontbold text-lg flex items-center">
-                  <q-btn icon="menu" class="" flat>
-                    <q-popup-proxy class="z-top">
-                      <q-btn-group class="surface">
-                        <q-btn icon="edit" label="Edit" color="primary">
-                          <q-popup-edit v-model="chat.t" buttons v-slot="scope"
-                                        @show="editingChannel = chat"
-                                        @save="handleChannelEdit"
-                                        color="brand-p"
-                                        class="z-top">
-                            <q-input v-model="scope.value"
-                                     dense autofocus counter
-                                     @keyup.enter="scope.set"/>
-                          </q-popup-edit>
-                        </q-btn>
-                        <q-btn icon="delete" label="Delete"
-                               @click="editingChannel = chat; handleChannelEdit('')"/>
-                      </q-btn-group>
-                    </q-popup-proxy>
-                  </q-btn>
-                  <template v-if="chat.type === 'text'">
-                    <q-icon name="tag" size="1.5rem"/>
-                  </template>
-                  <template v-else-if="chat.type === 'audio'">
-                    <q-icon name="mic" size="1.5rem"/>
-                  </template>
-                  <template v-else-if="chat.type === 'video'">
-                    <q-icon name="videocam" size="1.5rem"/>
-                  </template>
-                  <span class="ml4 text-body1 fontbold">
+          <div class="pb4">
+            <template v-for="chat in newGroup.subc" :key="chat">
+              <q-item v-if="chat.uid !== newGroup.uid" clickable dense>
+                <template v-if="chat._hasUnread">
+                  <div class="w[6px] h-[90%] bg-orange rounded-r absolute left-0"></div>
+                </template>
+                <q-item-section class="rounded">
+                  <q-item-label class="fontbold text-lg flex items-center">
+                    <q-btn icon="menu" class="" flat>
+                      <q-popup-proxy class="z-top">
+                        <q-btn-group class="surface">
+                          <q-btn icon="edit" label="Edit" color="primary">
+                            <q-popup-edit v-model="chat.t" buttons v-slot="scope"
+                                          @show="editingChannel = chat"
+                                          @save="handleChannelEdit"
+                                          color="brand-p"
+                                          class="z-top">
+                              <q-input v-model="scope.value"
+                                       dense autofocus counter
+                                       @keyup.enter="scope.set"/>
+                            </q-popup-edit>
+                          </q-btn>
+                          <q-btn icon="delete" label="Delete"
+                                 @click="editingChannel = chat; handleChannelEdit('')"/>
+                        </q-btn-group>
+                      </q-popup-proxy>
+                    </q-btn>
+                    <template v-if="chat.type === 'text'">
+                      <q-icon name="tag" size="1.5rem"/>
+                    </template>
+                    <template v-else-if="chat.type === 'audio'">
+                      <q-icon name="mic" size="1.5rem"/>
+                    </template>
+                    <template v-else-if="chat.type === 'video'">
+                      <q-icon name="videocam" size="1.5rem"/>
+                    </template>
+                    <span class="ml4 text-body1 fontbold">
                   {{ chat.t }}
                 </span>
-                </q-item-label>
-              </q-item-section>
-            </q-item>
-          </template>
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+          </div>
         </q-expansion-item>
       </template>
+      <q-expansion-item class="mt2 background">
+        <template v-slot:header>
+          <p class="text-h6 wfull">
+            Custom Emotes - {{ emoteList.length }}
+          </p>
+        </template>
+        <div class="px4 mt2 wfull">
+          <q-file
+            v-model="bulkEmoteFiles"
+            @update:model-value="handleBulkFilesSelect"
+            label="Pick files"
+            label-color="brand-p"
+            accept=".jpg, .png"
+            clearable
+            filled
+            multiple
+            style="max-width: 300px"
+          />
+          <template v-if="bulkFiles.length > 0">
+            <div class="p4 fmt_border rounded-2 my4 wfull">
+              <p class="text-h6 fontbold">
+                Bulk Upload
+              </p>
+              <div class="flex gap-4 mt4 wfull">
+                <template v-for="(file, i) in bulkFiles" :key="file">
+                  <div class="flex column items-center">
+                    <q-img :src="file._base64"
+                           size="96px"
+                           fit="contain"/>
+                    <div class="my2">
+                      <p class="text-subtitle2">Name:</p>
+                      <input type="text" v-model="file._name"
+                             class="surface p1 border-none
+                                    decoration-none ring-0 outline-none
+                                    rounded"
+                             style="color: var(--md-sys-color-on-surface)">
+                    </div>
+                    <q-btn icon="delete" label="Remove" no-caps
+                           class="wfull"
+                           color="brand-bg" text-color="brand-p"
+                           @click="removeFile(i)"/>
+                  </div>
+                </template>
+              </div>
+              <div class="wfull flex justify-end gap-2 mt8">
+                <q-btn label="Cancel"
+                       no-caps
+                       flat
+                       @click="cancelBulkUpload"/>
+                <q-btn label="Upload Emotes"
+                       no-caps
+                       color="primary"
+                       @click="bulkUploadEmotes"/>
+              </div>
+              <template v-if="isBulkUploadingEmotes">
+                <div class="wfull flex justify-end gap-2 mt4">
+                  <q-spinner-radio color="brand_p"/>
+                  <span>Uploading {{ bulkUploadingCurrently }}... {{ bulkUploadLeft }} left</span>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+        <template v-if="emoteList.length < 1">
+          <div class="pb2">
+            <div class="flex items-center gap-1
+                        px1 py0.5 rounded-b surface
+                        wfit ml4 my2 wfull"
+                 style="max-width: 300px">
+              <q-icon name="info"/>
+              <span class="text-subtitle2">
+              Upload some emotes to get started!
+            </span>
+            </div>
+          </div>
+        </template>
+        <template v-else>
+          <div class="p4 flex wfull gap-2">
+            <template v-for="emote in emoteList" :key="emote">
+              <div class="flex column items-center gap-2">
+                <q-img :src="emote._pth"
+                       size="96px"
+                       fit="contain"/>
+                <p class="text-subtitle2 fontbold">
+                  {{ emote.t }}
+                </p>
+              </div>
+            </template>
+          </div>
+        </template>
+      </q-expansion-item>
       <div class="flex wfull mt6">
         <q-card-actions align="right">
           <q-btn flat label="Close" color="text-brand-p" v-close-popup/>
@@ -186,7 +279,7 @@ import { api } from 'boot/axios'
 import FilePicker from 'components/FilePicker.vue'
 import GroupIcon from 'components/chat/GroupIcon.vue'
 import { useStore } from 'stores/wikistate'
-import { dbDeleteSession } from 'src/libs/wikistore'
+import { dbDeleteSession, dbGetData, dbSetData } from 'src/libs/wikistore'
 
 export default {
   components: {
@@ -231,17 +324,20 @@ export default {
       isUploadingBanner: false,
       uploadingImageProgress: 0,
       leaveCounter: 0,
-      editingChannel: null
+      editingChannel: null,
+      emotes: new Map(),
+      emoteList: [],
+      bulkEmoteFiles: [],
+      bulkFiles: [],
+      isBulkUploadingEmotes: false,
+      bulkUploadingCurrently: '',
+      bulkUploadLeft: 0
     }
   },
   methods: {
     handleDialogOpen: function () {
-      setTimeout(() => {
-        const elem = document.getElementById('group_t')
-        if (!elem) return
-        elem.focus()
-      })
       this.newGroup = this.group
+      this.getCustomEmotes()
     },
     updateGroup: function () {
       this.$emit('refresh')
@@ -325,7 +421,7 @@ export default {
           }
         ]
       })
-      this.$router.push('/q/groups')
+      this.$router.push('/groups')
     },
     setLeaveCounter: function () {
       this.leaveCounter = 1
@@ -370,22 +466,14 @@ export default {
       })
       .catch((err) => console.debug(err.message))
     },
-    handleBulkFilesSelect: async function (evt, drop = false) {
-      evt.stopPropagation()
-      evt.preventDefault()
-      let filesTmp
-      const files = []
-      if (drop) {
-        filesTmp = evt.dataTransfer.files
-      } else {
-        filesTmp = evt.target.files
-      }
-      for (let i = 0; i < filesTmp.length; i++) {
-        files.push(filesTmp[i])
+    handleBulkFilesSelect: async function (fileEv) {
+      this.bulkFiles = []
+      const files = fileEv
+      for (let i = 0; i < files.length; i++) {
         files[i]._base64 = await this.getBase64(files[i])
         files[i]._name = files[i].name.split('.')[0]
+        this.bulkFiles.push(files[i])
       }
-      this.bulkFiles = files
     },
     getBase64: function (file) {
       return new Promise(function (resolve, reject) {
@@ -395,6 +483,132 @@ export default {
         }
         reader.onerror = reject
         reader.readAsDataURL(file)
+      })
+    },
+    /**
+     *
+     * @returns {Promise<unknown>}
+     */
+    getCustomEmotes: async function () {
+      const response = await api({
+        url: `files/private/chat/${this.group.uid}?type=emote`
+      }).catch((e) => {
+        console.debug(e.message)
+      })
+      if (response == null || response.data == null) return
+      const emotes = response.data.files
+      if (emotes.length < 1) return
+      let url
+      let md
+      let emotesStore = await dbGetData('emotes')
+      if (emotesStore == null) {
+        emotesStore = {
+          map: new Map()
+        }
+      }
+      let fname
+      this.emotes = new Map()
+      this.emoteList = []
+      for (let i = 0; i < emotes.length; i++) {
+        url = this.store.serverIP + emotes[i].pth
+        emotes[i].t = emotes[i].t.split('.')[0]
+        fname = ':' + emotes[i].t + ':'
+        // Build Markdown image string
+        md = `![${fname}](${url})`
+        this.emotes[fname] = md
+        // Add to emote list (user prompt)
+        emotes[i]._md = md
+        emotes[i]._pth = url
+        this.emoteList.push(emotes[i])
+        await this.addEmoteToSaved(emotesStore, emotes[i])
+      }
+      await dbSetData('emotes', emotesStore)
+      return new Promise((resolve) => {
+        resolve()
+      })
+    },
+    /**
+     *
+     * @param emotes
+     * @param emoteFile
+     * @returns {Promise<unknown>}
+     */
+    addEmoteToSaved: async function (emotes, emoteFile) {
+      const tmp = `${emoteFile.t}-${this.newGroup.t}`
+      const newEntry = {
+        // A unique name of the emoji which will be stored as attribute
+        name: tmp,
+        // A list of unique shortcodes that are used by input rules to find the emoji
+        shortcodes: [tmp],
+        // A list of tags that can help for searching emojis
+        tags: [tmp, 'custom', this.newGroup.t],
+        // A name that can help to group emojis
+        group: 'Custom Emotes',
+        // The image to be rendered
+        fallbackImage: emoteFile._pth
+      }
+      emotes.map.set(emoteFile.t, newEntry)
+      return new Promise((resolve) => {
+        resolve()
+      })
+    },
+    cancelBulkUpload: function () {
+      this.bulkFiles = []
+      this.bulkEmoteFiles = []
+    },
+    removeFile: function (index) {
+      if (index < 0) return
+      if (this.bulkFiles == null || index > this.bulkFiles.length) return
+      this.bulkFiles.splice(index, 1)
+    },
+    bulkUploadEmotes: async function () {
+      if (this.isBulkUploadingEmotes === true) return
+      if (!this.bulkFiles || this.bulkFiles.length < 1) return
+      this.isBulkUploadingEmotes = true
+      this.bulkUploadLeft = this.bulkFiles.length
+      for (let i = 0; i < this.bulkFiles.length; i++) {
+        this.bulkUploadingCurrently = this.bulkFiles[i]._name
+        await this.uploadSnippet(this.bulkFiles[i])
+        this.bulkUploadLeft -= 1
+      }
+      this.bulkFiles = []
+      this.isBulkUploadingEmotes = false
+      await this.getCustomEmotes()
+      this.$q.notify({
+        color: 'primary',
+        position: 'top-right',
+        message: 'Emotes Uploaded!',
+        caption: 'Use emotes by typing a colon ":" in the chat!',
+        actions: [
+          {
+            icon: 'close',
+            color: 'white',
+            round: true,
+            handler: () => {
+            }
+          }
+        ]
+      })
+    },
+    uploadSnippet: function (file) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const content = {
+            base64: file._base64,
+            name: file._name,
+            pid: this.group.uid,
+            emote: true
+          }
+          api({
+            method: 'post',
+            url: 'files/private/create',
+            data: content
+          })
+          .catch((err) => (console.log(err.message)))
+          .finally(() => {
+            resolve()
+          })
+        }, 500)
       })
     }
   }

@@ -31,7 +31,7 @@
           <q-btn flat icon="sym_o_arrow_left_alt"
                  align="left" class="wfull pl4 mt2"
                  no-caps
-                 @click="$router.push('/q/groups')">
+                 @click="$router.push('/groups')">
             <span class="ml4 text-body1">Groups</span>
           </q-btn>
           <q-btn flat icon="sym_o_settings"
@@ -314,14 +314,6 @@
                 </div>
               </div>
               <div class="flex column items-center wfull max-w-3xl">
-                <template v-if="emoteList.length > 0">
-                  <list-picker class=""
-                               :list="emoteList"
-                               :query="newMessage"
-                               :prefix="':'"
-                               :key-name="'t'"
-                               :headline="'Send a custom emote (Tab to complete)'"/>
-                </template>
                 <template v-if="replyingMessage">
                   <div class="flex wfull px4 py2 mt2
                             relative surface-variant">
@@ -361,69 +353,9 @@
                   </div>
                 </template>
               </div>
-              <q-editor id="ref_editor"
-                        ref="ref_editor"
-                        v-model="newMessage"
-                        @update:model-value="transmitActivity"
-                        min-height="3rem"
-                        class="wfull max-w-3xl"
-                        content-class="markedView"
-                        dense
-                        :toolbar="toolbarConfig"
-                        :fonts="toolbarFonts">
-                <template v-slot:tag>
-                  <q-btn-dropdown
-                    dense no-caps
-                    ref="tokenRef"
-                    no-wrap
-                    unelevated
-                    label="Tag Member"
-                    size="sm"
-                  >
-                    <q-list dense>
-                      <q-item tag="label"
-                              clickable
-                              @click="addToEditor('everyone')">
-                        <q-item-section side>
-                          <q-icon name="sym_o_alternate_email" size="1rem"/>
-                        </q-item-section>
-                        <q-item-section>everyone</q-item-section>
-                      </q-item>
-                      <q-item tag="label"
-                              clickable
-                              @click="addToEditor('here')">
-                        <q-item-section side>
-                          <q-icon name="sym_o_alternate_email" size="1rem"/>
-                        </q-item-section>
-                        <q-item-section>here</q-item-section>
-                      </q-item>
-                      <template v-for="[key, member] of members.entries()" :key="member.id">
-                        <q-item v-if="key"
-                                tag="label"
-                                clickable
-                                @click="addToEditor(member.usr)">
-                          <q-item-section side>
-                            <q-icon name="sym_o_alternate_email" size="1rem"/>
-                          </q-item-section>
-                          <q-item-section>{{ member.usr }}</q-item-section>
-                        </q-item>
-                      </template>
-                    </q-list>
-                  </q-btn-dropdown>
-                </template>
-                <template v-slot:uploader>
-                  <template v-if="!pickingFile">
-                    <q-btn icon="upload" dense flat no-caps size="1rem"
-                           @click="pickingFile = true">
-                    </q-btn>
-                  </template>
-                  <template v-else>
-                    <q-btn icon="close" dense flat no-caps size="1rem"
-                           @click="hideFilePicker">
-                    </q-btn>
-                  </template>
-                </template>
-              </q-editor>
+              <div class="wfull max-w-3xl relative">
+                <editor v-model="newMessage" ref="ref_editor"/>
+              </div>
             </q-page-sticky>
           </div>
           <div v-show="isDragging"
@@ -434,8 +366,8 @@
             <div class="wfull hfull flex column
                         items-center justify-center"
                  style="border: 4px dashed white">
-              <q-icon name="interests" size="4rem"/>
-              <p class="wfit text-h6 fontbold mt4">
+              <q-icon name="interests" size="4rem" color="white"/>
+              <p class="wfit text-h6 fontbold mt4 text-white">
                 Drop your files here.
               </p>
             </div>
@@ -464,9 +396,10 @@ import WikiricSdk from 'src/libs/wikiric-sdk'
 import WRTC from 'src/libs/wRTC'
 import { api } from 'boot/axios'
 import {
+  dbGetData,
   dbGetDisplayName,
   dbGetSession,
-  dbGetTimestamp,
+  dbGetTimestamp, dbSetData,
   dbSetDisplayName,
   dbSetSession,
   dbSetTimestamp
@@ -479,10 +412,10 @@ import NewGroupView from 'components/chat/NewGroup.vue'
 import { copyToClipboard, scroll } from 'quasar'
 import InviteToGroup from 'components/chat/InviteToGroup.vue'
 import MemberCard from 'components/chat/MemberCard.vue'
-import ListPicker from 'components/ListPicker.vue'
 import GroupSettings from 'components/chat/GroupSettings.vue'
 import FilePicker from 'components/FilePicker.vue'
 import FilesViewer from 'components/chat/FilesViewer.vue'
+import Editor from 'components/EditorComponent.vue'
 
 export default {
   name: 'ChatView',
@@ -490,12 +423,12 @@ export default {
     FilePicker,
     FilesViewer,
     GroupSettings,
-    ListPicker,
     MemberCard,
     InviteToGroup,
     NewGroupView,
     MemberIcon,
-    ChatMessageContent
+    ChatMessageContent,
+    Editor
   },
   data () {
     return {
@@ -518,10 +451,6 @@ export default {
       },
       members: new Map(),
       messages: [],
-      // Custom Emote-Map
-      emotes: null,
-      // Custom Emote-Array
-      emoteList: [],
       newMessage: '',
       last_message: {
         usr: ''
@@ -536,6 +465,7 @@ export default {
       isUploadingImage: false,
       isDragging: false,
       isViewingFiles: false,
+      isSelectingEmote: false,
       dragTimer: null,
       filePreference: null,
       lastActivity: undefined,
@@ -547,54 +477,6 @@ export default {
       selectedImage: undefined,
       pickingFile: false,
       uploadingImageProgress: 0,
-      toolbarConfig: [
-        ['tag', 'uploader'],
-        ['bold', 'italic', 'strike', 'underline'],
-        ['token', 'hr', 'link'],
-        [
-          {
-            label: this.$q.lang.editor.formatting,
-            icon: this.$q.iconSet.editor.formatting,
-            list: 'no-icons',
-            options: [
-              'h1',
-              'h2',
-              'h3',
-              'h4',
-              'h5',
-              'h6',
-              'p',
-              'code'
-            ]
-          },
-          {
-            label: this.$q.lang.editor.fontSize,
-            icon: this.$q.iconSet.editor.fontSize,
-            fixedLabel: true,
-            fixedIcon: true,
-            list: 'no-icons',
-            options: [
-              'size-1',
-              'size-2',
-              'size-3',
-              'size-4',
-              'size-5',
-              'size-6',
-              'size-7'
-            ]
-          }
-        ]
-      ],
-      toolbarFonts: {
-        arial: 'Arial',
-        arial_black: 'Arial Black',
-        comic_sans: 'Comic Sans MS',
-        courier_new: 'Courier New',
-        impact: 'Impact',
-        lucida_grande: 'Lucida Grande',
-        times_new_roman: 'Times New Roman',
-        verdana: 'Verdana'
-      },
       peerCons: new Map(),
       peerStreamOutgoing: null,
       peerStreamOutgoingConstraints: {
@@ -605,7 +487,9 @@ export default {
         video: true,
         audio: true
       },
-      peerStreamScreenshare: null
+      peerStreamScreenshare: null,
+      msgCache: '',
+      chrCache: []
     }
   },
   mounted () {
@@ -613,6 +497,9 @@ export default {
     this.initFunction()
   },
   beforeUnmount () {
+    if (this.sdk) {
+      this.sdk.doDisconnect()
+    }
     this.manageKeyListeners(true)
     this.manageDocumentListeners(true)
   },
@@ -634,7 +521,7 @@ export default {
         this.channel.id = chatID.trim()
       }
       this.chatPW = password
-      // Listen for new messages
+      // Listen for new chat messages
       const events = new BroadcastChannel('wikiric_msg')
       events.onmessage = event => {
         this.handleIncomingMessage(event.data)
@@ -643,6 +530,11 @@ export default {
       const connector = new BroadcastChannel('wikiric_connector')
       connector.onmessage = event => {
         this.handleIncomingConnectorMessages(event.data)
+      }
+      // Listen for internal messages
+      const internal = new BroadcastChannel('wikiric_internal')
+      internal.onmessage = event => {
+        this.handleIncomingInternalMessages(event.data)
       }
       // Prepare to connect to chat
       await this.getChatroom()
@@ -853,8 +745,6 @@ export default {
         for (let i = message.reacts.length - 1; i >= 0; i--) {
           if (message.reacts[i].src.length === 0) {
             message.reacts.splice(i, 1)
-          } else {
-            message.reacts[i]._t = this.replaceEmotePlaceholders(message.reacts[i].t)
           }
         }
       } else {
@@ -919,9 +809,9 @@ export default {
       Only allow the user to edit his own messages, not the ones of others
        */
       message._editable = (message.usr === this.store.user.username)
-      // Is the message encrypted?
+      // Is the message encrypted? Also check if message has been decrypted already (_isEncrypted)
       const encryptionPrefix = '[c:MSG<ENCR]'
-      if (message.msg.startsWith(encryptionPrefix)) {
+      if (!message._isEncrypted && message.msg.startsWith(encryptionPrefix)) {
         message._isEncrypted = true
         try {
           message = await this.sdk.decryptMessage(message)
@@ -958,7 +848,7 @@ export default {
           message.msg = tmp.reply
           message._source = tmp.src
           message._source._time = DateTime.fromISO(message._source.ts)
-          message._source._ts = this.getHumanReadableDateText(message._source._time, true, true)
+          message._source._ts = this.getHumanReadableDateText(message._source.ts, true, true)
         } catch (e) {
           console.debug('Reply Message Parsing Error')
         }
@@ -979,10 +869,6 @@ export default {
       // Save original message content
       message._msg = message.msg
       if (message.msg) {
-        // Replace emote placeholders
-        if (message._mType !== 'ReactNotification') {
-          message.msg = this.replaceEmotePlaceholders(message.msg)
-        }
         // Check if msg only consists of an emote
         const rgx = /^!\[:.+:]\(.+\)$/
         const results = message.msg.match(rgx)
@@ -993,19 +879,6 @@ export default {
       return new Promise((resolve) => {
         resolve(message)
       })
-    },
-    /**
-     *
-     * @param {String} msg
-     * @returns {*}
-     */
-    replaceEmotePlaceholders: function (msg) {
-      if (this.emotes == null) return msg
-      const escape = s => s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')
-      const pattern = new RegExp(
-        Object.keys(this.emotes).map(escape).join('|'), 'g'
-      )
-      return msg.replace(pattern, match => this.emotes[match])
     },
     /**
      *
@@ -1044,17 +917,20 @@ export default {
      */
     handleChatKeyDown: function (e) {
       if (e.key === 'Enter') {
-        if (e.shiftKey) return
+        if (e.shiftKey) {
+          this.inputResize()
+          return
+        }
         e.preventDefault()
         e.stopImmediatePropagation()
-        this.sendMessage().then(() => {
-          this.inputResize()
-        })
+        this.sendMessage()
       } else if (e.key === 'ArrowUp') {
+        if (this.isSelectingEmote) return
         this.editLastMessage()
       } else if (e.key === 'Escape') {
         this.cancelActions()
       }
+      this.inputResize()
     },
     /**
      *
@@ -1456,7 +1332,12 @@ export default {
         await this.sendEdit()
         return
       }
-      if (this.newMessage.trim() === '') return
+      // Avoid sending empty messages
+      let tmpMsg = this.newMessage
+      tmpMsg = tmpMsg.replace(/<\/?[^>]+(>|$)/g, '')
+      tmpMsg = tmpMsg.replace(/&nbsp;/g, '')
+      tmpMsg = tmpMsg.replace(/\s/g, '')
+      if (tmpMsg === '') return
       // Retrieve and limit the message's content
       let messageContent = this.newMessage
       messageContent = messageContent.replaceAll(
@@ -1483,10 +1364,19 @@ export default {
         _isDraft: true
       })
       if (!msg._header) {
-        this.messages[0]._isDraft = true
-        this.messages[0]._ts = msg._ts
-        this.messages[0]._msgs.push(msg)
+        // Find last own message and append new message
+        const ix = this.findLastOwnMessage()
+        if (ix !== -1) {
+          this.messages[ix]._isDraft = true
+          this.messages[ix]._ts = msg._ts
+          this.messages[ix]._msgs.push(msg)
+        } else {
+          // Append message as new message
+          msg._msgs = [msg]
+          this.messages.unshift(msg)
+        }
       } else {
+        // Append message as new message
         msg._msgs = [msg]
         this.messages.unshift(msg)
       }
@@ -1495,6 +1385,7 @@ export default {
       this.sdk.sendMessage(messageContent)
       // Clear activity
       this.clearActivity(this.store.user.username, false, true)
+      this.inputResize()
     },
     /**
      *
@@ -1515,21 +1406,19 @@ export default {
     connectToChat: async function () {
       this.resetChannelStats()
       const sesh = await dbGetSession(this.chatID)
-      await this.sdk.doLogin(this.store.user._u, this.store.user._p)
+      const token = await this.sdk.doLogin(this.store.user._u, this.store.user._p)
+      // Add token as global header for authorization
+      api.defaults.headers.common.Authorization = 'Bearer ' + token
       await this.sdk.doConnect(this.channel.id, sesh.priv, '', this.chatPW)
-      // Finish preparations
-      this.manageKeyListeners()
-      this.manageDocumentListeners()
-      this.inputResize()
       // Retrieve messages and prepare input field
       await this.getMessages()
-      if (this.$refs.ref_editor) {
-        this.$refs.ref_editor.focus()
-      }
+      // if (this.$refs.ref_editor) {
+      //   this.$refs.ref_editor.focus()
+      // }
       // Remember the current channel
       if (this.channel.id !== this.chatID) {
         sesh.lastChannelID = this.channel.id
-        // Set channel info if it isn't already set
+        // Set channel info if it isn't set already
         if (!this.channel.t || this.channel.t === '') {
           for (let i = 0; i < this.chatroom.subc.length; i++) {
             if (this.chatroom.subc[i].uid === this.channel.id) {
@@ -1545,8 +1434,8 @@ export default {
       await dbSetSession(this.chatID, sesh)
       // Get active members + send online message
       await this.getActiveMembers()
-      await this.getMessages(true)
       await this.addTimestampRead()
+      await this.hasUnread(this.channel.id)
       if (this.channel.type === 'video') {
         await this.startCall(undefined, {
           video: true,
@@ -1558,18 +1447,23 @@ export default {
           audio: true
         })
       }
+      // Finish preparations
+      this.manageKeyListeners()
+      this.manageDocumentListeners()
+      this.inputResize()
     },
     /**
      *
      * @param {Object} channel
      */
-    gotoChannel: function (channel) {
+    gotoChannel: async function (channel) {
       this.messages = []
       // Prepare to connect
+      await this.hasUnread(this.channel.id)
       this.channel.id = channel.uid
       this.channel.t = channel.t
       this.channel.type = channel.type
-      this.connectToChat()
+      await this.connectToChat()
       // Hide sidebar on mobile
       if (window.innerWidth < 768) {
         this.sidebarLeft = false
@@ -1697,19 +1591,27 @@ export default {
       }
     },
     /**
+     * Sets member online status and updates members if a new member was found
      *
      * @param {Array<String>} usernames
      * @param {Boolean} isOnline
      */
     setMemberOnlineStatus: function (usernames, isOnline) {
       let member
+      let retrieveUsers = false
       for (let i = 0; i < usernames.length; i++) {
         member = this.members.get(usernames[i])
         if (member) {
           member.online = isOnline
           if (!member.online) member.active = false
           this.members.set(usernames[i], member)
+        } else {
+          retrieveUsers = true
         }
+      }
+      // Get chat members if a member wasn't found
+      if (retrieveUsers) {
+        this.getMainMembers()
       }
     },
     /**
@@ -1719,41 +1621,38 @@ export default {
      */
     handleChannelCreation: async function (channel) {
       await this.getChatroom()
-      this.gotoChannel(channel)
+      await this.gotoChannel(channel)
     },
     /**
      *
      * @returns {Promise<unknown>}
      */
-    getCustomEmotes: function () {
+    getCustomEmotes: async function () {
+      const response = await api({
+        url: `files/private/chat/${this.chatID}?type=emote`
+      }).catch((e) => {
+        console.debug(e.message)
+      })
+      if (response == null || response.data == null) return
+      const emotes = response.data.files
+      if (emotes.length < 1) return
+      let url
+      let emotesStore = await dbGetData('emotes')
+      if (emotesStore == null) {
+        emotesStore = {
+          map: new Map()
+        }
+      }
+      for (let i = 0; i < emotes.length; i++) {
+        url = this.store.serverIP + emotes[i].pth
+        emotes[i].t = emotes[i].t.split('.')[0]
+        // Add to emote list (user prompt)
+        emotes[i]._pth = url
+        await this.addEmoteToSaved(emotesStore, emotes[i])
+      }
+      await dbSetData('emotes', emotesStore)
       return new Promise((resolve) => {
-        api({
-          url: `files/private/chat/${this.chatID}?type=emote`
-        }).then((response) => {
-          const emotes = response.data.files
-          if (emotes.length < 1) return
-          let url
-          let md
-          let fname
-          this.emotes = new Map()
-          this.emoteList = []
-          for (let i = 0; i < emotes.length; i++) {
-            url = this.$store.state.serverIP + '/' + emotes[i].pth
-            emotes[i].t = emotes[i].t.split('.')[0]
-            fname = ':' + emotes[i].t + ':'
-            // Build Markdown image string
-            md = `![${fname}](${url})`
-            this.emotes[fname] = md
-            // Add to emote list (user prompt)
-            emotes[i]._md = md
-            this.emoteList.push(emotes[i])
-          }
-        }).catch((e) => {
-          console.debug(e.message)
-        })
-        .finally(() => {
-          resolve()
-        })
+        resolve()
       })
     },
     /**
@@ -1779,7 +1678,6 @@ export default {
       .finally(() => {
         setTimeout(() => {
           this.getOnlineUsers()
-          this.sdk.sendMessage('[c:SC]' + '[online]' + this.store.user.username)
         }, 0)
       })
     },
@@ -1803,11 +1701,11 @@ export default {
      * @param name
      */
     addToEditor (name) {
-      this.$refs.tokenRef.hide()
-      const edit = this.$refs.ref_editor
-      edit.caret.restore()
-      edit.runCmd('insertHTML', `&nbsp;<div class="editor_token row inline items-center" contenteditable="false"><span>@${name}</span><i class="q-icon material-icons cursor-pointer" onclick="this.parentNode.parentNode.removeChild(this.parentNode)">close</i></div>&nbsp;`)
-      edit.focus()
+      // this.$refs.tokenRef.hide()
+      // const edit = this.$refs.ref_editor
+      // edit.caret.restore()
+      // edit.runCmd('insertHTML', `&nbsp;<div class="editor_token row inline items-center" contenteditable="false"><span>@${name}</span><i class="q-icon material-icons cursor-pointer" onclick="this.parentNode.parentNode.removeChild(this.parentNode)">close</i></div>&nbsp;`)
+      // edit.focus()
     },
     /**
      *
@@ -1820,7 +1718,7 @@ export default {
           if (this.messages[i]._msgs[j].uid === uid) {
             this.replyingMessage = this.messages[i]._msgs[j]
             this.inputResize()
-            this.$refs.ref_editor.focus()
+            // this.$refs.ref_editor.focus()
             done = true
             break
           }
@@ -1856,13 +1754,13 @@ export default {
               this.last_message.msgMonth = this.messages[i]._msgs[j]._time.day
               this.last_message.msgYear = this.messages[i]._msgs[j]._time.day
             }
-            if (this.$refs.ref_editor) {
-              try {
-                this.$refs.ref_editor.focus()
-              } catch (e) {
-                console.debug(e.message)
-              }
-            }
+            // if (this.$refs.ref_editor) {
+            //   try {
+            //     this.$refs.ref_editor.focus()
+            //   } catch (e) {
+            //     console.debug(e.message)
+            //   }
+            // }
             done = true
             break
           }
@@ -1975,7 +1873,13 @@ export default {
       this.editingMessage._msg = this.newMessage
       // Transmit
       let editPayloadMessage
-      if (!forceDelete && this.newMessage !== '') {
+      let isRemove = false
+      let tmpMsg = this.newMessage
+      tmpMsg = tmpMsg.replace(/<\/?[^>]+(>|$)/g, '')
+      tmpMsg = tmpMsg.replace(/&nbsp;/g, '')
+      tmpMsg = tmpMsg.replace(/\s/g, '')
+      if (tmpMsg === '') isRemove = true
+      if (!forceDelete && !isRemove) {
         this.newMessage = this.replaceTagRemover(this.newMessage)
         editPayloadMessage =
           await this.sdk._wcrypt.encryptPayload(this.newMessage)
@@ -2034,9 +1938,10 @@ export default {
       if (this.replyingMessage) {
         this.replyingMessage = null
       }
-      this.$refs.ref_editor.focus()
+      // this.$refs.ref_editor.focus()
       this.pickingFile = false
       this.selectedImage = undefined
+      this.isSelectingEmote = false
       setTimeout(() => {
         this.inputResize()
       }, 0)
@@ -2110,17 +2015,9 @@ export default {
       } else if (msg.typ === '[s:chat]') {
         if (msg.act === 'mark') {
           // Check if we're already connected to this channel
-          const subchatID = this.$route.query.chan
-          if (subchatID) {
-            if (this.$route.fullPath.includes('?chan=' + msg.pid)) {
-              return
-            }
-          } else {
-            if (this.$route.fullPath.includes('/' + msg.pid)) {
-              return
-            }
+          if (this.channel.id === msg.pid) {
+            return
           }
-          this.hasUnread(msg.pid, false, true, true)
           this.addTimestampNew(msg.pid)
           .then(() => {
             this.hasUnread(msg.pid)
@@ -2133,6 +2030,21 @@ export default {
             // Retrieve active users of current group or channel
             this.getActiveMembers()
           })
+        }
+      }
+    },
+    /**
+     *
+     * @param msg
+     */
+    handleIncomingInternalMessages: function (msg) {
+      // Only listen for chat related events
+      if (msg.app !== 'chat') return
+      if (msg.target === 'emote') {
+        if (msg.type === 'open') {
+          this.isSelectingEmote = true
+        } else if (msg.type === 'close') {
+          this.isSelectingEmote = false
         }
       }
     },
@@ -2233,13 +2145,13 @@ export default {
       if (!this.chatID) return
       this.manageKeyListeners(true)
       this.manageDocumentListeners(true)
-      this.$router.push(`/q/knowledge?id=${this.chatID}`)
+      this.$router.push(`/knowledge?id=${this.chatID}`)
     },
     gotoProjectManagement: function () {
       if (!this.chatID) return
       this.manageKeyListeners(true)
       this.manageDocumentListeners(true)
-      this.$router.push(`/q/projects?id=${this.chatID}`)
+      this.$router.push(`/projects?id=${this.chatID}`)
     },
     dragOverHandler: function (ev) {
       ev.preventDefault()
@@ -2273,7 +2185,7 @@ export default {
       this.pickingFile = true
       setTimeout(() => {
         this.filePreference = files[0]
-        this.$refs.ref_editor.focus()
+        // this.$refs.ref_editor.focus()
         this.inputResize()
       }, 200)
     },
@@ -2448,6 +2360,56 @@ export default {
     },
     showFiles: function () {
       this.isViewingFiles = !this.isViewingFiles
+    },
+    handleEmoteConfirm: function (emote) {
+      // this.newMessage = ''
+      // setTimeout(() => {
+      //   const edit = this.$refs.ref_editor
+      //   edit.caret.restore()
+      //   edit.runCmd('insertHTML', `&nbsp;<img src="${emote._pth}" alt="${emote.t}" style="width: 48px; height: 48px; object-fit: contain"/>&nbsp;`)
+      //   this.newMessage = this.msgCache + this.newMessage
+      //   edit.focus()
+      //   this.inputResize()
+      // }, 0)
+    },
+    /**
+     *
+     * @returns {Number}
+     */
+    findLastOwnMessage: function () {
+      let index = -1
+      for (let i = 0; i < this.messages.length; i++) {
+        if (this.messages[i].usr === this.store.user.username) {
+          index = i
+          return index
+        }
+      }
+      return index
+    },
+    /**
+     *
+     * @param emotes
+     * @param emoteFile
+     * @returns {Promise<unknown>}
+     */
+    addEmoteToSaved: async function (emotes, emoteFile) {
+      const tmp = `${emoteFile.t}-${this.chatroom.t}`
+      const newEntry = {
+        // A unique name of the emoji which will be stored as attribute
+        name: tmp,
+        // A list of unique shortcodes that are used by input rules to find the emoji
+        shortcodes: [tmp],
+        // A list of tags that can help for searching emojis
+        tags: [tmp, 'custom', this.chatroom.t],
+        // A name that can help to group emojis
+        group: 'Custom Emotes',
+        // The image to be rendered
+        fallbackImage: emoteFile._pth
+      }
+      emotes.map.set(emoteFile.t, newEntry)
+      return new Promise((resolve) => {
+        resolve()
+      })
     }
   }
 }

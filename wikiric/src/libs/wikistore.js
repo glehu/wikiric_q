@@ -30,19 +30,19 @@ export async function dbSetTimestamp (key, val) {
   return (await dbPromise).put('timestamps', toRaw(val), key)
 }
 
-export async function del (key) {
+export async function dbRemoveGroup (key) {
   return (await dbPromise).delete('sessions', key)
 }
 
-export async function clear () {
+export async function dbClearGroups () {
   return (await dbPromise).clear('sessions')
 }
 
-export async function keys () {
+export async function dbGetGroupKeys () {
   return (await dbPromise).getAllKeys('sessions')
 }
 
-export async function values () {
+export async function dbGetGroups () {
   return (await dbPromise).getAll('sessions')
 }
 

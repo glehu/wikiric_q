@@ -6,13 +6,20 @@
         inline-label
         class="">
         <q-tab name="activity" icon="history" label="Activity"/>
-        <q-tab name="groups" icon="groups" label="Groups"/>
         <q-tab name="friends" icon="people" label="Friends"/>
       </q-tabs>
     </q-toolbar>
     <q-tab-panels v-model="tab" animated>
       <q-tab-panel name="activity">
-        <p class="text-h6 mb4 fontbold">Recent Activity</p>
+        <div class="flex gap-2 mb4">
+          <p class="text-h6 fontbold">Recent Activity</p>
+          <q-btn icon="chat" label="Create Group" no-caps dense
+                 color="primary" class="mlauto <sm:hidden rounded-2 p2"
+                 @click="createGroup()"/>
+          <q-btn icon="login" label="Join Group" no-caps dense
+                 color="primary" class="mr4 <sm:hidden rounded-2 p2"
+                 @click="joinGroup()"/>
+        </div>
         <q-item v-for="chat in activity" :key="chat"
                 clickable
                 dense
@@ -43,13 +50,11 @@
           </q-item-section>
         </q-item>
       </q-tab-panel>
-      <q-tab-panel name="groups">
-        <p class="text-h6 mb4 fontbold">Your Groups</p>
-        Groups will be found here!
-      </q-tab-panel>
       <q-tab-panel name="friends">
         <div class="text-h6 mb4 fontbold">Your Friends</div>
-        Friends will be found here!
+        <p class="text-body2">
+          (WIP) Friends will be found here!
+        </p>
       </q-tab-panel>
     </q-tab-panels>
     <q-page-sticky position="bottom-right" :offset="[18, 18]">
@@ -75,7 +80,7 @@
 
 <script>
 import { defineComponent } from 'vue'
-import { values } from 'src/libs/wikistore'
+import { dbGetGroups } from 'src/libs/wikistore'
 import GroupIcon from 'components/chat/GroupIcon.vue'
 import NewGroupView from 'components/chat/NewGroup.vue'
 import JoinGroupView from 'components/chat/JoinGroup.vue'
@@ -103,7 +108,7 @@ export default defineComponent({
   },
   methods: {
     gotoChat: function (chat) {
-      let linkURL = `/q/chat?id=${chat.id}`
+      let linkURL = `/chat?id=${chat.id}`
       // Rejoin last channel if it exists
       if (chat.lastChannelID && chat.lastChannelID !== '') {
         linkURL += `&chan=${chat.lastChannelID}`
@@ -111,7 +116,7 @@ export default defineComponent({
       this.$router.push(linkURL)
     },
     initFunction: async function () {
-      this.activity = await values()
+      this.activity = await dbGetGroups()
     },
     createGroup: function () {
       this.showNewGroup = !this.showNewGroup

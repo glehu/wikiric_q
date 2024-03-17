@@ -12,7 +12,7 @@ const routes = [{
   path: '/:catchAll(.*)*',
   component: () => import('pages/ErrorNotFound.vue')
 }, {
-  path: '/q/',
+  path: '/',
   component: () => import('layouts/MainLayout.vue'),
   children: [{
     path: '',

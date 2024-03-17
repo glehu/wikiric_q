@@ -346,7 +346,7 @@ export default {
       this.getRecentQuestions()
     },
     clickedBack: function () {
-      const url = `/q/chat?id=${this.groupID}`
+      const url = `/chat?id=${this.groupID}`
       this.$router.push(url)
     },
     getChatroom: function () {
@@ -673,7 +673,7 @@ export default {
       return returnString
     },
     gotoWisdom: function (uid) {
-      const url = '/q/wisdom?id=' + uid
+      const url = '/wisdom?id=' + uid
       this.$router.push(url)
     },
     getTopContributors: async function () {

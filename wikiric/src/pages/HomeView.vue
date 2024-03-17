@@ -78,16 +78,16 @@ export default defineComponent({
   methods: {
     gotoLogin () {
       if (this.store.isLoggedIn) {
-        this.$router.push('/q/account')
+        this.$router.push('/account')
       } else {
-        this.$router.push('/q/login?redirect=/q/account')
+        this.$router.push('/login?redirect=/account')
       }
     },
     gotoRegistration () {
       if (this.store.isLoggedIn) {
-        this.$router.push('/q/account')
+        this.$router.push('/account')
       } else {
-        this.$router.push('/q/register?redirect=/q/login')
+        this.$router.push('/register?redirect=/login')
       }
     },
     getUsercount: async function () {

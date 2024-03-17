@@ -6,35 +6,47 @@
               class="flex">
         <q-btn-group flat class="surface flex justify-center flex-grow">
           <q-btn icon="reply" dense
-                 v-on:click="$emit('reply', msg.uid)"/>
+                 v-on:click="$emit('reply', msg.uid)">
+            <q-tooltip class="text-subtitle2">Reply</q-tooltip>
+          </q-btn>
           <q-btn v-if="sent" icon="edit" dense
-                 v-on:click="$emit('edit', msg.uid)"/>
+                 v-on:click="$emit('edit', msg.uid)">
+            <q-tooltip class="text-subtitle2">Edit</q-tooltip>
+          </q-btn>
           <q-btn v-if="sent" icon="delete" dense
-                 v-on:click="$emit('delete', msg.uid)"/>
+                 v-on:click="$emit('delete', msg.uid)">
+            <q-tooltip class="text-subtitle2">Delete</q-tooltip>
+          </q-btn>
           <q-separator vertical spaced color="transparent"
                        class=""/>
           <q-btn icon="thumb_up" dense
-                 v-on:click="$emit('react', msg.uid, '+')"/>
+                 v-on:click="$emit('react', msg.uid, '+')">
+            <q-tooltip class="text-subtitle2">Upvote</q-tooltip>
+          </q-btn>
           <q-btn icon="thumb_down" dense
-                 v-on:click="$emit('react', msg.uid, '-')"/>
+                 v-on:click="$emit('react', msg.uid, '-')">
+            <q-tooltip class="text-subtitle2">Dislike</q-tooltip>
+          </q-btn>
           <q-btn icon="star" dense
-                 v-on:click="$emit('react', msg.uid, '⭐️')"/>
+                 v-on:click="$emit('react', msg.uid, '⭐️')">
+            <q-tooltip class="text-subtitle2">Wow!</q-tooltip>
+          </q-btn>
           <q-separator vertical spaced color="transparent"
                        class=""/>
           <q-btn icon="content_copy" dense
-                 v-on:click="$emit('copy', msg._msg)"/>
+                 v-on:click="$emit('copy', msg._msg)">
+            <q-tooltip class="text-subtitle2">Copy</q-tooltip>
+          </q-btn>
+          <template v-if="msg._isFile">
+            <a :href="msg._msgURL"
+               class="flex-grow"
+               download>
+              <q-btn icon="sym_o_file_download" dense unelevated size="1rem">
+                <q-tooltip class="text-subtitle2">Download</q-tooltip>
+              </q-btn>
+            </a>
+          </template>
         </q-btn-group>
-        <template v-if="msg._isFile">
-          <a :href="msg._msgURL"
-             class="flex-grow"
-             download>
-            <q-btn icon="sym_o_file_download"
-                   color="brand-bg"
-                   text-color="brand-p"
-                   class="wfull"
-                   label="Download"/>
-          </a>
-        </template>
       </q-menu>
       <q-slide-item @left="onLeft" @right="onLeft"
                     left-color="positive" right-color="positive"
@@ -109,32 +121,47 @@
                         </template>
                         <q-btn-group flat class="surface mlauto">
                           <q-btn icon="reply" dense
-                                 v-on:click="$emit('reply', msg.uid)"/>
+                                 v-on:click="$emit('reply', msg.uid)">
+                            <q-tooltip class="text-subtitle2">Reply</q-tooltip>
+                          </q-btn>
                           <q-btn v-if="sent" icon="edit" dense
-                                 v-on:click="$emit('edit', msg.uid)"/>
+                                 v-on:click="$emit('edit', msg.uid)">
+                            <q-tooltip class="text-subtitle2">Edit</q-tooltip>
+                          </q-btn>
                           <q-btn v-if="sent" icon="delete" dense
-                                 v-on:click="$emit('delete', msg.uid)"/>
+                                 v-on:click="$emit('delete', msg.uid)">
+                            <q-tooltip class="text-subtitle2">Delete</q-tooltip>
+                          </q-btn>
                           <q-separator vertical spaced color="transparent"
                                        class=""/>
-                          <q-btn icon="thumb_up" dense/>
-                          <q-btn icon="thumb_down" dense/>
-                          <q-btn icon="star" dense/>
+                          <q-btn icon="thumb_up" dense
+                                 v-on:click="$emit('react', msg.uid, '+')">
+                            <q-tooltip class="text-subtitle2">Upvote</q-tooltip>
+                          </q-btn>
+                          <q-btn icon="thumb_down" dense
+                                 v-on:click="$emit('react', msg.uid, '-')">
+                            <q-tooltip class="text-subtitle2">Dislike</q-tooltip>
+                          </q-btn>
+                          <q-btn icon="star" dense
+                                 v-on:click="$emit('react', msg.uid, '⭐️')">
+                            <q-tooltip class="text-subtitle2">Wow!</q-tooltip>
+                          </q-btn>
                           <q-separator vertical spaced color="transparent"
                                        class=""/>
                           <q-btn icon="content_copy" dense
-                                 v-on:click="$emit('copy', msg._msg)"/>
+                                 v-on:click="$emit('copy', msg._msg)">
+                            <q-tooltip class="text-subtitle2">Copy</q-tooltip>
+                          </q-btn>
+                          <template v-if="msg._isFile">
+                            <a :href="msg._msgURL"
+                               class="flex-grow"
+                               download>
+                              <q-btn icon="sym_o_file_download" dense unelevated size="1rem">
+                                <q-tooltip class="text-subtitle2">Download</q-tooltip>
+                              </q-btn>
+                            </a>
+                          </template>
                         </q-btn-group>
-                        <template v-if="msg._isFile">
-                          <a :href="msg._msgURL"
-                             class="flex-grow"
-                             download>
-                            <q-btn icon="sym_o_file_download"
-                                   color="brand-bg"
-                                   text-color="brand-p"
-                                   class="wfull"
-                                   label="Download"/>
-                          </a>
-                        </template>
                       </div>
                     </q-carousel-control>
                     <q-carousel-control

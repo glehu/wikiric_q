@@ -19,6 +19,10 @@
   --calendar-active-date-background-dark: var(--md-sys-color-primary) !important;
 }
 
+.ProseMirror:focus {
+  outline: none;
+}
+
 ::placeholder {
   @apply italic;
 }
@@ -715,10 +719,6 @@ input:checked {
   color: var(--md-sys-color-on-error-container);
 }
 
-.markedView p {
-  margin-bottom: 1rem;
-}
-
 .markedView a {
   text-decoration: underline var(--md-sys-color-on-tertiary);
   color: var(--md-sys-color-on-tertiary);
@@ -773,11 +773,18 @@ input:checked {
 }
 
 .markedView th {
-  @apply p-2 font-bold fmt_border surface-variant;
+  padding: 0.5rem;
+  font-weight: bold;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background-color: var(--md-sys-color-surface-variant);
+  color: var(--md-sys-color-on-surface);
 }
 
 .markedView td {
-  @apply p-2 fmt_border background;
+  padding: 0.5rem;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  background-color: var(--md-sys-color-surface-variant);
+  color: var(--md-sys-color-on-surface);
 }
 
 .markedView h1 {
@@ -805,20 +812,25 @@ input:checked {
 }
 
 .markedView code {
-  @apply py-0.5 px-1 rounded-md fmt_border my-2 text-sm;
+  padding: 0.12rem 0.25rem;
+  border-radius: 0.375rem;
+  border: 1px solid var(--md-sys-color-outline-variant);
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }
 
 hr {
-  @apply my-6 h-[2px] w-full rounded outline-variant;
   border: 1px solid var(--md-sys-color-outline-variant);
 }
 
 .markedView > :last-child {
-  @apply mb-0 !important;
+  margin-bottom: 0 !important;
 }
 
 .markedView > :first-child {
-  @apply mt-0 !important;
+  margin-top: 0 !important;
 }
 
 .markedView blockquote {
@@ -827,11 +839,11 @@ hr {
 }
 
 .markedView blockquote > :last-child {
-  @apply mb-0 !important;
+  margin-bottom: 0 !important;
 }
 
 .markedView blockquote > :first-child {
-  @apply mt-0 !important;
+  margin-top: 0 !important;
 }
 
 .navbar_body {

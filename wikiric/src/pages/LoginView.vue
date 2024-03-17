@@ -104,7 +104,7 @@ export default {
             password: 'test',
             token: '! Test Account - No Token In Offline Mode !'
           })
-          this.$router.push(this.$route.query.redirect.toString() || '/q/')
+          this.$router.push(this.$route.query.redirect.toString() || '/')
         } else {
           // Regular login
           this.serverLogin()
@@ -193,9 +193,9 @@ export default {
     gotoRegister () {
       const redirect = this.$route.query.redirect
       if (redirect) {
-        this.$router.push('/q/register?redirect=' + redirect)
+        this.$router.push('/register?redirect=' + redirect)
       } else {
-        this.$router.push('/q/register')
+        this.$router.push('/register')
       }
     },
     checkRememberedUser: async function () {
