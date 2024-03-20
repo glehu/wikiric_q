@@ -105,17 +105,16 @@ export default {
       // Attempt to retrieve group
       const uuid = this.extractUUID()
       const sdk = WikiricSdk
-      let chatID = ''
+      console.log(uuid)
       this.getGroup(uuid)
-      .then((chat) => {
-        chatID = chat.uid
+      .then(() => {
         sdk.doLogin(this.store.user._u, this.store.user._p)
       }).then(() => {
-        sdk.doConnect(chatID, '', '', this.pw)
+        sdk.doConnect(uuid, '', '', this.pw)
       }).then(() => {
         this.loginInterval = setInterval(() => {
           if (sdk._isAuthorized) {
-            this.$router.push(`/chat?id=${chatID.uid}`)
+            this.$router.push(`/chat?id=${uuid}`)
             clearTimeout(this.loginInterval)
           } else {
             this.handleJoinFailed()

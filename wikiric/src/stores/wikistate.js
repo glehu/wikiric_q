@@ -16,6 +16,7 @@ export const useStore = defineStore('general', {
     },
     logOut () {
       this.loggedIn = false
+      this.user = {}
     }
   }
 })

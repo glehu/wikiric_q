@@ -58,7 +58,8 @@
               <div class="flex row gap-2 items-center justify-between flex-grow">
                 <q-btn icon="event" flat dense no-caps
                        class="wfit text-md fontbold" :label="getHumanReadableDateText(wisdom.due)">
-                  <q-popup-proxy @before-show="updateProxyDueDate" cover transition-show="scale" transition-hide="scale">
+                  <q-popup-proxy @before-show="updateProxyDueDate" cover transition-show="scale"
+                                 transition-hide="scale">
                     <q-date v-model="proxyDate">
                       <div class="row items-center justify-end q-gutter-sm">
                         <q-btn label="Cancel" color="primary" flat v-close-popup/>
@@ -69,7 +70,8 @@
                 </q-btn>
                 <q-btn icon="access_time" flat dense no-caps
                        class="wfit text-md fontbold" :label="wisdom._dueTimeFmt">
-                  <q-popup-proxy @before-show="updateProxyDueTime" cover transition-show="scale" transition-hide="scale">
+                  <q-popup-proxy @before-show="updateProxyDueTime" cover transition-show="scale"
+                                 transition-hide="scale">
                     <q-time v-model="proxyTime">
                       <div class="row items-center justify-end q-gutter-sm">
                         <q-btn label="Cancel" color="primary" flat v-close-popup/>
@@ -137,14 +139,11 @@
         <p class="text-body2 fontbold mt4 mb2">
           Content
         </p>
-        <q-editor id="wisdom_desc"
+        <div class="wfull max-w-3xl relative">
+          <editor id="wisdom_desc"
                   ref="wisdom_desc"
-                  v-model="wisdom.desc"
-                  min-height="10rem"
-                  class=""
-                  content-class="markedView"
-                  :toolbar="toolbarConfig"
-                  :fonts="toolbarFonts"/>
+                  v-model="wisdom.desc"/>
+        </div>
       </div>
     </q-card>
   </q-dialog>
@@ -155,8 +154,10 @@
 import { useStore } from 'stores/wikistate'
 import { ref, toRaw } from 'vue'
 import { DateTime } from 'luxon'
+import Editor from 'components/EditorComponent.vue'
 
 export default {
+  components: { Editor },
   props: {
     isOpen: {
       type: Boolean,
@@ -165,6 +166,10 @@ export default {
     knowledgeId: {
       type: String,
       required: true
+    },
+    typePreference: {
+      type: String,
+      default: ''
     },
     typeChangeable: {
       type: Boolean,
@@ -178,6 +183,15 @@ export default {
   emits: ['update', 'create'],
   watch: {
     isOpen () {
+      if (!this.wisdomProp ||
+        this.wisdom.uid !== this.wisdomProp.uid) {
+        this.wisdom = {
+          uid: '',
+          t: '',
+          desc: '',
+          keys: ''
+        }
+      }
       this.show = true
       this.handleDialogOpen()
     },
@@ -205,53 +219,6 @@ export default {
       wisdomBackup: {},
       contributorOptions: [],
       filterOptions: [],
-      toolbarConfig: [
-        ['bold', 'italic', 'strike', 'underline'],
-        ['token', 'hr', 'link'],
-        [
-          {
-            label: this.$q.lang.editor.formatting,
-            icon: this.$q.iconSet.editor.formatting,
-            list: 'no-icons',
-            options: [
-              'h1',
-              'h2',
-              'h3',
-              'h4',
-              'h5',
-              'h6',
-              'p',
-              'code'
-            ]
-          },
-          {
-            label: this.$q.lang.editor.fontSize,
-            icon: this.$q.iconSet.editor.fontSize,
-            fixedLabel: true,
-            fixedIcon: true,
-            list: 'no-icons',
-            options: [
-              'size-1',
-              'size-2',
-              'size-3',
-              'size-4',
-              'size-5',
-              'size-6',
-              'size-7'
-            ]
-          }
-        ]
-      ],
-      toolbarFonts: {
-        arial: 'Arial',
-        arial_black: 'Arial Black',
-        comic_sans: 'Comic Sans MS',
-        courier_new: 'Courier New',
-        impact: 'Impact',
-        lucida_grande: 'Lucida Grande',
-        times_new_roman: 'Times New Roman',
-        verdana: 'Verdana'
-      },
       wisdomType: ref('lesson'),
       wisTypes: [
         {
@@ -274,6 +241,15 @@ export default {
   },
   created () {
     this.wisdomBackup = {
+      uid: '',
+      t: '',
+      desc: '',
+      keys: ''
+    }
+  },
+  beforeUnmount () {
+    this.wisdom = {
+      uid: '',
       t: '',
       desc: '',
       keys: ''
@@ -281,6 +257,9 @@ export default {
   },
   methods: {
     handleDialogOpen: function () {
+      if (this.typePreference && this.typePreference !== '') {
+        this.wisdomType = this.typePreference
+      }
       setTimeout(() => {
         const elem = document.getElementById('wisdom_t')
         if (elem) {
@@ -355,18 +334,22 @@ export default {
       return date
     },
     qDateToJSDate: function (date) {
-      let dateTmp = date._dueDate.replaceAll('/', '-')
-      let timeTmp = date._dueTime
-      if (!timeTmp || timeTmp === '') {
-        timeTmp = '00:00'
+      if (date._dueDate) {
+        const dateTmp = date._dueDate.replaceAll('/', '-')
+        let timeTmp = date._dueTime
+        if (!timeTmp || timeTmp === '') {
+          timeTmp = '00:00'
+        }
+        date.due = DateTime.fromISO(`${dateTmp}T${timeTmp}`)
       }
-      date.due = DateTime.fromISO(`${dateTmp}T${timeTmp}`)
-      dateTmp = date._dueDateUntil.replaceAll('/', '-')
-      timeTmp = date._dueTimeUntil
-      if (!timeTmp || timeTmp === '') {
-        timeTmp = '00:00'
+      if (date._dueDateUntil) {
+        const dateTmp = date._dueDateUntil.replaceAll('/', '-')
+        let timeTmp = date._dueTimeUntil
+        if (!timeTmp || timeTmp === '') {
+          timeTmp = '00:00'
+        }
+        date.duet = DateTime.fromISO(`${dateTmp}T${timeTmp}`)
       }
-      date.duet = DateTime.fromISO(`${dateTmp}T${timeTmp}`)
       return date
     },
     updateProxyDueDate () {

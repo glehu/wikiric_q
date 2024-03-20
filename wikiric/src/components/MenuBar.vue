@@ -81,7 +81,7 @@ export default {
           isActive: () => this.editor.isActive('orderedList')
         },
         {
-          icon: 'sym_o_integration_instructions',
+          icon: 'sym_o_code',
           title: 'Code Block',
           action: () => this.editor.chain().focus().toggleCodeBlock().run(),
           isActive: () => this.editor.isActive('codeBlock')

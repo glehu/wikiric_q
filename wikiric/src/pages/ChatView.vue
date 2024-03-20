@@ -8,16 +8,16 @@
       <q-drawer
         side="left"
         v-model="sidebarLeft"
-        show-if-above
         :width="300"
+        show-if-above
         :breakpoint="768"
         class="surface-variant hfit">
         <q-scroll-area class="fit">
           <template v-if="chatroom.burl">
             <div class="p2">
-              <div class="wfull h-[10rem] rounded-2 overflow-hidden">
+              <div class="wfull max-h-[10rem] rounded-2 overflow-hidden">
                 <q-img :src="getImg(chatroom.burl, true)" alt="Banner"
-                       fit="cover"/>
+                       fit="cover" class="max-h-[10rem]"/>
               </div>
             </div>
           </template>
@@ -108,6 +108,8 @@
         side="right"
         v-model="sidebarRight"
         :width="256"
+        show-if-above
+        :breakpoint="1200"
         class="background">
         <q-scroll-area class="fit">
           <q-toolbar class="fmt_border_bottom md:hidden">
@@ -127,13 +129,15 @@
           <q-item v-for="[key, member] of members.entries()" :key="member.id"
                   clickable>
             <q-menu touch-position>
-              <member-card :member="member"/>
+              <member-card :member="member"
+                           @refresh="getMainMembers"/>
             </q-menu>
             <q-item-section v-if="key">
               <q-item-label class="fontbold text-lg">
                 <member-icon :iurl="member.iurl"
                              :iurla="member.iurla"
-                             :online="member.online"/>
+                             :online="member.online"
+                             size="48px"/>
                 <span>{{ member.name }}</span>
               </q-item-label>
             </q-item-section>
@@ -151,7 +155,7 @@
                   Toggle&nbsp;Channels
                 </q-tooltip>
               </q-btn>
-              <q-toolbar-title class="text-subtitle1 sm:text-lg">
+              <q-toolbar-title class="text-subtitle1">
                 <q-breadcrumbs active-color="brand-p">
                   <q-breadcrumbs-el :label="chatroom.t"/>
                   <template v-if="channel.t">
@@ -354,7 +358,11 @@
                 </template>
               </div>
               <div class="wfull max-w-3xl relative">
-                <editor v-model="newMessage" ref="ref_editor"/>
+                <editor ref="ref_editor"
+                        v-model="newMessage"
+                        prevent-enter
+                        @kpress="handleEditorKeyDown"
+                        @fpaste="handleEditorPaste"/>
               </div>
             </q-page-sticky>
           </div>
@@ -416,6 +424,7 @@ import GroupSettings from 'components/chat/GroupSettings.vue'
 import FilePicker from 'components/FilePicker.vue'
 import FilesViewer from 'components/chat/FilesViewer.vue'
 import Editor from 'components/EditorComponent.vue'
+import WikiricUtils from 'src/libs/wikiric-utils'
 
 export default {
   name: 'ChatView',
@@ -433,6 +442,7 @@ export default {
   data () {
     return {
       sdk: WikiricSdk,
+      utils: WikiricUtils,
       wrtc: WRTC,
       store: useStore(),
       sidebarLeft: false,
@@ -489,7 +499,8 @@ export default {
       },
       peerStreamScreenshare: null,
       msgCache: '',
-      chrCache: []
+      chrCache: [],
+      internal: new BroadcastChannel('wikiric_internal')
     }
   },
   mounted () {
@@ -532,8 +543,7 @@ export default {
         this.handleIncomingConnectorMessages(event.data)
       }
       // Listen for internal messages
-      const internal = new BroadcastChannel('wikiric_internal')
-      internal.onmessage = event => {
+      this.internal.onmessage = event => {
         this.handleIncomingInternalMessages(event.data)
       }
       // Prepare to connect to chat
@@ -581,13 +591,15 @@ export default {
               desc: this.chatroom.desc,
               iurl: this.chatroom.iurl,
               burl: this.chatroom.burl,
-              type: this.chatroom.type
+              type: this.chatroom.type,
+              iscom: this.chatroom.iscom
             }
           } else {
             chatEntry.iurl = this.chatroom.iurl
             chatEntry.burl = this.chatroom.burl
             chatEntry.t = this.chatroom.t
             chatEntry.desc = this.chatroom.desc
+            chatEntry.iscom = this.chatroom.iscom
           }
           await dbSetSession(this.chatID, chatEntry)
           // Return
@@ -754,7 +766,8 @@ export default {
       Don't add a header (avatar, name) if the last message came from the same source and similar time
        */
       message._header = true
-      if (message.usr === '_server' || message._isApi !== true) {
+      if (message._mType !== 'Reply' &&
+        (message.usr === '_server' || message._isApi !== true)) {
         if (this.last_message.usr === message.usr) {
           // If the sources are identical, check if the time was similar
           let timeDiff
@@ -902,6 +915,49 @@ export default {
     },
     /**
      *
+     * @param {KeyboardEvent} e
+     */
+    handleEditorKeyDown: function (e) {
+      this.transmitActivity()
+      if (e.key === 'Enter') {
+        if (e.shiftKey) {
+          this.inputResize()
+          return
+        }
+        e.preventDefault()
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        this.sendMessage()
+      } else if (e.key === 'ArrowUp') {
+        // Exit if we're selecting an emote (we need arrow keys)
+        if (this.isSelectingEmote) return
+        // Exit if we're writing a message already
+        if (this.utils.htmlToString(this.newMessage) !== '') return
+        this.editLastMessage()
+      }
+    },
+    handleEditorPaste: function (e) {
+      const items = (e.clipboardData ?? e.originalEvent.clipboardData).items
+      for (const item of items) {
+        if (item.kind === 'file') {
+          e.preventDefault()
+          e.stopPropagation()
+          const blob = item.getAsFile()
+          const reader = new FileReader()
+          reader.onload = () => {
+            this.pickingFile = true
+            setTimeout(() => {
+              this.filePreference = blob
+              // this.$refs.ref_editor.focus()
+              this.inputResize()
+            }, 200)
+          }
+          reader.readAsDataURL(blob)
+        }
+      }
+    },
+    /**
+     *
      * @param {Boolean} forceRemove
      */
     manageDocumentListeners: function (forceRemove = false) {
@@ -916,18 +972,7 @@ export default {
      * @param {KeyboardEvent} e
      */
     handleChatKeyDown: function (e) {
-      if (e.key === 'Enter') {
-        if (e.shiftKey) {
-          this.inputResize()
-          return
-        }
-        e.preventDefault()
-        e.stopImmediatePropagation()
-        this.sendMessage()
-      } else if (e.key === 'ArrowUp') {
-        if (this.isSelectingEmote) return
-        this.editLastMessage()
-      } else if (e.key === 'Escape') {
+      if (e.key === 'Escape') {
         this.cancelActions()
       }
       this.inputResize()
@@ -1275,7 +1320,7 @@ export default {
                   this.messages[i]._msgs[j].reacts.push({
                     src: [message.usr],
                     t: message.msg,
-                    _t: this.replaceEmotePlaceholders(message.msg)
+                    _t: message.msg
                   })
                   // setTimeout(() => {
                   //   const elem = document.getElementById(
@@ -1320,24 +1365,38 @@ export default {
      * @returns {Promise<void>}
      */
     sendMessage: async function () {
-      // Add one to the skip count
-      this.extraSkipCount += 1
       // Are we currently replying?
       if (this.replyingMessage) {
         await this.sendReply()
+        this.inputResize()
         return
       }
       // Are we currently editing?
       if (this.editingMessage) {
         await this.sendEdit()
+        this.inputResize()
         return
       }
-      // Avoid sending empty messages
-      let tmpMsg = this.newMessage
-      tmpMsg = tmpMsg.replace(/<\/?[^>]+(>|$)/g, '')
-      tmpMsg = tmpMsg.replace(/&nbsp;/g, '')
-      tmpMsg = tmpMsg.replace(/\s/g, '')
-      if (tmpMsg === '') return
+      // Avoid sending empty messages when not sending an image
+      if (!this.selectedImage) {
+        let tmpMsg = this.newMessage
+        if (tmpMsg === '') return
+        let valid = false
+        // First, we check if the message contains an emote, since we will
+        // ...filter out empty tags otherwise
+        if (tmpMsg.includes('<img')) {
+          valid = true
+        } else {
+          tmpMsg = tmpMsg.replace(/<\/?[^>]+(>|$)/g, '')
+          tmpMsg = tmpMsg.replace(/&nbsp;/g, '')
+          tmpMsg = tmpMsg.replace(/\s/g, '')
+          if (tmpMsg === '') return
+          valid = true
+        }
+        if (!valid) return
+      }
+      // Add one to the skip count
+      this.extraSkipCount += 1
       // Retrieve and limit the message's content
       let messageContent = this.newMessage
       messageContent = messageContent.replaceAll(
@@ -1451,6 +1510,10 @@ export default {
       this.manageKeyListeners()
       this.manageDocumentListeners()
       this.inputResize()
+      this.internal.postMessage({
+        app: 'editor',
+        type: 'focus'
+      })
     },
     /**
      *
@@ -1848,13 +1911,17 @@ export default {
      */
     sendReply: async function () {
       if (!this.replyingMessage) return
+      // Add one to the skip count
+      this.extraSkipCount += 1
       this.replyingMessage._msgs = []
       this.newMessage = this.replaceTagRemover(this.newMessage)
-      const payload = await this.sdk._wcrypt.encryptPayload(
-        JSON.stringify({
-          src: this.replyingMessage,
-          reply: this.newMessage
-        }))
+      let payload = JSON.stringify({
+        src: this.replyingMessage,
+        reply: this.newMessage
+      })
+      if (this.chatroom.crypt) {
+        payload = await this.sdk._wcrypt.encryptPayload(payload)
+      }
       this.replyingMessage = null
       this.newMessage = ''
       const txt = '[c:REPLY]' + payload
@@ -1869,6 +1936,8 @@ export default {
         this.resetEditing()
         return
       }
+      // Add one to the skip count
+      this.extraSkipCount += 1
       // Apply edited content
       this.editingMessage._msg = this.newMessage
       // Transmit
@@ -1881,8 +1950,12 @@ export default {
       if (tmpMsg === '') isRemove = true
       if (!forceDelete && !isRemove) {
         this.newMessage = this.replaceTagRemover(this.newMessage)
-        editPayloadMessage =
-          await this.sdk._wcrypt.encryptPayload(this.newMessage)
+        if (this.chatroom.crypt) {
+          editPayloadMessage =
+            await this.sdk._wcrypt.encryptPayload(this.newMessage)
+        } else {
+          editPayloadMessage = this.newMessage
+        }
       } else {
         editPayloadMessage = ''
       }
@@ -2107,9 +2180,13 @@ export default {
         url: contentURL,
         fileName: name
       })
-      this.sdk.sendMessage(prefix +
-        await this.sdk._wcrypt.encryptPayload(payload)
-      )
+      if (this.chatroom.crypt) {
+        this.sdk.sendMessage(prefix +
+          await this.sdk._wcrypt.encryptPayload(payload)
+        )
+      } else {
+        this.sdk.sendMessage(prefix + payload)
+      }
       this.isUploadingImage = false
       this.uploadingImageProgress = 0
       this.selectedImage = undefined
@@ -2187,6 +2264,10 @@ export default {
         this.filePreference = files[0]
         // this.$refs.ref_editor.focus()
         this.inputResize()
+        this.internal.postMessage({
+          app: 'editor',
+          type: 'focus'
+        })
       }, 200)
     },
     initWRTC: function () {
@@ -2398,9 +2479,9 @@ export default {
         // A unique name of the emoji which will be stored as attribute
         name: tmp,
         // A list of unique shortcodes that are used by input rules to find the emoji
-        shortcodes: [tmp],
+        shortcodes: [tmp.toLowerCase()],
         // A list of tags that can help for searching emojis
-        tags: [tmp, 'custom', this.chatroom.t],
+        tags: [tmp.toLowerCase(), 'custom', this.chatroom.t.toLowerCase()],
         // A name that can help to group emojis
         group: 'Custom Emotes',
         // The image to be rendered

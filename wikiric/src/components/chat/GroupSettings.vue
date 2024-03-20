@@ -81,7 +81,7 @@
         <q-card class="my2 background">
           <q-card-section>
             <div class="rounded-2 overflow-hidden p2"
-                 style="border: 4px solid var(--md-sys-color-error);">
+                 style="border: 4px solid var(--md-sys-color-error-light);">
               <div class="p2 wfit rounded-2 overflow-hidden">
                 <template v-if="leaveCounter === 0">
                   <q-btn icon="delete"
@@ -93,8 +93,7 @@
                 </template>
                 <template v-else-if="leaveCounter === 1">
                   <q-btn icon="delete"
-                         color="brand-bg"
-                         text-color="brand-p"
+                         color="negative"
                          label="Press To Confirm: Leave Group"
                          class="fontbold"
                          v-on:click="leaveGroup"/>
@@ -539,9 +538,9 @@ export default {
         // A unique name of the emoji which will be stored as attribute
         name: tmp,
         // A list of unique shortcodes that are used by input rules to find the emoji
-        shortcodes: [tmp],
+        shortcodes: [tmp.toLowerCase()],
         // A list of tags that can help for searching emojis
-        tags: [tmp, 'custom', this.newGroup.t],
+        tags: [tmp.toLowerCase(), 'custom', this.newGroup.t.toLowerCase()],
         // A name that can help to group emojis
         group: 'Custom Emotes',
         // The image to be rendered

@@ -70,7 +70,7 @@
                   Toggle&nbsp;Contents
                 </q-tooltip>
               </q-btn>
-              <q-toolbar-title class="text-subtitle1 sm:text-lg
+              <q-toolbar-title class="text-subtitle1
                                       flex items-center non-selectable">
                 <span>Wisdom Viewer</span>
               </q-toolbar-title>
@@ -94,8 +94,15 @@
                   </template>
                   <q-btn icon="edit" label="Edit"
                          @click="handleEditWisdom"/>
-                  <q-btn icon="delete" label="Delete"
-                         @click="handleDeleteWisdom"/>
+                  <template v-if="deleteCounter === 0">
+                    <q-btn icon="delete" label="Delete"
+                           @click="setDeleteCounter"/>
+                  </template>
+                  <template v-else-if="deleteCounter === 1">
+                    <q-btn icon="delete" label="Confirm"
+                           color="negative"
+                           @click="handleDeleteWisdom"/>
+                  </template>
                   <q-btn icon="share" label="Share"
                          @click="isSharingTask = !isSharingTask"/>
                 </q-btn-group>
@@ -142,7 +149,7 @@
                 </template>
                 <div class="wfull flex column
                             my4 py1 px2 non-selectable
-                            background fmt_border rounded">
+                            background rounded">
                   <div class="flex gap-2 items-start justify-between">
                     <div>
                       <div class="flex gap-x-2">
@@ -293,7 +300,8 @@ export default {
       contentTree: [],
       contentQuery: '',
       comment: '',
-      isSharingTask: false
+      isSharingTask: false,
+      deleteCounter: 0
     }
   },
   methods: {
@@ -762,6 +770,12 @@ export default {
       }
       if (dur > 1) date._duration += 's'
       return date
+    },
+    setDeleteCounter: function () {
+      this.deleteCounter = 1
+      setTimeout(() => {
+        this.deleteCounter = 0
+      }, 5000)
     }
   }
 }

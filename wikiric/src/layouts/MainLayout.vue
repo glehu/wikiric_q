@@ -77,10 +77,15 @@
         <router-view/>
       </template>
     </q-page-container>
-    <q-dialog v-model="fixed" class="z-max">
-      <q-card class="surface p4 w-[75dvw] max-w-xl
-                     fixed top-[60px]"
-              flat bordered>
+    <q-dialog v-model="fixed" class="z-max"
+              backdrop-filter="blur(10px)"
+              style="background-color: transparent">
+      <div ref="dialogSearchContainer"
+           id="dialogSearchContainer"
+           class="pt2 w-[75dvw] max-w-xl
+                  fmt_border
+                  fixed top-[60px]"
+           style="background-color: rgba(var(--rgb-sys-color-surface), 0.8)">
         <q-input
           for="searchEverything"
           label="Search everything... (SPACE to show all)"
@@ -88,51 +93,95 @@
           label-color="brand-p"
           v-model="queryText"
           @update:model-value="processQuery"
-          class="p2 text-xl">
+          class="text-xl px4">
           <template v-slot:prepend>
-            <q-icon name="search"/>
+            <q-icon name="search" class=""/>
           </template>
         </q-input>
-        <div class="max-h-[90dvh] overflow-auto">
+        <div ref="seResults"
+             class="max-h-[90dvh] overflow-y-auto px2">
           <div v-if="queryResults.length > 0">
-            <p class="fontbold ml2 mb1 mt2">
-              {{ queryResults.length }} Apps/Settings:</p>
+            <p class="fontbold ml4 mb1 mt6 text-subtitle2">
+              {{ queryResults.length }} Apps/Settings:
+            </p>
             <q-item v-for="res in queryResults" :key="res"
-                    clickable
+                    clickable dense
+                    class="mt2"
                     @click="gotoLink(res.link)">
               <q-item-section>
-                <q-item-label class="text-lg fontbold flex items-center">
+                <q-item-label class="fontbold
+                                     flex items-center
+                                     gap-3">
                   <template v-if="res.icon">
-                    <q-icon :name="res.icon" size="1.5rem" class="mr1"/>
+                    <q-icon :name="res.icon" size="1.6rem"/>
                   </template>
-                  {{ res.t }}
+                  <span class="text-body2 fontbold">
+                    {{ res.t }}
+                  </span>
+                  <span class="text-body2">
+                    {{ res.desc }}
+                  </span>
                 </q-item-label>
-                <span>{{ res.desc }}</span>
               </q-item-section>
             </q-item>
           </div>
           <div v-if="queryGroupResults.length > 0">
-            <p class="fontbold ml2 mb1 mt2">
-              {{ queryGroupResults.length }} Chat Groups:</p>
+            <p class="fontbold ml4 mb1 mt4 text-subtitle2">
+              {{ queryGroupResults.length }} Chat Groups:
+            </p>
             <q-item v-for="res in queryGroupResults" :key="res"
-                    clickable
+                    clickable dense
+                    class="mt2"
                     @click="gotoLink(res.link)">
               <q-item-section>
-                <q-item-label class="text-lg fontbold flex items-center">
+                <q-item-label class="text-lg fontbold
+                                     flex items-center
+                                     gap-3">
                   <template v-if="res.icon">
-                    <q-icon :name="res.icon" size="1.5rem" class="mr1"/>
+                    <q-icon :name="res.icon" size="1.6rem"/>
                   </template>
-                  {{ res.t }}
+                  <span class="text-body2 fontbold">
+                    {{ res.t }}
+                  </span>
+                  <span class="text-body2">
+                    {{ res.desc }}
+                  </span>
                 </q-item-label>
-                <span>{{ res.desc }}</span>
               </q-item-section>
             </q-item>
           </div>
         </div>
-        <q-card-actions align="right">
-          <q-btn flat label="Close" color="text-brand-p" v-close-popup/>
+        <q-card-actions align="right"
+                        class="surface py2 px4 mt6 flex gap-6
+                               fmt_border_top">
+          <!--<q-btn flat label="Close" color="text-brand-p" v-close-popup/>-->
+          <img src='../assets/wikiric/wikiric-logo-big.webp' alt="Logo"
+               class="mrauto pointer-events-none non-selectable"
+               style="max-width: 22px; max-height: 22px; object-fit: contain">
+          <div class="flex gap-2 items-center
+                      pointer-events-none non-selectable">
+            <span class="text-subtitle2">
+              Open/Enter
+            </span>
+            <div class="fmt_border rounded w5 h5
+                        flex items-center justify-center">
+              <q-icon name="keyboard_return"/>
+            </div>
+          </div>
+          <div class="flex gap-2 items-center
+                      pointer-events-none non-selectable">
+            <span class="text-subtitle2">
+              Close
+            </span>
+            <div class="fmt_border rounded w7 h5
+                        flex items-center justify-center">
+              <span class="text-xs fontbold">
+                ESC
+              </span>
+            </div>
+          </div>
         </q-card-actions>
-      </q-card>
+      </div>
     </q-dialog>
   </q-layout>
 </template>
@@ -214,10 +263,20 @@ export default defineComponent({
       document.addEventListener('keydown', this.handleKeyDownM, false)
     },
     handleKeyDownM: function (e) {
-      if (e.key === 'k' && e.metaKey) {
-        e.preventDefault()
-        e.stopImmediatePropagation()
-        this.openDialog()
+      if (e.key === 'k') {
+        // Check for key combination to open "search everything"
+        let os = ''
+        if (this.$q.platform.is.mac) {
+          os = 'mac'
+        } else if (this.$q.platform.is.win || this.$q.platform.is.linux) {
+          os = 'win'
+        }
+        if ((os === 'mac' && e.metaKey) ||
+          (os === 'win' && e.altKey)) {
+          e.preventDefault()
+          e.stopImmediatePropagation()
+          this.openDialog()
+        }
       }
     },
     openDialog: function () {
@@ -236,6 +295,7 @@ export default defineComponent({
       this.queryResults = []
       this.queryGroupResults = []
       if (!text || text === '') {
+        this.$refs.seResults.classList.remove('min-h-[25dvh]')
         this.isProcessingQuery = false
         return
       }
@@ -281,14 +341,30 @@ export default defineComponent({
           })
         }
       }
+      if (this.queryResults.length > 0 || this.queryGroupResults.length > 0) {
+        if (!this.$refs.seResults.classList.contains('min-h-[25dvh]')) {
+          this.$refs.seResults.classList.add('min-h-[25dvh]')
+        }
+      } else {
+        this.$refs.seResults.classList.remove('min-h-[25dvh]')
+      }
       // Return
       setTimeout(() => {
         this.isProcessingQuery = false
       }, 0)
     },
     gotoLink: function (link) {
+      const wasChat = this.$route.path.startsWith('/chat')
       this.fixed = false
       this.$router.push(link)
+      if (wasChat && link.startsWith('/chat')) {
+        // Reload on chat since there could be no module switching
+        // If the location stays the same (e.g. only chat id query changed)
+        // ...then the browser would not do anything
+        setTimeout(() => {
+          window.location.reload()
+        }, 10)
+      }
     },
     minimize: function () {
       window.myWindowAPI?.minimize()
@@ -337,11 +413,11 @@ export default defineComponent({
           // Check if we're already connected to this channel
           const subchatID = this.$route.query.chan
           if (subchatID) {
-            if (this.$route.fullPath.includes('?chan=' + msg.pid)) {
+            if (this.$route.fullPath.includes('&chan=' + msg.pid)) {
               return
             }
           } else {
-            if (this.$route.fullPath.includes('/' + msg.pid)) {
+            if (this.$route.fullPath.includes('/chat?id=' + msg.pid)) {
               return
             }
           }

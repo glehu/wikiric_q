@@ -2,10 +2,11 @@
   <q-avatar :size="size">
     <template v-if="iurl && iurl !== ''">
       <img :src="getImg(iurl, true)" alt="?"
-           class="sender_avatar">
+           class="sender_avatar p-[3px]">
       <template v-if="iurla && iurla !== ''">
         <img :src="getImg(iurla, true)" alt="?"
-             class="sender_avatar absolute hidden sender_avatar_animated">
+             class="sender_avatar p-[3px]
+                    absolute hidden sender_avatar_animated">
       </template>
     </template>
     <template v-else>
@@ -21,6 +22,7 @@
 
 <script>
 import { UserCircleIcon } from '@heroicons/vue/24/solid'
+import { useStore } from 'stores/wikistate'
 
 export default {
   name: 'MemberIcon',
@@ -38,7 +40,7 @@ export default {
     },
     size: {
       type: String,
-      default: '48px'
+      default: '39px'
     },
     hideStatus: {
       type: Boolean,
@@ -46,6 +48,11 @@ export default {
     }
   },
   mounted () {
+  },
+  data () {
+    return {
+      store: useStore()
+    }
   },
   methods: {
     getImg: function (imgGUID, get = false) {
@@ -79,6 +86,13 @@ export default {
 
 .markedView pre {
   max-width: 300px;
+}
+
+.sender_avatar {
+  object-fit: cover !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+
 }
 
 </style>

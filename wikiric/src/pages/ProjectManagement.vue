@@ -39,7 +39,7 @@
                   Toggle&nbsp;Sidebar
                 </q-tooltip>
               </q-btn>
-              <q-toolbar-title class="text-subtitle1 sm:text-lg">
+              <q-toolbar-title class="text-subtitle1">
                 <q-breadcrumbs active-color="brand-p">
                   <template v-if="chatroom">
                     <q-breadcrumbs-el :label="chatroom.t"/>
@@ -564,7 +564,7 @@ export default {
 }
 
 .fc .fc-timegrid-slot {
-  height: 4rem !important;
+  height: 3rem !important;
 }
 
 .fc-header-toolbar {

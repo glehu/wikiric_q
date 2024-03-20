@@ -99,12 +99,6 @@
         <div class="flex column gap-4 items-start mt1">
           <template v-if="date.uid">
             <div class="flex column gap-2 items-center">
-              <q-btn icon="check" dense no-caps
-                     align="left"
-                     label="Finish Task"
-                     color="primary"
-                     class="text-md fontbold px4 py2 wfull"
-                     @click="finishDate"/>
               <q-btn icon="north_east" dense no-caps
                      align="left"
                      label="View Task"
@@ -112,6 +106,12 @@
                      text-color="brand-p"
                      class="text-md fontbold px4 py2 wfull"
                      @click="gotoWisdom"/>
+              <q-btn icon="check" dense no-caps
+                     align="left"
+                     label="Finish Task"
+                     color="primary"
+                     class="text-md fontbold px4 py2 wfull"
+                     @click="finishDate"/>
             </div>
           </template>
         </div>

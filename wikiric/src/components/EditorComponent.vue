@@ -4,14 +4,14 @@
                 fmt_border">
       <menu-bar :editor="editor"/>
       <editor-content :editor="editor"
-                      class="p3"/>
+                      class="p3" :style="{ minHeight: eMinHeight }"/>
     </div>
   </template>
 </template>
 
 <script>
 import StarterKit from '@tiptap/starter-kit'
-import { Editor, EditorContent } from '@tiptap/vue-3'
+import { Editor, EditorContent, Extension } from '@tiptap/vue-3'
 import MenuBar from 'components/MenuBar.vue'
 import Emoji from '@tiptap-pro/extension-emoji'
 import suggestion from 'components/MenuSuggestion.js'
@@ -26,20 +26,27 @@ export default {
     modelValue: {
       type: String,
       default: ''
+    },
+    eMinHeight: {
+      type: String,
+      default: '1rem'
+    },
+    preventEnter: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue', 'kpress', 'fpaste'],
   data () {
     return {
-      editor: null
+      editor: null,
+      bc: new BroadcastChannel('wikiric_internal')
     }
   },
   watch: {
     modelValue (value) {
       // HTML
       const isSame = this.editor.getHTML() === value
-      // JSON
-      // const isSame = JSON.stringify(this.editor.getJSON()) === JSON.stringify(value)
       if (isSame) {
         return
       }
@@ -50,6 +57,7 @@ export default {
     this.handleMounted()
   },
   beforeUnmount () {
+    this.bc = null
     this.editor.destroy()
   },
   methods: {
@@ -59,10 +67,33 @@ export default {
       if (custom != null) {
         customEmotes = Array.from(custom.map, ([name, value]) => (value))
       }
+      const shiftEnterExtension = Extension.create({
+        addKeyboardShortcuts () {
+          return {
+            'Shift-Enter': ({ editor }) => {
+              editor.commands.enter()
+              return true
+            }
+          }
+        }
+      })
       this.editor = new Editor({
         editorProps: {
           attributes: {
             class: 'markedView'
+          },
+          handleDOMEvents: {
+            keydown: (_, event) => {
+              this.$emit('kpress', event)
+              if (event.key === 'Enter') {
+                if (this.preventEnter && !event.shiftKey) {
+                  return true
+                }
+              }
+            },
+            paste: (_, event) => {
+              this.$emit('fpaste', event)
+            }
           }
         },
         extensions: [
@@ -74,13 +105,23 @@ export default {
             HTMLAttributes: {
               class: 'wkrg-emote'
             }
-          })
+          }),
+          shiftEnterExtension
         ],
         content: this.modelValue,
         onUpdate: () => {
           this.$emit('update:modelValue', this.editor.getHTML())
         }
       })
+      this.bc.onmessage = event => {
+        this.handleEditorInternal(event.data)
+      }
+    },
+    handleEditorInternal: function (e) {
+      if (e.app !== 'editor') return
+      if (e.type === 'focus') {
+        this.editor.commands.focus('end')
+      }
     }
   }
 }
@@ -164,82 +205,8 @@ export default {
     margin-top: 0.75em;
   }
 
-  ul,
-  ol {
-    padding: 0 1rem;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    line-height: 1.1;
-  }
-
-  code {
-    background-color: rgba(#616161, 0.1);
-    color: #616161;
-  }
-
-  pre {
-    background: #0D0D0D;
-    border-radius: 0.5rem;
-    color: #FFF;
-    font-family: 'JetBrainsMono', monospace;
-    padding: 0.75rem 1rem;
-
-    code {
-      background: none;
-      color: inherit;
-      font-size: 0.8rem;
-      padding: 0;
-    }
-  }
-
   mark {
     background-color: #FAF594;
-  }
-
-  img {
-    height: auto;
-    max-width: 100%;
-  }
-
-  hr {
-    margin: 1rem 0;
-  }
-
-  blockquote {
-    border-left: 2px solid rgba(#0D0D0D, 0.1);
-    padding-left: 1rem;
-  }
-
-  hr {
-    border: none;
-    border-top: 2px solid rgba(#0D0D0D, 0.1);
-    margin: 2rem 0;
-  }
-
-  ul[data-type="taskList"] {
-    list-style: none;
-    padding: 0;
-
-    li {
-      align-items: center;
-      display: flex;
-
-      > label {
-        flex: 0 0 auto;
-        margin-right: 0.5rem;
-        user-select: none;
-      }
-
-      > div {
-        flex: 1 1 auto;
-      }
-    }
   }
 }
 

@@ -2,6 +2,23 @@
   <div>
     <p class="text-h6 mb4 fontbold">Settings</p>
     <template v-if="userExists">
+      <div class="m2 p2 rounded background flex gap-2 items-center">
+        <q-icon name="person" size="4rem"/>
+        <div class="flex gap-2 items-start
+                    justify-between flex-grow">
+          <div class="wfit">
+            <p class="text-h5 fontbold">
+              {{ user.displayName }}
+            </p>
+            <p class="fontbold">
+              @{{ user.username }}
+            </p>
+          </div>
+          <q-btn icon="logout" label="Logout"
+                 no-caps dense flat
+                 @click="handleLogout"/>
+        </div>
+      </div>
       <div class="m2 p2 rounded fmt_border">
         <p class="text-h6 mb4 fontbold ml2">Login</p>
         <q-item tag="label" v-ripple>
@@ -174,6 +191,46 @@ export default {
           }
         ]
       })
+    },
+    handleLogout: async function () {
+      this.store.logOut()
+      this.$q.notify({
+        color: 'primary',
+        position: 'top-right',
+        message: 'Logged out',
+        caption: 'See you soon!',
+        actions: [
+          {
+            icon: 'close',
+            color: 'white',
+            round: true,
+            handler: () => {
+            }
+          }
+        ]
+      })
+      // Remove auto-login
+      let usr = await dbGetData('usr')
+      if (!usr || !usr._u) {
+        this.userExists = false
+        return
+      }
+      usr.instantLogin = false
+      // Does the user wish not to be remembered?
+      if (usr.doRemember === false) {
+        usr = {
+          doRemember: false,
+          instantLogin: false,
+          forceMac: false,
+          forceWin: false,
+          startingView: '/'
+        }
+      }
+      // Update user data
+      await dbSetData('usr', usr)
+      setTimeout(() => {
+        this.$router.push('/login?redirect=/account')
+      }, 0)
     }
   }
 }

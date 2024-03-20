@@ -5,19 +5,21 @@
         v-model="tab"
         inline-label
         class="">
-        <q-tab name="activity" icon="history" label="Activity"/>
+        <q-tab name="activity" icon="groups" label="Groups"/>
         <q-tab name="friends" icon="people" label="Friends"/>
       </q-tabs>
     </q-toolbar>
     <q-tab-panels v-model="tab" animated>
       <q-tab-panel name="activity">
         <div class="flex gap-2 mb4">
-          <p class="text-h6 fontbold">Recent Activity</p>
-          <q-btn icon="chat" label="Create Group" no-caps dense
-                 color="primary" class="mlauto <sm:hidden rounded-2 p2"
+          <p class="text-h6 fontbold">Your Groups</p>
+          <q-btn icon="chat" label="Create Group"
+                 no-caps dense unelevated
+                 class="mlauto <sm:hidden p2"
                  @click="createGroup()"/>
-          <q-btn icon="login" label="Join Group" no-caps dense
-                 color="primary" class="mr4 <sm:hidden rounded-2 p2"
+          <q-btn icon="login" label="Join Group"
+                 no-caps dense unelevated
+                 class="mr4 <sm:hidden p2"
                  @click="joinGroup()"/>
         </div>
         <q-item v-for="chat in activity" :key="chat"
@@ -37,6 +39,15 @@
                               iurla=""
                               size="74px"/>
                   <div class="px2 py1 rounded-2 surface relative">
+                    <template v-if="chat.iscom">
+                      <div class="gap-2 wfit flex row items-center
+                                  primary my1 rounded pl2 pr1">
+                        <q-icon name="groups" size="1rem"/>
+                        <span class="text-subtitle2 fontbold">
+                          Community
+                        </span>
+                      </div>
+                    </template>
                     <p class="text-2xl fontbold">
                       {{ chat.t }}
                     </p>

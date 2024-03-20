@@ -1,12 +1,12 @@
 <template>
   <q-card>
-    <q-card-section class="w-[300px] max-w-[90dvw]">
+    <q-card-section class="min-w-[300px] max-w-[90dvw]">
       <div class="flex row items-start wfull">
         <div>
           <member-icon :iurl="member.iurl"
                        :iurla="member.iurla"
                        :online="member.online"
-                       size="78px"/>
+                       size="128px"/>
         </div>
         <div class="flex column">
           <span class="fontbold text-h5">{{ member.name }}</span>
@@ -25,33 +25,51 @@
             </q-icon>
             {{ getHumanReadableDateText(member.ts, true, true) }}
           </span>
+          <template v-if="member.roles">
+            <div class="flex gap-2 mt2">
+              <div v-for="role in member.roles" :key="role"
+                   class="rounded fmt_border background
+                      flex items-center px1">
+                <span class="text-subtitle2">{{ role }}</span>
+              </div>
+            </div>
+          </template>
         </div>
       </div>
-      <q-separator class="my4 wfull"/>
       <template v-if="member.usr === store.user.username">
-        <q-btn icon="edit" label="Edit Profile" color="primary"/>
+        <q-btn icon="edit" label="Edit Profile" color="primary"
+               class="mt4"
+               @click="isViewingSettings = !isViewingSettings"/>
       </template>
     </q-card-section>
   </q-card>
+  <member-settings :member="member" :is-open="isViewingSettings"
+                   @refresh="handleMemberRefresh"/>
 </template>
 
 <script>
 import MemberIcon from 'components/chat/MemberIcon.vue'
 import { DateTime } from 'luxon'
 import { useStore } from 'stores/wikistate'
+import MemberSettings from 'components/chat/MemberSettings.vue'
 
 export default {
-  components: { MemberIcon },
+  components: {
+    MemberSettings,
+    MemberIcon
+  },
   props: {
     member: {
       type: Object,
       required: true
     }
   },
+  emits: ['refresh'],
   name: 'MemberCard',
   data () {
     return {
-      store: useStore()
+      store: useStore(),
+      isViewingSettings: false
     }
   },
   methods: {
@@ -108,6 +126,9 @@ export default {
           }
       }
       return returnString
+    },
+    handleMemberRefresh: function () {
+      this.$emit('refresh')
     }
   }
 }

@@ -99,7 +99,7 @@ export default {
       if (!this.isLoggedIn) {
         // Bypass login for testing purposes
         if (this.user.email === 'test@cwo') {
-          this.$store.commit('logIn', {
+          this.store.logIn({
             email: 'test@cwo',
             password: 'test',
             token: '! Test Account - No Token In Offline Mode !'

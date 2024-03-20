@@ -7,20 +7,46 @@
           <q-btn flat
                  icon="sym_o_arrow_left_alt"
                  label="Back"
-                 class="fmt_border mb3 rounded-2
+                 class="fmt_border mb2 rounded-2
                         surface-variant"
                  @click="show = false">
           </q-btn>
           <q-input ref="file_query_input"
                    clearable
-                   filled label="Filter"
+                   label="Filter"
                    v-model="fileQuery"
                    text-color="brand-p"
-                   label-color="brand-p"/>
-          <div class="px1 pt2">
-            <span class="text-subtitle2 fontbold">
-              {{ snippets.length }} files total
-            </span>
+                   label-color="brand-p">
+            <template v-slot:prepend>
+              <q-icon name="search" class=""/>
+            </template>
+          </q-input>
+          <div class="p1 mt6 flex gap-x-4 gap-y-2">
+            <q-circular-progress
+              show-value
+              font-size="14px"
+              :value="storagePercentage"
+              size="75px"
+              :thickness="0.22"
+              color="primary"
+              track-color="grey-3"
+              class="fontbold">
+              {{ storagePercentage }}%
+            </q-circular-progress>
+            <div>
+              <p class="text-subtitle2">
+                <span class="fontbold">
+                  {{ snippets.length }} files
+                </span>
+                saved in this group
+              </p>
+              <p class="text-subtitle2">
+                <span class="fontbold">
+                  {{ totalMBString }} MB
+                </span>
+                of {{ maxMB }} MB stored
+              </p>
+            </div>
           </div>
         </div>
         <template v-if="snippets.length < 1">
@@ -36,7 +62,7 @@
               <div class="wfull">
                 <div class="rounded-2 fmt_border p3
                             flex column surface">
-                  <div class="flex wfull justify-center">
+                  <div class="flex wfull justify-center mb4">
                     <template v-if="file.mime.startsWith('image')">
                       <q-img :src="file.pth" size="200px"/>
                     </template>
@@ -123,7 +149,11 @@ export default {
       show: false,
       store: useStore(),
       snippets: [],
-      fileQuery: ''
+      fileQuery: '',
+      totalMB: 0,
+      totalMBString: '',
+      storagePercentage: 0,
+      maxMB: 1024
     }
   },
   methods: {
@@ -137,20 +167,29 @@ export default {
     },
     getSnippets: async function () {
       if (!this.groupId) return
+      this.totalMB = 0
       return new Promise((resolve) => {
         api({
           url: 'files/private/chat/' + this.groupId
         }).then((response) => {
           this.snippets = response.data.files
           for (let i = 0; i < this.snippets.length; i++) {
+            this.totalMB += this.snippets[i].mb
             this.snippets[i].pth = this.store.serverIP + this.snippets[i].pth
             if (this.snippets[i].type === 'emote') {
               this.snippets[i].emote = true
               this.snippets[i].ph = ':' + this.snippets[i].t.split('.')[0] + ':'
             }
           }
-        })
-        .then(() => resolve())
+          this.storagePercentage = this.totalMB / this.maxMB
+          this.storagePercentage = this.storagePercentage * 100
+          this.storagePercentage = Math.round(this.storagePercentage)
+          this.totalMBString = this.totalMB.toFixed(2)
+        }).catch((e) => {
+          if (e) {
+            console.debug(e.message)
+          }
+        }).finally(() => resolve())
       })
     },
     /**

@@ -3,7 +3,8 @@
                  flex justify-center">
     <div class="flex column wfull hfull relative overflow-hidden
                 justify-center text-center items-center
-                rounded-18 mx2 mt2 md:mx4 md:mt4 non-selectable">
+                <sm:rounded-9 rounded-18
+                mx2 mt2 md:mx4 md:mt4 non-selectable">
       <div class="absolute top-0 left-0 wfull hfull">
         <img src='../assets/account/pexels-marek-piwnicki-10050567.jpg' alt="Banner"
              style="object-fit: fill; object-position: top"
@@ -11,17 +12,20 @@
         <div class="backdrop-blur
                     absolute top-0 left-0 wfull hfull"></div>
       </div>
-      <div class="flex column py28 px8 z1">
+      <div class="flex column py28 <sm:px4 px8 z1">
         <div class="q-pb-md md:text-start">
-          <p class="text-h2 text-white">
+          <p class="<sm:text-4xl <md:text-6xl text-7xl
+                    text-white mb2">
             Open Source
           </p>
-          <p class="text-h2 md:text-h1 text-weight-bold text-white">
+          <p class="<sm:text-4xl <md:text-7xl text-8xl
+                    text-weight-bold text-white">
             Collaboration
           </p>
         </div>
         <p class="text-weight-bold no-pointer-events
-                  text-body1 md:text-start text-white">
+                  <sm:text-subtitle2 md:text-body1
+                  md:text-start text-white">
           {{ $t("home.title") }}
           <br>Powered by wikiric and
           <span class="italic">{{ userCount }}</span> others.
@@ -29,7 +33,8 @@
         <div class="relative q-mt-lg flex justify-center
                     md:justify-start">
           <q-btn color="primary" no-caps
-                 class="muArrow q-mr-sm q-mb-sm rounded-18"
+                 class="muArrow q-mr-sm q-mb-sm rounded-18
+                        <sm:wfull"
                  v-on:click="gotoLogin()">
             <div class="column text-left q-pa-md px10">
               <p class="text-h5 text-weight-bold q-ma-none">Sign In</p>
@@ -37,7 +42,7 @@
           </q-btn>
           <q-btn color="transparent" no-caps
                  class="muArrow q-mb-sm backdrop-blur-3xl rounded-18
-                        fmt_border"
+                        fmt_border <sm:wfull"
                  v-on:click="gotoRegistration()">
             <div class="column text-left q-pa-md">
               <p class="text-h5 text-weight-bold q-ma-none">Sign Up</p>

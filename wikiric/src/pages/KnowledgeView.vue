@@ -26,6 +26,29 @@
                  @click="clickedBack">
             <span class="ml4 text-body1">Back</span>
           </q-btn>
+          <div class="flex column wfull">
+            <q-toolbar>
+              <q-toolbar-title class="text-lg">
+                New
+              </q-toolbar-title>
+            </q-toolbar>
+            <q-btn icon="lightbulb" label="Lesson"
+                   no-caps flat align="left"
+                   @click="startCreatingWisdom('lesson')"/>
+            <q-btn icon="question_mark" label="Question"
+                   no-caps flat align="left"
+                   @click="startCreatingWisdom('question')"/>
+          </div>
+          <div class="flex column wfull">
+            <q-toolbar>
+              <q-toolbar-title class="text-lg">
+                Query
+              </q-toolbar-title>
+            </q-toolbar>
+            <q-btn icon="engineering" label="ToDo's"
+                   no-caps flat align="left"
+                   @click="filterToDos"/>
+          </div>
         </q-scroll-area>
       </q-drawer>
       <q-page-container>
@@ -39,14 +62,13 @@
                   Toggle&nbsp;Sidebar
                 </q-tooltip>
               </q-btn>
-              <q-toolbar-title class="text-subtitle1 sm:text-lg">
+              <q-toolbar-title class="text-subtitle1">
                 <q-breadcrumbs active-color="brand-p">
                   <template v-if="chatroom">
                     <q-breadcrumbs-el :label="chatroom.t"/>
                   </template>
                   <template v-if="knowledgeExists && knowledge">
                     <q-breadcrumbs-el :label="knowledge.t"/>
-                    <q-breadcrumbs-el :label="knowledge.desc"/>
                   </template>
                 </q-breadcrumbs>
               </q-toolbar-title>
@@ -173,24 +195,26 @@
                       Top Contributors
                     </p>
                   </template>
-                  <template v-for="writer in topWriters" :key="writer">
-                    <q-item flat
-                            class="wfit surface flex column rounded
+                  <div class="flex gap-2">
+                    <template v-for="writer in topWriters" :key="writer">
+                      <q-item flat
+                              class="wfit surface flex column rounded
                                    items-start pl2 pr3 pb2 mt2">
-                      <div class="flex items-center gap-2">
-                        <q-icon name="person" size="2rem"/>
-                        <span class="text-body2 fontbold">
+                        <div class="flex items-center gap-2">
+                          <q-icon name="person" size="2rem"/>
+                          <span class="text-body2 fontbold">
                         {{ writer.name }}
                       </span>
-                      </div>
-                      <div class="flex items-center gap-2 mt2">
-                        <q-icon name="book" size="2rem"/>
-                        <span class="text-h5 fontbold">
-                        {{ writer.wisdomCount }}
-                      </span>
-                      </div>
-                    </q-item>
-                  </template>
+                        </div>
+                        <div class="flex items-center gap-2 mt2">
+                          <q-icon name="book" size="2rem"/>
+                          <span class="text-h5 fontbold">
+                            {{ writer.wisdomCount }}
+                          </span>
+                        </div>
+                      </q-item>
+                    </template>
+                  </div>
                 </q-expansion-item>
               </div>
             </template>
@@ -260,8 +284,10 @@
               color="primary"
               icon="menu"
               direction="up">
-              <q-fab-action color="primary" @click="startCreatingWisdom"
-                            icon="add" label="Create Wisdom" label-position="left"/>
+              <q-fab-action color="primary" @click="startCreatingWisdom('lesson')"
+                            icon="lightbulb" label="New Lesson" label-position="left"/>
+              <q-fab-action color="primary" @click="startCreatingWisdom('question')"
+                            icon="question_mark" label="Ask Question" label-position="left"/>
             </q-fab>
           </q-page-sticky>
         </q-page>
@@ -270,6 +296,7 @@
   </q-page>
   <wisdom-edit :is-open="isEditingWisdom"
                :knowledge-id="knowledge.uid"
+               :type-preference="typePref"
                @update="handleWisdomUpdate"
                @create="handleWisdomCreate"/>
 </template>
@@ -277,11 +304,12 @@
 <script>
 import { api } from 'boot/axios'
 import { dbGetDisplayName } from 'src/libs/wikistore'
-import { debounce, scroll } from 'quasar'
+import { debounce, dom, scroll } from 'quasar'
 import WisdomEdit from 'components/knowledge/WisdomEdit.vue'
 import { DateTime } from 'luxon'
 import * as d3 from 'd3'
 import * as d3Cloud from 'd3-cloud'
+import { useStore } from 'stores/wikistate'
 
 const {
   getScrollTarget,
@@ -299,6 +327,7 @@ export default {
   name: 'KnowledgeView',
   data () {
     return {
+      store: useStore(),
       fab: false,
       sidebarLeft: false,
       groupID: undefined,
@@ -316,7 +345,8 @@ export default {
       processes: [],
       isEditingWisdom: false,
       queryTime: 0,
-      topWriters: []
+      topWriters: [],
+      typePref: ''
     }
   },
   created () {
@@ -589,7 +619,8 @@ export default {
         })
       })
     },
-    startCreatingWisdom: function () {
+    startCreatingWisdom: function (forceType = '') {
+      this.typePref = forceType
       this.isEditingWisdom = !this.isEditingWisdom
     },
     handleWisdomUpdate: function (wisdom) {
@@ -838,6 +869,29 @@ export default {
       const offset = 0 // el.offsetTop
       const duration = 200
       setVerticalScrollPosition(target, offset, duration)
+    },
+    filterToDos: function () {
+      const query = `type:task state:todo ${this.store.user.username}`
+      this.searchWisdom(query)
+      this.$q.notify({
+        color: 'primary',
+        position: 'top-right',
+        message: 'Showing ToDo\'s!',
+        caption: 'Check search query for more information',
+        actions: [
+          {
+            icon: 'close',
+            color: 'white',
+            round: true,
+            handler: () => {
+            }
+          }
+        ]
+      })
+      const { width } = dom
+      if (width(document.body) < 768) {
+        this.sidebarLeft = false
+      }
     }
   }
 }

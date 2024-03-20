@@ -34,7 +34,9 @@
           <q-separator vertical spaced color="transparent"
                        class=""/>
           <q-btn icon="content_copy" dense
-                 v-on:click="$emit('copy', msg._msg)">
+                 v-on:click="$emit(
+                   'copy',
+                   utils.htmlToString(msg._msg))">
             <q-tooltip class="text-subtitle2">Copy</q-tooltip>
           </q-btn>
           <template v-if="msg._isFile">
@@ -82,7 +84,7 @@
             <div class="mt2 p2 fmt_border rounded text-white"
                  :class="{'bg-primary': sent,
                     'surface': !sent}">
-              <div v-html="replySrc.msg"></div>
+              <div class="markedView" v-html="replySrc.msg"></div>
               <span class="text-xs opacity-60 text-weight-medium">
                 {{ replySrc._ts }}
               </span>
@@ -102,7 +104,8 @@
                                            items-center
                                            justify-center
                                            min-w-[300px]">
-                    <q-img :src="msg._msgURL" fit="contain" loading="eager"/>
+                    <q-img :src="msg._msgURL" fit="contain" loading="eager"
+                           style="max-height: calc(100% - 9rem)"/>
                   </q-carousel-slide>
                   <template v-slot:control>
                     <q-carousel-control
@@ -111,29 +114,40 @@
                       position="bottom-left"
                       :offset="[0, 0]">
                       <div class="flex row gap-2 items-center
-                                  surface wfull pl4 pr14">
-                        <span class="text-subtitle2">{{ msg._ts }}:</span>
-                        <template v-if="msg._fileName">
-                          <span class="text-subtitle2">{{ msg._fileName }}</span>
-                        </template>
-                        <template v-else>
-                          <span class="text-subtitle2 italic">(No Filename)</span>
-                        </template>
+                                  background wfull
+                                  pl4 pr14 pt1 h-18
+                                  fmt_border_top">
+                        <div class="hfull">
+                          <div>
+                            <span class="text-subtitle2">{{ msg._ts }}:</span>
+                            <template v-if="msg._fileName">
+                              <span class="text-subtitle2">{{ msg._fileName }}</span>
+                            </template>
+                            <template v-else>
+                              <span class="text-subtitle2 italic">(No Filename)</span>
+                            </template>
+                          </div>
+                          <div v-if="msg.reacts && msg.reacts.length > 0"
+                               class="flex relative pt1 pb2">
+                            <div v-for="reaction in msg.reacts" :key="reaction.t"
+                                 style="padding: 1px 4px 1px 4px; margin-right: 4px; border-radius: 5px"
+                                 class="fmt_border cursor-pointer
+                                        flex row items-center gap-1"
+                                 :title="reaction.src.toString() + ' reacted to this message.'"
+                                 v-on:click="$emit('react', msg.uid, reaction.t)"
+                                 :id="'react_' + msg.uid + '_' + reaction.t">
+                              <q-icon v-if="reaction.t === '+'" name="thumb_up"
+                                      class=""/>
+                              <q-icon v-else-if="reaction.t === '-'" name="thumb_down"
+                                      class=""/>
+                              <span v-else>{{ reaction.t }}</span>
+                              <span class="text-sm font-bold">
+                                {{ reaction.src.length }}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
                         <q-btn-group flat class="surface mlauto">
-                          <q-btn icon="reply" dense
-                                 v-on:click="$emit('reply', msg.uid)">
-                            <q-tooltip class="text-subtitle2">Reply</q-tooltip>
-                          </q-btn>
-                          <q-btn v-if="sent" icon="edit" dense
-                                 v-on:click="$emit('edit', msg.uid)">
-                            <q-tooltip class="text-subtitle2">Edit</q-tooltip>
-                          </q-btn>
-                          <q-btn v-if="sent" icon="delete" dense
-                                 v-on:click="$emit('delete', msg.uid)">
-                            <q-tooltip class="text-subtitle2">Delete</q-tooltip>
-                          </q-btn>
-                          <q-separator vertical spaced color="transparent"
-                                       class=""/>
                           <q-btn icon="thumb_up" dense
                                  v-on:click="$emit('react', msg.uid, '+')">
                             <q-tooltip class="text-subtitle2">Upvote</q-tooltip>
@@ -149,7 +163,9 @@
                           <q-separator vertical spaced color="transparent"
                                        class=""/>
                           <q-btn icon="content_copy" dense
-                                 v-on:click="$emit('copy', msg._msg)">
+                                 v-on:click="$emit(
+                                             'copy',
+                                             utils.htmlToString(msg._msg))">
                             <q-tooltip class="text-subtitle2">Copy</q-tooltip>
                           </q-btn>
                           <template v-if="msg._isFile">
@@ -168,18 +184,29 @@
                       v-if="!noInteraction"
                       position="bottom-right"
                       :offset="[0, 0]">
-                      <q-btn
-                        square dense color="primary"
-                        class="rounded-tl"
-                        :icon="fullscreen ? 'fullscreen_exit' : 'fullscreen'"
-                        @click="fullscreen = !fullscreen"
-                      />
+                      <template v-if="sent">
+                        <q-btn
+                          square dense color="primary"
+                          class="rounded-tl"
+                          :icon="fullscreen ? 'fullscreen_exit' : 'fullscreen'"
+                          @click="fullscreen = !fullscreen"
+                        />
+                      </template>
+                      <template v-else>
+                        <q-btn
+                          square dense color="brand-bg"
+                          text-color="brand-p"
+                          class="rounded-tl"
+                          :icon="fullscreen ? 'fullscreen_exit' : 'fullscreen'"
+                          @click="fullscreen = !fullscreen"
+                        />
+                      </template>
                     </q-carousel-control>
                   </template>
                 </q-carousel>
               </div>
             </div>
-            <div class="pt2" v-html="msg._msg"></div>
+            <div class="pt2 markedView" v-html="msg._msg"></div>
           </template>
           <template v-else-if="msg._mType === 'Audio'">
             <div class="clientMessage">
@@ -193,7 +220,7 @@
                 Your browser does not support playing audio.
               </audio>
             </div>
-            <div class="pt2" v-html="msg._msg"></div>
+            <div class="pt2 markedView" v-html="msg._msg"></div>
           </template>
           <template v-else-if="msg._isFile">
             <div class="clientMessage">
@@ -205,10 +232,10 @@
                 </span>
               </div>
             </div>
-            <div class="pt2" v-html="msg._msg"></div>
+            <div class="pt2 markedView" v-html="msg._msg"></div>
           </template>
           <template v-else>
-            <div v-html="msg._msg"></div>
+            <div class="markedView" v-html="msg._msg"></div>
           </template>
           <div v-if="msg.e"
                class="flex row gap-1 items-center
@@ -244,6 +271,9 @@
 </template>
 
 <script>
+
+import wikiricUtils from 'src/libs/wikiric-utils'
+
 export default {
   name: 'ChatMessageContent',
   props: {
@@ -268,7 +298,8 @@ export default {
   data () {
     return {
       fullscreen: false,
-      slide: 1
+      slide: 1,
+      utils: wikiricUtils
     }
   },
   mounted () {
