@@ -246,6 +246,12 @@ export default defineComponent({
           this.store.logIn(usr)
           token = await this.$connector.doLogin(usr._u, usr._p)
           autoStart = true
+          // Auto-renew token every 30 minutes
+          setInterval(() => {
+            this.$connector.doLogin(usr._u, usr._p).then((token) => {
+              api.defaults.headers.common.Authorization = 'Bearer ' + token
+            })
+          }, 1_800_000)
         }
       }
       if (token) {

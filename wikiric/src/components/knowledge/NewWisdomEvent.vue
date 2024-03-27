@@ -6,10 +6,10 @@
                   flex items-center justify-between">
         <span class="text-h5 fontbold pointer-events-none">
           <template v-if="!isEdit">
-            New Event
+            New {{ title }}
           </template>
           <template v-else>
-            Event
+            {{ title }}
           </template>
         </span>
         <div class="flex gap-4">
@@ -19,12 +19,19 @@
                    label="Delete Event" no-caps flat
                    class="px3 py2 fontbold"
                    @click="deleteDate"/>
+            <q-btn color="brand-bg" text-color="brand-p"
+                   icon="save"
+                   label="Save Changes" no-caps flat
+                   class="px3 py2 fontbold"
+                   @click="createDate"/>
           </template>
-          <q-btn color="brand-bg" text-color="brand-p"
-                 icon="save"
-                 label="Save Changes" no-caps flat
-                 class="px3 py2 fontbold"
-                 @click="createDate"/>
+          <template v-else>
+            <q-btn color="primary"
+                   icon="add"
+                   :label="'Create ' + title" no-caps
+                   class="px3 py2 fontbold"
+                   @click="createDate"/>
+          </template>
         </div>
       </div>
       <div class="flex row gap-6 wfull px4 py2 surface items-start justify-between">
@@ -131,7 +138,7 @@
         </q-input>
         <q-input
           for="event_desc"
-          label="Description"
+          label="Keywords"
           color="brand-p"
           label-color="brand-p"
           v-model="date.keys"
@@ -182,6 +189,10 @@ export default {
     isEdit: {
       type: Boolean,
       default: false
+    },
+    title: {
+      type: String,
+      default: 'Event'
     }
   },
   name: 'NewWisdomEvent',
@@ -211,52 +222,7 @@ export default {
       proxyTimeUntil: '',
       duration: '',
       contributorOptions: [],
-      filterOptions: [],
-      toolbarConfig: [
-        ['bold', 'italic', 'strike', 'underline'],
-        ['token', 'hr', 'link'],
-        [
-          {
-            label: this.$q.lang.editor.formatting,
-            icon: this.$q.iconSet.editor.formatting,
-            list: 'no-icons',
-            options: [
-              'h1',
-              'h2',
-              'h3',
-              'h4',
-              'h5',
-              'h6',
-              'p',
-              'code'
-            ]
-          },
-          {
-            label: this.$q.lang.editor.fontSize,
-            icon: this.$q.iconSet.editor.fontSize,
-            fixedLabel: true,
-            fixedIcon: true,
-            list: 'no-icons',
-            options: [
-              'size-3',
-              'size-4',
-              'size-5',
-              'size-6',
-              'size-7'
-            ]
-          }
-        ]
-      ],
-      toolbarFonts: {
-        arial: 'Arial',
-        arial_black: 'Arial Black',
-        comic_sans: 'Comic Sans MS',
-        courier_new: 'Courier New',
-        impact: 'Impact',
-        lucida_grande: 'Lucida Grande',
-        times_new_roman: 'Times New Roman',
-        verdana: 'Verdana'
-      }
+      filterOptions: []
     }
   },
   methods: {
@@ -271,41 +237,57 @@ export default {
       }
     },
     jsDateToQDate: function (date) {
-      const lux = DateTime.fromISO(date.due)
-      date._dueDate = lux.toISODate().replaceAll('-', '/')
-      date._dueTime = lux.toISOTime()
-      date._dueTimeFmt = lux.toLocaleString(DateTime.TIME_24_SIMPLE)
-      const luxt = DateTime.fromISO(date.duet)
-      date._dueDateUntil = luxt.toISODate().replaceAll('-', '/')
-      date._dueTimeUntil = luxt.toISOTime()
-      date._dueTimeUntilFmt = luxt.toLocaleString(DateTime.TIME_24_SIMPLE)
-      let dur = luxt.diff(lux).as('minutes')
-      if (dur >= 120) {
-        dur = dur / 60
-        date._duration = dur.toString() + ' hour'
-      } else {
-        date._duration = dur.toString() + ' minute'
+      let lux
+      let luxt
+      if (date.due) {
+        lux = DateTime.fromISO(date.due)
+        date._dueDate = lux.toISODate().replaceAll('-', '/')
+        date._dueTime = lux.toISOTime()
+        date._dueTimeFmt = lux.toLocaleString(DateTime.TIME_24_SIMPLE)
       }
-      if (dur > 1) date._duration += 's'
+      if (date.duet) {
+        luxt = DateTime.fromISO(date.duet)
+        date._dueDateUntil = luxt.toISODate().replaceAll('-', '/')
+        date._dueTimeUntil = luxt.toISOTime()
+        date._dueTimeUntilFmt = luxt.toLocaleString(DateTime.TIME_24_SIMPLE)
+        let dur = luxt.diff(lux).as('minutes')
+        if (dur >= 120) {
+          dur = dur / 60
+          date._duration = dur.toString() + ' hour'
+        } else {
+          date._duration = dur.toString() + ' minute'
+        }
+        if (dur > 1) date._duration += 's'
+      }
       return date
     },
     qDateToJSDate: function (date) {
-      let dateTmp = date._dueDate.replaceAll('/', '-')
-      let timeTmp = date._dueTime
-      date.due = DateTime.fromISO(`${dateTmp}T${timeTmp}`)
-      dateTmp = date._dueDateUntil.replaceAll('/', '-')
-      timeTmp = date._dueTimeUntil
-      date.duet = DateTime.fromISO(`${dateTmp}T${timeTmp}`)
+      let dateTmp
+      let timeTmp
+      if (date._dueDate) {
+        dateTmp = date._dueDate.replaceAll('/', '-')
+        timeTmp = date._dueTime
+        date.due = DateTime.fromISO(`${dateTmp}T${timeTmp}`)
+      }
+      if (date._dueDateUntil) {
+        dateTmp = date._dueDateUntil.replaceAll('/', '-')
+        timeTmp = date._dueTimeUntil
+        date.duet = DateTime.fromISO(`${dateTmp}T${timeTmp}`)
+      }
       return date
     },
     createDate: function () {
       this.date = this.qDateToJSDate(this.date)
       if (!this.isEdit) {
+        let dueString
+        if (this.date.due) {
+          dueString = this.date.due.toJSDate().toISOString()
+        }
         this.$emit('create', {
           t: this.date.t,
           desc: this.date.desc,
           keys: this.date.keys,
-          due: this.date.due.toJSDate().toISOString(),
+          due: dueString,
           duet: this.date.duet,
           coll: this.date.coll
         })
@@ -362,6 +344,7 @@ export default {
       this.date = this.jsDateToQDate(this.date)
     },
     getHumanReadableDateText: function (date, withTime = false, fullDate = false) {
+      if (!date) return ''
       const time = DateTime.fromISO(date).toLocaleString(DateTime.TIME_24_SIMPLE)
       const start = DateTime.fromISO(DateTime.fromISO(date).toISODate())
       const end = DateTime.fromISO(DateTime.now().toISODate())

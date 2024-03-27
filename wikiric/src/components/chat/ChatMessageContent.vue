@@ -329,10 +329,6 @@ export default {
 
 <style scoped>
 
-.markedView pre {
-  max-width: 15rem;
-}
-
 .q-img__image {
   object-fit: contain !important;
 }

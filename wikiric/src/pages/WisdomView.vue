@@ -186,7 +186,7 @@
                           </div>
                           <template v-if="wisdom.due">
                             <div class="flex items-center fmt_border
-                                    wfit rounded px2 py1">
+                                        wfit rounded px2 py1">
                               <q-icon name="access_time" size="1.2rem" class="mr1.5"/>
                               <span v-if="wisdom.done !== true">Due&nbsp;</span>
                               <span>{{ getHumanReadableDateText(wisdom.due, true, true) }}</span>
@@ -197,7 +197,7 @@
                     </div>
                   </div>
                 </div>
-                <div v-html="wisdom.desc"></div>
+                <div v-html="wisdom.desc" class="markedView"></div>
               </div>
               <div class="mx4 mt4">
                 <editor v-model="comment" ref="ref_editor"/>
@@ -222,7 +222,7 @@
                           {{ reply.name }},
                           <span class="text-subtitle2">{{ reply._ts }}:</span>
                         </p>
-                        <div v-html="reply.desc"></div>
+                        <div v-html="reply.desc" class="markedView"></div>
                       </div>
                     </template>
                   </div>

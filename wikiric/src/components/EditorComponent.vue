@@ -1,10 +1,14 @@
 <template>
   <template v-if="editor">
-    <div class="wfull surface rounded-2 overflow-hidden
+    <div class="wfull surface rounded-2
+                overflow-x-hidden
+                overflow-y-auto
                 fmt_border">
       <menu-bar :editor="editor"/>
       <editor-content :editor="editor"
-                      class="p3" :style="{ minHeight: eMinHeight }"/>
+                      class="p3 markedView"
+                      :style="{ minHeight: eMinHeight,
+                                height: eHeight}"/>
     </div>
   </template>
 </template>
@@ -31,16 +35,21 @@ export default {
       type: String,
       default: '1rem'
     },
+    eHeight: {
+      type: String,
+      default: 'inherit'
+    },
     preventEnter: {
       type: Boolean,
       default: false
     }
   },
-  emits: ['update:modelValue', 'kpress', 'fpaste'],
+  emits: ['update:modelValue', 'kpress', 'fpaste', 'autosave'],
   data () {
     return {
       editor: null,
-      bc: new BroadcastChannel('wikiric_internal')
+      bc: new BroadcastChannel('wikiric_internal'),
+      autoSaveTimer: -1
     }
   },
   watch: {
@@ -67,12 +76,21 @@ export default {
       if (custom != null) {
         customEmotes = Array.from(custom.map, ([name, value]) => (value))
       }
+      const preventEnter = this.preventEnter
       const shiftEnterExtension = Extension.create({
         addKeyboardShortcuts () {
           return {
             'Shift-Enter': ({ editor }) => {
-              editor.commands.enter()
-              return true
+              if (preventEnter) {
+                editor.commands.first(({ commands }) => [
+                  () => commands.newlineInCode(),
+                  () => commands.splitListItem('listItem'),
+                  () => commands.createParagraphNear(),
+                  () => commands.liftEmptyBlock(),
+                  () => commands.splitBlock()
+                ])
+                return true
+              }
             }
           }
         }
@@ -110,6 +128,7 @@ export default {
         ],
         content: this.modelValue,
         onUpdate: () => {
+          this.handleEmitAutoSave()
           this.$emit('update:modelValue', this.editor.getHTML())
         }
       })
@@ -122,6 +141,15 @@ export default {
       if (e.type === 'focus') {
         this.editor.commands.focus('end')
       }
+    },
+    handleEmitAutoSave: function () {
+      if (this.autoSaveTimer) {
+        clearTimeout(this.autoSaveTimer)
+      }
+      this.autoSaveTimer = setTimeout(() => {
+        this.$emit('autosave')
+        console.log('AUTOSAVE')
+      }, 2_000)
     }
   }
 }

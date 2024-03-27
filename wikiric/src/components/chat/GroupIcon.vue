@@ -66,8 +66,4 @@ export default {
 
 <style>
 
-.markedView pre {
-  max-width: 300px;
-}
-
 </style>

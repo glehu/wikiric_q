@@ -39,9 +39,9 @@
                   Toggle&nbsp;Sidebar
                 </q-tooltip>
               </q-btn>
-              <q-toolbar-title class="text-subtitle1 sm:text-lg">
+              <q-toolbar-title class="text-subtitle1">
                 <q-breadcrumbs active-color="brand-p">
-                  <q-breadcrumbs-el label="PageTemplate"/>
+                  <q-breadcrumbs-el label="REPLACE_THIS_TEXT"/>
                 </q-breadcrumbs>
               </q-toolbar-title>
             </q-toolbar>

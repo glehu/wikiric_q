@@ -84,10 +84,6 @@ export default {
 
 <style>
 
-.markedView pre {
-  max-width: 300px;
-}
-
 .sender_avatar {
   object-fit: cover !important;
   max-width: 100% !important;

@@ -1,14 +1,14 @@
 <template>
-  <q-page class="full-height full-width flex items-center justify-center">
+  <q-page class="full-height full-width flex">
     <q-layout
       view="lhh LpR lff"
       container
-      style="height: calc(100dvh - 52px)"
+      :style="{height: eHeight}"
       class="overflow-hidden no-scroll">
       <q-drawer
         side="left"
         v-model="sidebarLeft"
-        show-if-above
+        :show-if-above="!isComponent"
         :width="300"
         :breakpoint="768"
         class="surface-variant hfit">
@@ -20,12 +20,14 @@
                    @click="toggleSidebarLeft">
             </q-btn>
           </q-toolbar>
-          <q-btn flat icon="sym_o_arrow_left_alt"
-                 align="left" class="wfull pl4 mt2"
-                 no-caps
-                 @click="clickedBack">
-            <span class="ml4 text-body1">Back</span>
-          </q-btn>
+          <template v-if="!isComponent">
+            <q-btn flat icon="sym_o_arrow_left_alt"
+                   align="left" class="wfull pl4 mt2"
+                   no-caps
+                   @click="clickedBack">
+              <span class="ml4 text-body1">Back</span>
+            </q-btn>
+          </template>
         </q-scroll-area>
       </q-drawer>
       <q-page-container>
@@ -49,13 +51,15 @@
               </q-toolbar-title>
             </q-toolbar>
           </q-page-sticky>
-          <q-btn flat
-                 icon="sym_o_arrow_left_alt"
-                 label="Back"
-                 class="md:hidden fmt_border ml4 mb3 rounded-2
+          <template v-if="!isComponent">
+            <q-btn flat
+                   icon="sym_o_arrow_left_alt"
+                   label="Back"
+                   class="md:hidden fmt_border ml4 mb3 rounded-2
                         surface-variant"
-                 @click="clickedBack">
-          </q-btn>
+                   @click="clickedBack">
+            </q-btn>
+          </template>
           <template v-if="!knowledgeExists">
             <div class="wfull hfull flex column items-center justify-center">
               <div class="p8 surface rounded-2">
@@ -133,6 +137,10 @@ export default {
     chatID: {
       type: String,
       default: ''
+    },
+    eHeight: {
+      type: String,
+      default: 'calc(100dvh - 52px)'
     }
   },
   name: 'ProjectManagement',
@@ -142,6 +150,7 @@ export default {
   },
   data () {
     return {
+      isComponent: false,
       fab: false,
       sidebarLeft: false,
       groupID: undefined,
@@ -169,9 +178,11 @@ export default {
   created () {
     if (this.chatID) {
       this.groupID = this.chatID
+      this.isComponent = true
     } else {
       const paramID = this.$route.query.id
       if (paramID) this.groupID = paramID
+      this.isComponent = false
     }
     const eventUpdater = this.eventUpdated
     const eventOpener = this.eventClicked

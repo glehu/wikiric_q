@@ -139,7 +139,7 @@
         <p class="text-body2 fontbold mt4 mb2">
           Content
         </p>
-        <div class="wfull max-w-3xl relative">
+        <div class="wfull relative">
           <editor id="wisdom_desc"
                   ref="wisdom_desc"
                   v-model="wisdom.desc"/>

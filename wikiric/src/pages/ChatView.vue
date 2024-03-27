@@ -34,6 +34,11 @@
                  @click="$router.push('/groups')">
             <span class="ml4 text-body1">Groups</span>
           </q-btn>
+          <q-toolbar>
+            <q-toolbar-title class="text-lg">
+              Group
+            </q-toolbar-title>
+          </q-toolbar>
           <q-btn flat icon="sym_o_settings"
                  align="left" class="wfull pl4"
                  no-caps
@@ -48,9 +53,7 @@
           </q-btn>
           <q-toolbar>
             <q-toolbar-title class="text-lg">
-              <span v-if="this.chatroom.subc">
-                Apps
-              </span>
+              Apps
             </q-toolbar-title>
           </q-toolbar>
           <q-btn icon="sym_o_school" flat no-caps
@@ -63,7 +66,19 @@
                  align="left"
                  class="wfull"
                  @click="gotoProjectManagement">
-            <span class="ml4 text-body1">Projects</span>
+            <span class="ml4 text-body1">Calendar</span>
+          </q-btn>
+          <q-btn icon="sym_o_view_week" flat no-caps
+                 align="left"
+                 class="wfull"
+                 @click="gotoPlanner">
+            <span class="ml4 text-body1">Planner</span>
+          </q-btn>
+          <q-btn icon="sym_o_dashboard_customize" flat no-caps
+                 align="left"
+                 class="wfull"
+                 @click="gotoStudio">
+            <span class="ml4 text-body1">Studio</span>
           </q-btn>
           <q-toolbar>
             <q-toolbar-title class="text-lg">
@@ -1788,6 +1803,10 @@ export default {
         }
         if (done) break
       }
+      this.internal.postMessage({
+        app: 'editor',
+        type: 'focus'
+      })
     },
     /**
      *
@@ -1830,6 +1849,10 @@ export default {
         }
         if (done) break
       }
+      this.internal.postMessage({
+        app: 'editor',
+        type: 'focus'
+      })
     },
     /**
      *
@@ -2229,6 +2252,18 @@ export default {
       this.manageKeyListeners(true)
       this.manageDocumentListeners(true)
       this.$router.push(`/projects?id=${this.chatID}`)
+    },
+    gotoPlanner: function () {
+      if (!this.chatID) return
+      this.manageKeyListeners(true)
+      this.manageDocumentListeners(true)
+      this.$router.push(`/planner?id=${this.chatID}`)
+    },
+    gotoStudio: function () {
+      if (!this.chatID) return
+      this.manageKeyListeners(true)
+      this.manageDocumentListeners(true)
+      this.$router.push(`/studio?id=${this.chatID}`)
     },
     dragOverHandler: function (ev) {
       ev.preventDefault()

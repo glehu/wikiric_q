@@ -788,27 +788,45 @@ input:checked {
 }
 
 .markedView h1 {
-  @apply text-3xl mb-6 mt-10 font-bold;
+  font-size: 3rem; /* 20.0px */
+  font-weight: bold;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
 }
 
 .markedView h2 {
-  @apply text-2xl mb-6 mt-8 font-bold;
+  font-size: 2.6rem; /* 20.0px */
+  font-weight: bold;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
 }
 
 .markedView h3 {
-  @apply text-xl mb-4 mt-8 font-bold;
+  font-size: 2.4rem; /* 20.0px */
+  font-weight: bold;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
 }
 
 .markedView h4 {
-  @apply text-xl mb-4 mt-8 font-bold;
+  font-size: 2.2rem; /* 20.0px */
+  font-weight: bold;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
 }
 
 .markedView h5 {
-  @apply text-lg mb-4 mt-6 font-bold;
+  font-size: 1.5rem; /* 18.0px */
+  font-weight: bold;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .markedView h6 {
-  @apply text-lg my-2 font-bold;
+  font-size: 1.3rem; /* 18.0px */
+  font-weight: bold;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
 }
 
 .markedView code {
@@ -818,11 +836,13 @@ input:checked {
   color: var(--md-sys-color-on-background);
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
-  font-size: 0.8rem;
-  line-height: 1.25rem;
+  font-size: 1rem;
+  line-height: 1.3rem;
 }
 
 .markedView pre {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
   padding: 0.10rem 0.25rem;
   background-color: var(--md-sys-color-background);
 }
@@ -833,8 +853,8 @@ input:checked {
   color: var(--md-sys-color-on-background);
   margin-top: 0.5rem;
   margin-bottom: 0.5rem;
-  font-size: 0.8rem;
-  line-height: 1.25rem;
+  font-size: 1rem;
+  line-height: 1.3rem;
 }
 
 hr {
@@ -1079,7 +1099,6 @@ pre {
 
 pre {
   overflow: auto;
-  margin: 0 !important;
 }
 
 .q-message-text--sent {
@@ -1108,4 +1127,18 @@ pre {
 
 *::-webkit-scrollbar-track {
   background-color: var(--md-sys-color-background) !important;
+}
+
+@media (max-width: 768px) {
+  .markedView pre {
+    max-width: 80dvw;
+    overflow-x: auto;
+  }
+}
+
+@media (min-width: 769px) {
+  .markedView pre {
+    max-width: 50dvw;
+    overflow-x: auto;
+  }
 }

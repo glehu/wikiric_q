@@ -21,32 +21,32 @@
               <q-icon name="search" class=""/>
             </template>
           </q-input>
-          <div class="p1 mt6 flex gap-x-4 gap-y-2">
-            <q-circular-progress
-              show-value
-              font-size="14px"
-              :value="storagePercentage"
-              size="75px"
-              :thickness="0.22"
-              color="primary"
-              track-color="grey-3"
-              class="fontbold">
-              {{ storagePercentage }}%
-            </q-circular-progress>
-            <div>
-              <p class="text-subtitle2">
-                <span class="fontbold">
-                  {{ snippets.length }} files
-                </span>
-                saved in this group
-              </p>
-              <p class="text-subtitle2">
-                <span class="fontbold">
-                  {{ totalMBString }} MB
-                </span>
-                of {{ maxMB }} MB stored
-              </p>
-            </div>
+        </div>
+        <div class="p4 my2 flex gap-x-4 gap-y-2">
+          <q-circular-progress
+            show-value
+            font-size="14px"
+            :value="storagePercentage"
+            size="75px"
+            :thickness="0.22"
+            color="primary"
+            track-color="grey-3"
+            class="fontbold">
+            {{ storagePercentage }}%
+          </q-circular-progress>
+          <div>
+            <p class="text-subtitle2">
+              <span class="fontbold">
+                {{ snippets.length }} files
+              </span>
+              saved in this group
+            </p>
+            <p class="text-subtitle2">
+              <span class="fontbold">
+                {{ totalMBString }} MB
+              </span>
+              of {{ maxMB }} MB stored
+            </p>
           </div>
         </div>
         <template v-if="snippets.length < 1">
@@ -58,7 +58,7 @@
         <template v-else>
           <template v-for="file in snippets" :key="file">
             <div v-if="queryValid(file)"
-                 class="wfull hauto p4 background flex gap-4">
+                 class="wfull hauto px3 pb3 background flex gap-4">
               <div class="wfull">
                 <div class="rounded-2 fmt_border p3
                             flex column surface">
@@ -153,7 +153,7 @@ export default {
       totalMB: 0,
       totalMBString: '',
       storagePercentage: 0,
-      maxMB: 1024
+      maxMB: 2048
     }
   },
   methods: {
@@ -176,6 +176,7 @@ export default {
           for (let i = 0; i < this.snippets.length; i++) {
             this.totalMB += this.snippets[i].mb
             this.snippets[i].pth = this.store.serverIP + this.snippets[i].pth
+            this.snippets[i].mb = this.snippets[i].mb.toFixed(2)
             if (this.snippets[i].type === 'emote') {
               this.snippets[i].emote = true
               this.snippets[i].ph = ':' + this.snippets[i].t.split('.')[0] + ':'

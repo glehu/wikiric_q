@@ -25,6 +25,12 @@ const routes = [{
   }, {
     path: 'projects',
     component: () => import('pages/ProjectManagement.vue')
+  }, {
+    path: 'planner',
+    component: () => import('pages/PlannerView.vue')
+  }, {
+    path: 'studio',
+    component: () => import('pages/StudioSandboxView.vue')
   }]
 }, {
   path: '/:catchAll(.*)*',

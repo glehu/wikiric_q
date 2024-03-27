@@ -42,25 +42,19 @@ export default {
           isActive: () => this.editor.isActive('strike')
         },
         {
-          icon: 'sym_o_border_color',
-          title: 'Highlight',
-          action: () => this.editor.chain().focus().toggleHighlight().run(),
-          isActive: () => this.editor.isActive('highlight')
-        },
-        {
           type: 'divider'
-        },
-        {
-          icon: 'sym_o_format_h3',
-          title: 'Heading 3',
-          action: () => this.editor.chain().focus().toggleHeading({ level: 3 }).run(),
-          isActive: () => this.editor.isActive('heading', { level: 3 })
         },
         {
           icon: 'sym_o_format_h4',
           title: 'Heading 4',
           action: () => this.editor.chain().focus().toggleHeading({ level: 4 }).run(),
           isActive: () => this.editor.isActive('heading', { level: 4 })
+        },
+        {
+          icon: 'sym_o_format_h5',
+          title: 'Heading 5',
+          action: () => this.editor.chain().focus().toggleHeading({ level: 5 }).run(),
+          isActive: () => this.editor.isActive('heading', { level: 5 })
         },
         {
           icon: 'sym_o_format_paragraph',
