@@ -468,19 +468,19 @@ export default defineComponent({
       }
     }).finally(() => {
       // Set app's color scheme
-      if (colorTheme.value === 'auto') {
+      if (colorTheme.value === 'light') {
+        $q.dark.set(false)
+        document.documentElement.setAttribute('data-theme', 'light')
+      } else if (colorTheme.value === 'dark') {
+        $q.dark.set(true)
+        document.documentElement.setAttribute('data-theme', 'dark')
+      } else {
         $q.dark.set('auto')
         if ($q.dark.isActive) {
           document.documentElement.setAttribute('data-theme', 'dark')
         } else {
           document.documentElement.setAttribute('data-theme', 'light')
         }
-      } else if (colorTheme.value === 'light') {
-        $q.dark.set(false)
-        document.documentElement.setAttribute('data-theme', 'light')
-      } else if (colorTheme.value === 'dark') {
-        $q.dark.set(true)
-        document.documentElement.setAttribute('data-theme', 'dark')
       }
     })
 
