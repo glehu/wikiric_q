@@ -744,13 +744,11 @@ input:checked {
 
 .markedView ul {
   list-style: disc inside;
-  margin-left: 1rem; /* 16.0px */
   margin-bottom: 0.5rem; /* 8.0px */
 }
 
 .markedView ol {
   list-style: decimal inside;
-  margin-left: 1rem; /* 16.0px */
   margin-bottom: 0.5rem; /* 8.0px */
 }
 
@@ -858,6 +856,7 @@ input:checked {
 }
 
 hr {
+  margin: 1rem 0 1rem 0 !important;
   border: 1px solid var(--md-sys-color-outline-variant);
 }
 
@@ -872,6 +871,7 @@ hr {
 .markedView blockquote {
   padding: 0.5rem 1rem;
   border-radius: 0.25rem;
+  margin-top: 1rem;
   margin-bottom: 1rem;
   border-left: 8px solid var(--md-sys-color-tertiary-container);
   background-color: var(--md-sys-color-tertiary);

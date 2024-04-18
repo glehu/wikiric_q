@@ -274,6 +274,13 @@
                     </q-chat-message>
                   </template>
                 </div>
+                <div class="wfull flex justify-center mb16">
+                  <q-card flat class="px4 py2">
+                    <p class="text-body1">
+                      Welcome to {{ channel.t }}, {{ store.user.username }}.
+                    </p>
+                  </q-card>
+                </div>
               </div>
             </div>
             <q-page-sticky id="ref_editor_container"
@@ -1504,6 +1511,7 @@ export default {
         }
       } else {
         sesh.lastChannelID = ''
+        this.channel.t = 'General'
       }
       await dbSetSession(this.chatID, sesh)
       // Get active members + send online message

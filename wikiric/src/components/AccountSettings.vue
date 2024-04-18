@@ -81,6 +81,21 @@
             </q-item-label>
           </q-item-section>
         </q-item>
+        <q-item tag="label">
+          <q-item-section avatar top>
+            <q-select :options="colorSchemes"
+                      v-model="user.colorTheme"
+                      @update:model-value="updateUserData(false)"/>
+          </q-item-section>
+          <q-item-section>
+            <q-item-label class="fontbold">
+              Color Scheme
+            </q-item-label>
+            <q-item-label caption>
+              Sets the app's colors to either light or dark
+            </q-item-label>
+          </q-item-section>
+        </q-item>
         <p class="text-h6 my4 fontbold ml2">Auto-Start</p>
         <q-item tag="label">
           <q-item-section avatar top>
@@ -116,10 +131,12 @@ export default {
         instantLogin: false,
         forceMac: false,
         forceWin: false,
+        colorTheme: 'auto',
         startingView: '/'
       },
       userExists: false,
-      startingViews: ['/', '/groups']
+      startingViews: ['/', '/groups'],
+      colorSchemes: ['auto', 'light', 'dark']
     }
   },
   created () {
@@ -150,6 +167,9 @@ export default {
       if (this.user.startingView === null || this.user.startingView === undefined) {
         this.user.startingView = '/'
       }
+      if (this.user.colorTheme === null || this.user.colorTheme === undefined) {
+        this.user.colorTheme = 'auto'
+      }
     },
     updateUserData: async function (isOSChange) {
       // Is there an existing user?
@@ -167,6 +187,21 @@ export default {
       }
       if (this.user.forceWin && usr.forceMac) {
         this.user.forceMac = false
+      }
+      // Set app's color scheme
+      if (this.user.colorTheme === 'auto') {
+        this.$q.dark.set('auto')
+        if (this.$q.dark.isActive) {
+          document.documentElement.setAttribute('data-theme', 'dark')
+        } else {
+          document.documentElement.setAttribute('data-theme', 'light')
+        }
+      } else if (this.user.colorTheme === 'light') {
+        this.$q.dark.set(false)
+        document.documentElement.setAttribute('data-theme', 'light')
+      } else if (this.user.colorTheme === 'dark') {
+        this.$q.dark.set(true)
+        document.documentElement.setAttribute('data-theme', 'dark')
       }
       // Update data
       await dbSetData('usr', this.user)

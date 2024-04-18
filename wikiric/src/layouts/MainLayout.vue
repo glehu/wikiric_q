@@ -189,7 +189,7 @@
 <script>
 import { defineComponent, ref } from 'vue'
 import EssentialLink from 'components/EssentialLink.vue'
-import { debounce } from 'quasar'
+import { debounce, useQuasar } from 'quasar'
 import { dbGetData, dbGetGroups, dbGetTimestamp, dbSetTimestamp } from 'src/libs/wikistore'
 import { api } from 'boot/axios'
 import { useStore } from 'stores/wikistate'
@@ -393,6 +393,7 @@ export default defineComponent({
     const queryGroupResults = ref([])
     const forceMacLook = ref(false)
     const forceWinLook = ref(false)
+    const colorTheme = ref('auto')
     const store = useStore()
 
     // *** BACKEND CONNECTOR ***
@@ -458,10 +459,28 @@ export default defineComponent({
       handleConnectorMessage(event.data)
     }
 
+    const $q = useQuasar()
     dbGetData('usr').then((usr) => {
       if (usr && usr._u) {
         forceMacLook.value = usr.forceMac
         forceWinLook.value = usr.forceWin
+        colorTheme.value = usr.colorTheme
+      }
+    }).finally(() => {
+      // Set app's color scheme
+      if (colorTheme.value === 'auto') {
+        $q.dark.set('auto')
+        if ($q.dark.isActive) {
+          document.documentElement.setAttribute('data-theme', 'dark')
+        } else {
+          document.documentElement.setAttribute('data-theme', 'light')
+        }
+      } else if (colorTheme.value === 'light') {
+        $q.dark.set(false)
+        document.documentElement.setAttribute('data-theme', 'light')
+      } else if (colorTheme.value === 'dark') {
+        $q.dark.set(true)
+        document.documentElement.setAttribute('data-theme', 'dark')
       }
     })
 

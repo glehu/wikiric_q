@@ -110,6 +110,17 @@
               <div class="hfull wfull surface
                           rounded
                           px4 pt2 pb4">
+                <template v-if="wisdom.type === 'question' && wisdom.done !== true">
+                  <div class="wfull pb1">
+                    <p class="my2 p2
+                              border-l-8 border-l-orange-600
+                              surface-variant
+                              text-sm rounded w-fit fmt_border">
+                      This question is unanswered (or at least not confirmed yet)!
+                      <br>Help by submitting a comment, providing useful information on this topic.
+                    </p>
+                  </div>
+                </template>
                 <p class="text-h4 fontbold">{{ wisdom.t }}</p>
                 <template v-if="wisdom.due">
                   <div class="flex row gap-6 px2 py1
@@ -152,7 +163,7 @@
                             background rounded">
                   <div class="flex gap-2 items-start justify-between">
                     <div>
-                      <div class="flex gap-x-2">
+                      <div class="flex gap-x-2 pb1">
                         <q-breadcrumbs active-color="brand-p" class="px1 mt1">
                           <q-breadcrumbs-el icon="person"
                                             :label="wisdom.usr"/>
@@ -224,6 +235,14 @@
                         </p>
                         <div v-html="reply.desc" class="markedView"></div>
                       </div>
+                      <template
+                        v-if="wisdom.type === 'question' && wisdom.done !== true && wisdom.usr === store.user.username">
+                        <div class="mb-4 mt-1 w-full flex">
+                          <q-btn @click="finishQuestion(wisdom, reply)"
+                                 color="primary"
+                                 label="Accept Answer"/>
+                        </div>
+                      </template>
                     </template>
                   </div>
                 </template>
@@ -256,6 +275,7 @@ import WisdomEdit from 'components/knowledge/WisdomEdit.vue'
 import { dbGetDisplayName } from 'src/libs/wikistore'
 import TaskShare from 'components/knowledge/TaskShare.vue'
 import Editor from 'components/EditorComponent.vue'
+import { useStore } from 'stores/wikistate'
 
 export default {
   props: {
@@ -285,6 +305,7 @@ export default {
   },
   data () {
     return {
+      store: useStore(),
       sidebarLeft: false,
       wisdomId: '',
       wisdom: {
@@ -776,6 +797,24 @@ export default {
       setTimeout(() => {
         this.deleteCounter = 0
       }, 5000)
+    },
+    finishQuestion: async function (wisdom, comment) {
+      if (wisdom == null) return
+      return new Promise((resolve) => {
+        api({
+          url: `wisdom/private/accept/${comment.uid}`
+        })
+        .then(() => {
+          this.getWisdom()
+        })
+        .then(() => {
+          this.getRelated()
+        })
+        .catch((err) => {
+          console.debug(err.message)
+        })
+        .finally(() => resolve())
+      })
     }
   }
 }
