@@ -18,7 +18,9 @@ import StarterKit from '@tiptap/starter-kit'
 import { Editor, EditorContent, Extension } from '@tiptap/vue-3'
 import MenuBar from 'components/MenuBar.vue'
 import Emoji from '@tiptap-pro/extension-emoji'
-import suggestion from 'components/MenuSuggestion.js'
+import Mention from '@tiptap/extension-mention'
+import emojiSuggestion from 'components/EmojiSuggestion.js'
+import mentionSuggestion from 'components/MentionSuggestion.js'
 import { dbGetData } from 'src/libs/wikistore'
 
 export default {
@@ -119,10 +121,16 @@ export default {
           Emoji.configure({
             emojis: customEmotes,
             enableEmoticons: false,
-            suggestion,
+            suggestion: emojiSuggestion,
             HTMLAttributes: {
               class: 'wkrg-emote'
             }
+          }),
+          Mention.configure({
+            HTMLAttributes: {
+              class: 'mention'
+            },
+            suggestion: mentionSuggestion
           }),
           shiftEnterExtension
         ],
