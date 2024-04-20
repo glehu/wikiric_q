@@ -82,9 +82,9 @@
               style="background-color: transparent">
       <div ref="dialogSearchContainer"
            id="dialogSearchContainer"
-           class="pt2 w-[75dvw] max-w-xl
+           class="pt2 wfull sm:w-[75dvw] sm:max-w-xl
                   fmt_border
-                  fixed top-[60px]"
+                  fixed top-0 sm:top-[60px]"
            style="background-color: rgba(var(--rgb-sys-color-surface), 0.8)">
         <q-input
           for="searchEverything"
@@ -106,21 +106,23 @@
             </p>
             <q-item v-for="res in queryResults" :key="res"
                     clickable dense
-                    class="mt2"
+                    class="mt2 ml2"
                     @click="gotoLink(res.link)">
               <q-item-section>
                 <q-item-label class="fontbold
-                                     flex items-center
+                                     flex row items-center
                                      gap-3">
                   <template v-if="res.icon">
                     <q-icon :name="res.icon" size="1.6rem"/>
                   </template>
-                  <span class="text-body2 fontbold">
-                    {{ res.t }}
-                  </span>
-                  <span class="text-body2">
-                    {{ res.desc }}
-                  </span>
+                  <div>
+                    <p class="text-body2 fontbold">
+                      {{ res.t }}
+                    </p>
+                    <p class="text-xs text-weight-regular">
+                      {{ res.desc }}
+                    </p>
+                  </div>
                 </q-item-label>
               </q-item-section>
             </q-item>
@@ -131,7 +133,7 @@
             </p>
             <q-item v-for="res in queryGroupResults" :key="res"
                     clickable dense
-                    class="mt2"
+                    class="mt2 ml2"
                     @click="gotoLink(res.link)">
               <q-item-section>
                 <q-item-label class="text-lg fontbold
@@ -140,12 +142,14 @@
                   <template v-if="res.icon">
                     <q-icon :name="res.icon" size="1.6rem"/>
                   </template>
-                  <span class="text-body2 fontbold">
-                    {{ res.t }}
-                  </span>
-                  <span class="text-body2">
-                    {{ res.desc }}
-                  </span>
+                  <div>
+                    <p class="text-body2 fontbold">
+                      {{ res.t }}
+                    </p>
+                    <p class="text-xs text-weight-regular">
+                      {{ res.desc }}
+                    </p>
+                  </div>
                 </q-item-label>
               </q-item-section>
             </q-item>
@@ -209,7 +213,7 @@ const linksList = [
   },
   {
     title: 'Chat',
-    caption: 'Your E2EE communication platform',
+    caption: 'Communication Platform',
     icon: 'code',
     link: '/groups'
   }
@@ -245,6 +249,8 @@ export default defineComponent({
         if (usr.instantLogin) {
           this.store.logIn(usr)
           token = await this.$connector.doLogin(usr._u, usr._p)
+          // Listen to connector messages
+          await this.$connector.doSync()
           autoStart = true
           // Auto-renew token every 30 minutes
           setInterval(() => {

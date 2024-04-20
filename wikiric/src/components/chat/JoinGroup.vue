@@ -112,14 +112,19 @@ export default {
       }).then(() => {
         sdk.doConnect(uuid, '', '', this.pw)
       }).then(() => {
+        let counter = 0
         this.loginInterval = setInterval(() => {
           if (sdk._isAuthorized) {
             this.$router.push(`/chat?id=${uuid}`)
             clearTimeout(this.loginInterval)
           } else {
-            this.handleJoinFailed()
+            counter += 1
+            if (counter === 10) {
+              this.handleJoinFailed()
+              clearTimeout(this.loginInterval)
+            }
           }
-        }, 10)
+        }, 100)
       })
       .catch((e) => {
         if (e) {

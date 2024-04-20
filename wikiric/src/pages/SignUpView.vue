@@ -1,12 +1,15 @@
 <template>
   <q-page class="full-height full-width flex items-center justify-center">
-    <form class="login flex" @submit.prevent="login">
+    <form class="login flex" @submit.prevent="register">
       <section class="flex justify-center p4 wfull surface rounded-2">
         <div class="md:mt-0">
           <p class="text-weight-bold text-h3 q-mb-lg">
-            Sign In
+            Welcome
           </p>
           <div class="mb-4">
+            <p class="fontbold mb1">
+              Login/Username:
+            </p>
             <q-input filled standout
                      required
                      v-model="user.email"
@@ -18,10 +21,22 @@
             />
           </div>
           <div class="mb-4">
+            <p class="fontbold mb1">
+              Public Name:
+            </p>
+            <q-input filled standout
+                     required
+                     v-model="user.displayName"
+                     label-color="brand-p"
+                     class="q-mb-xs"
+                     label="Display Name"
+            />
+          </div>
+          <div class="mb-4">
             <q-input filled standout
                      required
                      v-model="user.password"
-                     v-on:keyup.enter="login"
+                     v-on:keyup.enter="register"
                      label-color="brand-p"
                      type="password"
                      class="q-mb-xs"
@@ -34,24 +49,8 @@
           <div class="full-width flex column q-mt-lg">
             <q-btn color="primary"
                    class="wfull q-py-md text-weight-bold text-h6"
-                   label="Login"
-                   v-on:click="login">
-            </q-btn>
-            <q-checkbox label="Remember me"
-                        class="wfull pt2"
-                        v-model="user.doRemember"/>
-            <template v-if="user.doRemember">
-              <q-checkbox label="Auto-Login"
-                          class="wfull pt2"
-                          v-model="user.instantLogin"/>
-            </template>
-          </div>
-          <div class="flex items-center justify-between full-width q-mt-md">
-            <p class="no-pointer-events text-subtitle2 q-mb-none">No Account?</p>
-            <q-btn v-on:click="gotoRegister"
                    label="Sign Up"
-                   class="muArrow surface-variant
-                                  text-weight-bold">
+                   v-on:click="register">
             </q-btn>
           </div>
         </div>
@@ -68,7 +67,7 @@
 <script>
 import { api } from 'boot/axios'
 import { useStore } from 'stores/wikistate'
-import { dbGetData, dbSetData } from 'src/libs/wikistore'
+import { dbSetData } from 'src/libs/wikistore'
 
 export default {
   data () {
@@ -92,28 +91,12 @@ export default {
   },
   computed: {},
   mounted () {
-    this.checkRememberedUser()
   },
   methods: {
-    login () {
-      if (!this.isLoggedIn) {
-        // Bypass login for testing purposes
-        if (this.user.email === 'test@cwo') {
-          this.store.logIn({
-            email: 'test@cwo',
-            password: 'test',
-            token: '! Test Account - No Token In Offline Mode !'
-          })
-          this.$router.push(this.$route.query.redirect.toString() || '/')
-        } else {
-          // Regular login
-          this.serverLogin()
-        }
-      } else {
-        console.log('User already logged in.')
-      }
+    register () {
+      this.serverSignUp()
     },
-    async serverLogin (u = null, p = null, accountType = 'email') {
+    async serverSignUp (u = null, p = null, accountType = 'email') {
       if (!u) u = this.user.email
       if (!p) p = this.user.password
       if (accountType) {
@@ -122,21 +105,23 @@ export default {
         this.user.accountType = 'email'
       }
       api({
-        url: 'auth/private/signin',
-        auth: {
+        url: 'users/public/signup',
+        method: 'post',
+        data: {
           username: u,
+          displayName: this.user.displayName,
           password: p
         }
       })
       .then((data) => {
-        this.processLogin(data)
+        this.processSignUp(data)
       })
       .catch((err) => {
         this.$q.notify({
           color: 'negative',
           position: 'top-right',
-          message: 'Login Failed',
-          caption: 'Wrong username or password',
+          message: 'Sign-Up Failed',
+          caption: 'Maybe the username exists already?',
           actions: [
             {
               icon: 'close',
@@ -147,16 +132,17 @@ export default {
             }
           ]
         })
+        this.user.username = ''
         this.user.password = ''
         console.debug(err.message)
       })
     },
-    async processLogin (response) {
+    async processSignUp (response) {
       this.$q.notify({
         color: 'primary',
         position: 'top-right',
         message: `Welcome, ${response.data.username}!`,
-        caption: 'Login succeeded',
+        caption: 'Sign-Up succeeded',
         actions: [
           {
             icon: 'close',
@@ -188,31 +174,7 @@ export default {
       // Listen to connector messages
       await this.$connector.doSync()
       // Continue
-      let redirUrl = this.$route.query.redirect.toString() || '/'
-      if (redirUrl === '/login') {
-        redirUrl = '/account'
-      }
-      this.$router.replace(redirUrl)
-    },
-    gotoRegister () {
-      const redirect = this.$route.query.redirect
-      if (redirect) {
-        this.$router.push('/register?redirect=' + redirect)
-      } else {
-        this.$router.push('/register')
-      }
-    },
-    checkRememberedUser: async function () {
-      // Is there an existing user?
-      const usr = await dbGetData('usr')
-      if (!usr || !usr._u) return
-      this.user = usr
-      this.user.password = this.user._p
-      if (this.user.instantLogin) {
-        setTimeout(() => {
-          this.login()
-        }, 0)
-      }
+      this.$router.replace('/login?redirect=/account')
     }
   }
 }

@@ -234,6 +234,31 @@
             </div>
             <div class="pt2 markedView" v-html="msg._msg"></div>
           </template>
+          <template v-else-if="msg._mType === 'Task'">
+            <template v-if="wisdom === null">
+              <div class="flex items-center gap2 surface rounded px2">
+                <q-spinner-dots color="primary" size="2rem" class=""/>
+                <p class="text-body2">
+                  Loading...
+                </p>
+              </div>
+            </template>
+            <template v-else>
+              <div class="surface rounded p2">
+                <p class="mb2 rounded primary wfit text-body2 fontbold
+                          px1">
+                  Task
+                </p>
+                <p class="fontbold mb2">{{ wisdom.t }}</p>
+                <div class="markedView" v-html="wisdom.desc"></div>
+              </div>
+              <q-btn icon="north_east" dense no-caps unelevated
+                     align="left"
+                     label="View Task"
+                     class="text-md fontbold wfull"
+                     @click="gotoWisdom"/>
+            </template>
+          </template>
           <template v-else>
             <div class="markedView" v-html="msg._msg"></div>
           </template>
@@ -273,6 +298,8 @@
 <script>
 
 import wikiricUtils from 'src/libs/wikiric-utils'
+import { api } from 'boot/axios'
+import { DateTime } from 'luxon'
 
 export default {
   name: 'ChatMessageContent',
@@ -299,11 +326,14 @@ export default {
     return {
       fullscreen: false,
       slide: 1,
-      utils: wikiricUtils
+      utils: wikiricUtils,
+      wisdom: null
     }
   },
   mounted () {
     document.addEventListener('keydown', this.cmcHandleKeydown, false)
+    // Check if we need to load some external data
+    this.checkExternalData()
   },
   beforeUnmount () {
     document.removeEventListener('keydown', this.cmcHandleKeydown, false)
@@ -322,6 +352,39 @@ export default {
       if (e.key === 'Escape' && this.fullscreen) {
         this.fullscreen = false
       }
+    },
+    checkExternalData: function () {
+      if (this.msg._mType === 'Task') {
+        this.getWisdom()
+      }
+    },
+    getWisdom: function () {
+      if (!this.msg || this.msg._msg === '') return
+      const tmp = JSON.parse(this.msg._msg)
+      if (!tmp || !tmp.guid) return
+      const wisdomId = tmp.guid
+      return new Promise((resolve) => {
+        const url = 'wisdom/private/get/' + wisdomId
+        api({
+          url
+        }).then((response) => {
+          this.wisdom = response.data
+          this.wisdom._time = DateTime.fromISO(this.wisdom.ts)
+          this.wisdom._ts = this.getHumanReadableDateText(this.wisdom._time, true, true)
+          if (this.wisdom.keys) {
+            this.wisdom._keys = this.wisdom.keys.split(',').join(', ')
+          }
+        })
+        .catch((err) => {
+          console.debug(err.message)
+        })
+        .finally(() => {
+          resolve()
+        })
+      })
+    },
+    gotoWisdom: function () {
+      this.$router.push(`/wisdom?id=${this.wisdom.uid}`)
     }
   }
 }
