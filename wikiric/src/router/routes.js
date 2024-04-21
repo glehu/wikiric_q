@@ -34,6 +34,9 @@ const routes = [{
   }, {
     path: 'studio',
     component: () => import('pages/StudioSandboxView.vue')
+  }, {
+    path: 'feed',
+    component: () => import('pages/FeedView.vue')
   }]
 }, {
   path: '/:catchAll(.*)*',

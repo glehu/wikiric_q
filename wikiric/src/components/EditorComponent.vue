@@ -8,7 +8,8 @@
       <editor-content :editor="editor"
                       class="p3 markedView"
                       :style="{ minHeight: eMinHeight,
-                                height: eHeight}"/>
+                                height: eHeight,
+                                maxHeight: eMaxHeight}"/>
     </div>
   </template>
 </template>
@@ -22,6 +23,12 @@ import Mention from '@tiptap/extension-mention'
 import emojiSuggestion from 'components/EmojiSuggestion.js'
 import mentionSuggestion from 'components/MentionSuggestion.js'
 import { dbGetData } from 'src/libs/wikistore'
+import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight'
+import { common, createLowlight } from 'lowlight'
+import Image from '@tiptap/extension-image'
+import { FileHandler } from '@tiptap-pro/extension-file-handler'
+
+const lowlight = createLowlight(common)
 
 export default {
   components: {
@@ -40,6 +47,10 @@ export default {
     eHeight: {
       type: String,
       default: 'inherit'
+    },
+    eMaxHeight: {
+      type: String,
+      default: '100%'
     },
     preventEnter: {
       type: Boolean,
@@ -118,6 +129,7 @@ export default {
         },
         extensions: [
           StarterKit,
+          Image,
           Emoji.configure({
             emojis: customEmotes,
             enableEmoticons: false,
@@ -131,6 +143,42 @@ export default {
               class: 'mention'
             },
             suggestion: mentionSuggestion
+          }),
+          CodeBlockLowlight.configure({
+            lowlight
+          }),
+          FileHandler.configure({
+            allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif', 'image/webp'],
+            onDrop: (currentEditor, files, pos) => {
+              files.forEach(file => {
+                const fileReader = new FileReader()
+
+                fileReader.readAsDataURL(file)
+                fileReader.onload = () => {
+                  currentEditor.chain().insertContentAt(pos, {
+                    type: 'image',
+                    attrs: {
+                      src: fileReader.result
+                    }
+                  }).focus().run()
+                }
+              })
+            },
+            onPaste: (currentEditor, files) => {
+              files.forEach(file => {
+                const fileReader = new FileReader()
+
+                fileReader.readAsDataURL(file)
+                fileReader.onload = () => {
+                  currentEditor.chain().insertContentAt(currentEditor.state.selection.anchor, {
+                    type: 'image',
+                    attrs: {
+                      src: fileReader.result
+                    }
+                  }).focus().run()
+                }
+              })
+            }
           }),
           shiftEnterExtension
         ],
@@ -243,6 +291,73 @@ export default {
 
   mark {
     background-color: #FAF594;
+  }
+
+  pre {
+    background: #0D0D0D;
+    color: #FFF;
+    font-family: 'JetBrainsMono', monospace;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+
+    code {
+      color: inherit;
+      padding: 0;
+      background: none;
+      font-size: 0.8rem;
+    }
+
+    .hljs-comment,
+    .hljs-quote {
+      color: #616161;
+    }
+
+    .hljs-variable,
+    .hljs-template-variable,
+    .hljs-attribute,
+    .hljs-tag,
+    .hljs-name,
+    .hljs-regexp,
+    .hljs-link,
+    .hljs-name,
+    .hljs-selector-id,
+    .hljs-selector-class {
+      color: #F98181;
+    }
+
+    .hljs-number,
+    .hljs-meta,
+    .hljs-built_in,
+    .hljs-builtin-name,
+    .hljs-literal,
+    .hljs-type,
+    .hljs-params {
+      color: #FBBC88;
+    }
+
+    .hljs-string,
+    .hljs-symbol,
+    .hljs-bullet {
+      color: #B9F18D;
+    }
+
+    .hljs-title,
+    .hljs-section {
+      color: #FAF594;
+    }
+
+    .hljs-keyword,
+    .hljs-selector-tag {
+      color: #70CFF8;
+    }
+
+    .hljs-emphasis {
+      font-style: italic;
+    }
+
+    .hljs-strong {
+      font-weight: 700;
+    }
   }
 }
 

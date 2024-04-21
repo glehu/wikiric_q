@@ -80,6 +80,12 @@
                  @click="gotoStudio">
             <span class="ml4 text-body1">Studio</span>
           </q-btn>
+          <q-btn icon="sym_o_web_stories" flat no-caps
+                 align="left"
+                 class="wfull"
+                 @click="gotoFeed">
+            <span class="ml4 text-body1">Feed</span>
+          </q-btn>
           <q-toolbar>
             <q-toolbar-title class="text-lg">
               <span v-if="this.chatroom.subc">
@@ -124,7 +130,7 @@
         v-model="sidebarRight"
         :width="256"
         show-if-above
-        :breakpoint="1200"
+        :breakpoint="1280"
         class="background">
         <q-scroll-area class="fit">
           <q-toolbar class="fmt_border_bottom md:hidden">
@@ -382,6 +388,7 @@
               <div class="wfull max-w-3xl relative">
                 <editor ref="ref_editor"
                         v-model="newMessage"
+                        e-max-height="75dvh"
                         prevent-enter
                         @kpress="handleEditorKeyDown"
                         @fpaste="handleEditorPaste"/>
@@ -2275,6 +2282,12 @@ export default {
       this.manageDocumentListeners(true)
       this.$router.push(`/studio?id=${this.chatID}`)
     },
+    gotoFeed: function () {
+      if (!this.chatID) return
+      this.manageKeyListeners(true)
+      this.manageDocumentListeners(true)
+      this.$router.push(`/feed?id=${this.chatID}`)
+    },
     dragOverHandler: function (ev) {
       ev.preventDefault()
       this.isDragging = true
@@ -2551,6 +2564,77 @@ export default {
   color: var(--md-sys-color-on-background);
   font-weight: bold;
   font-size: 1em;
+}
+
+</style>
+
+<style lang="scss">
+
+.markedView pre {
+  background: #0D0D0D;
+  color: #FFF;
+  font-family: 'JetBrainsMono', monospace;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+
+  code {
+    color: inherit;
+    padding: 0;
+    background: none;
+    font-size: 0.8rem;
+  }
+
+  .hljs-comment,
+  .hljs-quote {
+    color: #616161;
+  }
+
+  .hljs-variable,
+  .hljs-template-variable,
+  .hljs-attribute,
+  .hljs-tag,
+  .hljs-name,
+  .hljs-regexp,
+  .hljs-link,
+  .hljs-name,
+  .hljs-selector-id,
+  .hljs-selector-class {
+    color: #F98181;
+  }
+
+  .hljs-number,
+  .hljs-meta,
+  .hljs-built_in,
+  .hljs-builtin-name,
+  .hljs-literal,
+  .hljs-type,
+  .hljs-params {
+    color: #FBBC88;
+  }
+
+  .hljs-string,
+  .hljs-symbol,
+  .hljs-bullet {
+    color: #B9F18D;
+  }
+
+  .hljs-title,
+  .hljs-section {
+    color: #FAF594;
+  }
+
+  .hljs-keyword,
+  .hljs-selector-tag {
+    color: #70CFF8;
+  }
+
+  .hljs-emphasis {
+    font-style: italic;
+  }
+
+  .hljs-strong {
+    font-weight: 700;
+  }
 }
 
 </style>

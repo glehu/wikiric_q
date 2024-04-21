@@ -1161,6 +1161,7 @@ pre {
 }
 
 .mention {
+  color: var(--md-sys-color-on-surface);
   background-color: var(--md-sys-color-surface-variant);
   font-size: 0.8rem;
   font-weight: bold;

@@ -8,7 +8,7 @@
           <q-btn flat label="Close" color="text-brand-p" v-close-popup/>
           <q-btn color="primary" no-caps
                  @click="handleSaveWisdom">
-            <span>Save Wisdom</span>
+            <span class="fontbold">Submit</span>
           </q-btn>
         </q-card-actions>
         <div v-if="typeChangeable"
@@ -48,94 +48,96 @@
             </template>
           </q-input>
         </div>
-        <div class="flex row gap-6 wfull px4 py2 items-start justify-between
+        <template v-if="wisdomType !== 'post'">
+          <div class="flex row gap-6 wfull px4 py2 items-start justify-between
                     fmt_border rounded mt4 mb1 background">
-          <div class="flex column gap-4">
-            <div class="flex row gap-2 items-center">
-              <p class="text-subtitle2 fontbold pointer-events-none w12">
-                From
-              </p>
-              <div class="flex row gap-2 items-center justify-between flex-grow">
-                <q-btn icon="event" flat dense no-caps
-                       class="wfit text-md fontbold" :label="getHumanReadableDateText(wisdom.due)">
-                  <q-popup-proxy @before-show="updateProxyDueDate" cover transition-show="scale"
-                                 transition-hide="scale">
-                    <q-date v-model="proxyDate">
-                      <div class="row items-center justify-end q-gutter-sm">
-                        <q-btn label="Cancel" color="primary" flat v-close-popup/>
-                        <q-btn label="OK" color="primary" flat @click="saveProxyDueDate" v-close-popup/>
-                      </div>
-                    </q-date>
-                  </q-popup-proxy>
-                </q-btn>
-                <q-btn icon="access_time" flat dense no-caps
-                       class="wfit text-md fontbold" :label="wisdom._dueTimeFmt">
-                  <q-popup-proxy @before-show="updateProxyDueTime" cover transition-show="scale"
-                                 transition-hide="scale">
-                    <q-time v-model="proxyTime">
-                      <div class="row items-center justify-end q-gutter-sm">
-                        <q-btn label="Cancel" color="primary" flat v-close-popup/>
-                        <q-btn label="OK" color="primary" flat @click="saveProxyDueTime" v-close-popup/>
-                      </div>
-                    </q-time>
-                  </q-popup-proxy>
-                </q-btn>
+            <div class="flex column gap-4">
+              <div class="flex row gap-2 items-center">
+                <p class="text-subtitle2 fontbold pointer-events-none w12">
+                  From
+                </p>
+                <div class="flex row gap-2 items-center justify-between flex-grow">
+                  <q-btn icon="event" flat dense no-caps
+                         class="wfit text-md fontbold" :label="getHumanReadableDateText(wisdom.due)">
+                    <q-popup-proxy @before-show="updateProxyDueDate" cover transition-show="scale"
+                                   transition-hide="scale">
+                      <q-date v-model="proxyDate">
+                        <div class="row items-center justify-end q-gutter-sm">
+                          <q-btn label="Cancel" color="primary" flat v-close-popup/>
+                          <q-btn label="OK" color="primary" flat @click="saveProxyDueDate" v-close-popup/>
+                        </div>
+                      </q-date>
+                    </q-popup-proxy>
+                  </q-btn>
+                  <q-btn icon="access_time" flat dense no-caps
+                         class="wfit text-md fontbold" :label="wisdom._dueTimeFmt">
+                    <q-popup-proxy @before-show="updateProxyDueTime" cover transition-show="scale"
+                                   transition-hide="scale">
+                      <q-time v-model="proxyTime">
+                        <div class="row items-center justify-end q-gutter-sm">
+                          <q-btn label="Cancel" color="primary" flat v-close-popup/>
+                          <q-btn label="OK" color="primary" flat @click="saveProxyDueTime" v-close-popup/>
+                        </div>
+                      </q-time>
+                    </q-popup-proxy>
+                  </q-btn>
+                </div>
+              </div>
+              <div class="flex row gap-2 items-center">
+                <p class="text-subtitle2 fontbold pointer-events-none w12">
+                  Until
+                </p>
+                <div class="flex row gap-2 items-center justify-between flex-grow">
+                  <q-btn icon="event" flat dense no-caps
+                         class="wfit text-subtitle2 fontbold" :label="getHumanReadableDateText(wisdom.duet)">
+                    <q-popup-proxy @before-show="updateProxyDueDateUntil" cover transition-show="scale"
+                                   transition-hide="scale">
+                      <q-date v-model="proxyDateUntil">
+                        <div class="row items-center justify-end q-gutter-sm">
+                          <q-btn label="Cancel" color="primary" flat v-close-popup/>
+                          <q-btn label="OK" color="primary" flat @click="saveProxyDueDateUntil" v-close-popup/>
+                        </div>
+                      </q-date>
+                    </q-popup-proxy>
+                  </q-btn>
+                  <q-btn icon="access_time" flat dense no-caps
+                         class="wfit text-subtitle2 fontbold" :label="wisdom._dueTimeUntilFmt">
+                    <q-popup-proxy @before-show="updateProxyDueTimeUntil" cover transition-show="scale"
+                                   transition-hide="scale">
+                      <q-time v-model="proxyTimeUntil">
+                        <div class="row items-center justify-end q-gutter-sm">
+                          <q-btn label="Cancel" color="primary" flat v-close-popup/>
+                          <q-btn label="OK" color="primary" flat @click="saveProxyDueTimeUntil" v-close-popup/>
+                        </div>
+                      </q-time>
+                    </q-popup-proxy>
+                  </q-btn>
+                </div>
               </div>
             </div>
-            <div class="flex row gap-2 items-center">
-              <p class="text-subtitle2 fontbold pointer-events-none w12">
-                Until
-              </p>
-              <div class="flex row gap-2 items-center justify-between flex-grow">
-                <q-btn icon="event" flat dense no-caps
-                       class="wfit text-subtitle2 fontbold" :label="getHumanReadableDateText(wisdom.duet)">
-                  <q-popup-proxy @before-show="updateProxyDueDateUntil" cover transition-show="scale"
-                                 transition-hide="scale">
-                    <q-date v-model="proxyDateUntil">
-                      <div class="row items-center justify-end q-gutter-sm">
-                        <q-btn label="Cancel" color="primary" flat v-close-popup/>
-                        <q-btn label="OK" color="primary" flat @click="saveProxyDueDateUntil" v-close-popup/>
-                      </div>
-                    </q-date>
-                  </q-popup-proxy>
-                </q-btn>
-                <q-btn icon="access_time" flat dense no-caps
-                       class="wfit text-subtitle2 fontbold" :label="wisdom._dueTimeUntilFmt">
-                  <q-popup-proxy @before-show="updateProxyDueTimeUntil" cover transition-show="scale"
-                                 transition-hide="scale">
-                    <q-time v-model="proxyTimeUntil">
-                      <div class="row items-center justify-end q-gutter-sm">
-                        <q-btn label="Cancel" color="primary" flat v-close-popup/>
-                        <q-btn label="OK" color="primary" flat @click="saveProxyDueTimeUntil" v-close-popup/>
-                      </div>
-                    </q-time>
-                  </q-popup-proxy>
-                </q-btn>
+            <div class="flex column gap-4 items-start mt1">
+              <div class="flex row gap-2 items-center">
+                <q-icon name="watch" size="1rem"/>
+                <span class="text-subtitle2 fontbold">{{ wisdom._duration }}</span>
               </div>
             </div>
           </div>
-          <div class="flex column gap-4 items-start mt1">
-            <div class="flex row gap-2 items-center">
-              <q-icon name="watch" size="1rem"/>
-              <span class="text-subtitle2 fontbold">{{ wisdom._duration }}</span>
-            </div>
-          </div>
-        </div>
-        <q-select
-          label="Collaborators"
-          color="brand-p"
-          bg-color="brand-bg"
-          filled
-          v-model="wisdom.coll"
-          :options="filterOptions"
-          @filter="filterCollaboratorOptions"
-          use-input
-          use-chips
-          multiple
-          input-debounce="50"
-          new-value-mode="add-unique"
-          class="wfull"
-        />
+          <q-select
+            label="Collaborators"
+            color="brand-p"
+            bg-color="brand-bg"
+            filled
+            v-model="wisdom.coll"
+            :options="filterOptions"
+            @filter="filterCollaboratorOptions"
+            use-input
+            use-chips
+            multiple
+            input-debounce="50"
+            new-value-mode="add-unique"
+            class="wfull"
+          />
+        </template>
         <p class="text-body2 fontbold mt4 mb2">
           Content
         </p>
@@ -235,6 +237,11 @@ export default {
           label: 'Task',
           value: 'task',
           icon: 'sym_o_calendar_clock'
+        },
+        {
+          label: 'Post',
+          value: 'post',
+          icon: 'sym_o_web_stories'
         }
       ]
     }

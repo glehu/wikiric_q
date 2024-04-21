@@ -28,7 +28,7 @@
               Toggle&nbsp;Sidebar
             </q-tooltip>
           </q-btn>
-          <q-toolbar-title class="text-weight-bold text-subtitle1" shrink>
+          <q-toolbar-title class="text-weight-bold text-subtitle1 <sm:hidden" shrink>
             wikiric
           </q-toolbar-title>
           <q-btn flat no-caps
@@ -42,9 +42,18 @@
               ⌘K
             </kbd>
           </q-btn>
+          <div class="relative flex mlauto">
+            <q-btn icon="inbox" size="1rem" unelevated
+                   @click="isViewingNotifications = !isViewingNotifications"/>
+            <template v-if="notifications.length > 0">
+              <p style="width: 14px; height: 14px; background-color: orange;
+                      border: 2px solid var(--md-sys-color-surface);
+                      border-radius: 100%; transform: translateX(34px) translateY(24px)"
+                 class="absolute pointer-events-none"></p>
+            </template>
+          </div>
           <template v-if="$q.platform.is.electron && !forceMacLook">
             <template v-if="$q.platform.is.win || $q.platform.is.linux || forceWinLook">
-              <q-space></q-space>
               <q-btn dense flat icon="minimize" @click="minimize"/>
               <q-btn dense flat icon="crop_square" @click="toggleMaximize"/>
               <q-btn dense flat icon="close" @click="closeApp"/>
@@ -188,6 +197,9 @@
       </div>
     </q-dialog>
   </q-layout>
+  <notification-list-view :is-open="isViewingNotifications"
+                          :notifications="notifications"
+                          @update="getNotifications"/>
 </template>
 
 <script>
@@ -197,6 +209,7 @@ import { debounce, useQuasar } from 'quasar'
 import { dbGetData, dbGetGroups, dbGetTimestamp, dbSetTimestamp } from 'src/libs/wikistore'
 import { api } from 'boot/axios'
 import { useStore } from 'stores/wikistate'
+import NotificationListView from 'components/NotificationListView.vue'
 
 const linksList = [
   {
@@ -222,6 +235,7 @@ const linksList = [
 export default defineComponent({
   name: 'MainLayout',
   components: {
+    NotificationListView,
     EssentialLink
   },
   mounted () {
@@ -263,6 +277,7 @@ export default defineComponent({
       if (token) {
         // Add token as global header for authorization
         api.defaults.headers.common.Authorization = 'Bearer ' + token
+        await this.getNotifications()
       }
       this.ready = true
       // Is an auto-start view defined?
@@ -386,6 +401,25 @@ export default defineComponent({
     },
     closeApp: function () {
       window.myWindowAPI?.close()
+    },
+    getNotifications: async function () {
+      return new Promise((resolve) => {
+        api({
+          url: 'notification/private/read'
+        })
+        .then((response) => {
+          if (response.data && response.data.Notifications) {
+            this.notifications = response.data.Notifications
+          } else {
+            this.notifications = []
+          }
+        }).catch((err) => {
+          console.debug(err.message)
+          this.notifications = []
+        }).finally(() => {
+          resolve()
+        })
+      })
     }
   },
   setup () {
@@ -401,6 +435,8 @@ export default defineComponent({
     const forceWinLook = ref(false)
     const colorTheme = ref('auto')
     const store = useStore()
+    const notifications = ref([])
+    const isViewingNotifications = ref(false)
 
     // *** BACKEND CONNECTOR ***
     function handleConnectorMessage (msg) {
@@ -436,6 +472,23 @@ export default defineComponent({
           }
           addTimestampNew(msg.pid)
         }
+      } else if (msg.typ === '[s:NOTIFICATION]') {
+        this.getNotifications()
+        this.$q.notify({
+          color: 'primary',
+          position: 'top-right',
+          message: msg.msg,
+          caption: 'Notification',
+          actions: [
+            {
+              icon: 'close',
+              color: 'white',
+              round: true,
+              handler: () => {
+              }
+            }
+          ]
+        })
       }
     }
 
@@ -503,6 +556,8 @@ export default defineComponent({
       forceMacLook,
       forceWinLook,
       store,
+      notifications,
+      isViewingNotifications,
       toggleLeftDrawer () {
         leftDrawerOpen.value = !leftDrawerOpen.value
       }

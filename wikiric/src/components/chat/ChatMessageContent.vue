@@ -1,5 +1,5 @@
 <template>
-  <div class="wfull relative">
+  <div class="wfull relative max-w-[80dvw] lg:max-w-[60dvw] xl:max-w-[45dvw]">
     <div class="wfull relative">
       <q-menu v-if="!noInteraction && !fullscreen"
               touch-position auto-close cover
