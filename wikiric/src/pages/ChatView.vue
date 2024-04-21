@@ -1838,6 +1838,7 @@ export default {
               this.editingMessage = this.messages[i]._msgs[j]
               this.newMessage = this.messages[i]._msgs[j]._msg
               this.inputResize()
+              this.$refs.ref_editor.editor.commands.focus('end')
             } else {
               this.last_message = this.messages[i]._msgs[j]
               this.last_message.msgDay = this.messages[i]._msgs[j]._time.day
@@ -1851,6 +1852,7 @@ export default {
             //     console.debug(e.message)
             //   }
             // }
+            this.$refs.ref_editor.editor.commands.focus('end')
             done = true
             break
           }

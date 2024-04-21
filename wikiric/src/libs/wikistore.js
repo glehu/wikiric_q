@@ -46,6 +46,10 @@ export async function dbGetGroups () {
   return (await dbPromise).getAll('sessions')
 }
 
+export async function dbGetUsernames () {
+  return (await dbPromise).getAllKeys('users')
+}
+
 export async function dbGetDisplayName (key) {
   return (await dbPromise).get('users', key)
 }
