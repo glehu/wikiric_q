@@ -5,7 +5,7 @@
         <p class="text-h5 fontbold">
           Add to Course
         </p>
-        <div class="mt4 flex gap-1 items-center">
+        <div class="mt4 flex column gap-2">
           <div>
             <div class="wfit">
               <p class="fontbold text-body1">
@@ -25,12 +25,9 @@
               </div>
             </div>
           </div>
-          <div>
-            <q-icon name="arrow_right" size="2rem"/>
-          </div>
           <template v-if="results.length > 0">
             <div>
-              <div class="mb2 text-subtitle2">
+              <div class="mt6 mb2 text-subtitle2">
                 <p>Choose from those Courses:</p>
               </div>
               <template v-for="result in results" :key="result">
