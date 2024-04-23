@@ -37,6 +37,9 @@ const routes = [{
   }, {
     path: 'feed',
     component: () => import('pages/FeedView.vue')
+  }, {
+    path: 'redir',
+    component: () => import('pages/RedirectPage.vue')
   }]
 }, {
   path: '/:catchAll(.*)*',

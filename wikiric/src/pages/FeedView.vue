@@ -95,13 +95,12 @@
                   </div>
                 </div>
               </div>
-              <div v-else class="wfull hfull max-w-lg
+              <div v-else class="wfull hfull max-w-xl
                                  gap-8 column pb80
                                  items-center relative">
                 <template v-for="post in results" :key="post.uid">
-                  <div class="wfull surface sm:rounded">
-                    <div class="text-body2 py2 mb4 flex justify-between gap-2 px4"
-                         style="border-bottom: 1px solid var(--md-sys-color-outline-variant)">
+                  <div class="wfull surface sm:rounded" style="border: 4px solid var(--md-sys-color-surface)">
+                    <div class="text-body2 py2 mb2 flex justify-between gap-2 px4">
                       <span class="fontbold">
                         {{ post.name }}
                       </span>
@@ -118,11 +117,10 @@
                     </p>
                     <div class="markedView px4"
                          v-html="post.result.desc"></div>
-                    <div class="mt4 p1"
-                         style="border-top: 1px solid var(--md-sys-color-outline-variant)">
+                    <div class="mt8 p2 background rounded-b">
                       <div class="flex justify-between flex-grow items-center">
                         <div v-if="post.result.reacts && post.result.reacts.length > 0"
-                             class="flex relative px1">
+                             class="flex relative px2">
                           <div v-for="reaction in post.result.reacts" :key="reaction.t"
                                style="padding: 1px 4px 1px 4px; margin-right: 4px; border-radius: 5px"
                                class="fmt_border cursor-pointer
@@ -178,16 +176,16 @@
                                  icon="reply"
                                  unelevated dense
                                  @click="replyToPost(post.result.uid)"
-                                 class="mlauto fontbold"
+                                 class="ml1 fontbold"
                                  no-caps/>
                         </template>
                         <template v-if="post.result.replies">
                           <div class="mt3 flex column gap2">
                             <template v-for="reply in post.result.replies" :key="reply">
-                              <div style="border-top: 1px solid var(--md-sys-color-outline-variant)"
-                                   class="p2">
+                              <div style="border-left: 4px solid var(--md-sys-color-primary)"
+                                   class="px2 mt1 rounded">
                                 <div class="flex gap-2 justify-between items-center">
-                                  <p class="fontbold text-body2 mb2">
+                                  <p class="fontbold text-body2 mb1">
                                     {{ reply.usr }}
                                   </p>
                                   <p class="text-xs">
@@ -378,9 +376,9 @@ export default {
             }
           }
           // Add results to list
-          if (parsedData.misc && parsedData.misc.length > 0) {
+          if (parsedData.posts && parsedData.posts.length > 0) {
             tmpNoResults = false
-            this.addResults(parsedData.misc, 'misc', false, catColors)
+            this.addResults(parsedData.posts, 'misc', false, catColors)
           }
           if (!lazyLoad) {
             this.noResults = tmpNoResults

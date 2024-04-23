@@ -12,28 +12,35 @@
         <div class="flex wfull gap2">
           <template v-if="notifications && notifications.length > 0">
             <template v-for="notification in notifications" :key="notification">
-              <div class="wfull p2 rounded"
+              <div class="wfull p2 rounded background"
                    style="border: 1px solid var(--md-sys-color-outline-variant)">
-                <div class="flex items-center gap-2">
-                  <p class="text-sm fontbold px1 rounded primary wfit">
-                    {{ capitalizeFirstLetter(notification.type) }}
-                  </p>
-                  <p class="text-body1">
+                <div class="flex items-center gap-2 mb2">
+                  <div class="primary px1 rounded wfit">
+                    <p class="text-sm fontbold">
+                      {{ capitalizeFirstLetter(notification.type) }}
+                    </p>
+                  </div>
+                  <p class="text-body2 fontbold">
                     {{ notification.t }}
                   </p>
                   <p class="text-body2 mlauto">
                     {{ getHumanReadableDateText(notification.ts, true, true) }}
                   </p>
                 </div>
-                <p class="text-body2">
-                  {{ notification.desc }}
-                </p>
+                <div class="flex items-center gap-2">
+                  <q-icon name="sym_o_info" size="1.2rem"/>
+                  <p class="text-body2">
+                    {{ notification.desc }}
+                  </p>
+                </div>
               </div>
             </template>
           </template>
           <template v-else>
-            <div class="background p2 rounded pointer-events-none">
-              <p>Nothing here, yet.</p>
+            <div class="background py2 pl2 pr3 rounded
+                        pointer-events-none flex gap2 items-center">
+              <q-icon name="check" size="2rem"/>
+              <p>You're up to date!</p>
             </div>
           </template>
         </div>

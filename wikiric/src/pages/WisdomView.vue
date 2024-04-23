@@ -88,22 +88,31 @@
                  class="max-w-screen-lg wfull hfull">
               <div class="flex row wfull">
                 <q-btn-group flat class="mlauto">
+                  <template v-if="wisdom.type === 'lesson'">
+                    <q-btn icon="sym_o_topic" label="Add to Course"
+                           no-caps
+                           @click="handleAddToCourse"/>
+                  </template>
                   <template v-if="wisdom.type === 'task' && wisdom.done === false">
                     <q-btn icon="check" label="Done"
+                           no-caps
                            @click="handleFinishWisdom"/>
                   </template>
                   <q-btn icon="edit" label="Edit"
+                         no-caps
                          @click="handleEditWisdom"/>
                   <template v-if="deleteCounter === 0">
                     <q-btn icon="delete" label="Delete"
+                           no-caps
                            @click="setDeleteCounter"/>
                   </template>
                   <template v-else-if="deleteCounter === 1">
-                    <q-btn icon="delete" label="Confirm"
+                    <q-btn icon="delete" label="Confirm Delete"
                            color="negative"
                            @click="handleDeleteWisdom"/>
                   </template>
                   <q-btn icon="share" label="Share"
+                         no-caps
                          @click="isSharingTask = !isSharingTask"/>
                 </q-btn-group>
               </div>
@@ -122,6 +131,51 @@
                   </div>
                 </template>
                 <p class="text-h4 fontbold">{{ wisdom.t }}</p>
+                <template v-if="wisdom.type === 'course'">
+                  <div class="wfull p3 my4
+                              surface-variant
+                              rounded w-fit">
+                    <div class="flex items-center gap-2 mb4">
+                      <q-icon name="sym_o_topic" size="2rem"/>
+                      <p class="text-h6">
+                        wikiric <span class="fontbold">Courses</span>
+                      </p>
+                    </div>
+                    <template v-if="wisdom.chapters && wisdom.chapters.length > 0">
+                      <q-scroll-area style="height: 160px; max-width: 100%">
+                        <div class="row no-wrap wfull">
+                          <template v-for="chapter in wisdom.chapters" :key="chapter">
+                            <div class="pb6 px4 pt3 rounded surface hoverPrimary bshadow wfit mr2"
+                                 @click="gotoWisdom(chapter.uid, true)">
+                              <p class="text-h4 fontbold mb2">
+                                {{ chapter.index + 1 }}
+                              </p>
+                              <p class="text-h6 fontbold"
+                                 style="white-space: nowrap">
+                                {{ chapter.t }}
+                              </p>
+                              <div v-if="chapter.keys"
+                                   class="flex items-center no-wrap text-sm">
+                                <q-icon name="sym_o_tag" size="1.2rem" class="mr1.5"/>
+                                <p>{{ chapter.keys }}</p>
+                              </div>
+                            </div>
+                          </template>
+                        </div>
+                      </q-scroll-area>
+                    </template>
+                    <template v-else>
+                      <div class="mt4 p2 rounded background wfit">
+                        <p class="text-sm fontbold cursor-help">
+                          No Chapters available.
+                          <q-tooltip class="text-subtitle2">
+                            Maybe the author has not added chapters yet.
+                          </q-tooltip>
+                        </p>
+                      </div>
+                    </template>
+                  </div>
+                </template>
                 <template v-if="wisdom.due">
                   <div class="flex row gap-6 px2 py1
                               mt4 rounded-2 fmt_border
@@ -264,7 +318,10 @@
     </q-layout>
   </q-page>
   <template v-if="wisdom">
-    <task-share :wisdom-prop="wisdom" :is-open="isSharingTask"/>
+    <task-share :wisdom-prop="wisdom"
+                :is-open="isSharingTask"/>
+    <course-adder :wisdom-prop="wisdom" :knowledge-prop="knowledge"
+                  :is-open="isAddingToCourse"/>
   </template>
 </template>
 
@@ -276,6 +333,7 @@ import { dbGetDisplayName } from 'src/libs/wikistore'
 import TaskShare from 'components/knowledge/TaskShare.vue'
 import Editor from 'components/EditorComponent.vue'
 import { useStore } from 'stores/wikistate'
+import CourseAdder from 'components/knowledge/CourseAdder.vue'
 
 export default {
   props: {
@@ -290,6 +348,7 @@ export default {
   },
   name: 'WisdomView',
   components: {
+    CourseAdder,
     Editor,
     TaskShare,
     WisdomEdit
@@ -322,6 +381,7 @@ export default {
       contentQuery: '',
       comment: '',
       isSharingTask: false,
+      isAddingToCourse: false,
       deleteCounter: 0
     }
   },
@@ -431,7 +491,13 @@ export default {
       })
     },
     clickedBack: function () {
-      this.$router.back()
+      const backrefQuery = this.$route.query.backref
+      if (backrefQuery && backrefQuery !== this.wisdom.uid) {
+        const url = `/redir?redirect=/wisdom?id=${backrefQuery}`
+        this.$router.push(url)
+      } else {
+        this.$router.push(`/knowledge?id=${this.knowledge.pid}`)
+      }
     },
     handleFinishWisdom: function () {
       if (this.wisdomId == null || this.wisdomId === '') return
@@ -570,6 +636,9 @@ export default {
           console.debug(err.message)
         })
       })
+    },
+    handleAddToCourse: function () {
+      this.isAddingToCourse = !this.isAddingToCourse
     },
     /**
      * So much spaghetti you can call it italy!
@@ -815,12 +884,25 @@ export default {
         })
         .finally(() => resolve())
       })
+    },
+    gotoWisdom: function (uid, fromCourse = false) {
+      let url = '/redir?redirect=/wisdom?id=' + uid
+      if (fromCourse) {
+        url += '&backref=' + this.wisdom.uid
+      }
+      this.$router.push(url)
     }
   }
 }
 </script>
 
 <style scoped>
+
+.hoverPrimary:hover {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  cursor: pointer;
+}
 
 </style>
 

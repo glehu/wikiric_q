@@ -20,7 +20,7 @@
             color="primary">
             <template v-slot:label="opt">
               <q-icon :name="opt.icon" size="1.5rem" class="mr2"/>
-              <span class="fontbold">{{ opt.label }}</span>
+              <span class="fontbold text-body2">{{ opt.label }}</span>
             </template>
           </q-option-group>
         </div>
@@ -138,14 +138,14 @@
             class="wfull"
           />
         </template>
-        <p class="text-body2 fontbold mt4 mb2">
-          Content
-        </p>
-        <div class="wfull relative">
-          <editor id="wisdom_desc"
-                  ref="wisdom_desc"
-                  v-model="wisdom.desc"/>
-        </div>
+      </div>
+      <p class="text-h6 fontbold mt4 ml4">
+        Content
+      </p>
+      <div class="wfull relative p4">
+        <editor id="wisdom_desc"
+                ref="wisdom_desc"
+                v-model="wisdom.desc"/>
       </div>
     </q-card>
   </q-dialog>
@@ -242,6 +242,11 @@ export default {
           label: 'Post',
           value: 'post',
           icon: 'sym_o_web_stories'
+        },
+        {
+          label: 'Course',
+          value: 'course',
+          icon: 'sym_o_topic'
         }
       ]
     }

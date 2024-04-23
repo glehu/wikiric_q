@@ -43,12 +43,12 @@
             </kbd>
           </q-btn>
           <div class="relative flex mlauto">
-            <q-btn icon="inbox" size="1rem" unelevated
+            <q-btn icon="inbox" size="1rem" unelevated dense
                    @click="isViewingNotifications = !isViewingNotifications"/>
             <template v-if="notifications.length > 0">
               <p style="width: 14px; height: 14px; background-color: orange;
                       border: 2px solid var(--md-sys-color-surface);
-                      border-radius: 100%; transform: translateX(34px) translateY(24px)"
+                      border-radius: 100%; transform: translateX(22px) translateY(22px)"
                  class="absolute pointer-events-none"></p>
             </template>
           </div>
@@ -383,14 +383,11 @@ export default defineComponent({
     gotoLink: function (link) {
       const wasChat = this.$route.path.startsWith('/chat')
       this.fixed = false
-      this.$router.push(link)
       if (wasChat && link.startsWith('/chat')) {
-        // Reload on chat since there could be no module switching
-        // If the location stays the same (e.g. only chat id query changed)
-        // ...then the browser would not do anything
-        setTimeout(() => {
-          window.location.reload()
-        }, 10)
+        const url = '/redir?redirect=' + link
+        this.$router.push(url)
+      } else {
+        this.$router.push(link)
       }
     },
     minimize: function () {
@@ -473,21 +470,34 @@ export default defineComponent({
           addTimestampNew(msg.pid)
         }
       } else if (msg.typ === '[s:NOTIFICATION]') {
-        this.getNotifications()
-        this.$q.notify({
-          color: 'primary',
-          position: 'top-right',
-          message: msg.msg,
-          caption: 'Notification',
-          actions: [
-            {
-              icon: 'close',
-              color: 'white',
-              round: true,
-              handler: () => {
+        api({
+          url: 'notification/private/read'
+        })
+        .then((response) => {
+          if (response.data && response.data.Notifications) {
+            notifications.value = response.data.Notifications
+          } else {
+            notifications.value = []
+          }
+        }).catch((err) => {
+          console.debug(err.message)
+          notifications.value = []
+        }).finally(() => {
+          this.$q.notify({
+            color: 'primary',
+            position: 'top-right',
+            message: msg.msg,
+            caption: 'Notification',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
               }
-            }
-          ]
+            ]
+          })
         })
       }
     }

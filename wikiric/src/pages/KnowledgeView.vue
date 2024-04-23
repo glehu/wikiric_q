@@ -40,6 +40,9 @@
             <q-btn icon="question_mark" label="Question"
                    no-caps flat align="left"
                    @click="startCreatingWisdom('question')"/>
+            <q-btn icon="sym_o_topic" label="Course"
+                   no-caps flat align="left"
+                   @click="startCreatingWisdom('course')"/>
           </div>
           <div class="flex column wfull">
             <q-toolbar>
@@ -134,6 +137,16 @@
                             <template v-else-if="res.type === 'question'">
                               <span>Question</span>
                               <q-icon name="question_mark" size="1rem"
+                                      class="ml2"/>
+                            </template>
+                            <template v-else-if="res.type === 'post'">
+                              <span>Post</span>
+                              <q-icon name="sym_o_web_stories" size="1rem"
+                                      class="ml2"/>
+                            </template>
+                            <template v-else-if="res.type === 'course'">
+                              <span>Course</span>
+                              <q-icon name="sym_o_topic" size="1rem"
                                       class="ml2"/>
                             </template>
                           </div>
@@ -456,6 +469,10 @@ export default {
           }
           // Add results to list
           if (!questionsOnly) {
+            if (parsedData.courses && parsedData.courses.length > 0) {
+              tmpNoResults = false
+              this.addResults(parsedData.courses, 'course', questionsOnly, catColors)
+            }
             if (parsedData.lessons && parsedData.lessons.length > 0) {
               tmpNoResults = false
               this.addResults(parsedData.lessons, 'lesson', questionsOnly, catColors)
@@ -467,6 +484,10 @@ export default {
             if (parsedData.answers && parsedData.answers.length > 0) {
               tmpNoResults = false
               this.addResults(parsedData.answers, 'answer', questionsOnly, catColors)
+            }
+            if (parsedData.posts && parsedData.posts.length > 0) {
+              tmpNoResults = false
+              this.addResults(parsedData.posts, 'post', questionsOnly, catColors)
             }
           }
           if (parsedData.questions && parsedData.questions.length > 0) {

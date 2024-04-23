@@ -870,12 +870,14 @@ hr {
 
 .markedView blockquote {
   padding: 0.5rem 1rem;
+  margin-left: 0 !important;
+  width: fit-content !important;
   border-radius: 0.25rem;
   margin-top: 1rem;
   margin-bottom: 1rem;
-  border-left: 8px solid var(--md-sys-color-tertiary-container);
-  background-color: var(--md-sys-color-tertiary);
-  color: var(--md-sys-color-on-tertiary);
+  border-left: 8px solid var(--md-sys-color-tertiary);
+  background-color: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
 }
 
 .markedView blockquote > :last-child {
