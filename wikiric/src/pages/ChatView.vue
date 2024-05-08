@@ -391,7 +391,8 @@
                         e-max-height="75dvh"
                         prevent-enter
                         @kpress="handleEditorKeyDown"
-                        @fpaste="handleEditorPaste"/>
+                        @fpaste="handleEditorPaste"
+                        @update:model-value="transmitActivity"/>
               </div>
             </q-page-sticky>
           </div>
@@ -953,7 +954,6 @@ export default {
      * @param {KeyboardEvent} e
      */
     handleEditorKeyDown: function (e) {
-      this.transmitActivity()
       if (e.key === 'Enter') {
         if (e.shiftKey) {
           this.inputResize()
