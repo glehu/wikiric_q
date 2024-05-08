@@ -175,7 +175,7 @@
                   </div>
                 </template>
                 <p class="text-2xl sm:text-3xl fontbold">{{ wisdom.t }}</p>
-                <template v-if="wisdom.type === 'course'">
+                <template v-if="course">
                   <div class="wfull my4
                               background overflow-hidden
                               rounded wfull">
@@ -185,7 +185,7 @@
                         wikiric <span class="fontbold text-subtitle1">Courses</span>
                       </p>
                     </div>
-                    <template v-if="wisdom.chapters && wisdom.chapters.length > 0">
+                    <template v-if="course.chapters && course.chapters.length > 0">
                       <div class="wfull">
                         <q-carousel
                           id="courseCarousel"
@@ -211,7 +211,7 @@
                                    color="brand-p" flat round dense
                                    @click="onClick"/>
                           </template>
-                          <q-carousel-slide v-for="chapter in wisdom.chapters" :key="chapter"
+                          <q-carousel-slide v-for="chapter in course.chapters" :key="chapter"
                                             :name="chapter.index"
                                             class="flex no-wrap wfull hfull justify-center">
                             <q-item class="rounded px3 lg:px6 py2 lg:py4 wfull hfull
@@ -219,7 +219,7 @@
                                            max-w-3xl overflow-hidden
                                            column justify-center"
                                     clickable
-                                    @click="gotoWisdom(chapter.uid, true)">
+                                    @click="gotoWisdom(chapter.uid, true, chapter.index)">
                               <div class="flex items-center gap-3 sm:gap-4">
                                 <p class="<sm:hidden text-5xl lg:text-7xl fontbold">
                                   {{ chapter.index + 1 }}
@@ -258,7 +258,7 @@
                             <div class="wfull flex items-center">
                               <p class="text-subtitle2 wfull fontbold">
                                 Toggle Chapter List
-                                <span>- {{ wisdom.chapters.length }}</span>
+                                <span>- {{ course.chapters.length }}</span>
                               </p>
                             </div>
                           </template>
@@ -274,12 +274,12 @@
                             </template>
                           </q-input>
                           <div class="p2 column gap-2">
-                            <template v-for="chapter in wisdom.chapters" :key="chapter">
+                            <template v-for="chapter in course.chapters" :key="chapter">
                               <q-item v-if="!chapter._hidden"
                                       class="surface rounded px3 py2 wfull hfull
                                              column justify-center"
                                       clickable
-                                      @click="gotoWisdom(chapter.uid, true)">
+                                      @click="gotoWisdom(chapter.uid, true, chapter.index)">
                                 <div class="flex items-center gap-3 sm:gap-4">
                                   <p class="text-5xl sm:text-7xl fontbold">
                                     {{ chapter.index + 1 }}
@@ -534,7 +534,17 @@ export default {
       this.wisdomId = this.wisdomProp.uid
     } else {
       const paramID = this.$route.query.id
-      if (paramID) this.wisdomId = paramID
+      if (paramID) {
+        this.wisdomId = paramID
+      }
+      const course = this.$route.query.course
+      if (course) {
+        this.getCourse(course)
+      }
+      const chapter = this.$route.query.chapter
+      if (chapter) {
+        this.slide = parseInt(chapter)
+      }
     }
     this.checkCarouselResize = debounce(this.checkCarouselResize, 50)
     this.getWisdom()
@@ -553,6 +563,7 @@ export default {
         uid: ''
       },
       related: null,
+      course: null,
       isEditingWisdom: false,
       contentTree: [],
       contentMap: null,
@@ -582,6 +593,14 @@ export default {
             this.wisdom._keys = this.wisdom.keys.split(',').join(', ')
           }
           this.wisdom = this.jsDateToQDate(this.wisdom)
+          if (this.wisdom.type === 'course') {
+            this.course = this.wisdom
+            if (this.course.chapters && this.course.chapters.length > 0) {
+              if (this.slide > this.course.chapters.length - 1) {
+                this.slide = 0
+              }
+            }
+          }
           this.buildContentLinks()
         }).then(() => {
           this.getKnowledge()
@@ -1117,10 +1136,16 @@ export default {
         .finally(() => resolve())
       })
     },
-    gotoWisdom: function (uid, fromCourse = false) {
+    gotoWisdom: function (uid, fromCourse = false, chapterIndex = -1) {
       let url = '/redir?redirect=/wisdom?id=' + uid
       if (fromCourse) {
-        url += '&backref=' + this.wisdom.uid
+        url += `&backref=${this.wisdom.uid}`
+        if (this.wisdom.type === 'course') {
+          url += `&course=${this.wisdom.uid}`
+        } else {
+          url += `&course=${this.course.uid}`
+        }
+        url += `&chapter=${chapterIndex}`
       }
       this.$router.push(url)
     },
@@ -1168,6 +1193,37 @@ export default {
           }
         }
       }
+    },
+    getCourse: function (wisdomId) {
+      if (!wisdomId || wisdomId === '') return
+      return new Promise((resolve) => {
+        const url = 'wisdom/private/get/' + wisdomId
+        api({
+          url
+        }).then((response) => {
+          this.course = response.data
+          this.course._time = DateTime.fromISO(this.course.ts)
+          this.course._ts = this.getHumanReadableDateText(this.course._time, true, true)
+          if (this.course.keys) {
+            this.course._keys = this.course.keys.split(',').join(', ')
+          }
+          this.course = this.jsDateToQDate(this.course)
+        }).then(() => {
+          setTimeout(() => {
+            this.checkCarouselResize()
+            const elem = document.body
+            if (elem) {
+              elem.onresize = this.checkCarouselResize
+            }
+          }, 100)
+        })
+        .catch((err) => {
+          console.debug(err.message)
+        })
+        .finally(() => {
+          resolve()
+        })
+      })
     }
   }
 }

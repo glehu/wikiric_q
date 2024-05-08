@@ -8,10 +8,18 @@ export default {
     gotoRedirect: function () {
       const redirect = this.$route.query.redirect
       if (redirect) {
-        const backref = this.$route.query.backref
         let url = redirect
+        const backref = this.$route.query.backref
         if (backref) {
           url += `&backref=${backref}`
+        }
+        const course = this.$route.query.course
+        if (course) {
+          url += `&course=${course}`
+        }
+        const chapter = this.$route.query.chapter
+        if (chapter) {
+          url += `&chapter=${chapter}`
         }
         this.$router.replace(url)
       } else {
