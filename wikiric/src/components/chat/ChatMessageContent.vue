@@ -43,9 +43,7 @@
           <q-separator vertical spaced color="transparent"
                        class=""/>
           <q-btn icon="content_copy" dense
-                 v-on:click="$emit(
-                   'copy',
-                   utils.htmlToString(msg._msg))">
+                 v-on:click="handleCopyMessage">
             <q-tooltip class="text-subtitle2">Copy</q-tooltip>
           </q-btn>
           <template v-if="msg._isFile">
@@ -395,6 +393,16 @@ export default {
     },
     gotoWisdom: function () {
       this.$router.push(`/wisdom?id=${this.wisdom.uid}`)
+    },
+    handleCopyMessage: function () {
+      if (this.wisdom == null) {
+        this.$emit('copy',
+          wikiricUtils.htmlToString(this.msg._msg))
+      } else {
+        let str = `${this.wisdom.t}\n\n`
+        str += wikiricUtils.htmlToString(this.wisdom.desc)
+        this.$emit('copy', str)
+      }
     }
   }
 }

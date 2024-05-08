@@ -125,11 +125,28 @@ export default {
           this.sharing.message = ''
           this.sharing.selectedChannel = ''
           this.show = false
+          this.$q.notify({
+            color: 'primary',
+            position: 'top-right',
+            message: 'Shared!',
+            caption: 'Wisdom successfully sent to target channel.',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
         })
         .catch((err) => {
           console.debug(err.message)
         })
-        .finally(() => resolve())
+        .finally(() => {
+          resolve()
+        })
       })
     }
   }
