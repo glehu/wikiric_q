@@ -743,12 +743,12 @@ input:checked {
 }
 
 .markedView ul {
-  list-style: disc inside;
+  list-style: disc outside;
   margin-bottom: 0.5rem; /* 8.0px */
 }
 
 .markedView ol {
-  list-style: decimal inside;
+  list-style: decimal outside;
   margin-bottom: 0.5rem; /* 8.0px */
 }
 

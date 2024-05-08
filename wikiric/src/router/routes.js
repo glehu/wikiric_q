@@ -40,6 +40,9 @@ const routes = [{
   }, {
     path: 'redir',
     component: () => import('pages/RedirectPage.vue')
+  }, {
+    path: 'down',
+    component: () => import('pages/ErrorServerDown.vue')
   }]
 }, {
   path: '/:catchAll(.*)*',

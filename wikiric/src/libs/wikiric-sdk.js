@@ -107,6 +107,11 @@ const wikiricSDK = {
           reject(Error('401'))
         }
       })
+      .catch((e) => {
+        if (e) {
+          reject(Error('401'))
+        }
+      })
     })
   },
   /**

@@ -636,6 +636,7 @@ export default {
           resolve()
         }).catch((e) => {
           console.debug(e.message)
+          this.$router.push('/down')
         })
       })
     },
@@ -1523,7 +1524,12 @@ export default {
     connectToChat: async function () {
       this.resetChannelStats()
       const sesh = await dbGetSession(this.chatID)
-      const token = await this.sdk.doLogin(this.store.user._u, this.store.user._p)
+      let token
+      try {
+        token = await this.sdk.doLogin(this.store.user._u, this.store.user._p)
+      } catch (e) {
+        this.$router.push('/down')
+      }
       // Add token as global header for authorization
       api.defaults.headers.common.Authorization = 'Bearer ' + token
       await this.sdk.doConnect(this.channel.id, sesh.priv, '', this.chatPW)

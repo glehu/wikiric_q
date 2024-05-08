@@ -262,7 +262,11 @@ export default defineComponent({
       if (usr && usr._u) {
         if (usr.instantLogin) {
           this.store.logIn(usr)
-          token = await this.$connector.doLogin(usr._u, usr._p)
+          try {
+            token = await this.$connector.doLogin(usr._u, usr._p)
+          } catch (e) {
+            this.$router.push('/down')
+          }
           // Listen to connector messages
           await this.$connector.doSync()
           autoStart = true
