@@ -262,9 +262,21 @@
                               </p>
                             </div>
                           </template>
+                          <q-input
+                            label="Filter..."
+                            color="primary"
+                            label-color="brand-p"
+                            v-model="chapterQuery"
+                            @update:model-value="handleChapterQuery"
+                            class="text-lg px2">
+                            <template v-slot:prepend>
+                              <q-icon name="search"/>
+                            </template>
+                          </q-input>
                           <div class="p2 column gap-2">
                             <template v-for="chapter in wisdom.chapters" :key="chapter">
-                              <q-item class="surface rounded px3 py2 wfull hfull
+                              <q-item v-if="!chapter._hidden"
+                                      class="surface rounded px3 py2 wfull hfull
                                              column justify-center"
                                       clickable
                                       @click="gotoWisdom(chapter.uid, true)">
@@ -551,7 +563,8 @@ export default {
       deleteCounter: 0,
       slide: 0,
       slideArrows: true,
-      treeNodeSelected: ''
+      treeNodeSelected: '',
+      chapterQuery: ''
     }
   },
   methods: {
@@ -1137,6 +1150,23 @@ export default {
       const elem = document.getElementById('answer')
       if (elem) {
         this.scrollToElement(elem)
+      }
+    },
+    handleChapterQuery: function () {
+      if (this.chapterQuery === '') {
+        for (let i = 0; i < this.wisdom.chapters.length; i++) {
+          this.wisdom.chapters[i]._hidden = false
+        }
+      } else {
+        for (let i = 0; i < this.wisdom.chapters.length; i++) {
+          if (this.wisdom.chapters[i].t.toLowerCase().includes(this.chapterQuery)) {
+            this.wisdom.chapters[i]._hidden = false
+          } else {
+            this.wisdom.chapters[i]._hidden =
+              !this.wisdom.chapters[i].keys
+              .toLowerCase().includes(this.chapterQuery)
+          }
+        }
       }
     }
   }
