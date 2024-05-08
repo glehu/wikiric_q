@@ -165,6 +165,17 @@
                           <div v-html="res.result.desc"
                                class="all_normal"></div>
                         </div>
+                        <template v-if="res.result.views">
+                          <div class="flex items-center gap-2 wfit">
+                            <q-tooltip>
+                              <span class="text-subtitle2">Views</span>
+                            </q-tooltip>
+                            <q-icon name="visibility"/>
+                            <p class="text-subtitle2">
+                              {{ res.result.views }}
+                            </p>
+                          </div>
+                        </template>
                       </q-item-section>
                     </q-item>
                   </template>

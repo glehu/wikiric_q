@@ -409,8 +409,8 @@
                         {{ related.answers[0].name }}
                       </p>
                       <span class="text-subtitle2">
-                          {{ related.answers[0]._ts }}
-                        </span>
+                        {{ related.answers[0]._ts }}
+                      </span>
                     </div>
                     <div v-html="related.answers[0].desc"
                          class="markedView"></div>
@@ -1017,7 +1017,8 @@ export default {
             }
             if (this.related.answers) {
               for (let i = 0; i < this.related.answers.length; i++) {
-                this.related.answers[i].ts = DateTime.fromISO(this.related.answers[i].ts)
+                this.related.answers[i]._time = DateTime.fromISO(this.related.answers[i].ts)
+                this.related.answers[i]._ts = this.getHumanReadableDateText(this.related.answers[i]._time, true, true)
                 dName = await dbGetDisplayName(this.related.answers[i].usr)
                 if (dName == null) {
                   dName = this.related.answers[i].usr
