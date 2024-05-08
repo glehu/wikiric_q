@@ -673,7 +673,8 @@ export default {
         this.sdk._wcrypt.setMembers(this.members)
       })
       .catch(() => {
-        this.members = []
+        this.members = new Map()
+        this.sdk._wcrypt.setMembers(this.members)
       })
     },
     /**
@@ -858,20 +859,11 @@ export default {
         try {
           message = await this.sdk.decryptMessage(message)
           if (message.msg == null) {
-            message.msg = 'The message could not be decrypted.'
-            message._mType = 'CryptError'
-            message._isApi = false
-            message._decryptionFailed = true
-            message.reacts = []
+            message = this.markMessageDecryptionError(message)
           }
-          message._decryptionFailed = false
         } catch (e) {
           console.debug('ENCRYPTION ERROR', e.message)
-          message.msg = 'The message could not be decrypted.'
-          message._mType = 'CryptError'
-          message._isApi = false
-          message._decryptionFailed = true
-          message.reacts = []
+          message = this.markMessageDecryptionError(message)
         }
       }
       if (message._isFile || message._mType === 'GIF') {
@@ -921,6 +913,20 @@ export default {
       return new Promise((resolve) => {
         resolve(message)
       })
+    },
+    /**
+     * Marks the message because of a failed decryption
+     *
+     * @param {Object} message
+     * @returns {Object}
+     */
+    markMessageDecryptionError: function (message) {
+      message.msg = 'The message could not be decrypted.'
+      message._mType = 'CryptError'
+      message._isApi = false
+      message._decryptionFailed = true
+      message.reacts = []
+      return message
     },
     /**
      *
@@ -1151,6 +1157,9 @@ export default {
       return returnString
     },
     /**
+     * Creates the encryption and decryption keys + sets public key
+     *
+     * Features error handling of doom!
      *
      * @param {Boolean=false} force
      * @returns {Promise<unknown>}
@@ -1174,15 +1183,6 @@ export default {
         true,
         ['encrypt', 'decrypt']
       )
-      await dbSetSession(this.chatID, {
-        id: this.chatID,
-        t: this.chatroom.t,
-        desc: this.chatroom.desc,
-        iurl: this.chatroom.iurl,
-        burl: this.chatroom.burl,
-        priv: await this.exportRSAPrivKey(keyPair.privateKey),
-        type: this.chatroom.type
-      })
       const content = {
         pubKeyPEM: await this.exportRSAPubKey(keyPair.publicKey)
       }
@@ -1206,8 +1206,36 @@ export default {
             //   })
           }
         })
-        .then(resolve)
-        .catch((err) => console.debug(err.message))
+        .then(() => {
+          this.exportRSAPrivKey(keyPair.privateKey)
+          .then((privKey) => {
+            const payload = {
+              id: this.chatID,
+              t: this.chatroom.t,
+              desc: this.chatroom.desc,
+              iurl: this.chatroom.iurl,
+              burl: this.chatroom.burl,
+              priv: privKey,
+              type: this.chatroom.type
+            }
+            dbSetSession(this.chatID, payload)
+            .then(() => {
+              resolve()
+            })
+            .catch((err) => {
+              console.debug(err.message)
+              resolve()
+            })
+          })
+          .catch((err) => {
+            console.debug(err.message)
+            resolve()
+          })
+        })
+        .catch((err) => {
+          console.debug(err.message)
+          resolve()
+        })
       })
     },
     /**
@@ -1431,6 +1459,7 @@ export default {
       messageContent = messageContent.replaceAll(
         '<i class="q-icon material-icons cursor-pointer" onclick="this.parentNode.parentNode.removeChild(this.parentNode)">close</i>', '')
       messageContent = messageContent.substring(0, 5000)
+      const originalMessageContent = messageContent
       // Are we sending a file?
       if (this.selectedImage) {
         this.uploadImage(messageContent)
@@ -1448,7 +1477,7 @@ export default {
         uid: '-1',
         ts: DateTime.now().toISO(),
         usr: this.store.user.username,
-        msg: messageContent,
+        msg: originalMessageContent,
         _isDraft: true
       })
       if (!msg._header) {
@@ -1561,6 +1590,8 @@ export default {
       if (window.innerWidth < 768) {
         this.sidebarLeft = false
       }
+      // Remember channel id in route
+      this.$router.push(`/chat?id=${this.chatID}&chan=${channel.uid}`)
     },
     /**
      *
@@ -1762,11 +1793,13 @@ export default {
       api({
         url: 'chat/private/users/active/' + this.channel.id
       })
-      .then((data) => {
-        // for (let i = 0; i < this.mainMembers.length; i++) {
-        //   this.mainMembers[i].active = (this.mainMembers[i].usr === this.store.user.username)
-        // }
-        // this.setActiveMembers(data.result.members, true, subchatMemberMode, uniChatroomGUID)
+      .then((result) => {
+        for (let i = 0; i < this.members.length; i++) {
+          this.members[i].active = this.members[i].usr === this.store.user.username
+        }
+        for (let i = 0; i < result.data.active.length; i++) {
+          this.setMemberOnlineStatus(result.data.active[i], true)
+        }
       })
       .finally(() => {
         setTimeout(() => {

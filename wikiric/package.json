@@ -24,7 +24,7 @@
     "@quasar/extras": "1.16.9",
     "@tiptap-pro/extension-emoji": "^2.7.6",
     "@tiptap-pro/extension-file-handler": "^2.8.1",
-    "@tiptap-pro/extension-unique-id": "^2.8.1",
+    "@tiptap-pro/extension-unique-id": "^2.8.2",
     "@tiptap/extension-code-block-lowlight": "^2.3.0",
     "@tiptap/extension-hard-break": "^2.2.4",
     "@tiptap/extension-image": "^2.3.0",

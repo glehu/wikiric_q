@@ -1,5 +1,14 @@
 <template>
   <div class="wfull relative max-w-[80dvw] lg:max-w-[60dvw] xl:max-w-[45dvw]">
+    <template v-if="msg._decryptionFailed">
+      <div class="mb2 error p1 rounded flex gap-2 items-center">
+        <q-icon left name="error"/>
+        <p class="text-sm fontbold"
+           style="margin: 0 !important">
+          Decryption Error
+        </p>
+      </div>
+    </template>
     <div class="wfull relative">
       <q-menu v-if="!noInteraction && !fullscreen"
               touch-position auto-close cover
@@ -244,18 +253,19 @@
               </div>
             </template>
             <template v-else>
-              <div class="surface rounded p2">
-                <p class="mb2 rounded primary wfit text-body2 fontbold
-                          px1">
-                  Task
-                </p>
+              <div class="surface rounded p2 markedView">
+                <div class="rounded primary wfit px1">
+                  <span class="text-body2 fontbold">
+                    Shared Wisdom
+                  </span>
+                </div>
                 <p class="fontbold mb2">{{ wisdom.t }}</p>
                 <div class="markedView" v-html="wisdom.desc"></div>
               </div>
               <q-btn icon="north_east" dense no-caps unelevated
                      align="left"
-                     label="View Task"
-                     class="text-md fontbold wfull"
+                     label="View Entry"
+                     class="text-md fontbold wfull my2"
                      @click="gotoWisdom"/>
             </template>
           </template>

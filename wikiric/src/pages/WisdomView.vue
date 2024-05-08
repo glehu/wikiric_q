@@ -53,10 +53,13 @@
                     node-key="label"
                     text-color="brand-p"
                     color="brand-p"
-                    class="non-selectable text-subtitle2"
+                    class="text-subtitle2"
                     dense
                     default-expand-all
-                    no-transition/>
+                    no-transition
+                    no-connectors
+                    v-model:selected="treeNodeSelected"
+                    @update:selected="handleTreeNodeSelected"/>
           </div>
         </q-scroll-area>
       </q-drawer>
@@ -130,39 +133,127 @@
                     </p>
                   </div>
                 </template>
-                <p class="text-h4 fontbold">{{ wisdom.t }}</p>
+                <p class="text-2xl sm:text-3xl fontbold">{{ wisdom.t }}</p>
                 <template v-if="wisdom.type === 'course'">
-                  <div class="wfull p3 my4
-                              surface-variant
-                              rounded w-fit">
-                    <div class="flex items-center gap-2 mb4">
+                  <div class="wfull my4
+                              background overflow-hidden
+                              rounded wfull">
+                    <div class="flex items-center gap-2 px3 pt3">
                       <q-icon name="sym_o_topic" size="2rem"/>
-                      <p class="text-h6">
-                        wikiric <span class="fontbold">Courses</span>
+                      <p class="text-subtitle2">
+                        wikiric <span class="fontbold text-subtitle1">Courses</span>
                       </p>
                     </div>
                     <template v-if="wisdom.chapters && wisdom.chapters.length > 0">
-                      <q-scroll-area style="height: 160px; max-width: 100%">
-                        <div class="row no-wrap wfull">
-                          <template v-for="chapter in wisdom.chapters" :key="chapter">
-                            <div class="pb6 px4 pt3 rounded surface hoverPrimary bshadow wfit mr2"
-                                 @click="gotoWisdom(chapter.uid, true)">
-                              <p class="text-h4 fontbold mb2">
-                                {{ chapter.index + 1 }}
-                              </p>
-                              <p class="text-h6 fontbold"
-                                 style="white-space: nowrap">
-                                {{ chapter.t }}
-                              </p>
-                              <div v-if="chapter.keys"
-                                   class="flex items-center no-wrap text-sm">
-                                <q-icon name="sym_o_tag" size="1.2rem" class="mr1.5"/>
-                                <p>{{ chapter.keys }}</p>
+                      <div class="wfull">
+                        <q-carousel
+                          id="courseCarousel"
+                          v-model="slide"
+                          transition-prev="jump-right"
+                          transition-next="jump-left"
+                          swipeable
+                          animated
+                          control-color="brand-p"
+                          control-type="flat"
+                          prev-icon="arrow_left"
+                          next-icon="arrow_right"
+                          padding
+                          :arrows="slideArrows"
+                          navigation
+                          height="264px"
+                          class="wfull background rounded">
+                          <template v-slot:navigation-icon="{ active, btnProps, onClick }">
+                            <q-btn v-if="active" size="sm" :icon="btnProps.icon"
+                                   color="primary" round dense
+                                   @click="onClick"/>
+                            <q-btn v-else size="sm" :icon="btnProps.icon"
+                                   color="brand-p" flat round dense
+                                   @click="onClick"/>
+                          </template>
+                          <q-carousel-slide v-for="chapter in wisdom.chapters" :key="chapter"
+                                            :name="chapter.index"
+                                            class="column no-wrap wfull hfull justify-center">
+                            <q-item class="surface rounded px3 py2 wfull hfull
+                                           column justify-center"
+                                    clickable
+                                    @click="gotoWisdom(chapter.uid, true)">
+                              <div class="flex items-center gap-3 sm:gap-4">
+                                <p class="<sm:hidden sm:text-7xl fontbold">
+                                  {{ chapter.index + 1 }}
+                                </p>
+                                <div>
+                                  <div class="flex gap-2 items-center">
+                                    <p class="sm:hidden text-xl fontbold">
+                                      {{ chapter.index + 1 }}.
+                                    </p>
+                                    <p class="text-h6 fontbold"
+                                       style="white-space: nowrap">
+                                      {{ chapter.t }}
+                                    </p>
+                                  </div>
+                                  <div class="flex gap-x-2 pb1 text-sm">
+                                    <q-breadcrumbs active-color="brand-p">
+                                      <q-breadcrumbs-el icon="person"
+                                                        :label="chapter.usr"/>
+                                      <q-breadcrumbs-el :label="getHumanReadableDateText(chapter.ts, false, true)"/>
+                                    </q-breadcrumbs>
+                                  </div>
+                                  <div v-if="chapter.keys"
+                                       class="flex items-center no-wrap text-sm">
+                                    <q-icon name="sym_o_tag" size="1.2rem" class="mr1.5"/>
+                                    <p>{{ chapter.keys }}</p>
+                                  </div>
+                                </div>
                               </div>
+                            </q-item>
+                          </q-carousel-slide>
+                        </q-carousel>
+                      </div>
+                      <div class="max-h-lg
+                                  overflow-y-auto flex-grow-1">
+                        <q-expansion-item>
+                          <template v-slot:header>
+                            <div class="wfull flex items-center">
+                              <p class="text-subtitle2 wfull fontbold">
+                                Toggle Chapter List
+                                <span>- {{ wisdom.chapters.length }}</span>
+                              </p>
                             </div>
                           </template>
-                        </div>
-                      </q-scroll-area>
+                          <div class="p2 column gap-2">
+                            <template v-for="chapter in wisdom.chapters" :key="chapter">
+                              <q-item class="surface rounded px3 py2 wfull hfull
+                                             column justify-center"
+                                      clickable
+                                      @click="gotoWisdom(chapter.uid, true)">
+                                <div class="flex items-center gap-3 sm:gap-4">
+                                  <p class="text-5xl sm:text-7xl fontbold">
+                                    {{ chapter.index + 1 }}
+                                  </p>
+                                  <div>
+                                    <p class="text-h6 fontbold"
+                                       style="white-space: nowrap">
+                                      {{ chapter.t }}
+                                    </p>
+                                    <div class="flex gap-x-2 pb1">
+                                      <q-breadcrumbs active-color="brand-p">
+                                        <q-breadcrumbs-el icon="person"
+                                                          :label="chapter.usr"/>
+                                        <q-breadcrumbs-el :label="getHumanReadableDateText(chapter.ts, true, true)"/>
+                                      </q-breadcrumbs>
+                                    </div>
+                                    <div v-if="chapter.keys"
+                                         class="flex items-center no-wrap text-sm">
+                                      <q-icon name="sym_o_tag" size="1.2rem" class="mr1.5"/>
+                                      <p>{{ chapter.keys }}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </q-item>
+                            </template>
+                          </div>
+                        </q-expansion-item>
+                      </div>
                     </template>
                     <template v-else>
                       <div class="mt4 p2 rounded background wfit">
@@ -334,6 +425,12 @@ import TaskShare from 'components/knowledge/TaskShare.vue'
 import Editor from 'components/EditorComponent.vue'
 import { useStore } from 'stores/wikistate'
 import CourseAdder from 'components/knowledge/CourseAdder.vue'
+import { debounce, scroll } from 'quasar'
+
+const {
+  getScrollTarget,
+  setVerticalScrollPosition
+} = scroll
 
 export default {
   props: {
@@ -360,6 +457,7 @@ export default {
       const paramID = this.$route.query.id
       if (paramID) this.wisdomId = paramID
     }
+    this.checkCarouselResize = debounce(this.checkCarouselResize, 50)
     this.getWisdom()
   },
   data () {
@@ -378,11 +476,15 @@ export default {
       related: null,
       isEditingWisdom: false,
       contentTree: [],
+      contentMap: null,
       contentQuery: '',
       comment: '',
       isSharingTask: false,
       isAddingToCourse: false,
-      deleteCounter: 0
+      deleteCounter: 0,
+      slide: 0,
+      slideArrows: true,
+      treeNodeSelected: ''
     }
   },
   methods: {
@@ -405,6 +507,14 @@ export default {
           this.getKnowledge()
         }).then(() => {
           this.getRelated()
+        }).then(() => {
+          setTimeout(() => {
+            this.checkCarouselResize()
+            const elem = document.body
+            if (elem) {
+              elem.onresize = this.checkCarouselResize
+            }
+          }, 100)
         })
         .catch((err) => {
           console.debug(err.message)
@@ -646,72 +756,114 @@ export default {
      */
     buildContentLinks: function () {
       if (!this.wisdom) return
-      const headers = [...this.wisdom.desc.matchAll(/<h([1-6])>([^<]+)<\/h[1-6]>/gm)]
+      const headers = [...this.wisdom.desc.matchAll(/<h([1-6])\sdata-wikiric-id="([\w-]*)">([^<]+)<\/h[1-6]>/gm)]
       let level
       let content
+      let dataId
       let lastLevel
+      let lastParentDataId = ''
+      let ix = 0
       let tmp = {
         label: '',
         children: []
       }
+      let obj = {}
+      const parentIndices = []
+      // Prepare content tree
       const tree = []
       // Add root node
       tree.push({
         label: this.wisdom.t,
         children: []
       })
+      // Prepare content map
+      this.contentMap = new Map()
       // Add further nodes
       for (let i = 0; i < headers.length; i++) {
         level = parseInt(headers[i][1], 10)
-        content = headers[i][2]
+        // Extract content
+        // If group 2 aka ID group exists we need to choose group 3
+        // Since group 0 (the whole match) always exists group 2 is on length 3
+        if (headers[i].length === 3) {
+          content = headers[i][2]
+        } else if (headers[i].length === 4) {
+          content = headers[i][3]
+        }
         if (!content) continue
         if (content.length > 40) {
           content = content.substring(0, 40) + '...'
         }
+        content = ++ix + '. ' + content
+        // Remember data id
+        if (headers[i].length === 4) {
+          dataId = headers[i][2]
+        } else {
+          dataId = ''
+        }
+        this.contentMap.set(content, dataId)
         if (level && content) {
           if (lastLevel) {
             if (level < lastLevel) {
               // Lower level (more important) -> remember
-              if (tmp && tmp.label) {
-                tree[0].children.push(tmp)
-              }
               tmp = {
                 label: content,
-                children: []
+                children: [],
+                id: dataId
+              }
+              parentIndices.pop()
+              if (parentIndices.length > 0) {
+                parentIndices[parentIndices.length - 1].children.push(tmp)
+              } else {
+                tree[0].children.push(tmp)
               }
             } else {
               if (level > lastLevel) {
                 // Higher level (less important) -> insert as child
                 // Insert as child of child if possible
                 const len = tmp.children.length
+                obj = {
+                  label: content,
+                  children: [],
+                  id: dataId
+                }
                 if (len > 0) {
                   // Allow for another level of child
                   const len2 = tmp.children[len - 1].children.length
                   if (len2 > 0) {
-                    tmp.children[len - 1].children[len2 - 1].children.push({
-                      label: content,
-                      children: []
-                    })
+                    tmp.children[len - 1].children[len2 - 1].children.push(obj)
+                    if (lastParentDataId !== tmp.children[len - 1].children[len2 - 1].id) {
+                      lastParentDataId = tmp.children[len - 1].children[len2 - 1].id
+                      parentIndices.push(tmp.children[len - 1].children[len2 - 1])
+                    }
                   } else {
-                    tmp.children[len - 1].children.push({
-                      label: content,
-                      children: []
-                    })
+                    tmp.children[len - 1].children.push(obj)
+                    if (lastParentDataId !== tmp.children[len - 1].id) {
+                      lastParentDataId = tmp.children[len - 1].id
+                      parentIndices.push(tmp.children[len - 1])
+                    }
                   }
                 } else {
-                  tmp.children.push({
-                    label: content,
-                    children: []
-                  })
+                  tmp.children.push(obj)
+                  if (lastParentDataId !== tmp.id) {
+                    lastParentDataId = tmp.id
+                    parentIndices.push(tmp)
+                  }
                 }
               } else if (level === lastLevel) {
                 // Same level -> remember
-                if (tmp && tmp.label) {
-                  tree[0].children.push(tmp)
-                }
-                tmp = {
+                // if (tmp && tmp.label) {
+                //   tree[0].children.push(tmp)
+                // }
+                obj = {
                   label: content,
-                  children: []
+                  children: [],
+                  id: dataId
+                }
+                tmp = { ...obj }
+                if (parentIndices.length > 0) {
+                  parentIndices[parentIndices.length - 1].children.push(tmp)
+                } else {
+                  tree[0].children.push(tmp)
                 }
               }
             }
@@ -719,20 +871,19 @@ export default {
             // First node -> remember
             tmp = {
               label: content,
-              children: []
+              children: [],
+              id: dataId
             }
+            tree[0].children.push(tmp)
           }
           lastLevel = level
         }
-      }
-      if (tmp && tmp.label) {
-        tree[0].children.push(tmp)
       }
       this.contentTree = tree
       if (tree[0].children.length > 0) {
         setTimeout(() => {
           this.$refs.contentTree.expandAll()
-        })
+        }, 0)
       }
     },
     postComment: async function () {
@@ -891,18 +1042,34 @@ export default {
         url += '&backref=' + this.wisdom.uid
       }
       this.$router.push(url)
+    },
+    checkCarouselResize: function () {
+      this.slideArrows = document.body.clientWidth > 500
+    },
+    handleTreeNodeSelected: function (e) {
+      const result = this.contentMap.get(e)
+      if (result) {
+        const elems = document.querySelectorAll(
+          `[data-wikiric-id="${result}"]`)
+        if (elems.length > 0) {
+          this.scrollToElement(elems[0])
+        }
+      }
+    },
+    scrollToElement: function (el) {
+      const target = getScrollTarget(el)
+      let offset = el.offsetTop - 64
+      if (offset < 0) {
+        offset = 0
+      }
+      const duration = 200
+      setVerticalScrollPosition(target, offset, duration)
     }
   }
 }
 </script>
 
 <style scoped>
-
-.hoverPrimary:hover {
-  background: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
-  cursor: pointer;
-}
 
 </style>
 

@@ -27,6 +27,7 @@ import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight'
 import { common, createLowlight } from 'lowlight'
 import Image from '@tiptap/extension-image'
 import { FileHandler } from '@tiptap-pro/extension-file-handler'
+import UniqueID from '@tiptap-pro/extension-unique-id'
 
 const lowlight = createLowlight(common)
 
@@ -179,6 +180,10 @@ export default {
                 }
               })
             }
+          }),
+          UniqueID.configure({
+            attributeName: 'wikiric-id',
+            types: ['heading']
           }),
           shiftEnterExtension
         ],

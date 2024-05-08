@@ -321,7 +321,7 @@
 
 <script>
 import { api } from 'boot/axios'
-import { dbGetDisplayName } from 'src/libs/wikistore'
+import { dbGetDisplayName, dbGetSession } from 'src/libs/wikistore'
 import { debounce, dom, scroll } from 'quasar'
 import WisdomEdit from 'components/knowledge/WisdomEdit.vue'
 import { DateTime } from 'luxon'
@@ -403,8 +403,12 @@ export default {
       this.getRecentKeywords()
       this.getRecentQuestions()
     },
-    clickedBack: function () {
-      const url = `/chat?id=${this.groupID}`
+    clickedBack: async function () {
+      const sesh = await dbGetSession(this.groupID)
+      let url = `/chat?id=${this.groupID}`
+      if (sesh.lastChannelID && sesh.lastChannelID !== '') {
+        url += `&chan=${sesh.lastChannelID}`
+      }
       this.$router.push(url)
     },
     getChatroom: function () {

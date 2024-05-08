@@ -267,20 +267,27 @@ const wikiricSDK = {
       try {
         message.msg = await this._wcrypt.decryptPayload(message, this._username, this._key)
         if (message.msg == null) {
-          message.msg = 'The message could not be decrypted.'
-          message._mType = 'CryptError'
-          message._isApi = false
-          message._decryptionFailed = true
-          message.reacts = []
+          message = this.markMessageDecryptionError(message)
         }
       } catch (e) {
-        message.msg = 'The message could not be decrypted.'
-        message._mType = 'CryptError'
-        message._isApi = false
-        message._decryptionFailed = true
-        message.reacts = []
+        console.debug('ENCRYPTION ERROR', e.message)
+        message = this.markMessageDecryptionError(message)
       }
     }
+    return message
+  },
+  /**
+   * Marks the message because of a failed decryption
+   *
+   * @param {Object} message
+   * @returns {Object}
+   */
+  markMessageDecryptionError: function (message) {
+    message.msg = 'The message could not be decrypted.'
+    message._mType = 'CryptError'
+    message._isApi = false
+    message._decryptionFailed = true
+    message.reacts = []
     return message
   },
   /**

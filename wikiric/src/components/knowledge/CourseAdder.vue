@@ -31,7 +31,7 @@
                 <p>Choose from those Courses:</p>
               </div>
               <template v-for="result in results" :key="result">
-                <div class="px4 pt2 pb4 rounded-2 background wfit hoverPrimary"
+                <div class="mt2 px4 pt2 pb4 rounded-2 background wfit hoverPrimary"
                      @click="addToCourse(result.result.uid)">
                   <p class="fontbold text-body1">
                     {{ result.result.t }}
@@ -299,11 +299,5 @@ export default {
 </script>
 
 <style scoped>
-
-.hoverPrimary:hover {
-  background: var(--md-sys-color-primary);
-  color: var(--md-sys-color-on-primary);
-  cursor: pointer;
-}
 
 </style>

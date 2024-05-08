@@ -788,43 +788,43 @@ input:checked {
 .markedView h1 {
   font-size: 3rem; /* 20.0px */
   font-weight: bold;
-  margin-top: 2.5rem;
-  margin-bottom: 1rem;
+  margin-top: 2.5rem !important;
+  margin-bottom: 1rem !important;
 }
 
 .markedView h2 {
   font-size: 2.6rem; /* 20.0px */
   font-weight: bold;
-  margin-top: 2.5rem;
-  margin-bottom: 1rem;
+  margin-top: 2.5rem !important;
+  margin-bottom: 1rem !important;
 }
 
 .markedView h3 {
   font-size: 2.4rem; /* 20.0px */
   font-weight: bold;
-  margin-top: 2.5rem;
-  margin-bottom: 1rem;
+  margin-top: 2.5rem !important;
+  margin-bottom: 1rem !important;
 }
 
 .markedView h4 {
   font-size: 2.2rem; /* 20.0px */
   font-weight: bold;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
+  margin-top: 2rem !important;
+  margin-bottom: 1rem !important;
 }
 
 .markedView h5 {
   font-size: 1.5rem; /* 18.0px */
   font-weight: bold;
-  margin-top: 1.5rem;
-  margin-bottom: 1rem;
+  margin-top: 1.5rem !important;
+  margin-bottom: 1rem !important;
 }
 
 .markedView h6 {
   font-size: 1.3rem; /* 18.0px */
   font-weight: bold;
-  margin-top: 1rem;
-  margin-bottom: 1rem;
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
 }
 
 .markedView code {
@@ -1170,4 +1170,13 @@ pre {
   border-radius: 0.4rem;
   padding: 0.1rem 0.3rem;
   box-decoration-break: clone;
+}
+
+.hoverPrimary:hover {
+  background: var(--md-sys-color-primary);
+  cursor: pointer;
+}
+
+.hoverPrimary:hover * {
+  color: var(--md-sys-color-on-primary);
 }
