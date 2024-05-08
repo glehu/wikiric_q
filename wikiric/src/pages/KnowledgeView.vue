@@ -50,9 +50,15 @@
                 Query
               </q-toolbar-title>
             </q-toolbar>
-            <q-btn icon="engineering" label="ToDo's"
+            <q-btn icon="engineering" label="ToDo"
                    no-caps flat align="left"
                    @click="filterToDos"/>
+            <q-btn icon="lightbulb" label="Lessons"
+                   no-caps flat align="left"
+                   @click="filterLessons"/>
+            <q-btn icon="sym_o_topic" label="Courses"
+                   no-caps flat align="left"
+                   @click="filterCourses"/>
           </div>
         </q-scroll-area>
       </q-drawer>
@@ -440,6 +446,14 @@ export default {
         }
       }
       const type = this.extractEntryType(query)
+      if (type !== '') {
+        // Check if query only contains a type query
+        if (query.replace(/type:\w*\s?/, '') === '') {
+          // Add a dot to filter every entry of the given type
+          // Otherwise, we might not see anything
+          query += ' .'
+        }
+      }
       if (!query) {
         return
       }
@@ -459,7 +473,7 @@ export default {
           const parsedData = response.data
           if (!questionsOnly) {
             this.results = []
-            this.queryTime = parsedData.respTime
+            this.queryTime = parsedData.respTime.toFixed(4)
           } else {
             this.questions = []
           }
@@ -911,7 +925,7 @@ export default {
       setVerticalScrollPosition(target, offset, duration)
     },
     filterToDos: function () {
-      const query = `type:task state:todo ${this.store.user.username}`
+      const query = `type:task state:todo ${this.store.user.username} `
       this.searchWisdom(query)
       this.$q.notify({
         color: 'primary',
@@ -929,7 +943,53 @@ export default {
         ]
       })
       const { width } = dom
-      if (width(this.$refs.toolbar_top) < 768) {
+      if (width(this.$refs.toolbar_top) < 768 - 300) {
+        this.sidebarLeft = false
+      }
+    },
+    filterCourses: function () {
+      const query = 'type:course '
+      this.searchWisdom(query)
+      this.$q.notify({
+        color: 'primary',
+        position: 'top-right',
+        message: 'Showing Courses!',
+        caption: 'Check search query for more information',
+        actions: [
+          {
+            icon: 'close',
+            color: 'white',
+            round: true,
+            handler: () => {
+            }
+          }
+        ]
+      })
+      const { width } = dom
+      if (width(this.$refs.toolbar_top) < 768 - 300) {
+        this.sidebarLeft = false
+      }
+    },
+    filterLessons: function () {
+      const query = 'type:lesson '
+      this.searchWisdom(query)
+      this.$q.notify({
+        color: 'primary',
+        position: 'top-right',
+        message: 'Showing Lessons!',
+        caption: 'Check search query for more information',
+        actions: [
+          {
+            icon: 'close',
+            color: 'white',
+            round: true,
+            handler: () => {
+            }
+          }
+        ]
+      })
+      const { width } = dom
+      if (width(this.$refs.toolbar_top) < 768 - 300) {
         this.sidebarLeft = false
       }
     }

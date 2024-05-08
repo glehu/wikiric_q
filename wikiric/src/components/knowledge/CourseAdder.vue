@@ -2,12 +2,22 @@
   <q-dialog v-model="show" class="z-top">
     <q-card class="surface p4 w-[99dvw] max-w-xl" flat bordered>
       <div>
-        <p class="text-h5 fontbold">
-          Add to Course
-        </p>
+        <q-toolbar class="wfull">
+          <q-toolbar-title class="wfull flex justify-between">
+            <p class="text-h5 fontbold non-selectable">
+              Add to Course
+            </p>
+            <q-btn icon="close" flat @click="show = false"/>
+          </q-toolbar-title>
+        </q-toolbar>
         <div class="mt4 flex column gap-2">
           <div>
-            <div class="wfit">
+            <div class="mb2">
+              <p class="text-subtitle2 non-selectable">
+                Current Lesson:
+              </p>
+            </div>
+            <div class="wfit px4 pt2">
               <p class="fontbold text-body1">
                 {{ wisdomProp.t }}
               </p>
@@ -27,8 +37,11 @@
           </div>
           <template v-if="results.length > 0">
             <div>
-              <div class="mt6 mb2 text-subtitle2">
-                <p>Choose from those Courses:</p>
+              <hr>
+              <div class="mb2">
+                <p class="text-subtitle2 non-selectable">
+                  Choose from those Courses:
+                </p>
               </div>
               <template v-for="result in results" :key="result">
                 <div class="mt2 px4 pt2 pb4 rounded-2 background wfit hoverPrimary"
@@ -50,6 +63,15 @@
                   </div>
                 </div>
               </template>
+            </div>
+          </template>
+          <template v-else>
+            <div>
+              <div class="mt6 mb2">
+                <p class="text-body1 fontbold non-selectable">
+                  No Courses found.
+                </p>
+              </div>
             </div>
           </template>
         </div>

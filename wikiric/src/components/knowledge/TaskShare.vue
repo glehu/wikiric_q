@@ -18,7 +18,7 @@
         </div>
         <template v-if="groups.length > 0">
           <template v-for="group in groups" :key="group">
-            <q-expansion-item class="mt4 background"
+            <q-expansion-item class="mt4 surface rounded-2 overflow-hidden"
                               group="group_chan"
                               @before-show="getChatroom(group.id)">
               <template v-slot:header>
@@ -26,6 +26,13 @@
                   {{ group.t }}
                 </p>
               </template>
+              <q-item clickable class="flex items-center"
+                      @click="shareTask(group.id)">
+                <q-item-label class="flex gap-2 items-center">
+                  <q-icon name="share" size="1.5rem"/>
+                  <span>General</span>
+                </q-item-label>
+              </q-item>
               <template v-if="channels.length > 0">
                 <q-item v-for="channel in channels" :key="channel"
                         clickable class="flex items-center"

@@ -48,15 +48,17 @@
             </template>
           </q-input>
         </div>
-        <template v-if="wisdomType !== 'post'">
-          <div class="flex row gap-6 wfull px4 py2 items-start justify-between
-                    fmt_border rounded mt4 mb1 background">
+        <template v-if="wisdomType === 'task'">
+          <div class="flex row gap-6 wfull px4 py2
+                      items-start justify-between
+                      fmt_border rounded mt4 mb1 background">
             <div class="flex column gap-4">
               <div class="flex row gap-2 items-center">
                 <p class="text-subtitle2 fontbold pointer-events-none w12">
                   From
                 </p>
-                <div class="flex row gap-2 items-center justify-between flex-grow">
+                <div class="flex row gap-2 items-center
+                            justify-between flex-grow">
                   <q-btn icon="event" flat dense no-caps
                          class="wfit text-md fontbold" :label="getHumanReadableDateText(wisdom.due)">
                     <q-popup-proxy @before-show="updateProxyDueDate" cover transition-show="scale"
@@ -122,22 +124,22 @@
               </div>
             </div>
           </div>
-          <q-select
-            label="Collaborators"
-            color="brand-p"
-            bg-color="brand-bg"
-            filled
-            v-model="wisdom.coll"
-            :options="filterOptions"
-            @filter="filterCollaboratorOptions"
-            use-input
-            use-chips
-            multiple
-            input-debounce="50"
-            new-value-mode="add-unique"
-            class="wfull"
-          />
         </template>
+        <q-select
+          label="Collaborators (Enter to add)"
+          color="brand-p"
+          bg-color="brand-bg"
+          filled
+          v-model="wisdom.coll"
+          :options="filterOptions"
+          @filter="filterCollaboratorOptions"
+          use-input
+          use-chips
+          multiple
+          input-debounce="50"
+          new-value-mode="add-unique"
+          class="wfull"
+        />
       </div>
       <p class="text-h6 fontbold mt4 ml4">
         Content
@@ -185,6 +187,13 @@ export default {
   emits: ['update', 'create'],
   watch: {
     isOpen () {
+      if (this.wisdomProp) {
+        this.wisdom = structuredClone(toRaw(this.wisdomProp))
+        if (this.wisdom.type) {
+          this.wisdomType = this.wisdom.type
+        }
+        this.wisdom = this.jsDateToQDate(this.wisdom)
+      }
       if (!this.wisdomProp ||
         this.wisdom.uid !== this.wisdomProp.uid) {
         this.wisdom = {

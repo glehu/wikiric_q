@@ -90,32 +90,38 @@
             <div v-if="wisdom"
                  class="max-w-screen-lg wfull hfull">
               <div class="flex row wfull">
-                <q-btn-group flat class="mlauto">
-                  <template v-if="wisdom.type === 'lesson'">
+                <q-btn-group flat class="mlauto mb1">
+                  <template v-if="wisdom.type === 'lesson' || wisdom.type === 'course'">
                     <q-btn icon="sym_o_topic" label="Add to Course"
-                           no-caps
+                           class="mr2"
+                           no-caps dense
                            @click="handleAddToCourse"/>
                   </template>
                   <template v-if="wisdom.type === 'task' && wisdom.done === false">
                     <q-btn icon="check" label="Done"
-                           no-caps
+                           class="mr2"
+                           no-caps dense
                            @click="handleFinishWisdom"/>
                   </template>
                   <q-btn icon="edit" label="Edit"
-                         no-caps
+                         class="mr2"
+                         no-caps dense
                          @click="handleEditWisdom"/>
                   <template v-if="deleteCounter === 0">
                     <q-btn icon="delete" label="Delete"
-                           no-caps
+                           class="mr2"
+                           no-caps dense
                            @click="setDeleteCounter"/>
                   </template>
                   <template v-else-if="deleteCounter === 1">
                     <q-btn icon="delete" label="Confirm Delete"
+                           class="fontbold"
                            color="negative"
                            @click="handleDeleteWisdom"/>
                   </template>
                   <q-btn icon="share" label="Share"
-                         no-caps
+                         class="mr2"
+                         no-caps dense
                          @click="isSharingTask = !isSharingTask"/>
                 </q-btn-group>
               </div>
@@ -123,14 +129,49 @@
                           rounded
                           px4 pt2 pb4">
                 <template v-if="wisdom.type === 'question' && wisdom.done !== true">
-                  <div class="wfull pb1">
-                    <p class="my2 p2
-                              border-l-8 border-l-orange-600
+                  <div class="wfull pb1 my2 p2
                               surface-variant
-                              text-sm rounded w-fit fmt_border">
-                      This question is unanswered (or at least not confirmed yet)!
-                      <br>Help by submitting a comment, providing useful information on this topic.
+                              text-sm rounded w-fit fmt_border"
+                       style="border-left: 8px solid darkorange">
+                    <p class="fontbold text-body1">
+                      This question is unanswered
+                      or no answer was accepted, yet!
                     </p>
+                    <ul class="mb2">
+                      <li>
+                        Help by submitting a comment,
+                        providing useful information on this topic.
+                      </li>
+                      <li>
+                        The question's author may accept an answer,
+                        pinning it at the top.
+                      </li>
+                    </ul>
+                  </div>
+                </template>
+                <template v-if="wisdom.type === 'question' && wisdom.done === true">
+                  <div class="wfull pb1 my2 p2
+                              surface-variant
+                              text-sm rounded w-fit fmt_border"
+                       style="border-left: 8px solid green">
+                    <p class="fontbold text-body1">
+                      This question was answered!
+                    </p>
+                    <ul>
+                      <li>
+                        Your comments can not be accepted anymore,
+                        but you can still provide useful information
+                        on this topic.
+                      </li>
+                    </ul>
+                    <div class="wfull flex justify-end mb2">
+                      <q-btn icon="sym_o_arrow_downward"
+                             color="primary"
+                             unelevated
+                             label="Go to answer"
+                             class="wfit"
+                             @click="gotoAnswer"/>
+                    </div>
                   </div>
                 </template>
                 <p class="text-2xl sm:text-3xl fontbold">{{ wisdom.t }}</p>
@@ -172,13 +213,15 @@
                           </template>
                           <q-carousel-slide v-for="chapter in wisdom.chapters" :key="chapter"
                                             :name="chapter.index"
-                                            class="column no-wrap wfull hfull justify-center">
-                            <q-item class="surface rounded px3 py2 wfull hfull
+                                            class="flex no-wrap wfull hfull justify-center">
+                            <q-item class="rounded px3 lg:px6 py2 lg:py4 wfull hfull
+                                           surface
+                                           max-w-3xl overflow-hidden
                                            column justify-center"
                                     clickable
                                     @click="gotoWisdom(chapter.uid, true)">
                               <div class="flex items-center gap-3 sm:gap-4">
-                                <p class="<sm:hidden sm:text-7xl fontbold">
+                                <p class="<sm:hidden text-5xl lg:text-7xl fontbold">
                                   {{ chapter.index + 1 }}
                                 </p>
                                 <div>
@@ -186,8 +229,7 @@
                                     <p class="sm:hidden text-xl fontbold">
                                       {{ chapter.index + 1 }}.
                                     </p>
-                                    <p class="text-h6 fontbold"
-                                       style="white-space: nowrap">
+                                    <p class="text-h6 fontbold">
                                       {{ chapter.t }}
                                     </p>
                                   </div>
@@ -231,8 +273,7 @@
                                     {{ chapter.index + 1 }}
                                   </p>
                                   <div>
-                                    <p class="text-h6 fontbold"
-                                       style="white-space: nowrap">
+                                    <p class="text-h6 fontbold">
                                       {{ chapter.t }}
                                     </p>
                                     <div class="flex gap-x-2 pb1">
@@ -355,6 +396,27 @@
                 </div>
                 <div v-html="wisdom.desc" class="markedView"></div>
               </div>
+              <div v-if="related" class="m4">
+                <template v-if="related.answers && related.answers.length > 0">
+                  <p id="answer"
+                     class="text-body1 mb2">
+                    Answer:
+                  </p>
+                  <div class="surface px3 pt2 pb4 rounded"
+                       style="border-left: 8px solid green">
+                    <div class="mb2 flex justify-between items-start gap-3">
+                      <p class="">
+                        {{ related.answers[0].name }}
+                      </p>
+                      <span class="text-subtitle2">
+                          {{ related.answers[0]._ts }}
+                        </span>
+                    </div>
+                    <div v-html="related.answers[0].desc"
+                         class="markedView"></div>
+                  </div>
+                </template>
+              </div>
               <div class="mx4 mt4">
                 <editor v-model="comment" ref="ref_editor"/>
               </div>
@@ -374,16 +436,21 @@
                   <div class="wfull flex column gap-2">
                     <template v-for="reply in related.replies" :key="reply.uid">
                       <div class="surface px3 pt2 pb4 rounded">
-                        <p class="mb2">
-                          {{ reply.name }},
-                          <span class="text-subtitle2">{{ reply._ts }}:</span>
-                        </p>
+                        <div class="mb2 flex justify-between items-start gap-3">
+                          <p class="">
+                            {{ reply.name }}
+                          </p>
+                          <span class="text-subtitle2">
+                          {{ reply._ts }}
+                        </span>
+                        </div>
                         <div v-html="reply.desc" class="markedView"></div>
                       </div>
                       <template
                         v-if="wisdom.type === 'question' && wisdom.done !== true && wisdom.usr === store.user.username">
                         <div class="mb-4 mt-1 w-full flex">
                           <q-btn @click="finishQuestion(wisdom, reply)"
+                                 icon="check"
                                  color="primary"
                                  label="Accept Answer"/>
                         </div>
@@ -1064,6 +1131,12 @@ export default {
       }
       const duration = 200
       setVerticalScrollPosition(target, offset, duration)
+    },
+    gotoAnswer: function () {
+      const elem = document.getElementById('answer')
+      if (elem) {
+        this.scrollToElement(elem)
+      }
     }
   }
 }
