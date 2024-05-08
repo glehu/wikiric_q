@@ -125,21 +125,23 @@
             </div>
           </div>
         </template>
-        <q-select
-          label="Collaborators (Enter to add)"
-          color="brand-p"
-          bg-color="brand-bg"
-          filled
-          v-model="wisdom.coll"
-          :options="filterOptions"
-          @filter="filterCollaboratorOptions"
-          use-input
-          use-chips
-          multiple
-          input-debounce="50"
-          new-value-mode="add-unique"
-          class="wfull"
-        />
+        <template v-if="wisdomType !== 'post'">
+          <q-select
+            label="Collaborators (Enter to add)"
+            color="brand-p"
+            bg-color="brand-bg"
+            filled
+            v-model="wisdom.coll"
+            :options="filterOptions"
+            @filter="filterCollaboratorOptions"
+            use-input
+            use-chips
+            multiple
+            input-debounce="50"
+            new-value-mode="add-unique"
+            class="wfull"
+          />
+        </template>
       </div>
       <p class="text-h6 fontbold mt4 ml4">
         Content
