@@ -60,6 +60,22 @@
                    no-caps flat align="left"
                    @click="filterCourses"/>
           </div>
+          <div class="flex column wfull">
+            <q-toolbar>
+              <q-toolbar-title class="text-lg">
+                Sort
+              </q-toolbar-title>
+            </q-toolbar>
+            <q-btn icon="sym_o_target" label="Relevance"
+                   no-caps flat align="left"
+                   @click="sortByRelevance"/>
+            <q-btn icon="visibility" label="Views"
+                   no-caps flat align="left"
+                   @click="sortByViews"/>
+            <q-btn icon="event" label="Date"
+                   no-caps flat align="left"
+                   @click="sortByDate"/>
+          </div>
         </q-scroll-area>
       </q-drawer>
       <q-page-container>
@@ -450,7 +466,8 @@ export default {
       isEditingWisdom: false,
       queryTime: 0,
       topWriters: [],
-      typePref: ''
+      typePref: '',
+      sortAsc: false
     }
   },
   created () {
@@ -1066,6 +1083,36 @@ export default {
       if (width(this.$refs.toolbar_top) < 768 - 300) {
         this.sidebarLeft = false
       }
+    },
+    sortByRelevance: function () {
+      if (this.sortAsc) {
+        this.results.sort(
+          (a, b) => a.result.accuracy - b.result.accuracy)
+      } else {
+        this.results.sort(
+          (a, b) => b.result.accuracy - a.result.accuracy)
+      }
+      this.sortAsc = !this.sortAsc
+    },
+    sortByViews: function () {
+      if (this.sortAsc) {
+        this.results.sort(
+          (a, b) => a.result.views - b.result.views)
+      } else {
+        this.results.sort(
+          (a, b) => b.result.views - a.result.views)
+      }
+      this.sortAsc = !this.sortAsc
+    },
+    sortByDate: function () {
+      if (this.sortAsc) {
+        this.results.sort(
+          (a, b) => new Date(a.result.ts).valueOf() - new Date(b.result.ts).valueOf())
+      } else {
+        this.results.sort(
+          (a, b) => new Date(b.result.ts).valueOf() - new Date(a.result.ts).valueOf())
+      }
+      this.sortAsc = !this.sortAsc
     }
   }
 }
