@@ -134,25 +134,40 @@
                             {{ res.name }},
                             {{ res.result._ts }}:
                           </p>
-                          <div class="flex row items-center">
+                          <div class="flex row items-center text-xs fontbold opacity80">
                             <template v-if="res.type === 'lesson'">
                               <span>Lesson</span>
-                              <q-icon name="lightbulb" size="1rem"
+                              <q-icon name="lightbulb" size="1.3rem"
                                       class="ml2"/>
                             </template>
                             <template v-else-if="res.type === 'question'">
                               <span>Question</span>
-                              <q-icon name="question_mark" size="1rem"
+                              <q-icon name="question_mark" size="1.3rem"
                                       class="ml2"/>
                             </template>
                             <template v-else-if="res.type === 'post'">
                               <span>Post</span>
-                              <q-icon name="sym_o_web_stories" size="1rem"
+                              <q-icon name="sym_o_web_stories" size="1.3rem"
                                       class="ml2"/>
                             </template>
                             <template v-else-if="res.type === 'course'">
                               <span>Course</span>
-                              <q-icon name="sym_o_topic" size="1rem"
+                              <q-icon name="sym_o_topic" size="1.3rem"
+                                      class="ml2"/>
+                            </template>
+                            <template v-else-if="res.type === 'task'">
+                              <span>Task</span>
+                              <q-icon name="engineering" size="1.3rem"
+                                      class="ml2"/>
+                            </template>
+                            <template v-else-if="res.type === 'reply'">
+                              <span>Comment</span>
+                              <q-icon name="sym_o_message" size="1.3rem"
+                                      class="ml2"/>
+                            </template>
+                            <template v-else-if="res.type === 'answer'">
+                              <span>Answer</span>
+                              <q-icon name="check" size="1.3rem"
                                       class="ml2"/>
                             </template>
                           </div>

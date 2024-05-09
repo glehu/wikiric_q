@@ -587,6 +587,24 @@ export default {
   font-weight: bold !important;
 }
 
+.fc-col-header-cell {
+  font-size: 0.8rem !important;
+  font-weight: bold !important;
+  word-break: break-word;
+}
+
+.fc-timegrid-axis-frame {
+  font-size: 0.8rem !important;
+  font-weight: bold !important;
+}
+
+.fc-timegrid-slot-label-frame {
+  width: 100% !important;
+  display: flex !important;
+  justify-items: center !important;
+  align-items: center !important;
+}
+
 </style>
 
 <style scoped>

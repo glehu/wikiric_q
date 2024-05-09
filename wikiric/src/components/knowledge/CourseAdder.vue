@@ -10,7 +10,7 @@
             <q-btn icon="close" flat @click="show = false"/>
           </q-toolbar-title>
         </q-toolbar>
-        <div class="mt4 flex column gap-2">
+        <div class="mt2 flex column gap-2">
           <div>
             <div class="mb2">
               <p class="text-subtitle2 non-selectable">
@@ -38,30 +38,51 @@
           <template v-if="results.length > 0">
             <div>
               <hr>
+              <div class="mb2 markedView">
+                <blockquote>
+                  <p class="text-subtitle2">
+                    Adding an entry to a course it's already in
+                    will remove it from that course!
+                    You will see a dash before the course when it's part of it.
+                  </p>
+                </blockquote>
+              </div>
               <div class="mb2">
                 <p class="text-subtitle2 non-selectable">
                   Choose from those Courses:
                 </p>
               </div>
               <template v-for="result in results" :key="result">
-                <div class="mt2 px4 pt2 pb4 rounded-2 background wfit hoverPrimary"
-                     @click="addToCourse(result.result.uid)">
-                  <p class="fontbold text-body1">
-                    {{ result.result.t }}
-                  </p>
-                  <div class="flex gap-x-2 text-sm">
-                    <q-breadcrumbs active-color="brand-p" class="mt1">
-                      <q-breadcrumbs-el icon="person"
-                                        :label="wisdomProp.usr"/>
-                      <q-breadcrumbs-el :label="wisdomProp._ts"/>
-                    </q-breadcrumbs>
+                <template v-if="result.result.uid !== wisdomProp.uid">
+                  <div class="mt2 px4 pt2 pb4 rounded-2 background wfit hoverPrimary"
+                       @click="addToCourse(result.result.uid)">
+                    <div class="flex items-center gap-3">
+                      <template v-if="result.result._isCourseParent">
+                        <q-icon name="remove" size="2rem"/>
+                      </template>
+                      <template v-else>
+                        <q-icon name="add" size="2rem"/>
+                      </template>
+                      <div>
+                        <p class="fontbold text-body1">
+                          {{ result.result.t }}
+                        </p>
+                        <div class="flex gap-x-2 text-sm">
+                          <q-breadcrumbs active-color="brand-p" class="mt1">
+                            <q-breadcrumbs-el icon="person"
+                                              :label="wisdomProp.usr"/>
+                            <q-breadcrumbs-el :label="wisdomProp._ts"/>
+                          </q-breadcrumbs>
+                        </div>
+                        <div v-if="result.result._keys"
+                             class="flex items-center mt1 text-sm">
+                          <q-icon name="sym_o_tag" size="1.2rem" class="mr1.5"/>
+                          <p>{{ result.result._keys }}</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div v-if="result.result._keys"
-                       class="flex items-center mt1 text-sm">
-                    <q-icon name="sym_o_tag" size="1.2rem" class="mr1.5"/>
-                    <p>{{ result.result._keys }}</p>
-                  </div>
-                </div>
+                </template>
               </template>
             </div>
           </template>
@@ -203,6 +224,15 @@ export default {
           for (let j = results[i].replies.length - 1; j >= 0; j--) {
             results[i].replies[j]._time = DateTime.fromISO(results[i].replies[j].ts)
             results[i].replies[j]._ts = this.getHumanReadableDateText(results[i].replies[j]._time, true, true)
+          }
+        }
+        // Check if current wisdom entry is already part of the course
+        if (results[i].chapters && results[i].chapters.length > 0) {
+          for (let j = 0; j < results[i].chapters.length; j++) {
+            if (results[i].chapters[j].uid === this.wisdomProp.uid) {
+              results[i]._isCourseParent = true
+              break
+            }
           }
         }
         // Add entry to list
