@@ -55,7 +55,7 @@
                    @click="filterToDos"/>
             <q-btn icon="lightbulb" label="Lessons"
                    no-caps flat align="left"
-                   @click="filterLessons"/>
+                   @click="filterLessons(false)"/>
             <q-btn icon="question_mark" label="Questions"
                    no-caps flat align="left"
                    @click="filterLessons(true)"/>
