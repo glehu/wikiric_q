@@ -251,11 +251,10 @@
                           </q-carousel-slide>
                         </q-carousel>
                       </div>
-                      <div class="max-h-lg
-                                  overflow-y-auto flex-grow-1">
+                      <div class="relative">
                         <q-expansion-item>
                           <template v-slot:header>
-                            <div class="wfull flex items-center">
+                            <div class="wfull flex items-center sticky top-0">
                               <p class="text-subtitle2 wfull fontbold">
                                 Toggle Chapter List
                                 <span>- {{ course.chapters.length }}</span>
@@ -268,42 +267,44 @@
                             label-color="brand-p"
                             v-model="chapterQuery"
                             @update:model-value="handleChapterQuery"
-                            class="text-lg px2">
+                            class="text-lg px2 pb2">
                             <template v-slot:prepend>
                               <q-icon name="search"/>
                             </template>
                           </q-input>
-                          <div class="p2 column gap-2">
-                            <template v-for="chapter in course.chapters" :key="chapter">
-                              <q-item v-if="!chapter._hidden"
-                                      class="surface rounded px3 py2 wfull hfull
+                          <div class="max-h-sm overflow-y-auto">
+                            <div class="p2 flex column gap-2 hfull">
+                              <template v-for="chapter in course.chapters" :key="chapter">
+                                <q-item v-if="!chapter._hidden"
+                                        class="surface rounded px3 py2 wfull hfull
                                              column justify-center"
-                                      clickable
-                                      @click="gotoWisdom(chapter.uid, true, chapter.index)">
-                                <div class="flex items-center gap-3 sm:gap-4">
-                                  <p class="text-5xl sm:text-7xl fontbold">
-                                    {{ chapter.index + 1 }}
-                                  </p>
-                                  <div>
-                                    <p class="text-h6 fontbold">
-                                      {{ chapter.t }}
+                                        clickable
+                                        @click="gotoWisdom(chapter.uid, true, chapter.index)">
+                                  <div class="flex items-center gap-3 sm:gap-4">
+                                    <p class="text-5xl sm:text-7xl fontbold">
+                                      {{ chapter.index + 1 }}
                                     </p>
-                                    <div class="flex gap-x-2 pb1">
-                                      <q-breadcrumbs active-color="brand-p">
-                                        <q-breadcrumbs-el icon="person"
-                                                          :label="chapter.usr"/>
-                                        <q-breadcrumbs-el :label="getHumanReadableDateText(chapter.ts, true, true)"/>
-                                      </q-breadcrumbs>
-                                    </div>
-                                    <div v-if="chapter.keys"
-                                         class="flex items-center no-wrap text-sm">
-                                      <q-icon name="sym_o_tag" size="1.2rem" class="mr1.5"/>
-                                      <p>{{ chapter.keys }}</p>
+                                    <div>
+                                      <p class="text-h6 fontbold">
+                                        {{ chapter.t }}
+                                      </p>
+                                      <div class="flex gap-x-2 pb1 text-subtitle2">
+                                        <q-breadcrumbs active-color="brand-p">
+                                          <q-breadcrumbs-el icon="person"
+                                                            :label="chapter.usr"/>
+                                          <q-breadcrumbs-el :label="getHumanReadableDateText(chapter.ts, false, true)"/>
+                                        </q-breadcrumbs>
+                                      </div>
+                                      <div v-if="chapter.keys"
+                                           class="flex items-center no-wrap text-subtitle2">
+                                        <q-icon name="sym_o_tag" size="1.2rem" class="mr1.5"/>
+                                        <p>{{ chapter.keys }}</p>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              </q-item>
-                            </template>
+                                </q-item>
+                              </template>
+                            </div>
                           </div>
                         </q-expansion-item>
                       </div>

@@ -223,6 +223,7 @@
   <wisdom-edit :is-open="isEditingWisdom"
                :knowledge-id="knowledge.uid"
                :type-preference="typePref"
+               :type-changeable="false"
                @update="handleWisdomUpdate"
                @create="handleWisdomCreate"/>
 </template>
