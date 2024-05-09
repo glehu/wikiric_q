@@ -56,6 +56,9 @@
             <q-btn icon="lightbulb" label="Lessons"
                    no-caps flat align="left"
                    @click="filterLessons"/>
+            <q-btn icon="question_mark" label="Questions"
+                   no-caps flat align="left"
+                   @click="filterLessons(true)"/>
             <q-btn icon="sym_o_topic" label="Courses"
                    no-caps flat align="left"
                    @click="filterCourses"/>
@@ -188,6 +191,12 @@
                             </template>
                           </div>
                         </q-item-label>
+                        <div v-if="res.result.keys"
+                             class="flex items-center fmt_border text-subtitle2
+                                    wfit rounded px1 mb2">
+                          <q-icon name="sym_o_tag" size="1.2rem" class="mr1"/>
+                          <p>{{ res.result.keys }}</p>
+                        </div>
                         <p class="text-h6 fontbold">
                           {{ res.result.t }}
                         </p>
@@ -206,6 +215,42 @@
                               {{ res.result.views }}
                             </p>
                           </div>
+                        </template>
+                        <template v-if="res.type === 'question'">
+                          <template v-if="res.result.done">
+                            <div class="flex items-center gap-2 mt2 px2 py1
+                                        rounded background text-subtitle2"
+                                 style="border-left: 8px solid green">
+                              <q-icon name="check"/>
+                              <span>Answered</span>
+                            </div>
+                          </template>
+                          <template v-else>
+                            <div class="flex items-center gap-2 mt2 px2 py1
+                                        rounded background text-subtitle2"
+                                 style="border-left: 8px solid darkorange">
+                              <q-icon name="question_mark"/>
+                              <span>Help Requested</span>
+                            </div>
+                          </template>
+                        </template>
+                        <template v-else-if="res.type === 'task'">
+                          <template v-if="res.result.done">
+                            <div class="flex items-center gap-2 mt2 px2 py1
+                                        rounded background text-subtitle2"
+                                 style="border-left: 8px solid green">
+                              <q-icon name="check"/>
+                              <span>Done</span>
+                            </div>
+                          </template>
+                          <template v-else>
+                            <div class="flex items-center gap-2 mt2 px2 py1
+                                        rounded background text-subtitle2"
+                                 style="border-left: 8px solid darkorange">
+                              <q-icon name="sym_o_manufacturing"/>
+                              <span>ToDo</span>
+                            </div>
+                          </template>
                         </template>
                       </q-item-section>
                     </q-item>
@@ -402,6 +447,8 @@
                             icon="lightbulb" label="New Lesson" label-position="left"/>
               <q-fab-action color="primary" @click="startCreatingWisdom('question')"
                             icon="question_mark" label="Ask Question" label-position="left"/>
+              <q-fab-action color="primary" @click="startCreatingWisdom('course')"
+                            icon="sym_o_topic" label="New Course" label-position="left"/>
             </q-fab>
           </q-page-sticky>
         </q-page>
@@ -1061,13 +1108,18 @@ export default {
         this.sidebarLeft = false
       }
     },
-    filterLessons: function () {
-      const query = 'type:lesson '
+    filterLessons: function (question = false) {
+      let query = 'type:lesson '
+      let content = 'Lessons'
+      if (question) {
+        query = 'type:question '
+        content = 'Questions'
+      }
       this.searchWisdom(query)
       this.$q.notify({
         color: 'primary',
         position: 'top-right',
-        message: 'Showing Lessons!',
+        message: `Showing ${content}!`,
         caption: 'Check search query for more information',
         actions: [
           {

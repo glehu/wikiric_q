@@ -252,19 +252,91 @@
             </template>
             <template v-else>
               <div class="surface rounded p2 markedView">
-                <div class="rounded primary wfit px1">
-                  <span class="text-body2 fontbold">
-                    Shared Wisdom
-                  </span>
+                <div class="flex row items-center text-subtitle2
+                            fontbold background rounded wfit px2 py1">
+                  <template v-if="wisdom.type === 'lesson'">
+                    <q-icon name="lightbulb" size="1.3rem"
+                            class="mr2"/>
+                    <span>Lesson</span>
+                  </template>
+                  <template v-else-if="wisdom.type === 'question'">
+                    <q-icon name="question_mark" size="1.3rem"
+                            class="mr2"/>
+                    <span>Question</span>
+                  </template>
+                  <template v-else-if="wisdom.type === 'post'">
+                    <q-icon name="sym_o_web_stories" size="1.3rem"
+                            class="mr2"/>
+                    <span>Post</span>
+                  </template>
+                  <template v-else-if="wisdom.type === 'course'">
+                    <q-icon name="sym_o_topic" size="1.3rem"
+                            class="mr2"/>
+                    <span>Course</span>
+                  </template>
+                  <template v-else-if="wisdom.type === 'task'">
+                    <q-icon name="engineering" size="1.3rem"
+                            class="mr2"/>
+                    <span>Task</span>
+                  </template>
+                  <template v-else-if="wisdom.type === 'reply'">
+                    <q-icon name="sym_o_message" size="1.3rem"
+                            class="mr2"/>
+                    <span>Comment</span>
+                  </template>
+                  <template v-else-if="wisdom.type === 'answer'">
+                    <q-icon name="check" size="1.3rem"
+                            class="mr2"/>
+                    <span>Answer</span>
+                  </template>
                 </div>
                 <p class="fontbold mb2">{{ wisdom.t }}</p>
                 <div class="markedView" v-html="wisdom.desc"></div>
+                <template v-if="wisdom.type === 'question'">
+                  <template v-if="wisdom.done">
+                    <div class="flex items-center gap-2 mt4 px2 py1
+                                rounded background text-subtitle2"
+                         style="border-left: 8px solid green">
+                      <q-icon name="check"/>
+                      <span>Answered</span>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="flex items-center gap-2 mt4 px2 py1
+                                        rounded background text-subtitle2"
+                         style="border-left: 8px solid darkorange">
+                      <q-icon name="question_mark"/>
+                      <span>Help Requested</span>
+                    </div>
+                  </template>
+                </template>
+                <template v-else-if="wisdom.type === 'task'">
+                  <template v-if="wisdom.done">
+                    <div class="flex items-center gap-2 mt4 px2 py1
+                                        rounded background text-subtitle2"
+                         style="border-left: 8px solid green">
+                      <q-icon name="check"/>
+                      <span>Done</span>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="flex items-center gap-2 mt4 px2 py1
+                                        rounded background text-subtitle2"
+                         style="border-left: 8px solid darkorange">
+                      <q-icon name="sym_o_manufacturing"/>
+                      <span>ToDo</span>
+                    </div>
+                  </template>
+                </template>
               </div>
               <q-btn icon="north_east" dense no-caps unelevated
                      align="left"
                      label="View Entry"
-                     class="text-md fontbold wfull my2"
+                     class="text-md fontbold wfull mt4 mb2"
                      @click="gotoWisdom"/>
+              <p class="text-xs text-center">
+                (Auto-Generated Message)
+              </p>
             </template>
           </template>
           <template v-else>

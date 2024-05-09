@@ -401,19 +401,24 @@
                                   wfit rounded px2 py1">
                             <template v-if="wisdom.done === true">
                               <q-icon name="check" size="1.2rem" class="mr1.5"/>
-                              <span>Done</span>
+                              <span>Done,</span>
+                              <span class="ml1">
+                                {{ getHumanReadableDateText(wisdom.tsd, true, true) }}
+                              </span>
                             </template>
                             <template v-else>
                               <q-icon name="engineering" size="1.2rem" class="mr1.5"/>
                               <span>In Progress</span>
                             </template>
                           </div>
-                          <template v-if="wisdom.due">
+                          <template v-if="wisdom.due && !wisdom.done">
                             <div class="flex items-center fmt_border
                                         wfit rounded px2 py1">
                               <q-icon name="access_time" size="1.2rem" class="mr1.5"/>
-                              <span v-if="wisdom.done !== true">Due&nbsp;</span>
-                              <span>{{ getHumanReadableDateText(wisdom.due, true, true) }}</span>
+                              <span>Due</span>
+                              <span class="ml1">
+                                {{ getHumanReadableDateText(wisdom.due, true, true) }}
+                              </span>
                             </div>
                           </template>
                         </div>
