@@ -403,6 +403,60 @@ export default {
         str += wikiricUtils.htmlToString(this.wisdom.desc)
         this.$emit('copy', str)
       }
+    },
+    /**
+     *
+     * @param {String} date
+     * @param {Boolean=false} withTime
+     * @param {Boolean=false} fullDate
+     * @returns {string}
+     */
+    getHumanReadableDateText: function (date, withTime = false, fullDate = false) {
+      const time = DateTime.fromISO(date).toLocaleString(DateTime.TIME_24_SIMPLE)
+      const start = DateTime.fromISO(DateTime.fromISO(date).toISODate())
+      const end = DateTime.fromISO(DateTime.now().toISODate())
+      const diffDays = Math.ceil(end.diff(start) / (1000 * 60 * 60 * 24))
+      let suffix = ''
+      if (withTime) {
+        suffix = ', ' + time
+      }
+      let returnString
+      switch (diffDays) {
+        case -5:
+          returnString = 'In 5 days' + suffix
+          break
+        case -4:
+          returnString = 'In 4 days' + suffix
+          break
+        case -3:
+          returnString = 'In 3 days' + suffix
+          break
+        case -2:
+          returnString = 'In 2 days' + suffix
+          break
+        case -1:
+          returnString = 'Tomorrow' + suffix
+          break
+        case 0:
+          returnString = 'Today' + suffix
+          break
+        case 1:
+          returnString = 'Yesterday' + suffix
+          break
+        case 2:
+          returnString = '2 days ago' + suffix
+          break
+        case 3:
+          returnString = '3 days ago' + suffix
+          break
+        default:
+          if (!fullDate) {
+            returnString = start.toLocaleString(DateTime.DATE_MED) + suffix
+          } else {
+            returnString = start.toLocaleString(DateTime.DATE_HUGE) + suffix
+          }
+      }
+      return returnString
     }
   }
 }
