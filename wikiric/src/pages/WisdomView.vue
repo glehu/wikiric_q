@@ -47,6 +47,15 @@
                      color="brand-p"
                      class="mb1"
                      v-model="contentQuery"/>
+            <template v-if="isLoading">
+              <q-skeleton type="text"/>
+              <q-skeleton type="text" class="ml6"/>
+              <q-skeleton type="text" class="ml12"/>
+              <q-skeleton type="text" class="ml6"/>
+              <q-skeleton type="text" class="ml6"/>
+              <q-skeleton type="text" class="ml12"/>
+              <q-skeleton type="text" class="ml18"/>
+            </template>
             <q-tree ref="contentTree"
                     :nodes="contentTree"
                     :filter="contentQuery"
@@ -172,6 +181,11 @@
                              class="wfit"
                              @click="gotoAnswer"/>
                     </div>
+                  </div>
+                </template>
+                <template v-if="isLoading">
+                  <div class="pt2">
+                    <q-skeleton type="rect"/>
                   </div>
                 </template>
                 <p class="text-2xl sm:text-3xl fontbold">{{ wisdom.t }}</p>
@@ -407,6 +421,15 @@
                     </div>
                   </div>
                 </div>
+                <template v-if="isLoading">
+                  <q-skeleton type="text"/>
+                  <q-skeleton type="text" class="mr6"/>
+                  <q-skeleton type="text" class="mr12"/>
+                  <q-skeleton type="text" class="mr6"/>
+                  <q-skeleton type="text" class="mr6"/>
+                  <q-skeleton type="text" class="mr12"/>
+                  <q-skeleton type="text" class="mr18"/>
+                </template>
                 <div v-html="wisdom.desc" class="markedView"></div>
               </div>
               <div v-if="related" class="m4">
@@ -440,6 +463,20 @@
                        no-caps
                        @click="postComment"/>
               </div>
+              <template v-if="isLoading">
+                <div class="pt4 mx4">
+                  <q-skeleton type="rect" class="p2">
+                    <q-skeleton type="text"/>
+                    <q-skeleton type="text"/>
+                  </q-skeleton>
+                </div>
+                <div class="pt4 mx4">
+                  <q-skeleton type="rect" class="p2">
+                    <q-skeleton type="text"/>
+                    <q-skeleton type="text"/>
+                  </q-skeleton>
+                </div>
+              </template>
               <div v-if="related" class="mx4">
                 <template v-if="related.replies && related.replies.length > 0">
                   <p class="mt4 mb2 text-subtitle2">
@@ -576,12 +613,14 @@ export default {
       slide: 0,
       slideArrows: true,
       treeNodeSelected: '',
-      chapterQuery: ''
+      chapterQuery: '',
+      isLoading: false
     }
   },
   methods: {
     getWisdom: function () {
       if (!this.wisdomId || this.wisdomId === '') return
+      this.isLoading = true
       return new Promise((resolve) => {
         const url = 'wisdom/private/get/' + this.wisdomId
         api({
@@ -620,6 +659,7 @@ export default {
           console.debug(err.message)
         })
         .finally(() => {
+          this.isLoading = false
           resolve()
         })
       })

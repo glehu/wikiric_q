@@ -149,9 +149,38 @@
       <div class="wfull relative p4">
         <editor id="wisdom_desc"
                 ref="wisdom_desc"
-                v-model="wisdom.desc"/>
+                e-id="wisdom_edit_desc"
+                v-model="wisdom.desc"
+                @fpaste="handleEditorPaste"/>
       </div>
     </q-card>
+  </q-dialog>
+  <q-dialog v-model="pickingFile">
+    <div class="flex column reverse items-center
+                relative surface rounded">
+      <file-picker
+        :uploading="isUploadingImage"
+        :upload-progress="uploadingImageProgress"
+        :file-ref="filePreference"
+        @selected="handleGroupImageSelected"
+        @upload="handleGroupImageUpload"/>
+      <q-slide-transition :duration="pickDuration">
+        <div v-show="selectedImage == null">
+          <div class="surface p4 rounded-2 w84 min-h-42
+                                  flex column mbauto
+                                  items-center justify-center mt1">
+            <q-toolbar-title
+              class="flex column items-center justify-center
+                                   gap-4">
+              <q-icon name="interests" size="4rem"/>
+              <span class="text-subtitle2">
+                                  Select or drop a file to see a preview
+                                </span>
+            </q-toolbar-title>
+          </div>
+        </div>
+      </q-slide-transition>
+    </div>
   </q-dialog>
 </template>
 
@@ -161,9 +190,14 @@ import { useStore } from 'stores/wikistate'
 import { ref, toRaw } from 'vue'
 import { DateTime } from 'luxon'
 import Editor from 'components/EditorComponent.vue'
+import FilePicker from 'components/FilePicker.vue'
+import { api } from 'boot/axios'
 
 export default {
-  components: { Editor },
+  components: {
+    FilePicker,
+    Editor
+  },
   props: {
     isOpen: {
       type: Boolean,
@@ -232,7 +266,14 @@ export default {
       wisdomBackup: {},
       contributorOptions: [],
       filterOptions: [],
+      pickDuration: 0,
+      selectedImage: undefined,
+      pickingFile: false,
+      uploadingImageProgress: 0,
+      isUploadingImage: false,
+      filePreference: null,
       wisdomType: ref('lesson'),
+      internal: new BroadcastChannel('wikiric_internal'),
       wisTypes: [
         {
           label: 'Lesson',
@@ -475,6 +516,74 @@ export default {
           )
         }
       })
+    },
+    handleGroupImageSelected: function (resp) {
+      this.selectedImage = resp
+      if (resp != null) {
+        this.pickDuration = 0
+      }
+      setTimeout(() => {
+        this.pickDuration = 300
+      }, 300)
+    },
+    handleGroupImageUpload: function () {
+      this.uploadImage()
+    },
+    uploadImage: function () {
+      this.isUploadingImage = true
+      const vThis = this
+      const config = {
+        onUploadProgress: function (progressEvent) {
+          vThis.uploadingImageProgress = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total)
+        }
+      }
+      const payload = {
+        base64: this.selectedImage.base64,
+        name: this.selectedImage.name
+      }
+      api.post(
+        'files/private/create',
+        payload,
+        config
+      ).then((response) => {
+        this.processUploadSnippetResponse(response.data)
+      }).catch((err) => console.debug(err.message))
+    },
+    processUploadSnippetResponse: async function (response) {
+      const contentURL = this.store.serverIP + 'files/public/get/' + response.trim()
+      this.internal.postMessage({
+        app: 'editor',
+        id: 'wisdom_edit_desc',
+        type: 'add',
+        payload: {
+          type: 'node',
+          tag: 'img',
+          src: contentURL
+        }
+      })
+      this.isUploadingImage = false
+      this.pickingFile = false
+    },
+    handleEditorPaste: function (e) {
+      const items = (e.clipboardData ?? e.originalEvent.clipboardData).items
+      for (const item of items) {
+        if (item.kind === 'file') {
+          e.preventDefault()
+          e.stopPropagation()
+          const blob = item.getAsFile()
+          const reader = new FileReader()
+          reader.onload = () => {
+            this.pickingFile = true
+            setTimeout(() => {
+              this.filePreference = blob
+              // this.$refs.ref_editor.focus()
+              this.inputResize()
+            }, 200)
+          }
+          reader.readAsDataURL(blob)
+        }
+      }
     }
   }
 }

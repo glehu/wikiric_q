@@ -41,6 +41,10 @@ export default {
       type: String,
       default: ''
     },
+    eId: {
+      type: String,
+      default: ''
+    },
     eMinHeight: {
       type: String,
       default: '1rem'
@@ -199,8 +203,29 @@ export default {
     },
     handleEditorInternal: function (e) {
       if (e.app !== 'editor') return
+      if (e.id && this.eId !== e.id) return
       if (e.type === 'focus') {
         this.editor.commands.focus('end')
+      } else if (e.type === 'add') {
+        this.handleInternalCommandAdd(e)
+      }
+    },
+    handleInternalCommandAdd: function (e) {
+      if (!e.payload) return
+      if (e.payload.type === 'node') {
+        this.handleAddNode(e.payload)
+      }
+    },
+    handleAddNode: function (e) {
+      if (e.tag === 'img') {
+        if (!e.src) return
+        this.editor.chain().insertContentAt(
+          this.editor.state.selection.anchor, {
+            type: 'image',
+            attrs: {
+              src: e.src
+            }
+          }).focus().run()
       }
     },
     handleEmitAutoSave: function () {

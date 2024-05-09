@@ -525,7 +525,7 @@ export default {
         if (query.replace(/type:\w*\s?/, '') === '') {
           // Add a dot to filter every entry of the given type
           // Otherwise, we might not see anything
-          query += ' .'
+          query = '.'
         }
       }
       if (!query) {
