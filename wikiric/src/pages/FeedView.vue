@@ -74,6 +74,25 @@
                         items-center absolute"
                  ref="feed_scroller"
                  v-on:scroll="checkScroll">
+              <template v-if="isLoading">
+                <div class="wfull flex justify-center">
+                  <div class="wfull p2 max-w-lg">
+                    <q-skeleton type="text" width="5rem" height="3rem"/>
+                    <q-skeleton type="text" width="15rem" height="3rem"/>
+                    <q-skeleton type="rect" height="400px" class="mt2"/>
+                    <div class="w-1/2 mt4 min-w-[15rem]">
+                      <q-skeleton type="text" class="mr6"/>
+                      <q-skeleton type="text" class="mr18"/>
+                      <q-skeleton type="text" class="mr6"/>
+                      <q-skeleton type="text" class="mr6"/>
+                      <q-skeleton type="text" class="mr18"/>
+                      <q-skeleton type="text" class="mr24"/>
+                    </div>
+                    <q-skeleton type="rect" height="64px" class="mt2"/>
+                    <q-skeleton type="rect" height="64px" class="mt2"/>
+                  </div>
+                </div>
+              </template>
               <div v-if="noResults">
                 <div class="p8 rounded-2 surface">
                   <p class="text-h4 mb4">
@@ -274,7 +293,8 @@ export default {
       pageSize: '10',
       extraSkipCount: 0,
       newMessage: '',
-      replyingUID: ''
+      replyingUID: '',
+      isLoading: false
     }
   },
   created () {
@@ -293,9 +313,11 @@ export default {
       this.$router.back()
     },
     initFunction: async function () {
+      this.isLoading = true
       await this.getChatroom()
       await this.getKnowledge(this.groupID, true)
       await this.getFeed(false)
+      this.isLoading = false
     },
     getChatroom: function () {
       if (!this.groupID) {
