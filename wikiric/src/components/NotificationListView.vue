@@ -33,6 +33,25 @@
                     {{ notification.desc }}
                   </p>
                 </div>
+                <div class="wfull flex justify-end mt2 gap-2">
+                  <template v-if="notification.type === 'frequest'">
+                    <q-btn label="Reject" icon-right="sym_o_delete"
+                           unelevated dense
+                           class="pl2"
+                           @click="deleteNotification(notification.uid)"/>
+                    <q-btn label="Accept" icon-right="check"
+                           color="primary"
+                           unelevated dense
+                           class="pl2"
+                           @click="acceptFriendship(notification)"/>
+                  </template>
+                  <template v-else>
+                    <q-btn label="Mark as Read" icon-right="check"
+                           unelevated dense
+                           class="pl2"
+                           @click="deleteNotification(notification.uid)"/>
+                  </template>
+                </div>
               </div>
             </template>
           </template>
@@ -149,6 +168,34 @@ export default {
           resolve()
         })
       })
+    },
+    deleteNotification: function (uid) {
+      return new Promise((resolve) => {
+        api({
+          url: `notification/private/delete/${uid}`
+        }).catch((err) => {
+          console.debug(err.message)
+        }).finally(() => {
+          this.$emit('update')
+          resolve()
+        })
+      })
+    },
+    acceptFriendship: function (notification) {
+      if (notification.act === 'join' || notification.act === 'open') {
+        if (notification.mod === 'chat') {
+          // Deconstruct ID with REGEX magic!
+          const data = [...notification.id.matchAll(
+            /([0-9a-z-]+)\?|pw=([0-9a-z-]+)&|ref=(\w+)/g)]
+          // Even more magic here:
+          // (Explanation, we will have three matches with three groups each,
+          // ...so that's why we have both 0,1,2 for index and 1,2,3 for group)
+          const id = data[0][1]
+          const pw = data[1][2]
+          const rf = data[2][3]
+          this.$router.push(`/chat?id=${id}&pw=${pw}&ref=${rf}`)
+        }
+      }
     }
   }
 }

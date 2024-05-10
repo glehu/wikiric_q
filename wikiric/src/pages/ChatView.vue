@@ -149,7 +149,7 @@
           </q-toolbar>
           <q-item v-for="[key, member] of members.entries()" :key="member.id"
                   clickable>
-            <q-menu touch-position>
+            <q-menu>
               <member-card :member="member"
                            @refresh="getMainMembers"/>
             </q-menu>
@@ -226,7 +226,7 @@
                  v-if="channel.type !== 'video'"
                  class="wfull p4 column reverse items-center scroll"
                  v-on:scroll="checkScroll">
-              <div class="wfull max-w-3xl pr2 column reverse no-wrap">
+              <div class="wfull max-w-3xl_custom pr2 column reverse no-wrap">
                 <div v-for="msg in messages" :key="msg"
                      class="relative wfull">
                   <p v-if="msg._separator"
@@ -323,7 +323,7 @@
                 </div>
               </template>
               <div class="flex row justify-start items-center
-                          wfull max-w-3xl py1 gap-4 h-[2.2rem]">
+                          wfull max-w-3xl_custom py1 gap-4 h-[2.2rem]">
                 <div v-if="activeMembers.size > 0"
                      class="flex row justify-start items-center h-[2rem] gap2">
                   <q-spinner-dots color="primary" size="2rem" class=""/>
@@ -345,7 +345,7 @@
                   </template>
                 </div>
               </div>
-              <div class="flex column items-center wfull max-w-3xl">
+              <div class="flex column items-center wfull max-w-3xl_custom">
                 <template v-if="replyingMessage">
                   <div class="flex wfull px4 py2 mt2
                             relative surface-variant">
@@ -385,7 +385,7 @@
                   </div>
                 </template>
               </div>
-              <div class="wfull max-w-3xl relative">
+              <div class="wfull max-w-3xl_custom relative">
                 <editor ref="ref_editor"
                         v-model="newMessage"
                         e-max-height="75dvh"
@@ -477,6 +477,7 @@ export default {
       store: useStore(),
       sidebarLeft: false,
       sidebarRight: false,
+      chatReference: '',
       chatID: '',
       chatPW: '',
       chatroom: {
@@ -554,6 +555,7 @@ export default {
       const chatID = this.$route.query.id
       const subchatID = this.$route.query.chan
       const password = this.$route.query.pw
+      const reference = this.$route.query.ref
       // Set values
       this.chatID = chatID.trim()
       if (subchatID) {
@@ -561,7 +563,12 @@ export default {
       } else {
         this.channel.id = chatID.trim()
       }
-      this.chatPW = password
+      if (password) {
+        this.chatPW = password
+      }
+      if (reference) {
+        this.chatReference = reference.trim()
+      }
       // Listen for new chat messages
       const events = new BroadcastChannel('wikiric_msg')
       events.onmessage = event => {
@@ -595,6 +602,19 @@ export default {
           url: 'chat/private/get/' + this.chatID
         }).then(async (response) => {
           this.chatroom = response.data
+          // Is this a DM group? Beautify title then
+          if (this.chatroom.type === 'dm') {
+            const names = [...this.chatroom.t.matchAll(
+              /\|([^|]+)\|/g)]
+            let title = ''
+            for (let i = 0; i < names.length; i++) {
+              if (title !== '') {
+                title += ' & '
+              }
+              title += names[i][1]
+            }
+            this.chatroom.t = title
+          }
           // Add general chat (main chat) to subchat list
           if (!this.chatroom.subc) {
             this.chatroom.subc = []
@@ -1532,7 +1552,7 @@ export default {
       }
       // Add token as global header for authorization
       api.defaults.headers.common.Authorization = 'Bearer ' + token
-      await this.sdk.doConnect(this.channel.id, sesh.priv, '', this.chatPW)
+      await this.sdk.doConnect(this.channel.id, sesh.priv, this.chatPW, this.chatReference)
       // Retrieve messages and prepare input field
       await this.getMessages()
       // if (this.$refs.ref_editor) {
@@ -2674,6 +2694,10 @@ export default {
   .hljs-strong {
     font-weight: 700;
   }
+}
+
+.max-w-3xl_custom {
+  max-width: 52rem;
 }
 
 </style>

@@ -53,13 +53,13 @@
             <q-btn icon="engineering" label="ToDo"
                    no-caps flat align="left"
                    @click="filterToDos"/>
-            <q-btn icon="lightbulb" label="Lessons"
+            <q-btn icon="sym_o_search" label="Lessons"
                    no-caps flat align="left"
                    @click="filterLessons(false)"/>
-            <q-btn icon="question_mark" label="Questions"
+            <q-btn icon="sym_o_search" label="Questions"
                    no-caps flat align="left"
                    @click="filterLessons(true)"/>
-            <q-btn icon="sym_o_topic" label="Courses"
+            <q-btn icon="sym_o_search" label="Courses"
                    no-caps flat align="left"
                    @click="filterCourses"/>
           </div>
@@ -565,6 +565,19 @@ export default {
           url: 'chat/private/get/' + this.groupID
         }).then(async (response) => {
           this.chatroom = response.data
+          // Is this a DM group? Beautify title then
+          if (this.chatroom.type === 'dm') {
+            const names = [...this.chatroom.t.matchAll(
+              /\|([^|]+)\|/g)]
+            let title = ''
+            for (let i = 0; i < names.length; i++) {
+              if (title !== '') {
+                title += ' & '
+              }
+              title += names[i][1]
+            }
+            this.chatroom.t = title
+          }
         }).catch((err) => {
           console.debug(err.message)
         }).finally(() => {
@@ -1171,12 +1184,5 @@ export default {
 </script>
 
 <style>
-
-.all_normal > * {
-  font-size: medium !important;
-  font-weight: normal !important;
-  line-height: 1.3rem !important;
-  letter-spacing: 0 !important;
-}
 
 </style>

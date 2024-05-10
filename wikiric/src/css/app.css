@@ -1180,3 +1180,10 @@ pre {
 .hoverPrimary:hover * {
   color: var(--md-sys-color-on-primary);
 }
+
+.all_normal > * {
+  font-size: medium !important;
+  font-weight: normal !important;
+  line-height: 1.3rem !important;
+  letter-spacing: 0 !important;
+}

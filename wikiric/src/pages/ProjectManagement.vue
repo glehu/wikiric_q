@@ -262,6 +262,19 @@ export default {
           url: 'chat/private/get/' + this.groupID
         }).then(async (response) => {
           this.chatroom = response.data
+          // Is this a DM group? Beautify title then
+          if (this.chatroom.type === 'dm') {
+            const names = [...this.chatroom.t.matchAll(
+              /\|([^|]+)\|/g)]
+            let title = ''
+            for (let i = 0; i < names.length; i++) {
+              if (title !== '') {
+                title += ' & '
+              }
+              title += names[i][1]
+            }
+            this.chatroom.t = title
+          }
         }).catch((err) => {
           console.debug(err.message)
         }).finally(() => {

@@ -110,7 +110,7 @@ export default {
       .then(() => {
         sdk.doLogin(this.store.user._u, this.store.user._p)
       }).then(() => {
-        sdk.doConnect(uuid, '', '', this.pw)
+        sdk.doConnect(uuid, '', this.pw)
       }).then(() => {
         let counter = 0
         this.loginInterval = setInterval(() => {

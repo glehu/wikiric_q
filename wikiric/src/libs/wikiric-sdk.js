@@ -164,16 +164,17 @@ const wikiricSDK = {
   },
   /**
    * Creates a wikiric chat session for the provided chatID and privateKey
-   * and optionally a channelID to be able to connect to channels.
+   * to be able to connect to channels.
    *
    * The chat session automatically gets authorized, so you can just listen to this SDKs event channel.
+   *
    * @param {String} chatID
    * @param {String} privateKey
-   * @param {String} channelID
    * @param {String} pw
+   * @param {String} ref
    * @returns {Promise<Boolean>}
    */
-  doConnect: async function (chatID, privateKey, channelID = '', pw = '') {
+  doConnect: async function (chatID, privateKey, pw = '', ref = '') {
     return new Promise((resolve, reject) => {
       // Disconnect from previous session
       this.doDisconnect()
@@ -182,21 +183,19 @@ const wikiricSDK = {
         priv: privateKey
       }
       // Construct connection URL and parameters
-      let suffix = ''
-      if (channelID !== '') {
-        channelID = 'sub=' + channelID
-        suffix = `?${channelID}`
+      const params = {}
+      if (pw && pw !== '') {
+        params.pw = pw
       }
-      if (pw !== '') {
-        pw = 'pw=' + pw
-        if (suffix === '') {
-          suffix = `?${pw}`
-        } else {
-          suffix += `&${pw}`
-        }
+      if (ref && ref !== '') {
+        params.ref = ref
+      }
+      let searchParams = new URLSearchParams(params).toString()
+      if (searchParams && searchParams !== '') {
+        searchParams = `?${searchParams}`
       }
       // Connect to backend and listen for welcome and banned message
-      this._websocket = new WebSocket('wss://wikiric.xyz/ws/chat/' + chatID + suffix)
+      this._websocket = new WebSocket(`wss://wikiric.xyz/ws/chat/${chatID}${searchParams}`)
       this._websocketState = 'CLOSED'
       this._websocket.onopen = async () => {
         this._websocket.onmessage = (event) => {

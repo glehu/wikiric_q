@@ -1,5 +1,5 @@
 <template>
-  <q-avatar class="mr4 rounded-3 surface"
+  <q-avatar class="mr4 rounded-3 surface bshadow"
             :size="size">
     <template v-if="iurl && iurl !== ''">
       <img :src="getImg(iurl, true)" alt="?"
