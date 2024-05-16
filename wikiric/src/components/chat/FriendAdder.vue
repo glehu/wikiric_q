@@ -109,6 +109,8 @@ export default {
             msg: this.requestMessage
           }
         }).then(() => {
+          this.friendUsername = ''
+          this.requestMessage = ''
           this.$q.notify({
             color: 'primary',
             position: 'top-right',

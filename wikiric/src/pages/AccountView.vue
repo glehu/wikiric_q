@@ -17,15 +17,39 @@
                 clickable
                 @click="gotoLink(res.link)">
           <q-item-section>
-            <q-item-label class="text-lg fontbold flex items-center">
+            <q-item-label class="flex items-center gap-4">
               <template v-if="res.icon">
-                <q-icon :name="res.icon" size="2rem" class="mr2"/>
+                <q-icon :name="res.icon" size="2rem"/>
               </template>
-              <span class="text-2xl">
-                {{ res.t }}
-              </span>
+              <div>
+                <p class="text-2xl fontbold">
+                  {{ res.t }}
+                </p>
+                <p>
+                  {{ res.desc }}
+                </p>
+              </div>
             </q-item-label>
-            <span>{{ res.desc }}</span>
+          </q-item-section>
+        </q-item>
+        <div class="text-h6 my4 fontbold">Games</div>
+        <q-item v-for="res in games" :key="res"
+                clickable
+                @click="gotoLink(res.link)">
+          <q-item-section>
+            <q-item-label class="flex items-center gap-4">
+              <template v-if="res.icon">
+                <q-icon :name="res.icon" size="2rem"/>
+              </template>
+              <div>
+                <p class="text-2xl fontbold">
+                  {{ res.t }}
+                </p>
+                <p>
+                  {{ res.desc }}
+                </p>
+              </div>
+            </q-item-label>
           </q-item-section>
         </q-item>
       </q-tab-panel>
@@ -55,6 +79,20 @@ export default {
           desc: 'Your E2EE communication platform',
           icon: 'code',
           link: '/groups'
+        },
+        {
+          t: 'API Mockingbird',
+          desc: 'Analyse HTTP requests',
+          icon: 'sym_o_travel_explore',
+          link: '/mockingbird'
+        }
+      ],
+      games: [
+        {
+          t: 'Flow Field Demo',
+          desc: '',
+          icon: 'sym_o_my_location',
+          link: '/flowfielddemo'
         }
       ]
     }

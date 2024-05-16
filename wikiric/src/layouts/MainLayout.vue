@@ -225,7 +225,7 @@ const linksList = [
     link: '/account'
   },
   {
-    title: 'Chat',
+    title: 'Chat & Friends',
     caption: 'Communication Platform',
     icon: 'code',
     link: '/groups'

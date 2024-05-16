@@ -38,6 +38,12 @@ const routes = [{
     path: 'feed',
     component: () => import('pages/FeedView.vue')
   }, {
+    path: 'mockingbird',
+    component: () => import('pages/MockingbirdView.vue')
+  }, {
+    path: 'flowfielddemo',
+    component: () => import('pages/games/FlowFieldDemo.vue')
+  }, {
     path: 'redir',
     component: () => import('pages/RedirectPage.vue')
   }, {
