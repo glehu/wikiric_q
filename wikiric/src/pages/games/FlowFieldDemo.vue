@@ -28,7 +28,7 @@
           </q-btn>
           <div class="p2">
             <div class="p3 rounded surface">
-              <p class="text-body1">
+              <p class="text-body1 mb2">
                 Brushes
               </p>
               <q-option-group
@@ -37,9 +37,80 @@
                 color="primary">
                 <template v-slot:label="opt">
                   <q-icon :name="opt.icon" size="1.5rem" class="mr2"/>
-                  <span class="fontbold text-body2">{{ opt.label }}</span>
+                  <span class="fontbold text-body2">
+                    {{ opt.label }}
+                  </span>
                 </template>
               </q-option-group>
+            </div>
+            <div class="p3 rounded surface mt2">
+              <p class="text-body1 mb2">
+                Actions
+              </p>
+              <template v-if="!isCalculating">
+                <q-btn color="brand-bg"
+                       @click="handleCalculation"
+                       icon="sym_o_manufacturing"
+                       label="Calculate"
+                       align="left"
+                       no-caps unelevated
+                       class="wfull fontbold text-body2"/>
+              </template>
+              <template v-else>
+                <div class="p2 wfull">
+                  <p class="fontbold text-body2">
+                    Calculating...
+                  </p>
+                </div>
+              </template>
+              <template v-if="!isSimulating">
+                <q-btn color="brand-bg"
+                       @click="handleSimulation"
+                       icon="sym_o_network_intelligence_history"
+                       label="Simulate"
+                       align="left"
+                       no-caps unelevated
+                       class="wfull mt2 fontbold text-body2"/>
+              </template>
+              <template v-else>
+                <div class="p2 wfull flex items-center gap-2
+                            justify-between">
+                  <p class="fontbold text-body2">
+                    Simulating...
+                  </p>
+                  <q-btn color="negative"
+                         label="Stop"
+                         dense
+                         @click="cancelSimulation"/>
+                </div>
+              </template>
+              <q-btn color="brand-bg"
+                     @click="clearAll"
+                     icon="sym_o_delete"
+                     label="Clear All"
+                     align="left"
+                     no-caps unelevated
+                     class="wfull mt2 fontbold text-body2"/>
+            </div>
+            <div class="p3 rounded surface mt2">
+              <p class="text-body1 mb2">
+                Stats
+              </p>
+              <div class="flex justify-between items-center gap-2
+                          text-subtitle2">
+                <p>Performance:</p>
+                <p>{{ timeDelta }} FPS</p>
+              </div>
+              <div class="flex justify-between items-center gap-2
+                          text-subtitle2">
+                <p>Enemies:</p>
+                <p>{{ enemies.length.toLocaleString() }}</p>
+              </div>
+              <div class="flex justify-between items-center gap-2
+                          text-subtitle2">
+                <p>Total Checks:</p>
+                <p>{{ totalCalculations.toLocaleString() }}</p>
+              </div>
             </div>
           </div>
         </q-scroll-area>
@@ -67,6 +138,8 @@
                     class="ffd_canvas"></canvas>
             <canvas id="ffd_canvas_cursor" ref="ffd_canvas_cursor"
                     class="ffd_canvas"></canvas>
+            <canvas id="ffd_canvas_enemy" ref="ffd_canvas_enemy"
+                    class="ffd_canvas"></canvas>
             <div class="ffd_main" ref="ffd_main">
             </div>
           </div>
@@ -80,8 +153,13 @@
               direction="up">
               <q-fab-action color="primary"
                             @click="handleCalculation"
-                            icon="sym_o_network_intelligence_history"
+                            icon="sym_o_manufacturing"
                             label="Calculate"
+                            label-position="left"/>
+              <q-fab-action color="primary"
+                            @click="handleSimulation"
+                            icon="sym_o_network_intelligence_history"
+                            label="Simulate"
                             label-position="left"/>
             </q-fab>
           </q-page-sticky>
@@ -92,6 +170,8 @@
 </template>
 
 <script>
+import * as THREE from 'threejs-math'
+
 export default {
   name: 'FlowFieldDemo',
   data () {
@@ -116,6 +196,11 @@ export default {
           icon: 'sym_o_flag'
         },
         {
+          label: 'Enemy',
+          value: 'enemy',
+          icon: 'sym_o_bug_report'
+        },
+        {
           label: 'Eraser',
           value: 'eraser',
           icon: 'sym_o_ink_eraser'
@@ -124,17 +209,23 @@ export default {
       brush: 'cursor',
       ctx: null,
       ctx2: null,
-      gridSize: 25,
-      width: 2000,
+      ctx3: null,
+      gridSize: 10,
+      width: 1500,
       height: 1000,
       totalCells: 0,
       xCells: 0,
       yCells: 0,
       costField: undefined,
       integrationField: undefined,
-      flowField: undefined,
+      enemies: [],
       goalX: -1,
-      goalY: -1
+      goalY: -1,
+      goalAlive: true,
+      isCalculating: false,
+      isSimulating: false,
+      timeDelta: 0,
+      totalCalculations: 0
     }
   },
   mounted () {
@@ -145,7 +236,13 @@ export default {
       this.$router.back()
     },
     initFunction: function () {
+      this.totalCalculations = 0
       this.initializeGridValues()
+      this.initializeEnemies()
+      this.initializeCanvas()
+      this.initializeEnemyCanvas()
+    },
+    initializeCanvas: function () {
       // Initialize Canvas (Field)
       const canvas = this.$refs.ffd_canvas
       this.ctx = canvas.getContext('2d')
@@ -157,7 +254,10 @@ export default {
       canvas.style.maxHeight = canvas.style.minHeight
       canvas.width = this.width
       canvas.height = this.height
-      this.drawGrid()
+      // this.drawGrid()
+      this.initializeCursorCanvas()
+    },
+    initializeCursorCanvas: function () {
       // Initialize Canvas (Cursor)
       const canvas2 = this.$refs.ffd_canvas_cursor
       this.ctx2 = canvas2.getContext('2d')
@@ -237,7 +337,27 @@ export default {
         vueInst.ctx2.stroke()
       }
     },
+    initializeEnemyCanvas: function () {
+      const canvas = this.$refs.ffd_canvas_enemy
+      this.ctx3 = canvas.getContext('2d')
+      this.ctx3.lineWidth = 1
+      this.ctx3.lineHeight = 1
+      canvas.style.minWidth = this.width + 'px'
+      canvas.style.maxWidth = canvas.style.minWidth
+      canvas.style.minHeight = this.height + 'px'
+      canvas.style.maxHeight = canvas.style.minHeight
+      canvas.width = this.width
+      canvas.height = this.height
+      this.ctx3.clearRect(0, 0, this.width, this.height)
+    },
     initializeGridValues: function () {
+      console.log('Initializing Grid...')
+      if (this.ctx) {
+        this.ctx.clearRect(0, 0, this.width, this.height)
+      }
+      if (this.ctx2) {
+        this.ctx2.clearRect(0, 0, this.width, this.height)
+      }
       // Calculate amount of cells
       const xCells = this.width / this.gridSize
       const yCells = this.height / this.gridSize
@@ -245,7 +365,7 @@ export default {
       this.xCells = xCells
       this.yCells = yCells
       this.totalCells = totalCells
-      console.log(`X(${xCells}) * Y(${yCells}) = ${totalCells} Cells`)
+      console.log(`\tX(${xCells}) * Y(${yCells}) = ${totalCells} Cells`)
       // Initialize grid arrays
       this.costField = new Uint16Array(totalCells)
       this.integrationField = new Uint16Array(totalCells)
@@ -254,6 +374,7 @@ export default {
         this.costField[i] = 1
         this.integrationField[i] = 65535
       }
+      console.log('Grid initialized!')
     },
     initializeIntegrationGrid: function () {
       for (let i = 0; i < this.totalCells; i++) {
@@ -288,6 +409,9 @@ export default {
           break
         case 'goal':
           this.addGoal(xNew, yNew)
+          break
+        case 'enemy':
+          this.addEnemy(xNew, yNew)
           break
         case 'eraser':
           this.removeWall(xNew, yNew)
@@ -331,12 +455,29 @@ export default {
       // Remember values
       this.goalX = x
       this.goalY = y
-      // Draw wall
+      // Draw goal
       this.ctx.fillStyle = '#0F0'
       this.ctx.beginPath()
       this.ctx.moveTo(xNew, yNew)
       this.ctx.rect(xNew, yNew, this.gridSize, this.gridSize)
       this.ctx.fill()
+    },
+    addEnemy: function (x, y) {
+      const arrayPos = this.convertXYToArrayPos(x, y)
+      if (arrayPos > this.costField.length) {
+        return
+      }
+      // Calculate positions
+      const xNew = x * this.gridSize
+      const yNew = y * this.gridSize
+      // Add enemy to list
+      this.enemies.push(new THREE.Vector2(x, y))
+      // Draw enemy
+      this.ctx3.fillStyle = '#ff0000'
+      this.ctx3.beginPath()
+      this.ctx3.moveTo(xNew, yNew)
+      this.ctx3.rect(xNew, yNew, this.gridSize, this.gridSize)
+      this.ctx3.fill()
     },
     handleCalculation: async function () {
       // Integration grid always needs to be initialized
@@ -345,19 +486,24 @@ export default {
       if (this.goalX === -1 || this.goalY === -1) {
         return
       }
+      this.isCalculating = true
+      console.log('Starting Calculation...')
       // Set integration value of goal's position to zero
       const goalArrayPos = this.convertXYToArrayPos(this.goalX, this.goalY)
       this.integrationField[goalArrayPos] = 0
       // Add goal to open list
       const open = []
       open.unshift(goalArrayPos)
-      // Enter calculation loop...
+      // Allocate memory for variables
       let current
       let neighbors
       let x
       let y
       let tmpXY
       let value
+      let calculations = 0
+      let totalCalculations = 0
+      // Enter calculation loop...
       while (open.length > 0) {
         current = open.pop()
         tmpXY = this.convertArrayPosToXY(current)
@@ -386,17 +532,26 @@ export default {
             tmpXY = this.convertArrayPosToXY(neighbors[i])
             x = tmpXY[0] * this.gridSize + 4
             y = tmpXY[1] * this.gridSize + 16
-            this.ctx.font = '10px sans-serif'
-            if (value < 30) {
-              this.ctx.fillStyle = this.heatMapColorForValue((value / 30))
+            this.ctx.font = '8px sans-serif'
+            if (value < 100) {
+              this.ctx.fillStyle = this.heatMapColorForValue((value / 100))
             } else {
               this.ctx.fillStyle = this.heatMapColorForValue(1)
             }
             this.ctx.fillText(`${value}`, x, y)
           }
+          totalCalculations += 1
         }
-        await this.timer(1)
+        calculations += 1
+        if (calculations % 100 === 0) {
+          await this.timer(1)
+        }
       }
+      this.isCalculating = false
+      console.log(
+        'Calculation Finished!',
+        `\n*\tMain Steps:  ${calculations}`,
+        `\n*\tTotal Steps: ${totalCalculations}`)
     },
     timer: function (delay) {
       return new Promise((resolve) => {
@@ -406,7 +561,7 @@ export default {
       })
     },
     heatMapColorForValue: function (value) {
-      const h = (1.0 - value) * 240
+      const h = value * 240
       return `hsl(${h}, 100%, 50%)`
     },
     convertXYToArrayPos: function (x, y) {
@@ -472,6 +627,100 @@ export default {
         }
       }
       return list
+    },
+    initializeEnemies: function () {
+      this.enemies = []
+    },
+    handleSimulation: function () {
+      if (this.enemies == null || this.enemies.length < 1) {
+        return
+      }
+      this.isSimulating = true
+      console.log('Starting Simulation...')
+      this.goalAlive = true
+      // Allocate memory for variables
+      let current
+      let neighbors
+      let min
+      let minId
+      let tmp
+      let xy
+      let xNew
+      let yNew
+      /**
+       * @type {THREE.Vector2}
+       */
+      let endVector
+      /**
+       * @type {THREE.Vector2}
+       */
+      let newVector = new THREE.Vector2()
+      let timestamp = performance.now()
+      const step = () => {
+        this.ctx3.clearRect(0, 0, this.width, this.height)
+        this.ctx3.beginPath()
+        for (let i = 0; i < this.enemies.length; i++) {
+          // Get current position and neighbors
+          current = this.enemies[i]
+          neighbors = this.getNeighbors(
+            Math.round(current.x), Math.round(current.y))
+          if (neighbors.length < 1) {
+            continue
+          }
+          // Figure out what neighbor has the lowest cost
+          min = 65535
+          minId = -1
+          for (let j = 0; j < neighbors.length; j++) {
+            tmp = this.integrationField[neighbors[j]]
+            this.totalCalculations += 1
+            if (tmp < min) {
+              min = tmp
+              minId = neighbors[j]
+            }
+          }
+          if (minId === -1) {
+            continue
+          }
+          // Move enemy to new coordinates
+          xy = this.convertArrayPosToXY(minId)
+          // Interpolate position vectors
+          endVector = new THREE.Vector2(
+            xy[0], xy[1]
+          )
+          newVector = newVector.lerpVectors(
+            current, endVector, 0.1)
+          // Write back interpolated value
+          this.enemies[i].copy(newVector)
+          // Draw enemy
+          xNew = newVector.x * this.gridSize
+          yNew = newVector.y * this.gridSize
+          this.ctx3.fillStyle = '#ff0000'
+          this.ctx3.moveTo(xNew, yNew)
+          this.ctx3.rect(xNew, yNew, this.gridSize, this.gridSize)
+        }
+        this.ctx3.fill()
+        if (this.goalAlive) {
+          this.timeDelta = Math.floor(
+            (16 / (performance.now() - timestamp)) * 60)
+          timestamp = performance.now()
+          requestAnimationFrame(step)
+        } else {
+          this.isSimulating = false
+          console.log('Simulation has ended!')
+        }
+      }
+      requestAnimationFrame(step)
+    },
+    cancelSimulation: function () {
+      this.goalAlive = false
+    },
+    clearAll: function () {
+      this.initFunction()
+      this.isCalculating = false
+      this.isSimulating = false
+      this.goalAlive = true
+      this.goalX = -1
+      this.goalY = -1
     }
   }
 }

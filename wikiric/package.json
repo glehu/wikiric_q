@@ -40,6 +40,7 @@
     "pinia": "^2.0.11",
     "quasar": "^2.8.0",
     "register-service-worker": "^1.7.2",
+    "threejs-math": "^0.147.0",
     "tippy.js": "^6.3.7",
     "vue": "^3.2.29",
     "vue-i18n": "^9.0.0",
