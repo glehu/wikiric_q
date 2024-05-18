@@ -167,10 +167,16 @@
       </q-page-container>
     </q-layout>
   </q-page>
+  <div class="hidden">
+    <img id="slime"
+         src="https://wikiric.xyz/files/public/get/018f866a-4182-7aef-b1a4-1a75a7e7c21f"
+         width="24" height="24" alt="img"/>
+  </div>
 </template>
 
 <script>
 import * as THREE from 'threejs-math'
+import FFUnit from 'pages/games/flowfield/FFUnit'
 
 export default {
   name: 'FlowFieldDemo',
@@ -210,7 +216,7 @@ export default {
       ctx: null,
       ctx2: null,
       ctx3: null,
-      gridSize: 10,
+      gridSize: 25,
       width: 1500,
       height: 1000,
       totalCells: 0,
@@ -471,13 +477,17 @@ export default {
       const xNew = x * this.gridSize
       const yNew = y * this.gridSize
       // Add enemy to list
-      this.enemies.push(new THREE.Vector2(x, y))
+      this.enemies.push(new FFUnit(x, y))
+      const image = document.getElementById('slime')
       // Draw enemy
-      this.ctx3.fillStyle = '#ff0000'
-      this.ctx3.beginPath()
-      this.ctx3.moveTo(xNew, yNew)
-      this.ctx3.rect(xNew, yNew, this.gridSize, this.gridSize)
-      this.ctx3.fill()
+      if (image) {
+        // this.ctx3.fillStyle = '#ff0000'
+        // this.ctx3.beginPath()
+        // this.ctx3.moveTo(xNew, yNew)
+        this.ctx3.drawImage(image, xNew, yNew, 32, 32)
+        // this.ctx3.rect(xNew, yNew, this.gridSize, this.gridSize)
+        // this.ctx3.fill()
+      }
     },
     handleCalculation: async function () {
       // Integration grid always needs to be initialized
@@ -543,9 +553,6 @@ export default {
           totalCalculations += 1
         }
         calculations += 1
-        if (calculations % 100 === 0) {
-          await this.timer(1)
-        }
       }
       this.isCalculating = false
       console.log(
@@ -553,16 +560,9 @@ export default {
         `\n*\tMain Steps:  ${calculations}`,
         `\n*\tTotal Steps: ${totalCalculations}`)
     },
-    timer: function (delay) {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve()
-        }, delay)
-      })
-    },
     heatMapColorForValue: function (value) {
       const h = value * 240
-      return `hsl(${h}, 100%, 50%)`
+      return `hsl(${h}, 25%, 50%)`
     },
     convertXYToArrayPos: function (x, y) {
       return this.xCells * y + x
@@ -647,58 +647,67 @@ export default {
       let xy
       let xNew
       let yNew
+      let tmpX
+      let tmpY
       /**
        * @type {THREE.Vector2}
        */
       let endVector
-      /**
-       * @type {THREE.Vector2}
-       */
-      let newVector = new THREE.Vector2()
       let timestamp = performance.now()
+      const image = document.getElementById('slime')
       const step = () => {
         this.ctx3.clearRect(0, 0, this.width, this.height)
-        this.ctx3.beginPath()
+        // this.ctx3.beginPath()
         for (let i = 0; i < this.enemies.length; i++) {
-          // Get current position and neighbors
           current = this.enemies[i]
-          neighbors = this.getNeighbors(
-            Math.round(current.x), Math.round(current.y))
-          if (neighbors.length < 1) {
-            continue
-          }
-          // Figure out what neighbor has the lowest cost
-          min = 65535
-          minId = -1
-          for (let j = 0; j < neighbors.length; j++) {
-            tmp = this.integrationField[neighbors[j]]
-            this.totalCalculations += 1
-            if (tmp < min) {
-              min = tmp
-              minId = neighbors[j]
+          // Get and check current's neighbors
+          tmpX = Math.round(current.pos.x)
+          tmpY = Math.round(current.pos.y)
+          tmp = this.convertXYToArrayPos(tmpX, tmpY)
+          if (this.costField[tmp] === 255) {
+            // We cannot move on a wall
+            // In this case, we simply continue with nextPos
+            xy[0] = Math.round(current.newPos.x)
+            xy[1] = Math.round(current.newPos.y)
+          } else {
+            // Calculate the new direction
+            neighbors = this.getNeighbors(tmpX, tmpY)
+            if (neighbors.length < 1) {
+              continue
             }
+            // Figure out what neighbor has the lowest cost
+            min = 65535
+            minId = -1
+            for (let j = 0; j < neighbors.length; j++) {
+              tmp = this.integrationField[neighbors[j]]
+              this.totalCalculations += 1
+              if (tmp < min) {
+                min = tmp
+                minId = neighbors[j]
+              }
+            }
+            if (minId === -1) {
+              continue
+            }
+            // Move enemy to new coordinates
+            xy = this.convertArrayPosToXY(minId)
           }
-          if (minId === -1) {
-            continue
-          }
-          // Move enemy to new coordinates
-          xy = this.convertArrayPosToXY(minId)
           // Interpolate position vectors
-          endVector = new THREE.Vector2(
-            xy[0], xy[1]
-          )
-          newVector = newVector.lerpVectors(
-            current, endVector, 0.1)
+          endVector = new THREE.Vector2(xy[0], xy[1])
+          this.enemies[i].newPos.copy(endVector)
+          endVector.sub(current.pos)
+          endVector.normalize()
+          endVector.multiplyScalar(0.05)
           // Write back interpolated value
-          this.enemies[i].copy(newVector)
+          this.enemies[i].pos.add(endVector)
           // Draw enemy
-          xNew = newVector.x * this.gridSize
-          yNew = newVector.y * this.gridSize
-          this.ctx3.fillStyle = '#ff0000'
-          this.ctx3.moveTo(xNew, yNew)
-          this.ctx3.rect(xNew, yNew, this.gridSize, this.gridSize)
+          if (image) {
+            xNew = this.enemies[i].pos.x * this.gridSize
+            yNew = this.enemies[i].pos.y * this.gridSize
+            this.ctx3.drawImage(image, xNew, yNew, 32, 32)
+          }
         }
-        this.ctx3.fill()
+        // this.ctx3.fill()
         if (this.goalAlive) {
           this.timeDelta = Math.floor(
             (16 / (performance.now() - timestamp)) * 60)

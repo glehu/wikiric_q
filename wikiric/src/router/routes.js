@@ -42,7 +42,7 @@ const routes = [{
     component: () => import('pages/MockingbirdView.vue')
   }, {
     path: 'flowfielddemo',
-    component: () => import('pages/games/FlowFieldDemo.vue')
+    component: () => import('pages/games/flowfield/FlowFieldDemo.vue')
   }, {
     path: 'redir',
     component: () => import('pages/RedirectPage.vue')
