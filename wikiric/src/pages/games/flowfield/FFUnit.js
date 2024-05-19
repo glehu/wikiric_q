@@ -26,6 +26,11 @@ class FFUnit {
      * @type {Number}
      */
     this.maxSpeed = speed
+    /**
+     * This FF Unit's State
+     * @type {Number}
+     */
+    this.state = 0
   }
 }
 

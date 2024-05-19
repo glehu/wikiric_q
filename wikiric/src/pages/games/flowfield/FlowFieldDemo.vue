@@ -106,11 +106,6 @@
                 <p>Enemies:</p>
                 <p>{{ enemies.length.toLocaleString() }}</p>
               </div>
-              <div class="flex justify-between items-center gap-2
-                          text-subtitle2">
-                <p>Total Checks:</p>
-                <p>{{ totalCalculations.toLocaleString() }}</p>
-              </div>
             </div>
           </div>
         </q-scroll-area>
@@ -216,7 +211,7 @@ export default {
       ctx: null,
       ctx2: null,
       ctx3: null,
-      gridSize: 25,
+      gridSize: 50,
       width: 1500,
       height: 1000,
       totalCells: 0,
@@ -230,23 +225,32 @@ export default {
       goalAlive: true,
       isCalculating: false,
       isSimulating: false,
-      timeDelta: 0,
-      totalCalculations: 0
+      timeDelta: 0
     }
   },
   mounted () {
     this.initFunction()
+  },
+  beforeUnmount () {
+    this.manageKeyListeners(true)
   },
   methods: {
     clickedBack: function () {
       this.$router.back()
     },
     initFunction: function () {
-      this.totalCalculations = 0
       this.initializeGridValues()
       this.initializeEnemies()
       this.initializeCanvas()
       this.initializeEnemyCanvas()
+      this.manageKeyListeners(false)
+    },
+    manageKeyListeners: function (forceRemove = false) {
+      document.removeEventListener('keydown', this.handleFFKeyDown, false)
+      document.removeEventListener('keyup', this.handleFFKeyUp, false)
+      if (forceRemove) return
+      document.addEventListener('keydown', this.handleFFKeyDown, false)
+      document.addEventListener('keyup', this.handleFFKeyUp, false)
     },
     initializeCanvas: function () {
       // Initialize Canvas (Field)
@@ -448,9 +452,6 @@ export default {
     removeWall: function (x, y) {
     },
     addGoal: function (x, y) {
-      if (this.goalX !== -1 || this.goalY !== -1) {
-        return
-      }
       const arrayPos = this.convertXYToArrayPos(x, y)
       if (arrayPos > this.costField.length) {
         return
@@ -462,11 +463,14 @@ export default {
       this.goalX = x
       this.goalY = y
       // Draw goal
+      this.ctx.clearRect(0, 0, this.width, this.height)
       this.ctx.fillStyle = '#0F0'
       this.ctx.beginPath()
       this.ctx.moveTo(xNew, yNew)
       this.ctx.rect(xNew, yNew, this.gridSize, this.gridSize)
       this.ctx.fill()
+      // Calculate integration field
+      this.handleCalculation()
     },
     addEnemy: function (x, y) {
       const arrayPos = this.convertXYToArrayPos(x, y)
@@ -481,12 +485,7 @@ export default {
       const image = document.getElementById('slime')
       // Draw enemy
       if (image) {
-        // this.ctx3.fillStyle = '#ff0000'
-        // this.ctx3.beginPath()
-        // this.ctx3.moveTo(xNew, yNew)
         this.ctx3.drawImage(image, xNew, yNew, 32, 32)
-        // this.ctx3.rect(xNew, yNew, this.gridSize, this.gridSize)
-        // this.ctx3.fill()
       }
     },
     handleCalculation: async function () {
@@ -544,8 +543,8 @@ export default {
             // Draw text
             x = neighbors[i].x * this.gridSize
             y = neighbors[i].y * this.gridSize
-            if (value < 100) {
-              this.ctx.fillStyle = this.heatMapColorForValue((value / 100))
+            if (value < 32) {
+              this.ctx.fillStyle = this.heatMapColorForValue((value / 32))
             } else {
               this.ctx.fillStyle = this.heatMapColorForValue(1)
             }
@@ -566,7 +565,7 @@ export default {
     },
     heatMapColorForValue: function (value) {
       const h = value * 240
-      return `hsl(${h}, 100%, 25%)`
+      return `hsl(${h}, 100%, 10%)`
     },
     convertXYToArrayPos: function (x, y) {
       return this.xCells * y + x
@@ -640,13 +639,11 @@ export default {
       this.enemies = []
     },
     handleSimulation: function () {
-      if (this.enemies == null || this.enemies.length < 1) {
-        return
-      }
       console.log('Starting Simulation...')
       this.isSimulating = true
       this.goalAlive = true
       // Allocate memory for variables
+      let dist, diff
       let min, minXY
       let tmp, arrayPos
       let tmpX, tmpY
@@ -665,80 +662,102 @@ export default {
        */
       let endVector
       let timestamp = performance.now()
-      let getNeighbors = true
       const image = document.getElementById('slime')
       // Step Function to be called repeatedly
+      let stepCount = 0
       const step = () => {
+        stepCount += 1
         // Clear previous frame
         this.ctx3.clearRect(0, 0, this.width, this.height)
-        for (let i = 0; i < this.enemies.length; i++) {
-          current = this.enemies[i]
-          // Get current position
-          tmpX = Math.round(current.pos.x)
-          tmpY = Math.round(current.pos.y)
-          tmp = this.convertXYToArrayPos(tmpX, tmpY)
-          if (this.costField[tmp] === 255) {
-            // We cannot move on a wall
-            // In this case, we simply continue with nextPos
-            xy[0] = Math.round(current.newPos.x)
-            xy[1] = Math.round(current.newPos.y)
-            neighbors = this.getNeighbors(current.pos.x, current.pos.y)
-            if (neighbors.length < 1) {
-              continue
+        if (this.enemies && this.enemies.length > 0) {
+          for (let i = 0; i < this.enemies.length; i++) {
+            current = this.enemies[i]
+            // Get current position
+            tmpX = Math.round(current.pos.x)
+            tmpY = Math.round(current.pos.y)
+            tmp = this.convertXYToArrayPos(tmpX, tmpY)
+            if (this.costField[tmp] === 255) {
+              // We cannot move on a wall
+              // In this case, we simply continue with nextPos
+              xy[0] = current.newPos.x
+              xy[1] = current.newPos.y
+              neighbors = this.getNeighbors(current.pos.x, current.pos.y)
+              if (neighbors.length < 1) {
+                continue
+              }
+            } else {
+              neighbors = this.getNeighbors(tmpX, tmpY)
+              if (neighbors.length < 1) {
+                continue
+              }
+              // Calculate the new direction
+              // Figure out what neighbor has the lowest cost
+              min = 65535
+              minXY = undefined
+              for (let j = 0; j < neighbors.length; j++) {
+                arrayPos = this.convertXYToArrayPos(
+                  neighbors[j].x,
+                  neighbors[j].y)
+                tmp = this.integrationField[arrayPos]
+                if (tmp < min) {
+                  min = tmp
+                  minXY = neighbors[j]
+                }
+              }
+              if (!minXY) {
+                continue
+              }
+              xy = [minXY.x, minXY.y]
             }
-            getNeighbors = false
-          } else {
-            getNeighbors = true
-            neighbors = this.getNeighbors(tmpX, tmpY)
-            if (neighbors.length < 1) {
-              continue
-            }
-            // Calculate the new direction
-            // Figure out what neighbor has the lowest cost
-            min = 65535
-            minXY = undefined
-            for (let j = 0; j < neighbors.length; j++) {
-              arrayPos = this.convertXYToArrayPos(
-                neighbors[j].x,
-                neighbors[j].y)
-              tmp = this.integrationField[arrayPos]
-              this.totalCalculations += 1
-              if (tmp < min) {
-                min = tmp
-                minXY = neighbors[j]
+            // Calculate new position vector
+            endVector = new THREE.Vector2(xy[0], xy[1])
+            this.enemies[i].newPos.copy(endVector)
+            endVector.sub(current.pos)
+            // endVector.normalize()
+            endVector.multiplyScalar(current.maxSpeed)
+            endVector.clampScalar(-current.maxSpeed, current.maxSpeed)
+            this.enemies[i].pos.add(endVector)
+            // Calculate distance vector to avoid crowding
+            tmp = 0
+            endVector = null
+            for (let j = 0; j < this.enemies.length; j++) {
+              if (i === j) {
+                continue
+              }
+              dist = current.pos.distanceToSquared(this.enemies[j].pos)
+              if (dist < 0.5) {
+                tmp += 1
+                diff = new THREE.Vector2(current.pos.x, current.pos.y)
+                diff.sub(this.enemies[j].pos)
+                diff.divideScalar(Math.pow(dist, 2))
+                if (!endVector) {
+                  endVector = new THREE.Vector2()
+                }
+                endVector.add(diff)
               }
             }
-            if (!minXY) {
-              continue
+            if (tmp > 0) {
+              endVector.divideScalar(tmp)
+              // endVector.normalize()
+              endVector.multiplyScalar(current.maxSpeed)
+              endVector.clampScalar(-current.maxSpeed, current.maxSpeed)
+              this.enemies[i].pos.add(endVector)
             }
-            xy = [minXY.x, minXY.y]
-          }
-          // Calculate new position vector
-          endVector = new THREE.Vector2(xy[0], xy[1])
-          this.enemies[i].newPos.copy(endVector)
-          endVector.sub(current.pos)
-          endVector.normalize()
-          endVector.multiplyScalar(current.maxSpeed)
-          this.enemies[i].pos.add(endVector)
-          // Calculate distance vector to avoid crowding
-          if (getNeighbors) {
-            neighbors = this.getNeighbors(current.pos.x, current.pos.y)
-          }
-          for (let j = 0; j < neighbors.length; j++) {
-            // if (neighbors[])
-          }
-          // Draw enemy
-          if (image) {
-            xNew = this.enemies[i].pos.x * this.gridSize
-            yNew = this.enemies[i].pos.y * this.gridSize
-            this.ctx3.drawImage(image, xNew, yNew, 32, 32)
+            // Draw enemy
+            if (image) {
+              xNew = this.enemies[i].pos.x * this.gridSize
+              yNew = this.enemies[i].pos.y * this.gridSize
+              this.ctx3.drawImage(image, xNew, yNew, 32, 32)
+            }
           }
         }
         if (this.goalAlive) {
           // Calculate FPS
-          this.timeDelta = Math.floor(
-            (16 / (performance.now() - timestamp)) * 60)
-          timestamp = performance.now()
+          if (((performance.now() - timestamp) / 1000) >= 1) {
+            timestamp = performance.now()
+            this.timeDelta = stepCount
+            stepCount = 0
+          }
           // Trigger next step
           requestAnimationFrame(step)
         } else {
@@ -759,6 +778,32 @@ export default {
       this.goalAlive = true
       this.goalX = -1
       this.goalY = -1
+    },
+    handleFFKeyDown: function (e) {
+      switch (e.key) {
+        case 'w':
+          break
+        case 'a':
+          break
+        case 's':
+          break
+        case 'd':
+          break
+      }
+    },
+    handleFFKeyUp: function (e) {
+      switch (e.key) {
+        case 'w':
+          break
+        case 'a':
+          break
+        case 's':
+          break
+        case 'd':
+          break
+      }
+    },
+    movePlayer: function (vector) {
     }
   }
 }
