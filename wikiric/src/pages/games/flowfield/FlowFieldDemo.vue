@@ -477,7 +477,7 @@ export default {
       const xNew = x * this.gridSize
       const yNew = y * this.gridSize
       // Add enemy to list
-      this.enemies.push(new FFUnit(x, y))
+      this.enemies.push(new FFUnit(x, y, 0.05))
       const image = document.getElementById('slime')
       // Draw enemy
       if (image) {
@@ -490,6 +490,7 @@ export default {
       }
     },
     handleCalculation: async function () {
+      console.log('Starting Calculation...')
       // Integration grid always needs to be initialized
       this.initializeIntegrationGrid()
       // Check if there is a goal
@@ -497,58 +498,61 @@ export default {
         return
       }
       this.isCalculating = true
-      console.log('Starting Calculation...')
       // Set integration value of goal's position to zero
       const goalArrayPos = this.convertXYToArrayPos(this.goalX, this.goalY)
       this.integrationField[goalArrayPos] = 0
       // Add goal to open list
       const open = []
-      open.unshift(goalArrayPos)
+      open.unshift(new THREE.Vector2(this.goalX, this.goalY))
       // Allocate memory for variables
       let current
       let neighbors
-      let x
-      let y
-      let tmpXY
+      let x, y
       let value
       let calculations = 0
       let totalCalculations = 0
+      let arrayPos, currentArrayPos
+      let dist
       // Enter calculation loop...
       while (open.length > 0) {
         current = open.pop()
-        tmpXY = this.convertArrayPosToXY(current)
-        x = tmpXY[0]
-        y = tmpXY[1]
-        neighbors = this.getNeighbors(x, y)
+        currentArrayPos = this.convertXYToArrayPos(current.x, current.y)
+        neighbors = this.getNeighbors(current.x, current.y)
         for (let i = 0; i < neighbors.length; i++) {
+          arrayPos = this.convertXYToArrayPos(
+            neighbors[i].x, neighbors[i].y)
           // Ignore this neighbor if it is a wall (255)
-          if (this.costField[neighbors[i]] >= 255) {
+          if (this.costField[arrayPos] >= 255) {
             continue
           }
           // Calculate the new value by first taking the current
           // ...element's value...
-          value = this.integrationField[current]
+          value = this.integrationField[currentArrayPos]
           // ...and then adding the neighbor's cost
-          value += this.costField[neighbors[i]]
+          value += this.costField[arrayPos]
+          // ...punish diagonal movement
+          dist = current.manhattanDistanceTo(neighbors[i])
+          value += dist - 1
           // Now we compare the value with its old one
-          if (value < this.integrationField[neighbors[i]]) {
+          if (value < this.integrationField[arrayPos]) {
             // Add neighbor to open list
             if (!open.includes(neighbors[i])) {
               open.unshift(neighbors[i])
             }
             // Set new value
-            this.integrationField[neighbors[i]] = value
+            this.integrationField[arrayPos] = value
             // Draw text
-            tmpXY = this.convertArrayPosToXY(neighbors[i])
-            x = tmpXY[0] * this.gridSize + 4
-            y = tmpXY[1] * this.gridSize + 16
-            this.ctx.font = '8px sans-serif'
+            x = neighbors[i].x * this.gridSize
+            y = neighbors[i].y * this.gridSize
             if (value < 100) {
               this.ctx.fillStyle = this.heatMapColorForValue((value / 100))
             } else {
               this.ctx.fillStyle = this.heatMapColorForValue(1)
             }
-            this.ctx.fillText(`${value}`, x, y)
+            this.ctx.beginPath()
+            this.ctx.moveTo(x, y)
+            this.ctx.rect(x, y, this.gridSize, this.gridSize)
+            this.ctx.fill()
           }
           totalCalculations += 1
         }
@@ -562,7 +566,7 @@ export default {
     },
     heatMapColorForValue: function (value) {
       const h = value * 240
-      return `hsl(${h}, 25%, 50%)`
+      return `hsl(${h}, 100%, 25%)`
     },
     convertXYToArrayPos: function (x, y) {
       return this.xCells * y + x
@@ -623,44 +627,53 @@ export default {
           if (xi === x && yi === y) {
             continue
           }
-          list.push(this.convertXYToArrayPos(xi, yi))
+          list.push(new THREE.Vector2(xi, yi))
         }
       }
       return list
     },
     initializeEnemies: function () {
+      /**
+       *
+       * @type {FFUnit[]}
+       */
       this.enemies = []
     },
     handleSimulation: function () {
       if (this.enemies == null || this.enemies.length < 1) {
         return
       }
-      this.isSimulating = true
       console.log('Starting Simulation...')
+      this.isSimulating = true
       this.goalAlive = true
       // Allocate memory for variables
-      let current
-      let neighbors
-      let min
-      let minId
-      let tmp
+      let min, minXY
+      let tmp, arrayPos
+      let tmpX, tmpY
       let xy
-      let xNew
-      let yNew
-      let tmpX
-      let tmpY
+      let xNew, yNew
+      /**
+       * @type {FFUnit}
+       */
+      let current
+      /**
+       * @type {THREE.Vector2[]}
+       */
+      let neighbors
       /**
        * @type {THREE.Vector2}
        */
       let endVector
       let timestamp = performance.now()
+      let getNeighbors = true
       const image = document.getElementById('slime')
+      // Step Function to be called repeatedly
       const step = () => {
+        // Clear previous frame
         this.ctx3.clearRect(0, 0, this.width, this.height)
-        // this.ctx3.beginPath()
         for (let i = 0; i < this.enemies.length; i++) {
           current = this.enemies[i]
-          // Get and check current's neighbors
+          // Get current position
           tmpX = Math.round(current.pos.x)
           tmpY = Math.round(current.pos.y)
           tmp = this.convertXYToArrayPos(tmpX, tmpY)
@@ -669,37 +682,51 @@ export default {
             // In this case, we simply continue with nextPos
             xy[0] = Math.round(current.newPos.x)
             xy[1] = Math.round(current.newPos.y)
+            neighbors = this.getNeighbors(current.pos.x, current.pos.y)
+            if (neighbors.length < 1) {
+              continue
+            }
+            getNeighbors = false
           } else {
-            // Calculate the new direction
+            getNeighbors = true
             neighbors = this.getNeighbors(tmpX, tmpY)
             if (neighbors.length < 1) {
               continue
             }
+            // Calculate the new direction
             // Figure out what neighbor has the lowest cost
             min = 65535
-            minId = -1
+            minXY = undefined
             for (let j = 0; j < neighbors.length; j++) {
-              tmp = this.integrationField[neighbors[j]]
+              arrayPos = this.convertXYToArrayPos(
+                neighbors[j].x,
+                neighbors[j].y)
+              tmp = this.integrationField[arrayPos]
               this.totalCalculations += 1
               if (tmp < min) {
                 min = tmp
-                minId = neighbors[j]
+                minXY = neighbors[j]
               }
             }
-            if (minId === -1) {
+            if (!minXY) {
               continue
             }
-            // Move enemy to new coordinates
-            xy = this.convertArrayPosToXY(minId)
+            xy = [minXY.x, minXY.y]
           }
-          // Interpolate position vectors
+          // Calculate new position vector
           endVector = new THREE.Vector2(xy[0], xy[1])
           this.enemies[i].newPos.copy(endVector)
           endVector.sub(current.pos)
           endVector.normalize()
-          endVector.multiplyScalar(0.05)
-          // Write back interpolated value
+          endVector.multiplyScalar(current.maxSpeed)
           this.enemies[i].pos.add(endVector)
+          // Calculate distance vector to avoid crowding
+          if (getNeighbors) {
+            neighbors = this.getNeighbors(current.pos.x, current.pos.y)
+          }
+          for (let j = 0; j < neighbors.length; j++) {
+            // if (neighbors[])
+          }
           // Draw enemy
           if (image) {
             xNew = this.enemies[i].pos.x * this.gridSize
@@ -707,17 +734,19 @@ export default {
             this.ctx3.drawImage(image, xNew, yNew, 32, 32)
           }
         }
-        // this.ctx3.fill()
         if (this.goalAlive) {
+          // Calculate FPS
           this.timeDelta = Math.floor(
             (16 / (performance.now() - timestamp)) * 60)
           timestamp = performance.now()
+          // Trigger next step
           requestAnimationFrame(step)
         } else {
           this.isSimulating = false
           console.log('Simulation has ended!')
         }
       }
+      // Start first simulation step
       requestAnimationFrame(step)
     },
     cancelSimulation: function () {
