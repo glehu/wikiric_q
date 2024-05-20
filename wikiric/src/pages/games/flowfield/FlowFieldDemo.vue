@@ -49,6 +49,7 @@
               </p>
               <template v-if="!isCalculating">
                 <q-btn color="brand-bg"
+                       text-color="brand-p"
                        @click="handleCalculation"
                        icon="sym_o_manufacturing"
                        label="Calculate"
@@ -65,6 +66,7 @@
               </template>
               <template v-if="!isSimulating">
                 <q-btn color="brand-bg"
+                       text-color="brand-p"
                        @click="handleSimulation"
                        icon="sym_o_network_intelligence_history"
                        label="Simulate"
@@ -85,6 +87,7 @@
                 </div>
               </template>
               <q-btn color="brand-bg"
+                     text-color="brand-p"
                      @click="clearAll"
                      icon="sym_o_delete"
                      label="Clear All"
@@ -172,6 +175,7 @@
 <script>
 import * as THREE from 'threejs-math'
 import FFUnit from 'pages/games/flowfield/FFUnit'
+import FFQuadTree from 'pages/games/flowfield/FFQuadTree'
 
 export default {
   name: 'FlowFieldDemo',
@@ -481,7 +485,9 @@ export default {
       const xNew = x * this.gridSize
       const yNew = y * this.gridSize
       // Add enemy to list
-      this.enemies.push(new FFUnit(x, y, 0.05))
+      const unit = new FFUnit(x, y, 0.05, this.getUUID())
+      this.enemies.push(unit)
+      // DEBUG
       const image = document.getElementById('slime')
       // Draw enemy
       if (image) {
@@ -565,7 +571,7 @@ export default {
     },
     heatMapColorForValue: function (value) {
       const h = value * 240
-      return `hsl(${h}, 100%, 10%)`
+      return `hsl(${h}, 100%, 25%)`
     },
     convertXYToArrayPos: function (x, y) {
       return this.xCells * y + x
@@ -663,13 +669,23 @@ export default {
       let endVector
       let timestamp = performance.now()
       const image = document.getElementById('slime')
+      let qtree
+      const cacheMap = new Map()
+      let cacheDiff
       // Step Function to be called repeatedly
       let stepCount = 0
       const step = () => {
+        qtree = new FFQuadTree(this.xCells / 2, this.yCells / 2, this.xCells / 2, this.yCells / 2, 4)
+        cacheMap.clear()
         stepCount += 1
         // Clear previous frame
         this.ctx3.clearRect(0, 0, this.width, this.height)
         if (this.enemies && this.enemies.length > 0) {
+          // Add all enemies to the quadtree
+          for (let i = 0; i < this.enemies.length; i++) {
+            qtree.insert(this.enemies[i])
+          }
+          // Calculate new position vectors for all enemies
           for (let i = 0; i < this.enemies.length; i++) {
             current = this.enemies[i]
             // Get current position
@@ -713,32 +729,55 @@ export default {
             endVector = new THREE.Vector2(xy[0], xy[1])
             this.enemies[i].newPos.copy(endVector)
             endVector.sub(current.pos)
-            // endVector.normalize()
             endVector.multiplyScalar(current.maxSpeed)
             endVector.clampScalar(-current.maxSpeed, current.maxSpeed)
             this.enemies[i].pos.add(endVector)
             // Calculate distance vector to avoid crowding
             tmp = 0
             endVector = null
-            for (let j = 0; j < this.enemies.length; j++) {
-              if (i === j) {
+            const others = qtree.getContents(
+              tmpX - 1,
+              tmpY - 1,
+              tmpX + 1,
+              tmpY + 1)
+            for (const other of others) {
+              // Ignore self
+              if (other === current) {
                 continue
               }
-              dist = current.pos.distanceToSquared(this.enemies[j].pos)
-              if (dist < 0.5) {
+              // Did we check this yet?
+              // A-B will cache A:B
+              // When B wants to check B-A it can simply check,
+              // If the other has already checked this combination
+              cacheDiff = cacheMap.get(`${other.id}:${current.id}`)
+              if (!cacheDiff) {
+                // Calculate distance vector
+                dist = current.pos.distanceToSquared(other.pos)
+                if (dist < 0.5) {
+                  tmp += 1
+                  diff = new THREE.Vector2(current.pos.x, current.pos.y)
+                  diff.sub(other.pos)
+                  diff.divideScalar(Math.pow(dist, 2))
+                  if (!endVector) {
+                    endVector = new THREE.Vector2()
+                  }
+                  endVector.add(diff)
+                  // Cache the difference for the other unit
+                  diff.multiplyScalar(-1)
+                  cacheMap.set(`${current.id}:${other.id}`, diff)
+                }
+              } else {
                 tmp += 1
-                diff = new THREE.Vector2(current.pos.x, current.pos.y)
-                diff.sub(this.enemies[j].pos)
-                diff.divideScalar(Math.pow(dist, 2))
+                // Use cached vector
                 if (!endVector) {
                   endVector = new THREE.Vector2()
                 }
-                endVector.add(diff)
+                endVector.add(cacheDiff)
               }
             }
             if (tmp > 0) {
+              // Get average
               endVector.divideScalar(tmp)
-              // endVector.normalize()
               endVector.multiplyScalar(current.maxSpeed)
               endVector.clampScalar(-current.maxSpeed, current.maxSpeed)
               this.enemies[i].pos.add(endVector)
@@ -804,6 +843,11 @@ export default {
       }
     },
     movePlayer: function (vector) {
+    },
+    getUUID: function () {
+      return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+      )
     }
   }
 }

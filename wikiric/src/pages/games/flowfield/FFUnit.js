@@ -9,11 +9,12 @@ class FFUnit {
    * @param {Number} x
    * @param {Number} y
    * @param {Number} speed
+   * @param id
    */
-  constructor (x, y, speed) {
+  constructor (x, y, speed, id) {
     /**
      * This FF Unit's Position
-     * @type {THREE.Vector2}
+     * @type {THREE.Vector2}¥
      */
     this.pos = new THREE.Vector2(x, y)
     /**
@@ -31,6 +32,8 @@ class FFUnit {
      * @type {Number}
      */
     this.state = 0
+
+    this.id = id
   }
 }
 
