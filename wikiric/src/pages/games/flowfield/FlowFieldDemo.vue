@@ -86,6 +86,7 @@
                          @click="cancelSimulation"/>
                 </div>
               </template>
+              <hr>
               <q-btn color="brand-bg"
                      text-color="brand-p"
                      @click="clearAll"
@@ -93,7 +94,7 @@
                      label="Clear All"
                      align="left"
                      no-caps unelevated dense
-                     class="wfull mt8 fontbold text-body2"/>
+                     class="wfull fontbold text-body2"/>
             </div>
             <div class="p3 rounded surface mt2">
               <p class="text-body1 mb2">
@@ -525,7 +526,7 @@ export default {
       const yNew = y * this.gridSize
       // Add enemy to list
       const id = this.getUUID()
-      const unit = new FFUnit(x, y, 0.02, id, 10, 20)
+      const unit = new FFUnit(x, y, 1, id, 10, 20)
       this.enemies.set(id, unit)
       const image = document.getElementById('slime')
       // Draw enemy
@@ -704,14 +705,36 @@ export default {
        * @type {THREE.Vector2}
        */
       let endVector
-      let timestamp = performance.now()
       const image = document.getElementById('slime')
       let qtree
       const cacheMap = new Map()
       let cacheDiff
       // Step Function to be called repeatedly
       let stepCount = 0
+      let timestamp = performance.now()
+      let lastTime = performance.now()
+      let timeDelta
       const step = () => {
+        if (this.goalAlive) {
+          // Calculate FPS
+          tmp = performance.now()
+          if (((tmp - timestamp) / 1000) >= 1) {
+            timestamp = tmp
+            this.timeDelta = stepCount
+            stepCount = 0
+          }
+          // How many seconds passed?
+          tmp = performance.now()
+          timeDelta = (tmp - lastTime) / 1000
+          lastTime = tmp
+          // Schedule next step
+          // MDN Docs say it's best practice to put this here
+          // ...so I guess we will just do it.
+          requestAnimationFrame(step)
+        } else {
+          this.isSimulating = false
+          console.log('Simulation has ended!')
+        }
         // Frame-Resets
         qtree = new FFQuadTree(this.xCells / 2, this.yCells / 2, this.xCells / 2, this.yCells / 2, 4)
         cacheMap.clear()
@@ -780,6 +803,7 @@ export default {
             endVector.sub(current.pos)
             endVector.multiplyScalar(current.maxSpeed)
             endVector.clampScalar(-current.maxSpeed, current.maxSpeed)
+            endVector.multiplyScalar(timeDelta)
             current.pos.add(endVector)
             // Calculate distance vector to avoid crowding
             tmp = 0
@@ -829,6 +853,7 @@ export default {
               endVector.divideScalar(tmp)
               endVector.multiplyScalar(current.maxSpeed)
               endVector.clampScalar(-current.maxSpeed, current.maxSpeed)
+              endVector.multiplyScalar(timeDelta)
               current.pos.add(endVector)
             }
             // Write back enemy
@@ -859,7 +884,6 @@ export default {
                 if (this.goalWeapons[k]._wait > 0) continue
                 if (dist <= this.goalWeapons[k].range) {
                   this.goalWeapons[k]._amt -= 1
-                  console.log(this.goalWeapons[k]._amt)
                   if (this.goalWeapons[k]._amt <= 0) {
                     this.goalWeapons[k]._wait = this.goalWeapons[k].cd
                   }
@@ -895,19 +919,6 @@ export default {
             }
             this.ctx3.stroke()
           }
-        }
-        if (this.goalAlive) {
-          // Calculate FPS
-          if (((performance.now() - timestamp) / 1000) >= 1) {
-            timestamp = performance.now()
-            this.timeDelta = stepCount
-            stepCount = 0
-          }
-          // Trigger next step
-          requestAnimationFrame(step)
-        } else {
-          this.isSimulating = false
-          console.log('Simulation has ended!')
         }
       }
       // Start first simulation step
