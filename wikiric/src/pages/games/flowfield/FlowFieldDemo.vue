@@ -253,6 +253,9 @@ export default {
       costField: undefined,
       integrationField: undefined,
       enemies: new Map(),
+
+      // PLAYABLE CHARACTER DATA
+
       goalPosition: undefined,
       goalHP: 1000,
       goalInvincibilityFrames: 0,
@@ -260,6 +263,20 @@ export default {
       goalWeapons: [],
       goalMaxRange: 0,
       goalMovementVector: new THREE.Vector2(0, 0),
+      goalSpeed: 2,
+
+      goalNorth: new THREE.Vector2(0, -1),
+      goalWest: new THREE.Vector2(-1, 0),
+      goalSouth: new THREE.Vector2(0, 1),
+      goalEast: new THREE.Vector2(1, 0),
+
+      goalUp: false,
+      goalLeft: false,
+      goalDown: false,
+      goalRight: false,
+
+      // SIMULATION DATA
+
       isCalculating: false,
       isSimulating: false,
       timeDelta: 0
@@ -485,8 +502,10 @@ export default {
       const xNew = x * this.gridSize
       const yNew = y * this.gridSize
       // Check if we'd overwrite the goal
-      if (xNew === this.goalPosition.x && yNew === this.goalPosition.y) {
-        return
+      if (this.goalPosition) {
+        if (xNew === this.goalPosition.x && yNew === this.goalPosition.y) {
+          return
+        }
       }
       const image = document.getElementById('wall')
       // Set highest cost value
@@ -501,20 +520,26 @@ export default {
       if (arrayPos > this.costField.length) {
         return
       }
-      // Calculate positions
-      const xNew = x * this.gridSize
-      const yNew = y * this.gridSize
       // Remember values
       this.goalPosition = new THREE.Vector2(x, y)
       // Draw goal
+      this.renderGoal()
+      // Calculate integration field
+      this.handleCalculation()
+    },
+    renderGoal: function () {
+      const xNew = this.goalPosition.x * this.gridSize
+      const yNew = this.goalPosition.y * this.gridSize
       this.drawGrid()
       this.ctx.fillStyle = '#0F0'
       this.ctx.beginPath()
       this.ctx.moveTo(xNew, yNew)
-      this.ctx.rect(xNew + (this.gridSize / 4), yNew + (this.gridSize / 4), this.gridSize / 2, this.gridSize / 2)
+      this.ctx.rect(xNew + (
+        this.gridSize / 4),
+        yNew + (this.gridSize / 4),
+        this.gridSize / 2,
+        this.gridSize / 2)
       this.ctx.fill()
-      // Calculate integration field
-      this.handleCalculation()
     },
     addEnemy: function (x, y) {
       const arrayPos = this.convertXYToArrayPos(x, y)
@@ -543,13 +568,15 @@ export default {
         return
       }
       this.isCalculating = true
+      const vec = new THREE.Vector2(
+        Math.round(this.goalPosition.x),
+        Math.round(this.goalPosition.y))
       // Set integration value of goal's position to zero
-      const goalArrayPos = this.convertXYToArrayPos(
-        this.goalPosition.x, this.goalPosition.y)
+      const goalArrayPos = this.convertXYToArrayPos(vec.x, vec.y)
       this.integrationField[goalArrayPos] = 0
       // Add goal to open list
       const open = []
-      open.unshift(this.goalPosition)
+      open.unshift(vec)
       // Allocate memory for variables
       let current
       let neighbors
@@ -731,6 +758,25 @@ export default {
           // MDN Docs say it's best practice to put this here
           // ...so I guess we will just do it.
           requestAnimationFrame(step)
+          // Move the player!
+          this.goalMovementVector = new THREE.Vector2()
+          if (this.goalUp) {
+            this.goalMovementVector.add(this.goalNorth)
+          }
+          if (this.goalLeft) {
+            this.goalMovementVector.add(this.goalWest)
+          }
+          if (this.goalDown) {
+            this.goalMovementVector.add(this.goalSouth)
+          }
+          if (this.goalRight) {
+            this.goalMovementVector.add(this.goalEast)
+          }
+          this.goalMovementVector.multiplyScalar(this.goalSpeed)
+          this.goalMovementVector.multiplyScalar(timeDelta)
+          this.goalPosition.add(this.goalMovementVector)
+          this.handleCalculation()
+          this.renderGoal()
         } else {
           this.isSimulating = false
           console.log('Simulation has ended!')
@@ -875,8 +921,8 @@ export default {
             tmp = this.goalPosition
             this.ctx3.beginPath()
             this.ctx3.strokeStyle = '#F00'
-            this.ctx3.lineHeight = 2
-            this.ctx3.lineWidth = 2
+            this.ctx3.lineHeight = 4
+            this.ctx3.lineWidth = 4
             for (const other of others) {
               dist = tmp.distanceToSquared(other.pos)
               // Can we target this enemy?
@@ -937,41 +983,34 @@ export default {
     handleFFKeyDown: function (e) {
       switch (e.key) {
         case 'w':
-          this.movePlayer(0, -1)
+          this.goalUp = true
           break
         case 'a':
-          this.movePlayer(-1, 0)
+          this.goalLeft = true
           break
         case 's':
-          this.movePlayer(0, 1)
+          this.goalDown = true
           break
         case 'd':
-          this.movePlayer(1, 0)
+          this.goalRight = true
           break
       }
     },
     handleFFKeyUp: function (e) {
       switch (e.key) {
         case 'w':
+          this.goalUp = false
           break
         case 'a':
+          this.goalLeft = false
           break
         case 's':
+          this.goalDown = false
           break
         case 'd':
+          this.goalRight = false
           break
       }
-    },
-    movePlayer: function (x, y) {
-      if (!this.goalAlive) {
-        return
-      }
-      const xT = this.goalPosition.x + x
-      const yT = this.goalPosition.y + y
-      if (xT < 0 || yT < 0 || xT > this.xCells || yT > this.yCells) {
-        return
-      }
-      this.addGoal(xT, yT)
     },
     getUUID: function () {
       return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
