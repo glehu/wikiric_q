@@ -10,8 +10,11 @@ class FFUnit {
    * @param {Number} y
    * @param {Number} speed
    * @param id
+   * @param {Number} dmg
+   * @param {Number} hp
    */
-  constructor (x, y, speed, id) {
+  constructor (x, y, speed, id, dmg, hp) {
+    this.id = id
     /**
      * This FF Unit's Position
      * @type {THREE.Vector2}¥
@@ -32,8 +35,21 @@ class FFUnit {
      * @type {Number}
      */
     this.state = 0
-
-    this.id = id
+    /**
+     * This FF Unit's Damage per Second
+     * @type {Number}
+     */
+    this.dps = dmg
+    /**
+     * This FF Unit's Max Health
+     * @type {Number}
+     */
+    this.maxHp = hp
+    /**
+     * This FF Unit's current Health
+     * @type {Number}
+     */
+    this.hp = hp
   }
 }
 
