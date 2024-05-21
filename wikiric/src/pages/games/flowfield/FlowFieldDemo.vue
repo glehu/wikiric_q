@@ -43,6 +43,124 @@
                 </template>
               </q-option-group>
             </div>
+            <div class="surface mt2 overflow-hidden">
+              <div class="p3">
+                <p class="text-body1">
+                  Tiles
+                </p>
+                <template v-if="tile !== ''">
+                  <p class="mt2 text-subtitle2">
+                    Selected: {{ tile }}
+                  </p>
+                </template>
+              </div>
+              <div class="grid grid-cols-5">
+                <q-btn @click="setBrush('floor')">
+                  <img id="floor"
+                       src="https://wikiric.xyz/files/public/get/018f9ca3-73c2-738d-8a28-03610cb178e5"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('floor_alt_1')">
+                  <img id="floor_alt_1"
+                       src="https://wikiric.xyz/files/public/get/018f9cd4-27c6-738d-a085-ad40d23e4898"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('floor_alt_2')">
+                  <img id="floor_alt_2"
+                       src="https://wikiric.xyz/files/public/get/018f9cd4-1f37-738d-b736-60ff4775b7a8"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('floor_bloody')">
+                  <img id="floor_bloody"
+                       src="https://wikiric.xyz/files/public/get/018f9cd4-3b5f-738d-a45d-f14cb45cee5a"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('wall')">
+                  <img id="wall"
+                       src="https://wikiric.xyz/files/public/get/018f9609-53c7-7af1-b199-8bb89b9a1a95"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('wall_top_left')">
+                  <img id="wall_top_left"
+                       src="https://wikiric.xyz/files/public/get/018f9cd4-727d-738d-8372-7b061a335c5b"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('wall_top_middle')">
+                  <img id="wall_top_middle"
+                       src="https://wikiric.xyz/files/public/get/018f9cd4-79dd-738d-bcd9-b6f6253f98fe"
+                       width="50" height="50" alt="img"/></q-btn>
+                <q-btn @click="setBrush('wall_top_right')">
+                  <img id="wall_top_right"
+                       src="https://wikiric.xyz/files/public/get/018f9cd4-814e-738d-a22a-288999cac241"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('wall_left_middle')">
+                  <img id="wall_left_middle"
+                       src="https://wikiric.xyz/files/public/get/018f9cd8-7aa5-738d-b17d-877c475c266d"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('wall_right_middle')">
+                  <img id="wall_right_middle"
+                       src="https://wikiric.xyz/files/public/get/018f9cd8-8274-738d-bbde-3004d1b69105"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('wall_bottom_left')">
+                  <img id="wall_bottom_left"
+                       src="https://wikiric.xyz/files/public/get/018f9cd4-60b5-738d-9f79-cfea517dd2cf"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('wall_bottom_middle')">
+                  <img id="wall_bottom_middle"
+                       src="https://wikiric.xyz/files/public/get/018f9cd4-6b4a-738d-8a06-c66fc7e7f795"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('wall_bottom_right')">
+                  <img id="wall_bottom_right"
+                       src="https://wikiric.xyz/files/public/get/018f9cd8-738d-738d-b480-33e50482adce"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('wall_inner_top_left')">
+                  <img id="wall_inner_top_left"
+                       src="https://wikiric.xyz/files/public/get/018f9d30-0ece-738d-89d0-59b65270c4e5"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('wall_inner_top_right')">
+                  <img id="wall_inner_top_right"
+                       src="https://wikiric.xyz/files/public/get/018f9d30-15dd-738d-a8bb-0d3bc66a2e2a"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('wall_base_left')">
+                  <img id="wall_base_left"
+                       src="https://wikiric.xyz/files/public/get/018f9cd4-92b3-738d-afd2-1479727a4698"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('wall_base_middle')">
+                  <img id="wall_base_middle"
+                       src="https://wikiric.xyz/files/public/get/018f9cd4-8ab8-738d-a7f7-940fa063c34c"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('wall_base_right')">
+                  <img id="wall_base_right"
+                       src="https://wikiric.xyz/files/public/get/018f9cd4-ad47-738d-8918-211e3a416ca9"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('wall_inner_bottom_left')">
+                  <img id="wall_inner_bottom_left"
+                       src="https://wikiric.xyz/files/public/get/018f9d2f-f7e4-738d-874b-d1ff530bbb7f"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('wall_inner_bottom_right')">
+                  <img id="wall_inner_bottom_right"
+                       src="https://wikiric.xyz/files/public/get/018f9d30-0121-738d-9e2f-69ef1577ee75"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('wall_inner')">
+                  <img id="wall_inner"
+                       src="https://wikiric.xyz/files/public/get/018f9d2f-e5b6-738d-bf08-62f0e4fc3804"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+              </div>
+            </div>
             <div class="p3 rounded surface mt2">
               <p class="text-body1 mb2">
                 Actions
@@ -156,9 +274,11 @@
           <div class="ffd_container" ref="ffd_container">
             <canvas id="ffd_canvas" ref="ffd_canvas"
                     class="ffd_canvas"></canvas>
-            <canvas id="ffd_canvas_cursor" ref="ffd_canvas_cursor"
+            <canvas id="ffd_canvas_player" ref="ffd_canvas_player"
                     class="ffd_canvas"></canvas>
             <canvas id="ffd_canvas_enemy" ref="ffd_canvas_enemy"
+                    class="ffd_canvas"></canvas>
+            <canvas id="ffd_canvas_cursor" ref="ffd_canvas_cursor"
                     class="ffd_canvas"></canvas>
             <div class="ffd_main" ref="ffd_main">
             </div>
@@ -192,12 +312,9 @@
     <img id="slime"
          src="https://wikiric.xyz/files/public/get/018f866a-4182-7aef-b1a4-1a75a7e7c21f"
          width="24" height="24" alt="img"/>
-    <img id="floor"
-         src="https://wikiric.xyz/files/public/get/018f9609-74b4-7af1-818a-dcc485456fd8"
-         width="50" height="50" alt="img"/>
-    <img id="wall"
-         src="https://wikiric.xyz/files/public/get/018f9609-53c7-7af1-b199-8bb89b9a1a95"
-         width="50" height="50" alt="img"/>
+    <img id="wizzard"
+         src="https://wikiric.xyz/files/public/get/018f9cfd-e044-738d-8df8-199c73d55585"
+         width="48" height="48" alt="img"/>
   </div>
 </template>
 
@@ -205,6 +322,8 @@
 import * as THREE from 'threejs-math'
 import FFUnit from 'pages/games/flowfield/FFUnit'
 import FFQuadTree from 'pages/games/flowfield/FFQuadTree'
+import FFTilesQuadTree from 'pages/games/flowfield/FFTilesQuadTree'
+import FFTile from 'pages/games/flowfield/FFTile'
 
 export default {
   name: 'FlowFieldDemo',
@@ -225,6 +344,11 @@ export default {
           icon: 'sym_o_stop'
         },
         {
+          label: 'Tile',
+          value: 'tile',
+          icon: 'sym_o_stop'
+        },
+        {
           label: 'Goal',
           value: 'goal',
           icon: 'sym_o_flag'
@@ -241,6 +365,36 @@ export default {
         }
       ],
       brush: 'cursor',
+      tile: '',
+
+      // TILE REFERENCES
+
+      wizzard: '',
+      tile_floor: '',
+      tile_alt_1: '',
+      tile_alt_2: '',
+      tile_bloody: '',
+      tile_box: '',
+      tile_wall_top_left: '',
+      tile_wall_top_middle: '',
+      tile_wall_top_right: '',
+      tile_wall_bottom_left: '',
+      tile_wall_bottom_middle: '',
+      tile_wall_bottom_right: '',
+      tile_wall_left_middle: '',
+      tile_wall_right_middle: '',
+      tile_wall_base_left: '',
+      tile_wall_base_middle: '',
+      tile_wall_base_right: '',
+      tile_wall_inner: '',
+      tile_wall_inner_top_left: '',
+      tile_wall_inner_top_right: '',
+      tile_wall_inner_bottom_left: '',
+      tile_wall_inner_bottom_right: '',
+
+      // GAME DATA
+
+      ctxPlayer: null,
       ctx: null,
       ctx2: null,
       ctx3: null,
@@ -253,6 +407,7 @@ export default {
       costField: undefined,
       integrationField: undefined,
       enemies: new Map(),
+      tileTree: null,
 
       // PLAYABLE CHARACTER DATA
 
@@ -297,10 +452,19 @@ export default {
       this.initializeEnemies()
       this.initializeCanvas()
       this.initializeEnemyCanvas()
+      this.initializePlayerCanvas()
+      this.initializeTileReferences()
+      this.tileTree = new FFTilesQuadTree(
+        this.xCells / 2,
+        this.yCells / 2,
+        this.xCells / 2,
+        this.yCells / 2,
+        100)
       this.manageKeyListeners(false)
+      // Give the player something to... play with!
       this.goalWeapons.push({
         range: 40,
-        dps: 5,
+        dps: 10,
         amount: 2,
         cd: 50,
         _wait: 0,
@@ -314,6 +478,82 @@ export default {
       if (forceRemove) return
       document.addEventListener('keydown', this.handleFFKeyDown, false)
       document.addEventListener('keyup', this.handleFFKeyUp, false)
+    },
+    initializeTileReferences: function () {
+      this.wizzard = document.getElementById('wizzard')
+      this.tile_floor = document.getElementById('floor')
+      this.tile_alt_1 = document.getElementById('floor_alt_1')
+      this.tile_alt_2 = document.getElementById('floor_alt_2')
+      this.tile_bloody = document.getElementById('floor_bloody')
+      this.tile_box = document.getElementById('wall')
+      this.tile_wall_top_left = document.getElementById('wall_top_left')
+      this.tile_wall_top_middle = document.getElementById('wall_top_middle')
+      this.tile_wall_top_right = document.getElementById('wall_top_right')
+      this.tile_wall_bottom_left = document.getElementById('wall_bottom_left')
+      this.tile_wall_bottom_middle = document.getElementById('wall_bottom_middle')
+      this.tile_wall_bottom_right = document.getElementById('wall_bottom_right')
+      this.tile_wall_left_middle = document.getElementById('wall_left_middle')
+      this.tile_wall_right_middle = document.getElementById('wall_right_middle')
+      this.tile_wall_base_left = document.getElementById('wall_base_left')
+      this.tile_wall_base_middle = document.getElementById('wall_base_middle')
+      this.tile_wall_base_right = document.getElementById('wall_base_right')
+      this.tile_wall_inner_top_left = document.getElementById('wall_inner_top_left')
+      this.tile_wall_inner_top_right = document.getElementById('wall_inner_top_right')
+      this.tile_wall_inner_bottom_left = document.getElementById('wall_inner_bottom_left')
+      this.tile_wall_inner_bottom_right = document.getElementById('wall_inner_bottom_right')
+      this.tile_wall_inner = document.getElementById('wall_inner')
+    },
+    getTile: function (override = '') {
+      let val
+      if (override && override !== '') {
+        val = override
+      } else {
+        val = this.tile
+      }
+      switch (val) {
+        case 'floor':
+          return this.tile_floor
+        case 'floor_alt_1':
+          return this.tile_alt_1
+        case 'floor_alt_2':
+          return this.tile_alt_2
+        case 'floor_bloody':
+          return this.tile_bloody
+        case 'crate':
+          return this.tile_box
+        case 'wall_top_left':
+          return this.tile_wall_top_left
+        case 'wall_top_middle':
+          return this.tile_wall_top_middle
+        case 'wall_top_right':
+          return this.tile_wall_top_right
+        case 'wall_bottom_left':
+          return this.tile_wall_bottom_left
+        case 'wall_bottom_middle':
+          return this.tile_wall_bottom_middle
+        case 'wall_bottom_right':
+          return this.tile_wall_bottom_right
+        case 'wall_left_middle':
+          return this.tile_wall_left_middle
+        case 'wall_right_middle':
+          return this.tile_wall_right_middle
+        case 'wall_base_left':
+          return this.tile_wall_base_left
+        case 'wall_base_middle':
+          return this.tile_wall_base_middle
+        case 'wall_base_right':
+          return this.tile_wall_base_right
+        case 'wall_inner_top_left':
+          return this.tile_wall_inner_top_left
+        case 'wall_inner_top_right':
+          return this.tile_wall_inner_top_right
+        case 'wall_inner_bottom_left':
+          return this.tile_wall_inner_bottom_left
+        case 'wall_inner_bottom_right':
+          return this.tile_wall_inner_bottom_right
+        case 'wall_inner':
+          return this.tile_wall_inner
+      }
     },
     initializeCanvas: function () {
       // Initialize Canvas (Field)
@@ -423,6 +663,19 @@ export default {
       canvas.height = this.height
       this.ctx3.clearRect(0, 0, this.width, this.height)
     },
+    initializePlayerCanvas: function () {
+      const canvas = this.$refs.ffd_canvas_player
+      this.ctxPlayer = canvas.getContext('2d')
+      this.ctxPlayer.lineWidth = 1
+      this.ctxPlayer.lineHeight = 1
+      canvas.style.minWidth = this.width + 'px'
+      canvas.style.maxWidth = canvas.style.minWidth
+      canvas.style.minHeight = this.height + 'px'
+      canvas.style.maxHeight = canvas.style.minHeight
+      canvas.width = this.width
+      canvas.height = this.height
+      this.ctxPlayer.clearRect(0, 0, this.width, this.height)
+    },
     initializeGridValues: function () {
       console.log('Initializing Grid...')
       if (this.ctx) {
@@ -482,6 +735,9 @@ export default {
         case 'wall':
           this.addWall(xNew, yNew)
           break
+        case 'tile':
+          this.addTile(xNew, yNew)
+          break
         case 'goal':
           this.addGoal(xNew, yNew)
           break
@@ -507,11 +763,45 @@ export default {
           return
         }
       }
-      const image = document.getElementById('wall')
+      const tile = new FFTile(x, y, xNew, yNew, this.tile)
+      this.tileTree.insert(tile)
       // Set highest cost value
       this.costField[arrayPos] = 255
-      // Draw wall
-      this.ctx.drawImage(image, xNew, yNew, this.gridSize, this.gridSize)
+      this.renderTiles()
+    },
+    addTile: function (x, y) {
+      const arrayPos = this.convertXYToArrayPos(x, y)
+      if (arrayPos > this.costField.length) {
+        return
+      }
+      // Calculate positions
+      const xNew = x * this.gridSize
+      const yNew = y * this.gridSize
+      // Check if we'd overwrite the goal
+      if (this.goalPosition) {
+        if (xNew === this.goalPosition.x && yNew === this.goalPosition.y) {
+          return
+        }
+      }
+      const tile = new FFTile(x, y, xNew, yNew, this.tile)
+      this.tileTree.insert(tile)
+      this.renderTiles()
+    },
+    renderTiles: function () {
+      const tiles = this.tileTree.getContents(
+        0, 0, this.xCells, this.yCells
+      )
+      let image
+      const gSize = this.gridSize
+      for (const tile of tiles) {
+        image = this.getTile(tile.name)
+        this.ctx.drawImage(
+          image,
+          tile.posVisual.x,
+          tile.posVisual.y,
+          gSize,
+          gSize)
+      }
     },
     removeWall: function (x, y) {
     },
@@ -530,16 +820,8 @@ export default {
     renderGoal: function () {
       const xNew = this.goalPosition.x * this.gridSize
       const yNew = this.goalPosition.y * this.gridSize
-      this.drawGrid()
-      this.ctx.fillStyle = '#0F0'
-      this.ctx.beginPath()
-      this.ctx.moveTo(xNew, yNew)
-      this.ctx.rect(xNew + (
-        this.gridSize / 4),
-        yNew + (this.gridSize / 4),
-        this.gridSize / 2,
-        this.gridSize / 2)
-      this.ctx.fill()
+      this.ctxPlayer.clearRect(0, 0, this.width, this.height)
+      this.ctxPlayer.drawImage(this.wizzard, xNew + 5, yNew + 5)
     },
     addEnemy: function (x, y) {
       const arrayPos = this.convertXYToArrayPos(x, y)
@@ -978,6 +1260,7 @@ export default {
       this.isCalculating = false
       this.isSimulating = false
       this.goalAlive = true
+      this.goalHP = 1000
       this.goalPosition = new THREE.Vector2(-1, -1)
     },
     handleFFKeyDown: function (e) {
@@ -1016,6 +1299,9 @@ export default {
       return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
         (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
       )
+    },
+    setBrush: function (tile) {
+      this.tile = tile
     }
   }
 }
