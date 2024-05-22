@@ -27,6 +27,59 @@
             <span class="ml4 text-body1">Back</span>
           </q-btn>
           <div class="p2">
+            <div class="p3 rounded surface mb2">
+              <p class="text-body1 mb2">
+                Actions
+              </p>
+              <template v-if="!isCalculating">
+                <q-btn color="brand-bg"
+                       text-color="brand-p"
+                       @click="handleCalculation"
+                       icon="sym_o_manufacturing"
+                       label="Calculate"
+                       align="left"
+                       no-caps unelevated dense
+                       class="wfull fontbold text-body2"/>
+              </template>
+              <template v-else>
+                <div class="p2 wfull">
+                  <p class="fontbold text-body2">
+                    Calculating...
+                  </p>
+                </div>
+              </template>
+              <template v-if="!isSimulating">
+                <q-btn color="brand-bg"
+                       text-color="brand-p"
+                       @click="handleSimulation"
+                       icon="sym_o_network_intelligence_history"
+                       label="Simulate"
+                       align="left"
+                       no-caps unelevated dense
+                       class="wfull mt2 fontbold text-body2"/>
+              </template>
+              <template v-else>
+                <div class="pl2 wfull flex items-center gap-2
+                            justify-between py2">
+                  <p class="fontbold text-body2">
+                    Simulating...
+                  </p>
+                  <q-btn color="negative"
+                         label="Stop"
+                         dense
+                         @click="cancelSimulation"/>
+                </div>
+              </template>
+              <hr>
+              <q-btn color="brand-bg"
+                     text-color="brand-p"
+                     @click="clearAll"
+                     icon="sym_o_delete"
+                     label="Clear All"
+                     align="left"
+                     no-caps unelevated dense
+                     class="wfull fontbold text-body2"/>
+            </div>
             <div class="p3 rounded surface">
               <p class="text-body1 mb2">
                 Brushes
@@ -163,59 +216,6 @@
             </div>
             <div class="p3 rounded surface mt2">
               <p class="text-body1 mb2">
-                Actions
-              </p>
-              <template v-if="!isCalculating">
-                <q-btn color="brand-bg"
-                       text-color="brand-p"
-                       @click="handleCalculation"
-                       icon="sym_o_manufacturing"
-                       label="Calculate"
-                       align="left"
-                       no-caps unelevated dense
-                       class="wfull fontbold text-body2"/>
-              </template>
-              <template v-else>
-                <div class="p2 wfull">
-                  <p class="fontbold text-body2">
-                    Calculating...
-                  </p>
-                </div>
-              </template>
-              <template v-if="!isSimulating">
-                <q-btn color="brand-bg"
-                       text-color="brand-p"
-                       @click="handleSimulation"
-                       icon="sym_o_network_intelligence_history"
-                       label="Simulate"
-                       align="left"
-                       no-caps unelevated dense
-                       class="wfull mt2 fontbold text-body2"/>
-              </template>
-              <template v-else>
-                <div class="pl2 wfull flex items-center gap-2
-                            justify-between py2">
-                  <p class="fontbold text-body2">
-                    Simulating...
-                  </p>
-                  <q-btn color="negative"
-                         label="Stop"
-                         dense
-                         @click="cancelSimulation"/>
-                </div>
-              </template>
-              <hr>
-              <q-btn color="brand-bg"
-                     text-color="brand-p"
-                     @click="clearAll"
-                     icon="sym_o_delete"
-                     label="Clear All"
-                     align="left"
-                     no-caps unelevated dense
-                     class="wfull fontbold text-body2"/>
-            </div>
-            <div class="p3 rounded surface mt2">
-              <p class="text-body1 mb2">
                 Stats
               </p>
               <div class="flex justify-between items-center gap-2
@@ -249,6 +249,28 @@
               <p class="text-subtitle2 px2">
                 3. Walls hinder enemy movement.
               </p>
+            </div>
+            <div class="p3 rounded surface mt2">
+              <p class="text-body1 mb2">
+                Debugging
+              </p>
+              <template v-if="goalPosition">
+                <div class="flex items-center justify-between
+                            gap-2 px2">
+                  <div>
+                    <p>X: {{ goalPosition.x.toFixed(2) }}</p>
+                    <p>Y: {{ goalPosition.y.toFixed(2) }}</p>
+                  </div>
+                  <template v-if="offsetVector">
+                    <div>
+                      <p>Offset: {{ offsetVector.x.toFixed(2) }}</p>
+                      <p>Offset: {{ offsetVector.y.toFixed(2) }}</p>
+                    </div>
+                  </template>
+                </div>
+                <hr>
+              </template>
+              <q-checkbox label="Heatmap" v-model="drawHeatmap"/>
             </div>
           </div>
         </q-scroll-area>
@@ -400,7 +422,7 @@ export default {
       ctx3: null,
       gridSize: 50,
       width: 1550,
-      height: 1000,
+      height: 900,
       totalCells: 0,
       xCells: 0,
       yCells: 0,
@@ -408,10 +430,11 @@ export default {
       integrationField: undefined,
       enemies: new Map(),
       tileTree: null,
+      offsetVector: new THREE.Vector2(0, 0),
 
       // PLAYABLE CHARACTER DATA
 
-      goalPosition: undefined,
+      goalPosition: new THREE.Vector2(0, 0),
       goalHP: 1000,
       goalInvincibilityFrames: 0,
       goalAlive: true,
@@ -434,7 +457,11 @@ export default {
 
       isCalculating: false,
       isSimulating: false,
-      timeDelta: 0
+      timeDelta: 0,
+
+      // DEBUG DATA
+
+      drawHeatmap: false
     }
   },
   mounted () {
@@ -459,14 +486,14 @@ export default {
         this.yCells / 2,
         this.xCells / 2,
         this.yCells / 2,
-        100)
+        4)
       this.manageKeyListeners(false)
       // Give the player something to... play with!
       this.goalWeapons.push({
         range: 40,
-        dps: 10,
-        amount: 2,
-        cd: 50,
+        dps: 0,
+        amount: 1,
+        cd: 0,
         _wait: 0,
         _amt: 0
       })
@@ -519,7 +546,7 @@ export default {
           return this.tile_alt_2
         case 'floor_bloody':
           return this.tile_bloody
-        case 'crate':
+        case 'wall':
           return this.tile_box
         case 'wall_top_left':
           return this.tile_wall_top_left
@@ -685,18 +712,18 @@ export default {
         this.ctx2.clearRect(0, 0, this.width, this.height)
       }
       // Calculate amount of cells
-      const xCells = this.width / this.gridSize
-      const yCells = this.height / this.gridSize
+      const xCells = (this.width / this.gridSize) * 2
+      const yCells = (this.height / this.gridSize) * 2
       const totalCells = xCells * yCells
       this.xCells = xCells
       this.yCells = yCells
       this.totalCells = totalCells
-      console.log(`\tX(${xCells}) * Y(${yCells}) = ${totalCells} Cells`)
+      console.log(`\tX(${this.xCells}) * Y(${this.yCells}) = ${this.totalCells} Cells`)
       // Initialize grid arrays
       this.costField = new Uint16Array(totalCells)
       this.integrationField = new Uint16Array(totalCells)
       // Fill with default values
-      for (let i = 0; i < totalCells; i++) {
+      for (let i = 0; i < this.totalCells; i++) {
         this.costField[i] = 1
         this.integrationField[i] = 65535
       }
@@ -715,8 +742,8 @@ export default {
       let xNew, yNew, arrayPos
       for (let x = 0; x < this.xCells; x++) {
         for (let y = 0; y < this.yCells; y++) {
-          xNew = x * this.gridSize
-          yNew = y * this.gridSize
+          xNew = (x + this.offsetVector.x) * this.gridSize
+          yNew = (y + this.offsetVector.y) * this.gridSize
           arrayPos = this.convertXYToArrayPos(x, y)
           if (this.costField[arrayPos] === 255) {
             this.ctx.drawImage(wall, xNew, yNew, this.gridSize, this.gridSize)
@@ -727,91 +754,113 @@ export default {
       }
     },
     handleDrawing: function (x, y) {
-      // Normalize values
-      const xNew = x / this.gridSize
-      const yNew = y / this.gridSize
+      // Consider offset
+      let xNew, yNew
+      xNew = x
+      yNew = y
+      if (this.offsetVector) {
+        xNew -= (this.offsetVector.x * this.gridSize)
+        yNew -= (this.offsetVector.y * this.gridSize)
+      }
+      xNew = Math.round(xNew / this.gridSize)
+      yNew = Math.round(yNew / this.gridSize)
+      const position = new THREE.Vector2(xNew, yNew)
       // Process input type
       switch (this.brush) {
         case 'wall':
-          this.addWall(xNew, yNew)
+          this.addWall(position)
           break
         case 'tile':
-          this.addTile(xNew, yNew)
+          this.addTile(position)
           break
         case 'goal':
-          this.addGoal(xNew, yNew)
+          this.addGoal(position)
           break
         case 'enemy':
-          this.addEnemy(xNew, yNew)
+          this.addEnemy(position)
           break
         case 'eraser':
-          this.removeWall(xNew, yNew)
+          this.removeWall(position)
           break
       }
     },
-    addWall: function (x, y) {
-      const arrayPos = this.convertXYToArrayPos(x, y)
+    addWall: function (position) {
+      const arrayPos = this.convertXYToArrayPos(position.x, position.y)
       if (arrayPos > this.costField.length) {
         return
       }
       // Calculate positions
-      const xNew = x * this.gridSize
-      const yNew = y * this.gridSize
+      const xNew = position.x * this.gridSize
+      const yNew = position.y * this.gridSize
       // Check if we'd overwrite the goal
       if (this.goalPosition) {
         if (xNew === this.goalPosition.x && yNew === this.goalPosition.y) {
           return
         }
       }
-      const tile = new FFTile(x, y, xNew, yNew, this.tile)
+      const tile = new FFTile(position.x, position.y, xNew, yNew, this.tile)
       this.tileTree.insert(tile)
       // Set highest cost value
       this.costField[arrayPos] = 255
-      this.renderTiles()
+      this.renderTiles(this.offsetVector)
     },
-    addTile: function (x, y) {
-      const arrayPos = this.convertXYToArrayPos(x, y)
+    addTile: function (position) {
+      const arrayPos = this.convertXYToArrayPos(position.x, position.y)
       if (arrayPos > this.costField.length) {
         return
       }
       // Calculate positions
-      const xNew = x * this.gridSize
-      const yNew = y * this.gridSize
+      const xNew = position.x * this.gridSize
+      const yNew = position.y * this.gridSize
       // Check if we'd overwrite the goal
       if (this.goalPosition) {
         if (xNew === this.goalPosition.x && yNew === this.goalPosition.y) {
           return
         }
       }
-      const tile = new FFTile(x, y, xNew, yNew, this.tile)
+      const tile = new FFTile(position.x, position.y, xNew, yNew, this.tile)
       this.tileTree.insert(tile)
-      this.renderTiles()
+      this.renderTiles(this.offsetVector)
     },
-    renderTiles: function () {
+    /**
+     *
+     * @param {THREE.Vector2} offset
+     */
+    renderTiles: function (offset) {
+      // Culling! Don't render what's too far away
+      const xx = this.goalPosition.x - offset.x
+      const yy = this.goalPosition.y - offset.y
       const tiles = this.tileTree.getContents(
-        0, 0, this.xCells, this.yCells
+        xx - 50, yy - 50, xx + 50, yy + 50
       )
       let image
       const gSize = this.gridSize
+      let x, y
       for (const tile of tiles) {
         image = this.getTile(tile.name)
+        x = tile.posVisual.x
+        y = tile.posVisual.y
+        if (offset) {
+          x += offset.x * this.gridSize
+          y += offset.y * this.gridSize
+        }
         this.ctx.drawImage(
           image,
-          tile.posVisual.x,
-          tile.posVisual.y,
+          x,
+          y,
           gSize,
           gSize)
       }
     },
-    removeWall: function (x, y) {
+    removeWall: function (position) {
     },
-    addGoal: function (x, y) {
-      const arrayPos = this.convertXYToArrayPos(x, y)
+    addGoal: function (position) {
+      const arrayPos = this.convertXYToArrayPos(position.x, position.y)
       if (arrayPos > this.costField.length) {
         return
       }
       // Remember values
-      this.goalPosition = new THREE.Vector2(x, y)
+      this.goalPosition = position
       // Draw goal
       this.renderGoal()
       // Calculate integration field
@@ -823,17 +872,17 @@ export default {
       this.ctxPlayer.clearRect(0, 0, this.width, this.height)
       this.ctxPlayer.drawImage(this.wizzard, xNew + 5, yNew + 5)
     },
-    addEnemy: function (x, y) {
-      const arrayPos = this.convertXYToArrayPos(x, y)
+    addEnemy: function (position) {
+      const arrayPos = this.convertXYToArrayPos(position.x, position.y)
       if (arrayPos > this.costField.length) {
         return
       }
       // Calculate positions
-      const xNew = x * this.gridSize
-      const yNew = y * this.gridSize
+      const xNew = position.x * this.gridSize
+      const yNew = position.y * this.gridSize
       // Add enemy to list
       const id = this.getUUID()
-      const unit = new FFUnit(x, y, 1, id, 10, 20)
+      const unit = new FFUnit(position.x, position.y, 1, id, 10, 20)
       this.enemies.set(id, unit)
       const image = document.getElementById('slime')
       // Draw enemy
@@ -842,7 +891,7 @@ export default {
       }
     },
     handleCalculation: async function () {
-      console.log('Starting Calculation...')
+      // this.ctx.clearRect(0, 0, this.width, this.height)
       // Integration grid always needs to be initialized
       this.initializeIntegrationGrid()
       // Check if there is a goal
@@ -851,8 +900,8 @@ export default {
       }
       this.isCalculating = true
       const vec = new THREE.Vector2(
-        Math.round(this.goalPosition.x),
-        Math.round(this.goalPosition.y))
+        Math.round(this.goalPosition.x - this.offsetVector.x),
+        Math.round(this.goalPosition.y - this.offsetVector.y))
       // Set integration value of goal's position to zero
       const goalArrayPos = this.convertXYToArrayPos(vec.x, vec.y)
       this.integrationField[goalArrayPos] = 0
@@ -864,15 +913,17 @@ export default {
       let neighbors
       // let x, y
       let value
-      let calculations = 0
-      let totalCalculations = 0
       let arrayPos, currentArrayPos
       let dist
       // Enter calculation loop...
+      let debugFirst = true
       while (open.length > 0) {
         current = open.pop()
         currentArrayPos = this.convertXYToArrayPos(current.x, current.y)
         neighbors = this.getNeighbors(current.x, current.y)
+        if (debugFirst) {
+          debugFirst = false
+        }
         for (let i = 0; i < neighbors.length; i++) {
           arrayPos = this.convertXYToArrayPos(
             neighbors[i].x, neighbors[i].y)
@@ -896,28 +947,24 @@ export default {
             }
             // Set new value
             this.integrationField[arrayPos] = value
-            // // Draw heatmap
-            // x = neighbors[i].x * this.gridSize
-            // y = neighbors[i].y * this.gridSize
-            // if (value < 32) {
-            //   this.ctx.fillStyle = this.heatMapColorForValue((value / 32))
-            // } else {
-            //   this.ctx.fillStyle = this.heatMapColorForValue(1)
-            // }
-            // this.ctx.beginPath()
-            // this.ctx.moveTo(x, y)
-            // this.ctx.rect(x, y, this.gridSize, this.gridSize)
-            // this.ctx.fill()
+            // Draw heatmap
+            if (this.drawHeatmap) {
+              const x = (neighbors[i].x + this.offsetVector.x) * this.gridSize
+              const y = (neighbors[i].y + this.offsetVector.y) * this.gridSize
+              if (value < 32) {
+                this.ctx.fillStyle = this.heatMapColorForValue((value / 32))
+              } else {
+                this.ctx.fillStyle = this.heatMapColorForValue(1)
+              }
+              this.ctx.beginPath()
+              this.ctx.moveTo(x, y)
+              this.ctx.rect(x, y, this.gridSize, this.gridSize)
+              this.ctx.fill()
+            }
           }
-          totalCalculations += 1
         }
-        calculations += 1
       }
       this.isCalculating = false
-      console.log(
-        'Calculation Finished!',
-        `\n*\tMain Steps:  ${calculations}`,
-        `\n*\tTotal Steps: ${totalCalculations}`)
     },
     heatMapColorForValue: function (value) {
       const h = value * 240
@@ -1023,6 +1070,7 @@ export default {
       let timestamp = performance.now()
       let lastTime = performance.now()
       let timeDelta
+      let lastPos
       const step = () => {
         if (this.goalAlive) {
           // Calculate FPS
@@ -1041,24 +1089,81 @@ export default {
           // ...so I guess we will just do it.
           requestAnimationFrame(step)
           // Move the player!
+          // If the player moved half the screen's distance
+          // ...in any direction, we will translate the movement
+          // ...that would further exceed this to the environment.
           this.goalMovementVector = new THREE.Vector2()
+          endVector = new THREE.Vector2()
           if (this.goalUp) {
-            this.goalMovementVector.add(this.goalNorth)
+            if (this.goalPosition.y >= (this.yCells / 4)) {
+              endVector.add(this.goalSouth)
+            } else {
+              this.goalMovementVector.add(this.goalNorth)
+            }
           }
           if (this.goalLeft) {
-            this.goalMovementVector.add(this.goalWest)
+            if (this.goalPosition.x >= (this.xCells / 4)) {
+              endVector.add(this.goalEast)
+            } else {
+              this.goalMovementVector.add(this.goalWest)
+            }
           }
           if (this.goalDown) {
-            this.goalMovementVector.add(this.goalSouth)
+            if (this.goalPosition.y >= (this.yCells / 4)) {
+              endVector.add(this.goalNorth)
+            } else {
+              this.goalMovementVector.add(this.goalSouth)
+            }
           }
           if (this.goalRight) {
-            this.goalMovementVector.add(this.goalEast)
+            if (this.goalPosition.x >= (this.xCells / 4)) {
+              endVector.add(this.goalWest)
+            } else {
+              this.goalMovementVector.add(this.goalEast)
+            }
           }
+          // // Don't forget to free the player!
+          if (this.offsetVector.x > 0) {
+            this.offsetVector.x = 0
+            this.goalMovementVector.add(this.goalWest)
+          }
+          if (this.offsetVector.y > 0) {
+            this.offsetVector.y = 0
+            this.goalMovementVector.add(this.goalNorth)
+          }
+          endVector.multiplyScalar(this.goalSpeed)
+          endVector.multiplyScalar(timeDelta)
+          this.offsetVector.add(endVector)
+          // Apply movement to player position
           this.goalMovementVector.multiplyScalar(this.goalSpeed)
           this.goalMovementVector.multiplyScalar(timeDelta)
           this.goalPosition.add(this.goalMovementVector)
-          this.handleCalculation()
+          // Draw environment
+          this.drawGrid()
+          if (this.drawHeatmap) {
+            this.handleCalculation()
+          } else {
+            if (!lastPos) {
+              lastPos = new THREE.Vector2(
+                Math.round(this.goalPosition.x - this.offsetVector.x),
+                Math.round(this.goalPosition.y - this.offsetVector.y))
+              this.handleCalculation()
+            } else {
+              if (Math.round(this.goalPosition.x - this.offsetVector.x) !== lastPos.x ||
+                Math.round(this.goalPosition.y - this.offsetVector.y) !== lastPos.y) {
+                lastPos = new THREE.Vector2(
+                  Math.round(this.goalPosition.x - this.offsetVector.x),
+                  Math.round(this.goalPosition.y - this.offsetVector.y))
+                // Calculate new paths
+                setTimeout(() => {
+                  this.handleCalculation()
+                }, 0)
+              }
+            }
+          }
+          // Display player
           this.renderGoal()
+          this.renderTiles(this.offsetVector)
         } else {
           this.isSimulating = false
           console.log('Simulation has ended!')
@@ -1188,19 +1293,21 @@ export default {
             this.enemies.set(id, current)
             // Draw enemy
             if (image) {
-              xNew = current.pos.x * this.gridSize
-              yNew = current.pos.y * this.gridSize
+              xNew = (current.pos.x + this.offsetVector.x) * this.gridSize
+              yNew = (current.pos.y + this.offsetVector.y) * this.gridSize
               this.ctx3.drawImage(image, xNew, yNew, 32, 32)
             }
           }
           // Now check if any enemy has come close to the player
           const others = qtree.getContents(
-            this.goalPosition.x - this.goalMaxRange,
-            this.goalPosition.y - this.goalMaxRange,
-            this.goalPosition.x + this.goalMaxRange,
-            this.goalPosition.y + this.goalMaxRange)
+            this.goalPosition.x - this.offsetVector.x - this.goalMaxRange,
+            this.goalPosition.y - this.offsetVector.y - this.goalMaxRange,
+            this.goalPosition.x - this.offsetVector.x + this.goalMaxRange,
+            this.goalPosition.y - this.offsetVector.y + this.goalMaxRange)
           if (others && others.length > 0) {
-            tmp = this.goalPosition
+            tmp = new THREE.Vector2()
+            tmp.copy(this.goalPosition)
+            tmp.sub(this.offsetVector)
             this.ctx3.beginPath()
             this.ctx3.strokeStyle = '#F00'
             this.ctx3.lineHeight = 4
@@ -1227,8 +1334,8 @@ export default {
                     (this.goalPosition.y * this.gridSize) + this.gridSize / 2
                   )
                   this.ctx3.lineTo(
-                    (other.pos.x * this.gridSize) + this.gridSize / 2,
-                    (other.pos.y * this.gridSize) + this.gridSize / 2
+                    ((other.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+                    ((other.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
                   )
                 }
               }
@@ -1256,12 +1363,15 @@ export default {
       this.goalAlive = false
     },
     clearAll: function () {
+      // Cancel game loop
+      this.goalAlive = false
+      // Set defaults
       this.initFunction()
       this.isCalculating = false
       this.isSimulating = false
-      this.goalAlive = true
       this.goalHP = 1000
       this.goalPosition = new THREE.Vector2(-1, -1)
+      this.offsetVector = new THREE.Vector2()
     },
     handleFFKeyDown: function (e) {
       switch (e.key) {
