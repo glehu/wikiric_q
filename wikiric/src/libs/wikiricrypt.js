@@ -2,7 +2,7 @@ const Wikiricrypt = {
   _members: new Map(),
   /**
    * Sets the members and their public keys
-   * @param {Map} members
+   * @param {Map<String, String>} members
    */
   setMembers: function (members) {
     this._members = members
@@ -43,13 +43,14 @@ const Wikiricrypt = {
       iv: this._arrayBufferToBase64(iv)
     }
     const keyArray = []
-    for (const [key, user] of this._members.entries()) {
-      if (key && user.pubkey != null && user.pubkey !== '') {
-        const pubKey = await this._importRSAPubKey(user.pubkey)
+    for (const [usr, pubkey] of this._members.entries()) {
+      if (usr && pubkey != null && pubkey !== '') {
+        console.debug(`wikiricrypt: Encrypting for ${usr} using pubkey\n${pubkey}`)
+        const pubKey = await this._importRSAPubKey(pubkey)
         const cipher2 = await this._encryptMessageRSA(JSON.stringify(aesPayload), pubKey)
         const encrypted2 = this._arrayBufferToBase64(cipher2)
         keyArray.unshift({
-          id: user.usr,
+          id: usr,
           key: encrypted2
         })
       }

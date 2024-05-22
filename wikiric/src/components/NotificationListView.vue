@@ -193,6 +193,9 @@ export default {
           const id = data[0][1]
           const pw = data[1][2]
           const rf = data[2][3]
+          // Delete notification
+          this.deleteNotification(notification.uid)
+          // Go to private message room
           this.$router.push(`/chat?id=${id}&pw=${pw}&ref=${rf}`)
         }
       }

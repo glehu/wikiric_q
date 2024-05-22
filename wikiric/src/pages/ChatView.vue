@@ -692,12 +692,27 @@ export default {
             this.members.set(member.usr, member)
           }
         }
-        this.sdk._wcrypt.setMembers(this.members)
+        this.setMemberPubkeys()
       })
       .catch(() => {
         this.members = new Map()
-        this.sdk._wcrypt.setMembers(this.members)
+        this.setMemberPubkeys()
       })
+    },
+    /**
+     * Sets the member's public encryption keys if they exist
+     */
+    setMemberPubkeys: function () {
+      // Prepare pubkey map
+      const pubKeys = new Map()
+      if (this.members != null && this.members.size > 0) {
+        for (const [key, member] of this.members.entries()) {
+          if (key && member.pubkey != null) {
+            pubKeys.set(member.usr, member.pubkey)
+          }
+        }
+      }
+      this.sdk._wcrypt.setMembers(pubKeys)
     },
     /**
      *
@@ -1491,6 +1506,7 @@ export default {
       }
       // Do we need to encrypt the message?
       if (this.chatroom.crypt) {
+        this.setMemberPubkeys()
         messageContent = await this.sdk._wcrypt.encryptPayload(messageContent)
       }
       // Pre-Display message
@@ -1820,8 +1836,8 @@ export default {
         url: 'chat/private/users/active/' + this.channel.id
       })
       .then((result) => {
-        for (let i = 0; i < this.members.length; i++) {
-          this.members[i].active = this.members[i].usr === this.store.user.username
+        for (const key of this.members.keys()) {
+          this.members[key].active = this.members[key].usr === this.store.user.username
         }
         for (let i = 0; i < result.data.active.length; i++) {
           this.setMemberOnlineStatus(result.data.active[i], true)
@@ -1904,7 +1920,7 @@ export default {
               this.editingMessage = this.messages[i]._msgs[j]
               this.newMessage = this.messages[i]._msgs[j]._msg
               this.inputResize()
-              this.$refs.ref_editor.editor.commands.focus('end')
+              // this.$refs.ref_editor.editor.commands.focus('end')
             } else {
               this.last_message = this.messages[i]._msgs[j]
               this.last_message.msgDay = this.messages[i]._msgs[j]._time.day
@@ -1918,7 +1934,7 @@ export default {
             //     console.debug(e.message)
             //   }
             // }
-            this.$refs.ref_editor.editor.commands.focus('end')
+            // this.$refs.ref_editor.editor.commands.focus('end')
             done = true
             break
           }
@@ -2019,6 +2035,7 @@ export default {
         reply: this.newMessage
       })
       if (this.chatroom.crypt) {
+        this.setMemberPubkeys()
         payload = await this.sdk._wcrypt.encryptPayload(payload)
       }
       this.replyingMessage = null
@@ -2050,6 +2067,7 @@ export default {
       if (!forceDelete && !isRemove) {
         this.newMessage = this.replaceTagRemover(this.newMessage)
         if (this.chatroom.crypt) {
+          this.setMemberPubkeys()
           editPayloadMessage =
             await this.sdk._wcrypt.encryptPayload(this.newMessage)
         } else {
@@ -2280,6 +2298,7 @@ export default {
         fileName: name
       })
       if (this.chatroom.crypt) {
+        this.setMemberPubkeys()
         this.sdk.sendMessage(prefix +
           await this.sdk._wcrypt.encryptPayload(payload)
         )
