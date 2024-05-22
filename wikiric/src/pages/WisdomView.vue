@@ -168,7 +168,8 @@
                     </p>
                     <ul>
                       <li>
-                        Your comments can not be accepted anymore,
+                        Your comments can not be accepted as
+                        the answer anymore,
                         but you can still provide useful information
                         on this topic.
                       </li>
