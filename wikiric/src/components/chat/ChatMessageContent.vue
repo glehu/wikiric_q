@@ -72,8 +72,8 @@
                       'surface': !sent}">
           <div v-if="msg._tagged"
                class="relative wfull hfull bg-orange
-                right-0 mb2 rounded p2 no-pointer-events
-                fontbold flex row items-center text-white">
+                      right-0 mb2 rounded p2 no-pointer-events
+                      fontbold flex row items-center text-white">
             <q-icon name="sym_o_alternate_email"
                     class="mr2"
                     size="1.5rem"/>
@@ -81,16 +81,18 @@
           <div v-if="replySrc"
                class="p1 rounded mb2"
                :class="{'bg-primary': !sent,
-                    'background': sent}">
+                        'background': sent}">
             <div class="flex row items-center gap-1 pl1 pr2">
               <q-icon name="reply" size="1rem"/>
               <div class="flex column fontbold">
-                <span class="text-xs">Reply to {{ replySrc.usr }}:</span>
+                <span class="text-xs on-surface-text">
+                  Reply to {{ replySrc.usr }}:
+                </span>
               </div>
             </div>
             <div class="mt2 p2 fmt_border rounded text-white"
                  :class="{'bg-primary': sent,
-                    'surface': !sent}">
+                          'surface': !sent}">
               <div class="markedView" v-html="replySrc.msg"></div>
               <span class="text-xs opacity-60 text-weight-medium">
                 {{ replySrc._ts }}

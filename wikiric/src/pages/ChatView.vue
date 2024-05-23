@@ -1884,7 +1884,8 @@ export default {
       for (let i = 0; i < this.messages.length; i++) {
         for (let j = 0; j < this.messages[i]._msgs.length; j++) {
           if (this.messages[i]._msgs[j].uid === uid) {
-            this.replyingMessage = this.messages[i]._msgs[j]
+            // Shallow copy the message to reply to
+            this.replyingMessage = { ...this.messages[i]._msgs[j] }
             this.inputResize()
             // this.$refs.ref_editor.focus()
             done = true

@@ -1,10 +1,9 @@
 <template>
   <q-page class="wfull hfull background
                  flex justify-center">
-    <div class="flex column wfull hfull relative overflow-hidden
-                justify-center text-center items-center
-                <sm:rounded-9 rounded-18
-                mx2 mt2 md:mx4 md:mt4 non-selectable">
+    <div class="flex column wfull relative overflow-hidden
+                text-center items-center
+                non-selectable">
       <div class="absolute top-0 left-0 wfull hfull">
         <img src='../assets/account/pexels-marek-piwnicki-10050567.jpg' alt="Banner"
              style="object-fit: fill; object-position: top"
@@ -23,14 +22,14 @@
             Collaboration
           </p>
         </div>
-        <p class="text-weight-bold no-pointer-events
+        <p class="no-pointer-events mt4
                   <sm:text-subtitle2 md:text-body1
                   md:text-start text-white">
           {{ $t("home.title") }}
           <br>Powered by wikiric and
           <span class="italic">{{ userCount }}</span> others.
         </p>
-        <div class="relative q-mt-lg flex justify-center
+        <div class="relative mt16 flex justify-center
                     md:justify-start">
           <q-btn color="primary" no-caps
                  class="muArrow q-mr-sm q-mb-sm rounded-18
@@ -50,16 +49,6 @@
           </q-btn>
         </div>
       </div>
-    </div>
-    <div class="wfull relative p8 markedView non-selectable">
-      <p class="text-weight-bolder text-lg">
-        E X P E R I M E N T A L
-      </p>
-      <p>
-        This website is under construction.
-        You can find a working version here:
-        <a :href="'https://wikiric.xyz'">wikiric</a>
-      </p>
     </div>
   </q-page>
 </template>
