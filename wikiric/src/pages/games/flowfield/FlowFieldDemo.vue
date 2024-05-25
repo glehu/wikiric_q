@@ -219,14 +219,34 @@
                 Stats
               </p>
               <div class="flex justify-between items-center gap-2
-                          text-subtitle2 px2">
-                <p>Goal HP:</p>
-                <p>{{ goalHP }}</p>
+                          text-subtitle2 px2 mb8">
+                <p>Player HP:</p>
+                <q-slider v-model="goalHP" :min="0" :max="goalMaxHP"
+                          readonly
+                          color="red"
+                          label-always
+                          switch-label-side
+                          track-size="10px" thumb-size="18px"/>
+              </div>
+              <div class="flex justify-between items-center gap-2
+                          text-subtitle2 px2 mb8">
+                <p>Player XP (Level {{ goalLevel }}):</p>
+                <q-slider v-model="goalXP" :min="0" :max="goalMaxXP"
+                          readonly
+                          color="blue"
+                          label-always
+                          switch-label-side
+                          track-size="10px" thumb-size="18px"/>
               </div>
               <div class="flex justify-between items-center gap-2
                           text-subtitle2 px2">
                 <p>Enemies:</p>
                 <p>{{ enemies.size.toLocaleString() }}</p>
+              </div>
+              <div class="flex justify-between items-center gap-2
+                          text-subtitle2 px2">
+                <p>Projectiles:</p>
+                <p>{{ goalWeaponProjectiles.length.toLocaleString() }}</p>
               </div>
               <hr>
               <div class="flex justify-between items-center gap-2
@@ -346,6 +366,7 @@ import FFUnit from 'pages/games/flowfield/FFUnit'
 import FFQuadTree from 'pages/games/flowfield/FFQuadTree'
 import FFTilesQuadTree from 'pages/games/flowfield/FFTilesQuadTree'
 import FFTile from 'pages/games/flowfield/FFTile'
+import FFWeapon from 'pages/games/flowfield/FFWeapon'
 
 export default {
   name: 'FlowFieldDemo',
@@ -436,9 +457,20 @@ export default {
 
       goalPosition: new THREE.Vector2(0, 0),
       goalHP: 1000,
+      goalMaxHP: 1000,
+      goalXP: 0,
+      goalMaxXP: 500,
+      goalLevel: 1,
       goalInvincibilityFrames: 0,
       goalAlive: true,
+      /**
+       * @type {FFWeapon[]}
+       */
       goalWeapons: [],
+      /**
+       * @type {FFProjectile[]}
+       */
+      goalWeaponProjectiles: [],
       goalMaxRange: 0,
       goalMovementVector: new THREE.Vector2(0, 0),
       goalSpeed: 2,
@@ -486,18 +518,18 @@ export default {
         this.yCells / 2,
         this.xCells / 2,
         this.yCells / 2,
-        4)
+        50)
       this.manageKeyListeners(false)
       // Give the player something to... play with!
-      this.goalWeapons.push({
-        range: 40,
-        dps: 0,
-        amount: 1,
-        cd: 0,
-        _wait: 0,
-        _amt: 0
-      })
-      this.goalMaxRange = 20
+      this.goalWeapons.push(
+        new FFWeapon(
+          40,
+          2,
+          2,
+          60,
+          0.05,
+          2))
+      this.goalMaxRange = 10
     },
     manageKeyListeners: function (forceRemove = false) {
       document.removeEventListener('keydown', this.handleFFKeyDown, false)
@@ -736,18 +768,27 @@ export default {
     },
     drawGrid: function () {
       const floor = document.getElementById('floor')
-      const wall = document.getElementById('wall')
+      // Only draw the area around the player to avoid having
+      // ...to render unnecessarily
+      const vDist = 30
+      let xStart = Math.round(this.goalPosition.x - this.offsetVector.x - vDist)
+      if (xStart < 0) xStart = 0
+      let xEnd = Math.round(this.goalPosition.x - this.offsetVector.x + vDist)
+      if (xEnd > this.xCells) xEnd = 0
+      let yStart = Math.round(this.goalPosition.y - this.offsetVector.y - vDist)
+      if (yStart < 0) yStart = 0
+      let yEnd = Math.round(this.goalPosition.y - this.offsetVector.y + vDist)
+      if (yEnd > this.yCells) yEnd = this.yCells
+      // Clear field
       this.ctx.clearRect(0, 0, this.width, this.height)
       // Draw grid
       let xNew, yNew, arrayPos
-      for (let x = 0; x < this.xCells; x++) {
-        for (let y = 0; y < this.yCells; y++) {
+      for (let x = xStart; x < xEnd; x++) {
+        for (let y = yStart; y < yEnd; y++) {
           xNew = (x + this.offsetVector.x) * this.gridSize
           yNew = (y + this.offsetVector.y) * this.gridSize
           arrayPos = this.convertXYToArrayPos(x, y)
-          if (this.costField[arrayPos] === 255) {
-            this.ctx.drawImage(wall, xNew, yNew, this.gridSize, this.gridSize)
-          } else {
+          if (this.costField[arrayPos] !== 255) {
             this.ctx.drawImage(floor, xNew, yNew, this.gridSize, this.gridSize)
           }
         }
@@ -769,6 +810,8 @@ export default {
       switch (this.brush) {
         case 'wall':
           this.addWall(position)
+          // Re-calculate flow field
+          this.handleCalculation()
           break
         case 'tile':
           this.addTile(position)
@@ -828,10 +871,11 @@ export default {
      */
     renderTiles: function (offset) {
       // Culling! Don't render what's too far away
+      const vDist = 30
       const xx = this.goalPosition.x - offset.x
       const yy = this.goalPosition.y - offset.y
       const tiles = this.tileTree.getContents(
-        xx - 50, yy - 50, xx + 50, yy + 50
+        xx - vDist, yy - vDist, xx + vDist, yy + vDist
       )
       let image
       const gSize = this.gridSize
@@ -882,7 +926,14 @@ export default {
       const yNew = position.y * this.gridSize
       // Add enemy to list
       const id = this.getUUID()
-      const unit = new FFUnit(position.x, position.y, 1, id, 10, 20)
+      const unit = new FFUnit(
+        position.x,
+        position.y,
+        1,
+        id,
+        10,
+        20,
+        50)
       this.enemies.set(id, unit)
       const image = document.getElementById('slime')
       // Draw enemy
@@ -1071,6 +1122,7 @@ export default {
       let lastTime = performance.now()
       let timeDelta
       let lastPos
+      let shootResult
       const step = () => {
         if (this.goalAlive) {
           // Calculate FPS
@@ -1089,78 +1141,10 @@ export default {
           // ...so I guess we will just do it.
           requestAnimationFrame(step)
           // Move the player!
-          // If the player moved half the screen's distance
-          // ...in any direction, we will translate the movement
-          // ...that would further exceed this to the environment.
-          this.goalMovementVector = new THREE.Vector2()
-          endVector = new THREE.Vector2()
-          if (this.goalUp) {
-            if (this.goalPosition.y >= (this.yCells / 4)) {
-              endVector.add(this.goalSouth)
-            } else {
-              this.goalMovementVector.add(this.goalNorth)
-            }
-          }
-          if (this.goalLeft) {
-            if (this.goalPosition.x >= (this.xCells / 4)) {
-              endVector.add(this.goalEast)
-            } else {
-              this.goalMovementVector.add(this.goalWest)
-            }
-          }
-          if (this.goalDown) {
-            if (this.goalPosition.y >= (this.yCells / 4)) {
-              endVector.add(this.goalNorth)
-            } else {
-              this.goalMovementVector.add(this.goalSouth)
-            }
-          }
-          if (this.goalRight) {
-            if (this.goalPosition.x >= (this.xCells / 4)) {
-              endVector.add(this.goalWest)
-            } else {
-              this.goalMovementVector.add(this.goalEast)
-            }
-          }
-          // // Don't forget to free the player!
-          if (this.offsetVector.x > 0) {
-            this.offsetVector.x = 0
-            this.goalMovementVector.add(this.goalWest)
-          }
-          if (this.offsetVector.y > 0) {
-            this.offsetVector.y = 0
-            this.goalMovementVector.add(this.goalNorth)
-          }
-          endVector.multiplyScalar(this.goalSpeed)
-          endVector.multiplyScalar(timeDelta)
-          this.offsetVector.add(endVector)
-          // Apply movement to player position
-          this.goalMovementVector.multiplyScalar(this.goalSpeed)
-          this.goalMovementVector.multiplyScalar(timeDelta)
-          this.goalPosition.add(this.goalMovementVector)
+          this.applyGoalMovement(endVector, timeDelta)
           // Draw environment
           this.drawGrid()
-          if (this.drawHeatmap) {
-            this.handleCalculation()
-          } else {
-            if (!lastPos) {
-              lastPos = new THREE.Vector2(
-                Math.round(this.goalPosition.x - this.offsetVector.x),
-                Math.round(this.goalPosition.y - this.offsetVector.y))
-              this.handleCalculation()
-            } else {
-              if (Math.round(this.goalPosition.x - this.offsetVector.x) !== lastPos.x ||
-                Math.round(this.goalPosition.y - this.offsetVector.y) !== lastPos.y) {
-                lastPos = new THREE.Vector2(
-                  Math.round(this.goalPosition.x - this.offsetVector.x),
-                  Math.round(this.goalPosition.y - this.offsetVector.y))
-                // Calculate new paths
-                setTimeout(() => {
-                  this.handleCalculation()
-                }, 0)
-              }
-            }
-          }
+          lastPos = this.applyGoalCalculation(lastPos)
           // Display player
           this.renderGoal()
           this.renderTiles(this.offsetVector)
@@ -1173,18 +1157,15 @@ export default {
         cacheMap.clear()
         stepCount += 1
         this.ctx3.clearRect(0, 0, this.width, this.height)
+        // Reduce invincibility frames
         if (this.goalInvincibilityFrames > 0) {
           this.goalInvincibilityFrames -= 1
         }
+        // Reduce weapon cooldown
         for (let i = 0; i < this.goalWeapons.length; i++) {
-          if (this.goalWeapons[i]._wait > 0) {
-            this.goalWeapons[i]._wait -= 1
-            if (this.goalWeapons[i]._wait === 0) {
-              this.goalWeapons[i]._amt = this.goalWeapons[i].amount
-            }
-          }
+          this.goalWeapons[i].processTick()
         }
-        // Enemy actions
+        // #### ENEMY ACTIONS ####
         if (this.enemies && this.enemies.size > 0) {
           // Add all enemies to the quadtree
           for (const [id, unit] of this.enemies) {
@@ -1298,6 +1279,79 @@ export default {
               this.ctx3.drawImage(image, xNew, yNew, 32, 32)
             }
           }
+          // #### WEAPON ACTIONS ####
+          // Render projectiles
+          if (this.goalWeaponProjectiles.length > 0) {
+            let projectile
+            for (let i = this.goalWeaponProjectiles.length - 1; i > 0; i--) {
+              projectile = this.goalWeaponProjectiles[i]
+              // Move projectile
+              projectile.pos.add(projectile.vec)
+              // Is the projectile still inside bounds?
+              if (projectile.pos.x < 0 || projectile.pos.x > this.width ||
+                projectile.pos.y < 0 || projectile.pos.y > this.height) {
+                this.goalWeaponProjectiles.splice(i, 1)
+                continue
+              }
+              // Render projectile
+              this.ctx3.beginPath()
+              this.ctx3.fillStyle = '#F00'
+              this.ctx3.lineHeight = 4
+              this.ctx3.lineWidth = 4
+              this.ctx3.rect(
+                ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+                ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+                4, 4
+              )
+              this.ctx3.fill()
+              // Did the projectile hit something?
+              const enemies = qtree.getContents(
+                projectile.pos.x - 2,
+                projectile.pos.y - 2,
+                projectile.pos.x + 2,
+                projectile.pos.y + 2)
+              if (enemies && enemies.length > 0) {
+                tmp = new THREE.Vector2()
+                tmp.copy(projectile.pos)
+                this.ctx3.beginPath()
+                this.ctx3.strokeStyle = '#fff400'
+                this.ctx3.lineHeight = 2
+                this.ctx3.lineWidth = 2
+                for (const enemy of enemies) {
+                  if (projectile.hitCount === 0) {
+                    break
+                  }
+                  dist = tmp.distanceToSquared(enemy.pos)
+                  if (dist <= 0.5) {
+                    projectile.hitCount -= 1
+                    enemy.hp -= projectile.dmg
+                    if (enemy.hp <= 0) {
+                      this.goalXP += enemy.xp
+                      this.checkXP()
+                      this.enemies.delete(enemy.id)
+                    } else {
+                      this.enemies.set(enemy.id, enemy)
+                    }
+                    // Draw weapon effect
+                    this.ctx3.moveTo(
+                      ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+                      ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
+                    )
+                    this.ctx3.lineTo(
+                      ((enemy.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+                      ((enemy.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
+                    )
+                  }
+                }
+                if (projectile.hitCount === 0) {
+                  this.goalWeaponProjectiles.splice(i, 1)
+                  continue
+                }
+                this.ctx3.stroke()
+              }
+              this.goalWeaponProjectiles[i] = projectile
+            }
+          }
           // Now check if any enemy has come close to the player
           const others = qtree.getContents(
             this.goalPosition.x - this.offsetVector.x - this.goalMaxRange,
@@ -1312,31 +1366,45 @@ export default {
             this.ctx3.strokeStyle = '#F00'
             this.ctx3.lineHeight = 4
             this.ctx3.lineWidth = 4
+            const position = new THREE.Vector2()
+            position.copy(this.goalPosition)
+            position.sub(this.offsetVector)
+            let direction
             for (const other of others) {
               dist = tmp.distanceToSquared(other.pos)
-              // Can we target this enemy?
               for (let k = 0; k < this.goalWeapons.length; k++) {
-                if (this.goalWeapons[k]._wait > 0) continue
-                if (dist <= this.goalWeapons[k].range) {
-                  this.goalWeapons[k]._amt -= 1
-                  if (this.goalWeapons[k]._amt <= 0) {
-                    this.goalWeapons[k]._wait = this.goalWeapons[k].cd
-                  }
-                  other.hp -= this.goalWeapons[k].dps
-                  if (other.hp <= 0) {
-                    this.enemies.delete(other.id)
+                direction = new THREE.Vector2()
+                direction.copy(other.pos)
+                direction.sub(position)
+                shootResult = this.goalWeapons[k].shoot(
+                  position,
+                  direction,
+                  dist
+                )
+                if (shootResult) {
+                  if (shootResult.speed === 0) {
+                    // Beam - Directly damage enemy
+                    other.hp -= shootResult.dmg
+                    if (other.hp <= 0) {
+                      this.goalXP += other.xp
+                      this.checkXP()
+                      this.enemies.delete(other.id)
+                    } else {
+                      this.enemies.set(other.id, other)
+                    }
+                    // Draw weapon effect
+                    this.ctx3.moveTo(
+                      (this.goalPosition.x * this.gridSize) + this.gridSize / 2,
+                      (this.goalPosition.y * this.gridSize) + this.gridSize / 2
+                    )
+                    this.ctx3.lineTo(
+                      ((other.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+                      ((other.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
+                    )
                   } else {
-                    this.enemies.set(other.id, other)
+                    // Projectile - Add to projectiles
+                    this.goalWeaponProjectiles.push(shootResult)
                   }
-                  // Draw weapon effect
-                  this.ctx3.moveTo(
-                    (this.goalPosition.x * this.gridSize) + this.gridSize / 2,
-                    (this.goalPosition.y * this.gridSize) + this.gridSize / 2
-                  )
-                  this.ctx3.lineTo(
-                    ((other.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
-                    ((other.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
-                  )
                 }
               }
               // Respect invincibility frames before damage
@@ -1359,6 +1427,87 @@ export default {
       // Start first simulation step
       requestAnimationFrame(step)
     },
+    applyGoalCalculation: function (lastPos) {
+      if (this.drawHeatmap) {
+        this.handleCalculation()
+      } else {
+        if (!lastPos) {
+          lastPos = new THREE.Vector2(
+            Math.round(this.goalPosition.x - this.offsetVector.x),
+            Math.round(this.goalPosition.y - this.offsetVector.y))
+          this.handleCalculation()
+        } else {
+          if (Math.round(this.goalPosition.x - this.offsetVector.x) !== lastPos.x ||
+            Math.round(this.goalPosition.y - this.offsetVector.y) !== lastPos.y) {
+            lastPos = new THREE.Vector2(
+              Math.round(this.goalPosition.x - this.offsetVector.x),
+              Math.round(this.goalPosition.y - this.offsetVector.y))
+            // Calculate new paths
+            setTimeout(() => {
+              this.handleCalculation()
+            }, 0)
+          }
+        }
+      }
+      return lastPos
+    },
+    /**
+     * Moves the player (goal)
+     *
+     * @param {THREE.Vector2} endVector
+     * @param {Number} timeDelta
+     */
+    applyGoalMovement: function (endVector, timeDelta) {
+      // If the player moved half the screen's distance
+      // ...in any direction, we will translate the movement
+      // ...that would further exceed this to the environment.
+      this.goalMovementVector = new THREE.Vector2()
+      endVector = new THREE.Vector2()
+      if (this.goalUp) {
+        if (this.goalPosition.y >= (this.yCells / 4)) {
+          endVector.add(this.goalSouth)
+        } else {
+          this.goalMovementVector.add(this.goalNorth)
+        }
+      }
+      if (this.goalLeft) {
+        if (this.goalPosition.x >= (this.xCells / 4)) {
+          endVector.add(this.goalEast)
+        } else {
+          this.goalMovementVector.add(this.goalWest)
+        }
+      }
+      if (this.goalDown) {
+        if (this.goalPosition.y >= (this.yCells / 4)) {
+          endVector.add(this.goalNorth)
+        } else {
+          this.goalMovementVector.add(this.goalSouth)
+        }
+      }
+      if (this.goalRight) {
+        if (this.goalPosition.x >= (this.xCells / 4)) {
+          endVector.add(this.goalWest)
+        } else {
+          this.goalMovementVector.add(this.goalEast)
+        }
+      }
+      // // Don't forget to free the player!
+      if (this.offsetVector.x > 0) {
+        this.offsetVector.x = 0
+        this.goalMovementVector.add(this.goalWest)
+      }
+      if (this.offsetVector.y > 0) {
+        this.offsetVector.y = 0
+        this.goalMovementVector.add(this.goalNorth)
+      }
+      endVector.multiplyScalar(this.goalSpeed)
+      endVector.multiplyScalar(timeDelta)
+      this.offsetVector.add(endVector)
+      // Apply movement to player position
+      this.goalMovementVector.multiplyScalar(this.goalSpeed)
+      this.goalMovementVector.multiplyScalar(timeDelta)
+      this.goalPosition.add(this.goalMovementVector)
+    },
     cancelSimulation: function () {
       this.goalAlive = false
     },
@@ -1370,8 +1519,10 @@ export default {
       this.isCalculating = false
       this.isSimulating = false
       this.goalHP = 1000
+      this.goalXP = 0
       this.goalPosition = new THREE.Vector2(-1, -1)
       this.offsetVector = new THREE.Vector2()
+      this.goalWeaponProjectiles = []
     },
     handleFFKeyDown: function (e) {
       switch (e.key) {
@@ -1412,6 +1563,13 @@ export default {
     },
     setBrush: function (tile) {
       this.tile = tile
+    },
+    checkXP: function () {
+      if (this.goalXP >= this.goalMaxXP) {
+        this.goalXP = 0
+        this.goalLevel += 1
+        this.goalMaxXP = this.goalMaxXP * 1.5
+      }
     }
   }
 }

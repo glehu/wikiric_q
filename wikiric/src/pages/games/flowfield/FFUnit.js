@@ -12,8 +12,9 @@ class FFUnit {
    * @param id
    * @param {Number} dmg
    * @param {Number} hp
+   * @param {Number} xp
    */
-  constructor (x, y, speed, id, dmg, hp) {
+  constructor (x, y, speed, id, dmg, hp, xp) {
     this.id = id
     /**
      * This FF Unit's Position
@@ -50,6 +51,11 @@ class FFUnit {
      * @type {Number}
      */
     this.hp = hp
+    /**
+     * This FF Unit's Experience Points upon death
+     * @type {Number}
+     */
+    this.xp = xp
   }
 }
 
