@@ -50,6 +50,12 @@ class FFWeapon {
      * @type {Number}
      */
     this.pHitCount = hitCount
+    /**
+     * This FF Weapon's PowerUps
+     * PowerUps increase a weapon's power! Wow!
+     * @type {FFPowerUp[]}
+     */
+    this.powerUps = []
   }
 
   /**
@@ -78,7 +84,7 @@ class FFWeapon {
    * @param {THREE.Vector2} pos
    * @param {THREE.Vector2} vec
    * @param {Number} dist
-   * @return {FFProjectile || null}
+   * @return {FFProjectile[] || null}
    */
   shoot (pos, vec, dist) {
     if (this._cd > 0) {
@@ -87,31 +93,94 @@ class FFWeapon {
     if (dist > this.range) {
       return null
     }
-    // Shoot projectile
     this._amount -= 1
     if (this._amount === 0) {
       // Set weapon on cooldown if amount has reached zero
       this._cd = this.cd
     }
-    return this.doShootProjectile(pos, vec)
+    // Initialize projectile values
+    let dmg = this.dps
+    let amt = 1
+    let speed = this.pSpeed
+    let hits = this.pHitCount
+    // Trigger weapon effects
+    const effects = this.procEffects()
+    if (effects.length > 0) {
+      for (const effect of effects) {
+        switch (effect.type) {
+          case 'dmg':
+            dmg += effect.value
+            break
+          case 'amt':
+            amt += effect.value
+            break
+          case 'speed':
+            speed += effect.value
+            break
+          case 'hits':
+            hits += effect.value
+            break
+        }
+      }
+    }
+    // Create projectiles
+    /**
+     * @type {FFProjectile[]}
+     */
+    const projectiles = []
+    for (let i = 1; i <= amt; i++) {
+      projectiles.push(this.doShootProjectile(pos, vec, dmg, speed, hits, i))
+    }
+    return projectiles
   }
 
   /**
    * Create and returns a new FF Projectile
    * @param {THREE.Vector2} pos
    * @param {THREE.Vector2} vec
+   * @param {Number} dmg
+   * @param {Number} speed
+   * @param {Number} hits
+   * @param {Number} iteration
    * @return {FFProjectile}
    */
-  doShootProjectile (pos, vec) {
+  doShootProjectile (pos, vec, dmg, speed, hits, iteration) {
+    // Calculate projectile vector
     const vector = new THREE.Vector2(vec.x, vec.y)
     if (vector.lengthSq() === 0) {
-      vector.x = Math.random()
-      vector.y = Math.random()
+      vector.x = Math.random() - 0.5
+      vector.y = Math.random() - 0.5
     }
     vector.normalize()
-    vector.multiplyScalar(this.pSpeed)
-    vector.clampScalar(-this.pSpeed, this.pSpeed)
-    return new FFProjectile(pos, vector, this.pHitCount, this.dps)
+    vector.multiplyScalar(speed)
+    vector.clampScalar(-speed, speed)
+    // Add random vector to simulate some spray effect
+    const spray = new THREE.Vector2()
+    spray.x = Math.random() - 0.5
+    spray.y = Math.random() - 0.5
+    spray.normalize()
+    const limit = 0.75 * iteration
+    spray.multiplyScalar(limit)
+    vector.add(spray)
+    // Return projectile
+    return new FFProjectile(pos, vector, hits, dmg)
+  }
+
+  /**
+   * @return {FFPowerUpEffect[]}
+   */
+  procEffects () {
+    if (this.powerUps.length < 1) {
+      return []
+    }
+    /**
+     * @type {FFPowerUpEffect[]}
+     */
+    let effects = []
+    for (const power of this.powerUps) {
+      effects = effects.concat(power.proc())
+    }
+    return effects
   }
 }
 
