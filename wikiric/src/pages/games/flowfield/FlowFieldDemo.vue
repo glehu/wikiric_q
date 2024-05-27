@@ -304,43 +304,69 @@
                     class="ffd_canvas"></canvas>
             <div class="ffd_main" ref="ffd_main"></div>
           </div>
-          <q-page-sticky position="bottom">
+          <q-page-sticky position="top" :offset="[0, 50]">
             <div class="flex gap-2 wfull px3 min-w-[calc(100dvw-300px)]
+                        justify-center items-start">
+              <div class="px4 wfull
+                          rounded-b-2 text-subtitle2
+                          justify-center
+                          flex items-start">
+                <q-slider v-model="goalXP" :min="0" :max="goalMaxXP"
+                          readonly
+                          color="blue"
+                          track-size="10px" thumb-size="14px"
+                          class="w-full"/>
+              </div>
+            </div>
+          </q-page-sticky>
+          <template v-if="isLevelUp">
+            <div class="flex gap-2 justify-center items-center
+                      h-[calc(100dvh-200px)] wfull
+                      min-w-[calc(100dvw-300px)]">
+              <q-card flat style="background: transparent"
+                      class="backdrop-brightness-50">
+                <q-card-section>
+                  <p class="fontbold text-3xl text-center">
+                    Level Up
+                  </p>
+                </q-card-section>
+                <q-card-section>
+                  <q-btn label="Dismiss (DEBUG)"
+                         @click="dismissLevelUp"></q-btn>
+                </q-card-section>
+              </q-card>
+            </div>
+          </template>
+          <q-page-sticky position="bottom">
+            <div class="flex gap-2 wfull min-w-[calc(100dvw-300px)]
                         justify-center items-end">
               <div class="backdrop-brightness-50
-                          fmt_border_top
-                          fmt_border_left
-                          fmt_border_right
-                          h-18 px4 w-[60%]
-                          rounded-t-2 text-subtitle2
+                          h-18 px w-[40%]
+                          rounded-tr text-subtitle2
                           justify-center
-                          flex gap-8 items-end">
+                          flex items-end">
                 <q-slider v-model="goalHP" :min="0" :max="goalMaxHP"
                           :label-value="`${goalHP} / ${goalMaxHP} HP`"
                           readonly
                           color="red"
                           label-always
-                          track-size="10px" thumb-size="18px"
-                          class="w-[40%]"/>
-                <q-slider v-model="goalXP" :min="0" :max="goalMaxXP"
-                          :label-value="`${goalXP} / ${goalMaxXP} XP (Lv. ${goalLevel})`"
-                          readonly
-                          color="blue"
-                          label-always
-                          track-size="10px" thumb-size="18px"
-                          class="w-[40%]"/>
+                          track-size="10px" thumb-size="14px"
+                          class="w-full"/>
               </div>
               <div class="backdrop-brightness-50
-                          fmt_border_top
-                          fmt_border_left
-                          fmt_border_right
                           h-18 py2 px4 flex-grow
-                          rounded-t-2 text-subtitle2
+                          rounded-tl text-subtitle2
                           flex gap-2 items-center">
                 <div class="flex column gap-1">
                   <div class="flex gap-2">
                     <p>
                       Kills: {{ goalKills }}
+                    </p>
+                    <p>
+                      Lv: {{ goalLevel }}
+                    </p>
+                    <p>
+                      XP: {{ goalXP }} / {{ goalMaxXP }}
                     </p>
                   </div>
                   <div class="flex gap-1">
@@ -520,6 +546,7 @@ export default {
       tileTree: null,
       offsetVector: new THREE.Vector2(0, 0),
       onHitEffects: [],
+      isLevelUp: false,
 
       // PLAYABLE CHARACTER DATA
 
@@ -1681,6 +1708,9 @@ export default {
       this.goalXP = 0
       this.goalLevel += 1
       this.goalMaxXP = Math.ceil(this.goalMaxXP * 2.5)
+      this.isLevelUp = true
+      // This actually just pauses the simulation
+      this.cancelSimulation()
       if (this.goalWeapons.length < 1) {
         return
       }
@@ -1693,6 +1723,10 @@ export default {
         }
       }
     },
+    dismissLevelUp: function () {
+      this.isLevelUp = false
+      this.handleSimulation()
+    },
     setUpPlayer: function () {
       const starterWeapon = this.getStarterWeapon()
       this.goalWeapons.push(starterWeapon)
@@ -1701,11 +1735,11 @@ export default {
     getStarterWeapon: function () {
       const starterWeapon = new FFWeapon(
         40,
-        4,
+        5,
         1,
         60,
         4,
-        100)
+        4)
       const starterPowerUp = new FFPowerUp(
         0,
         1,
@@ -1742,8 +1776,8 @@ export default {
   position: absolute;
   top: 0;
   left: 0;
-  width: 2000px;
-  height: 1000px;
+  width: 100vw;
+  height: 100vh;
   cursor: crosshair;
 }
 
