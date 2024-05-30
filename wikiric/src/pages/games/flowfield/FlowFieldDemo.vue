@@ -270,6 +270,7 @@
                 </div>
                 <hr>
               </template>
+              <q-checkbox label="Damage Numbers" v-model="drawDamageNumbers"/>
               <q-checkbox label="Heatmap" v-model="drawHeatmap"/>
             </div>
           </div>
@@ -304,35 +305,102 @@
                     class="ffd_canvas"></canvas>
             <div class="ffd_main" ref="ffd_main"></div>
           </div>
-          <q-page-sticky position="top" :offset="[0, 50]">
-            <div class="flex gap-2 wfull px3 min-w-[calc(100dvw-300px)]
+          <q-page-sticky position="top" :offset="[0, 38]">
+            <div class="flex wfull px2 min-w-[calc(100dvw-280px)]
                         justify-center items-start">
-              <div class="px4 wfull
+              <div class="wfull
                           rounded-b-2 text-subtitle2
                           justify-center
                           flex items-start">
                 <q-slider v-model="goalXP" :min="0" :max="goalMaxXP"
                           readonly
                           color="blue"
-                          track-size="10px" thumb-size="14px"
+                          track-size="16px" thumb-size="18px"
                           class="w-full"/>
               </div>
             </div>
           </q-page-sticky>
           <template v-if="isLevelUp">
             <div class="flex gap-2 justify-center items-center
-                      h-[calc(100dvh-200px)] wfull
-                      min-w-[calc(100dvw-300px)]">
+                        wfull max-w-[calc(100dvw-300px)] top-0
+                        backdrop-blur-lg
+                        z-99 fixed hfull pt_nav overflow-y-scroll">
               <q-card flat style="background: transparent"
-                      class="backdrop-brightness-50">
+                      class="wfull hfull">
                 <q-card-section>
-                  <p class="fontbold text-3xl text-center">
-                    Level Up
+                  <p class="fontbold text-3xl text-center pt2">
+                    Level Up Offers
                   </p>
                 </q-card-section>
+                <div class="flex gap-2">
+                  <q-card-section>
+                    <p class="text-body1 fontbold mb2">
+                      Choose a Weapon:
+                    </p>
+                    <template v-if="weaponOffers">
+                      <div class="grid grid-cols-3 gap-2">
+                        <template v-for="offer in weaponOffers" :key="offer">
+                          <q-btn unelevated dense no-caps flat
+                                 @click="handleWeaponOffer(offer)">
+                            <FFWeaponDisplay :weapon="offer"/>
+                          </q-btn>
+                        </template>
+                      </div>
+                    </template>
+                  </q-card-section>
+                  <q-card-section>
+                    <p class="text-body1 fontbold mb2">
+                      Choose a Power-Up:
+                    </p>
+                    <template v-if="powerUpOffers">
+                      <div class="grid grid-cols-3 gap-2">
+                        <template v-for="offer in powerUpOffers" :key="offer">
+                          <q-btn unelevated dense no-caps flat
+                                 @click="handlePowerUpOffer(offer)">
+                            <div class="fmt_border rounded p2 my2
+                                        wfull hfull">
+                              <FFPowerUpDisplay :power-ups="[offer]"/>
+                            </div>
+                          </q-btn>
+                        </template>
+                      </div>
+                    </template>
+                  </q-card-section>
+                </div>
+              </q-card>
+            </div>
+          </template>
+          <template v-if="modifyingWeapons">
+            <div class="flex gap-2 justify-center items-center
+                        wfull max-w-[calc(100dvw-300px)] top-0
+                        backdrop-blur-lg
+                        z-99 fixed hfull pt_nav overflow-y-scroll">
+              <q-card flat style="background: transparent"
+                      class="wfull hfull">
                 <q-card-section>
-                  <q-btn label="Dismiss (DEBUG)"
-                         @click="dismissLevelUp"></q-btn>
+                  <p class="fontbold text-3xl text-center pt2">
+                    Weapon Modification
+                  </p>
+                </q-card-section>
+                <template v-if="chosenPowerup">
+                  <div class="fmt_border rounded p2 m2">
+                    <FFPowerUpDisplay :power-ups="[chosenPowerup]"/>
+                  </div>
+                </template>
+                <q-card-section>
+                  <p class="text-body1 fontbold mb2">
+                    Choose a weapon to modify:
+                  </p>
+                  <template v-if="goalWeapons">
+                    <div class="flex gap-2">
+                      <template v-for="weapon in goalWeapons" :key="weapon">
+                        <q-btn unelevated dense no-caps flat
+                               @click="handleWeaponModification(weapon)">
+                          <FFWeaponDisplay :weapon="weapon"/>
+                        </q-btn>
+                      </template>
+                    </div>
+                  </template>
                 </q-card-section>
               </q-card>
             </div>
@@ -372,30 +440,7 @@
                   <div class="flex gap-1">
                     <template v-if="goalWeapons && goalWeapons.length > 0">
                       <template v-for="weapon in goalWeapons" :key="weapon">
-                        <template v-if="weapon._cd <= 0">
-                          <q-circular-progress
-                            instant-feedback
-                            :value="weapon._amount"
-                            :max="weapon._amount"
-                            size="28px"
-                            :thickness="0.5"
-                            color="primary"
-                            track-color="grey-3"
-                            class="fontbold">
-                          </q-circular-progress>
-                        </template>
-                        <template v-else>
-                          <q-circular-progress
-                            instant-feedback
-                            :value="weapon.cd - weapon._cd"
-                            :max="weapon.cd"
-                            size="28px"
-                            :thickness="0.5"
-                            color="negative"
-                            track-color="grey-3"
-                            class="fontbold">
-                          </q-circular-progress>
-                        </template>
+                        <FFWeaponComp :weapon="weapon"/>
                       </template>
                     </template>
                   </div>
@@ -444,13 +489,20 @@ import FFUnit from 'pages/games/flowfield/FFUnit'
 import FFQuadTree from 'pages/games/flowfield/FFQuadTree'
 import FFTilesQuadTree from 'pages/games/flowfield/FFTilesQuadTree'
 import FFTile from 'pages/games/flowfield/FFTile'
-import FFWeapon from 'pages/games/flowfield/FFWeapon'
-import FFPowerUp from 'pages/games/flowfield/FFPowerUp'
-import FFPowerUpEffect from 'pages/games/flowfield/FFPowerUpEffect'
 import FFOnHitEffect from 'pages/games/flowfield/FFOnHitEffect'
+import FFWeaponComp from 'pages/games/flowfield/FFWeapon.vue'
+import FFWeaponList from 'pages/games/flowfield/weapons/FFWeaponList'
+import FFPowerUpList from 'pages/games/flowfield/powerups/FFPowerUpList'
+import FFWeaponDisplay from 'pages/games/flowfield/FFWeaponDisplay.vue'
+import FFPowerUpDisplay from 'pages/games/flowfield/FFPowerUpDisplay.vue'
 
 export default {
   name: 'FlowFieldDemo',
+  components: {
+    FFPowerUpDisplay,
+    FFWeaponDisplay,
+    FFWeaponComp
+  },
   data () {
     return {
       fab: false,
@@ -547,6 +599,21 @@ export default {
       offsetVector: new THREE.Vector2(0, 0),
       onHitEffects: [],
       isLevelUp: false,
+      weaponList: new FFWeaponList(),
+      /**
+       * @type FFWeapon[]
+       */
+      weaponOffers: [],
+      powerUpList: new FFPowerUpList(),
+      /**
+       * @type FFPowerUp[]
+       */
+      powerUpOffers: [],
+      modifyingWeapons: false,
+      /**
+       * @type FFPowerUp
+       */
+      chosenPowerup: undefined,
 
       // PLAYABLE CHARACTER DATA
 
@@ -589,7 +656,8 @@ export default {
 
       // DEBUG DATA
 
-      drawHeatmap: false
+      drawHeatmap: false,
+      drawDamageNumbers: true
     }
   },
   mounted () {
@@ -627,6 +695,8 @@ export default {
         50)
       this.manageKeyListeners(false)
       // Give the player something to... play with!
+      this.weaponList.initiateStarterWeapons()
+      this.powerUpList.initiateStarterPowerUps()
       this.setUpPlayer()
     },
     manageKeyListeners: function (forceRemove = false) {
@@ -725,7 +795,7 @@ export default {
       canvas.width = this.width
       canvas.height = this.height
       this.initializeCursorCanvas()
-      this.drawGrid()
+      this.drawGrid(true)
     },
     initializeCursorCanvas: function () {
       // Initialize Canvas (Cursor)
@@ -867,19 +937,29 @@ export default {
         this.integrationField[i] = 65535
       }
     },
-    drawGrid: function () {
+    /**
+     *
+     * @param {Boolean} initial
+     */
+    drawGrid: function (initial) {
       const floor = document.getElementById('floor')
       // Only draw the area around the player to avoid having
       // ...to render unnecessarily
       const vDist = 30
+      // X
       let xStart = Math.round(this.goalPosition.x - this.offsetVector.x - vDist)
       if (xStart < 0) xStart = 0
       let xEnd = Math.round(this.goalPosition.x - this.offsetVector.x + vDist)
-      if (xEnd > this.xCells) xEnd = 0
+      if (xEnd > this.xCells) xEnd = this.xCells
+      // Y
       let yStart = Math.round(this.goalPosition.y - this.offsetVector.y - vDist)
       if (yStart < 0) yStart = 0
       let yEnd = Math.round(this.goalPosition.y - this.offsetVector.y + vDist)
       if (yEnd > this.yCells) yEnd = this.yCells
+      if (initial) {
+        xEnd = this.xCells
+        yEnd = this.yCells
+      }
       // Clear field
       this.ctx.clearRect(0, 0, this.width, this.height)
       // Draw grid
@@ -973,11 +1053,20 @@ export default {
     renderTiles: function (offset) {
       // Culling! Don't render what's too far away
       const vDist = 30
-      const xx = this.goalPosition.x - offset.x
-      const yy = this.goalPosition.y - offset.y
+      let xx = this.goalPosition.x - offset.x
+      let yy = this.goalPosition.y - offset.y
+      if (xx > this.xCells) {
+        xx = this.xCells
+      }
+      if (yy > this.yCells) {
+        yy = this.yCells
+      }
       const tiles = this.tileTree.getContents(
         xx - vDist, yy - vDist, xx + vDist, yy + vDist
       )
+      if (tiles.length < 1) {
+        return
+      }
       let image
       const gSize = this.gridSize
       let x, y
@@ -1244,7 +1333,7 @@ export default {
           // Move the player!
           this.applyGoalMovement(endVector, timeDelta)
           // Draw environment
-          this.drawGrid()
+          this.drawGrid(false)
           lastPos = this.applyGoalCalculation(lastPos)
           // Display player
           this.renderGoal()
@@ -1468,8 +1557,8 @@ export default {
             newVec.multiplyScalar(timeDelta)
             projectile.pos.add(newVec)
             // Is the projectile still inside bounds?
-            if (projectile.pos.x < 0 || projectile.pos.x > this.width * 2 ||
-              projectile.pos.y < 0 || projectile.pos.y > this.height * 2) {
+            if (projectile.pos.x < 0 || projectile.pos.x > this.xCells ||
+              projectile.pos.y < 0 || projectile.pos.y > this.yCells) {
               this.goalWeaponProjectiles.splice(i, 1)
               continue
             }
@@ -1506,7 +1595,7 @@ export default {
                     continue
                   }
                   dist = tmp.distanceToSquared(enemy.pos)
-                  if (dist <= 0.5) {
+                  if (dist <= projectile.hitRange) {
                     projectile.hitCount -= 1
                     enemy.hp -= projectile.dmg
                     if (enemy.hp <= 0) {
@@ -1531,7 +1620,9 @@ export default {
                       'text',
                       `${projectile.dmg}`,
                       60)
-                    this.onHitEffects.push(dmgNumber)
+                    if (this.drawDamageNumbers) {
+                      this.onHitEffects.push(dmgNumber)
+                    }
                   }
                 }
                 if (projectile.hitCount <= 0) {
@@ -1554,8 +1645,8 @@ export default {
             effect = this.onHitEffects[i]
             if (effect.tick()) {
               if (effect.type === 'text') {
-                this.ctx3.font = '12px sans-serif'
-                this.ctx3.fillStyle = '#ffa600'
+                this.ctx3.font = '1rem serif'
+                this.ctx3.fillStyle = '#ffc800'
                 this.ctx3.fillText(
                   effect.content,
                   (effect.x + this.offsetVector.x) * this.gridSize,
@@ -1702,29 +1793,27 @@ export default {
     checkXP: function () {
       if (this.goalXP >= this.goalMaxXP) {
         this.handleLevelUp()
+        this.showLevelUpOffers()
       }
     },
     handleLevelUp: function () {
       this.goalXP = 0
       this.goalLevel += 1
       this.goalMaxXP = Math.ceil(this.goalMaxXP * 2.5)
-      this.isLevelUp = true
       // This actually just pauses the simulation
       this.cancelSimulation()
       if (this.goalWeapons.length < 1) {
         return
       }
       for (const weapon of this.goalWeapons) {
-        if (weapon.powerUps.length < 1) {
-          continue
-        }
-        for (const powerUp of weapon.powerUps) {
-          powerUp.autoLevelUp()
-        }
+        weapon.levelUp()
       }
+      // Show level up screen
+      this.isLevelUp = true
     },
     dismissLevelUp: function () {
       this.isLevelUp = false
+      this.modifyingWeapons = false
       this.handleSimulation()
     },
     setUpPlayer: function () {
@@ -1733,29 +1822,80 @@ export default {
       this.goalMaxRange = 10
     },
     getStarterWeapon: function () {
-      const starterWeapon = new FFWeapon(
-        40,
-        5,
-        1,
-        60,
-        4,
-        4)
-      const starterPowerUp = new FFPowerUp(
-        0,
-        1,
-        'Bullet',
-        'More damage upon level-up.')
-      const starterEffect = new FFPowerUpEffect(
-        false,
-        'dmg',
-        0,
-        1,
-        0,
-        false,
-        true)
-      starterPowerUp.effects.push(starterEffect)
-      starterWeapon.powerUps.push(starterPowerUp)
-      return starterWeapon
+      const weapon = this.weaponList.categories.starter[0]
+      this.weaponList.categories.starter.splice(0, 1)
+      return weapon
+    },
+    showLevelUpOffers: function () {
+      // Get unowned weapons as offers
+      this.weaponOffers = []
+      for (const entry of this.weaponList.categories.starter) {
+        this.weaponOffers.push(entry)
+      }
+      // Get unowned power ups as offers
+      if (this.goalWeapons.length > 0) {
+        this.powerUpOffers = []
+        const offers = []
+        for (const entry of this.powerUpList.categories.starter) {
+          offers.push(entry)
+        }
+        // If there are less than 4 power ups,
+        // ...we cannot select 3 random ones -> use all
+        if (offers.length < 4) {
+          this.powerUpOffers = [].concat(offers)
+          return
+        }
+        // Select 3 random power ups
+        // Example of random index with 3 offers:
+        //    0.9 * 3 = 2.97 => Math.floor() => 2
+        // Index will never go out of bounds as seen above
+        let ix
+        /**
+         * @type {Number[]}
+         */
+        const cache = []
+        for (let i = 0; i < 3; i++) {
+          ix = Math.floor(Math.random() * offers.length)
+          if (cache.length > 0 && cache.includes(ix)) {
+            i -= 1
+            continue
+          }
+          this.powerUpOffers.push(offers[ix])
+          cache.push(ix)
+        }
+      }
+    },
+    handleWeaponOffer: function (offer) {
+      this.goalWeapons.push(offer)
+      const ix = this.weaponList.categories.starter.indexOf(offer)
+      if (ix >= 0) {
+        this.weaponList.categories.starter.splice(ix, 1)
+      }
+      this.dismissLevelUp()
+    },
+    /**
+     * @param {FFPowerUp} offer
+     */
+    handlePowerUpOffer: function (offer) {
+      this.chosenPowerup = offer
+      this.modifyingWeapons = true
+    },
+    handleWeaponModification: function (weapon) {
+      /**
+       * @type {FFPowerUp}
+       */
+      const powerUp = this.chosenPowerup
+      for (let i = 0; i < this.goalWeapons.length; i++) {
+        if (this.goalWeapons[i].name === weapon.name) {
+          this.goalWeapons[i].powerUps.push(powerUp)
+          break
+        }
+      }
+      const ix = this.powerUpList.categories.starter.indexOf(powerUp)
+      if (ix >= 0) {
+        this.powerUpList.categories.starter.splice(ix, 1)
+      }
+      this.dismissLevelUp()
     }
   }
 }

@@ -13,23 +13,26 @@
       </div>
       <div class="flex column py28 <sm:px4 px8 z1">
         <div class="q-pb-md md:text-start">
-          <p class="<sm:text-4xl <md:text-6xl text-7xl
-                    text-white mb2">
+          <p class="<sm:text-[10vw] <md:text-6xl
+                    text-7xl text-white mb2">
             Open Source
           </p>
-          <p class="<sm:text-4xl <md:text-7xl text-8xl
+          <p class="<sm:text-[10vw] <md:text-7xl text-8xl
                     text-weight-bold text-white">
             Collaboration
           </p>
         </div>
         <p class="no-pointer-events mt4
-                  <sm:text-subtitle2 md:text-body1
-                  md:text-start text-white">
+                  sm:block
+                  <sm:text-subtitle2 <sm:px4
+                  md:text-lg md:text-start
+                  text-white">
           {{ $t("home.title") }}
           <br>Powered by wikiric and
           <span class="italic">{{ userCount }}</span> others.
         </p>
         <div class="relative mt16 flex justify-center
+                    <sm:px4
                     md:justify-start">
           <q-btn color="primary" no-caps
                  class="muArrow q-mr-sm q-mb-sm rounded-18

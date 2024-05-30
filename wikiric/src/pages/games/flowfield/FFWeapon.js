@@ -7,14 +7,37 @@ import FFProjectile from 'pages/games/flowfield/FFProjectile'
 class FFWeapon {
   /**
    * An FF Weapon's Constructor
+   * @param {String} name
    * @param {Number} range
    * @param {Number} dps
+   * @param {Number} dpsLevelUp
    * @param {Number} amount
    * @param {Number} cooldown
+   * @param {Number} cooldownLevelUp
    * @param {Number} projectileSpeed
    * @param {Number} hitCount
+   * @param {Number} hitCountLevelUp
+   * @param {Number} hitRange
+   * @param {Number} hitRangeLevelUp
    */
-  constructor (range, dps, amount, cooldown, projectileSpeed, hitCount) {
+  constructor (name,
+               range,
+               dps,
+               dpsLevelUp,
+               amount,
+               cooldown,
+               cooldownLevelUp,
+               projectileSpeed,
+               hitCount,
+               hitCountLevelUp,
+               hitRange,
+               hitRangeLevelUp) {
+    this.level = 1
+    /**
+     * This FF Weapon's Name
+     * @type {String}
+     */
+    this.name = name
     /**
      * This FF Weapon's Range
      * @type {Number}
@@ -25,6 +48,7 @@ class FFWeapon {
      * @type {Number}
      */
     this.dps = dps
+    this.dpsLevelUp = dpsLevelUp
     /**
      * This FF Weapon's Amount of Projectiles
      * @type {Number}
@@ -36,6 +60,7 @@ class FFWeapon {
      * @type {Number}
      */
     this.cd = cooldown
+    this.cdLevelUp = cooldownLevelUp
     this._cd = 0
     /**
      * This FF Weapon Projectile's Speed
@@ -50,12 +75,19 @@ class FFWeapon {
      * @type {Number}
      */
     this.pHitCount = hitCount
+    this.pHitCountLevelUp = hitCountLevelUp
     /**
      * This FF Weapon's PowerUps
      * PowerUps increase a weapon's power! Wow!
      * @type {FFPowerUp[]}
      */
     this.powerUps = []
+    /**
+     * This FF Weapon's Hit Range
+     * @type {Number}
+     */
+    this.hitRange = hitRange
+    this.hitRangeLevelUp = hitRangeLevelUp
   }
 
   /**
@@ -76,6 +108,29 @@ class FFWeapon {
       return false
     }
     return true
+  }
+
+  /**
+   * This function is to be called upon player level-up.
+   */
+  levelUp () {
+    this.level += 1
+    this.dps += this.dpsLevelUp
+    this.cd -= this.cdLevelUp
+    if (this.cd < 10) {
+      this.cd = 10
+    }
+    this.pHitCount -= this.pHitCountLevelUp
+    if (this.pHitCount < 1) {
+      this.pHitCount = 1
+    }
+    this.hitRange += this.hitRangeLevelUp
+    if (this.powerUps.length < 1) {
+      return
+    }
+    for (const powerUp of this.powerUps) {
+      powerUp.autoLevelUp()
+    }
   }
 
   /**
@@ -103,6 +158,7 @@ class FFWeapon {
     let amt = 1
     let speed = this.pSpeed
     let hits = this.pHitCount
+    let hitRange = this.hitRange
     // Trigger weapon effects
     const effects = this.procEffects()
     if (effects.length > 0) {
@@ -117,8 +173,11 @@ class FFWeapon {
           case 'speed':
             speed += effect.value
             break
-          case 'hits':
+          case 'hitCount':
             hits += effect.value
+            break
+          case 'hitRange':
+            hitRange += effect.value
             break
         }
       }
@@ -129,7 +188,14 @@ class FFWeapon {
      */
     const projectiles = []
     for (let i = 1; i <= amt; i++) {
-      projectiles.push(this.doShootProjectile(pos, vec, dmg, speed, hits, i))
+      projectiles.push(this.doShootProjectile(
+        pos,
+        vec,
+        dmg,
+        speed,
+        hits,
+        i,
+        hitRange))
     }
     return projectiles
   }
@@ -142,28 +208,34 @@ class FFWeapon {
    * @param {Number} speed
    * @param {Number} hits
    * @param {Number} iteration
+   * @param {Number} hitRange
    * @return {FFProjectile}
    */
-  doShootProjectile (pos, vec, dmg, speed, hits, iteration) {
+  doShootProjectile (pos,
+                     vec,
+                     dmg,
+                     speed,
+                     hits,
+                     iteration,
+                     hitRange) {
     // Calculate projectile vector
     const vector = new THREE.Vector2(vec.x, vec.y)
     if (vector.lengthSq() === 0) {
       vector.x = Math.random() - 0.5
       vector.y = Math.random() - 0.5
     }
-    vector.normalize()
-    vector.multiplyScalar(speed)
-    vector.clampScalar(-speed, speed)
     // Add random vector to simulate some spray effect
     const spray = new THREE.Vector2()
     spray.x = Math.random() - 0.5
     spray.y = Math.random() - 0.5
     spray.normalize()
-    const limit = 0.75 * iteration
+    const limit = Math.sin(iteration)
     spray.multiplyScalar(limit)
     vector.add(spray)
+    vector.normalize()
+    vector.multiplyScalar(speed)
     // Return projectile
-    return new FFProjectile(pos, vector, hits, dmg)
+    return new FFProjectile(pos, vector, hits, dmg, hitRange)
   }
 
   /**

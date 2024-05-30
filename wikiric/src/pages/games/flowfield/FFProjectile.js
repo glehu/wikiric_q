@@ -10,8 +10,13 @@ class FFProjectile {
    * @param {THREE.Vector2} vec
    * @param {Number} hitCount
    * @param {Number} dmg
+   * @param {Number} hitRange
    */
-  constructor (pos, vec, hitCount, dmg) {
+  constructor (pos,
+               vec,
+               hitCount,
+               dmg,
+               hitRange) {
     /**
      * This FF Projectile's Position
      * @type {THREE.Vector2}
@@ -32,6 +37,7 @@ class FFProjectile {
      * @type {Number}
      */
     this.dmg = dmg
+    this.hitRange = hitRange
   }
 }
 

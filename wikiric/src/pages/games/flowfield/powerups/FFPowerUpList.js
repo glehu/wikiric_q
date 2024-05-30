@@ -1,0 +1,116 @@
+import FFPowerUp from 'pages/games/flowfield/FFPowerUp'
+import FFPowerUpEffect from 'pages/games/flowfield/FFPowerUpEffect'
+
+class FFPowerUpList {
+  constructor () {
+    this.version = 1
+    this.categories = {
+      /**
+       * @type FFPowerUp[]
+       */
+      starter: []
+    }
+  }
+
+  initiateStarterPowerUps () {
+    let powerUp
+    let effect
+    /**
+     * STARTER POWERUP: Critical Hit
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      1,
+      'Critical Hit',
+      'Deals more damage sometimes.')
+    effect = new FFPowerUpEffect(
+      true,
+      'dmg',
+      5,
+      1,
+      4,
+      false,
+      true)
+    powerUp.effects.push(effect)
+    this.categories.starter.push(powerUp)
+    /**
+     * STARTER POWERUP: Spam
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      1,
+      'Spam',
+      'More projectiles!')
+    effect = new FFPowerUpEffect(
+      false,
+      'amt',
+      2,
+      1,
+      0,
+      false,
+      true)
+    powerUp.effects.push(effect)
+    this.categories.starter.push(powerUp)
+    /**
+     * STARTER POWERUP: Multi-Hit
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      1,
+      'Multi-Hit',
+      'Can hit more enemies.')
+    effect = new FFPowerUpEffect(
+      false,
+      'hitCount',
+      1,
+      1,
+      0,
+      false,
+      true)
+    powerUp.effects.push(effect)
+    this.categories.starter.push(powerUp)
+    /**
+     * STARTER POWERUP: Area
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      1,
+      'Area',
+      'Hits enemies further away.')
+    effect = new FFPowerUpEffect(
+      false,
+      'hitRange',
+      0.5,
+      0.1,
+      0,
+      false,
+      true)
+    powerUp.effects.push(effect)
+    this.categories.starter.push(powerUp)
+    /**
+     * STARTER POWERUP: Speed
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      1,
+      'Speed',
+      'Projectiles are faster.')
+    effect = new FFPowerUpEffect(
+      false,
+      'speed',
+      1,
+      0.2,
+      0,
+      false,
+      true)
+    powerUp.effects.push(effect)
+    this.categories.starter.push(powerUp)
+  }
+}
+
+export default FFPowerUpList
