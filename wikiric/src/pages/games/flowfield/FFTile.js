@@ -4,12 +4,12 @@ class FFTile {
   constructor (x, y, xNew, yNew, name) {
     /**
      * This FF Tile's Position
-     * @type {THREE.Vector2}¥
+     * @type {THREE.Vector2}
      */
     this.pos = new THREE.Vector2(x, y)
     /**
      * This FF Tile's Visual Position
-     * @type {THREE.Vector2}¥
+     * @type {THREE.Vector2}
      */
     this.posVisual = new THREE.Vector2(xNew, yNew)
     /**

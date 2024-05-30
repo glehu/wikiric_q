@@ -31,23 +31,6 @@
               <p class="text-body1 mb2">
                 Actions
               </p>
-              <template v-if="!isCalculating">
-                <q-btn color="brand-bg"
-                       text-color="brand-p"
-                       @click="handleCalculation"
-                       icon="sym_o_manufacturing"
-                       label="Calculate"
-                       align="left"
-                       no-caps unelevated dense
-                       class="wfull fontbold text-body2"/>
-              </template>
-              <template v-else>
-                <div class="p2 wfull">
-                  <p class="fontbold text-body2">
-                    Calculating...
-                  </p>
-                </div>
-              </template>
               <template v-if="!isSimulating">
                 <q-btn color="brand-bg"
                        text-color="brand-p"
@@ -70,6 +53,22 @@
                          @click="cancelSimulation"/>
                 </div>
               </template>
+              <q-btn color="brand-bg"
+                     text-color="brand-p"
+                     @click="saveMap"
+                     icon="sym_o_save"
+                     label="Save Map"
+                     align="left"
+                     no-caps unelevated dense
+                     class="wfull mt2 fontbold text-body2"/>
+              <q-btn color="brand-bg"
+                     text-color="brand-p"
+                     @click="pickMap"
+                     icon="sym_o_upload"
+                     label="Load Map"
+                     align="left"
+                     no-caps unelevated dense
+                     class="wfull mt2 fontbold text-body2"/>
               <hr>
               <q-btn color="brand-bg"
                      text-color="brand-p"
@@ -79,6 +78,27 @@
                      align="left"
                      no-caps unelevated dense
                      class="wfull fontbold text-body2"/>
+            </div>
+            <div class="p3 rounded surface my2">
+              <p class="text-body1 mb2">
+                Stats
+              </p>
+              <div class="flex justify-between items-center gap-2
+                          text-subtitle2 px2">
+                <p>Enemies:</p>
+                <p>{{ enemies.size.toLocaleString() }}</p>
+              </div>
+              <div class="flex justify-between items-center gap-2
+                          text-subtitle2 px2">
+                <p>Projectiles:</p>
+                <p>{{ goalWeaponProjectiles.length.toLocaleString() }}</p>
+              </div>
+              <hr>
+              <div class="flex justify-between items-center gap-2
+                          text-subtitle2 px2">
+                <p>Performance:</p>
+                <p>{{ timeDelta }} FPS</p>
+              </div>
             </div>
             <div class="p3 rounded surface">
               <p class="text-body1 mb2">
@@ -212,27 +232,6 @@
                        src="https://wikiric.xyz/files/public/get/018f9d2f-e5b6-738d-bf08-62f0e4fc3804"
                        width="50" height="50" alt="img"/>
                 </q-btn>
-              </div>
-            </div>
-            <div class="p3 rounded surface mt2">
-              <p class="text-body1 mb2">
-                Stats
-              </p>
-              <div class="flex justify-between items-center gap-2
-                          text-subtitle2 px2">
-                <p>Enemies:</p>
-                <p>{{ enemies.size.toLocaleString() }}</p>
-              </div>
-              <div class="flex justify-between items-center gap-2
-                          text-subtitle2 px2">
-                <p>Projectiles:</p>
-                <p>{{ goalWeaponProjectiles.length.toLocaleString() }}</p>
-              </div>
-              <hr>
-              <div class="flex justify-between items-center gap-2
-                          text-subtitle2 px2">
-                <p>Performance:</p>
-                <p>{{ timeDelta }} FPS</p>
               </div>
             </div>
             <div class="p3 mt2 rounded surface">
@@ -481,6 +480,14 @@
          src="https://wikiric.xyz/files/public/get/018f9cfd-e044-738d-8df8-199c73d55585"
          width="48" height="48" alt="img"/>
   </div>
+  <q-slide-transition>
+    <q-card v-show="isPickingMap" flat
+            class="fixed bottom-0 wfull fmt_border_top">
+      <q-card-section>
+        <file-picker @selected="handleMapSelected"/>
+      </q-card-section>
+    </q-card>
+  </q-slide-transition>
 </template>
 
 <script>
@@ -495,10 +502,12 @@ import FFWeaponList from 'pages/games/flowfield/weapons/FFWeaponList'
 import FFPowerUpList from 'pages/games/flowfield/powerups/FFPowerUpList'
 import FFWeaponDisplay from 'pages/games/flowfield/FFWeaponDisplay.vue'
 import FFPowerUpDisplay from 'pages/games/flowfield/FFPowerUpDisplay.vue'
+import FilePicker from 'components/FilePicker.vue'
 
 export default {
   name: 'FlowFieldDemo',
   components: {
+    FilePicker,
     FFPowerUpDisplay,
     FFWeaponDisplay,
     FFWeaponComp
@@ -595,6 +604,9 @@ export default {
       costField: undefined,
       integrationField: undefined,
       enemies: new Map(),
+      /**
+       * @type FFTilesQuadTree
+       */
       tileTree: null,
       offsetVector: new THREE.Vector2(0, 0),
       onHitEffects: [],
@@ -614,6 +626,7 @@ export default {
        * @type FFPowerUp
        */
       chosenPowerup: undefined,
+      isPickingMap: false,
 
       // PLAYABLE CHARACTER DATA
 
@@ -695,7 +708,9 @@ export default {
         50)
       this.manageKeyListeners(false)
       // Give the player something to... play with!
+      this.weaponList = new FFWeaponList()
       this.weaponList.initiateStarterWeapons()
+      this.powerUpList = new FFPowerUpList()
       this.powerUpList.initiateStarterPowerUps()
       this.setUpPlayer()
     },
@@ -1817,6 +1832,7 @@ export default {
       this.handleSimulation()
     },
     setUpPlayer: function () {
+      this.goalWeapons = []
       const starterWeapon = this.getStarterWeapon()
       this.goalWeapons.push(starterWeapon)
       this.goalMaxRange = 10
@@ -1896,6 +1912,69 @@ export default {
         this.powerUpList.categories.starter.splice(ix, 1)
       }
       this.dismissLevelUp()
+    },
+    saveMap: function () {
+      const tiles = this.tileTree.getContents(
+        0, 0, this.xCells, this.yCells)
+      const costSaveState = this.costField
+      const saveState = {
+        tiles: tiles,
+        costField: costSaveState
+      }
+      const saveStr = 'data:text/json;charset=utf-8,' +
+        encodeURIComponent(JSON.stringify(saveState))
+      const tmpNode = document.createElement('a')
+      tmpNode.setAttribute('href', saveStr)
+      tmpNode.setAttribute('download', 'map.json')
+      document.body.appendChild(tmpNode)
+      tmpNode.click()
+      tmpNode.remove()
+    },
+    loadMap: function (saveState) {
+      this.clearAll()
+      /**
+       * @type FFTile[]
+       */
+      const tiles = saveState.tiles
+      if (tiles) {
+        this.tileTree = new FFTilesQuadTree(
+          this.xCells / 2,
+          this.yCells / 2,
+          this.xCells / 2,
+          this.yCells / 2,
+          50)
+        for (let i = 0; i < tiles.length; i++) {
+          this.tile = tiles[i].name
+          this.addTile(tiles[i].pos)
+        }
+        console.log(this.tileTree)
+      }
+      /**
+       * @type []
+       */
+      const costField = saveState.costField
+      if (costField) {
+        this.costField = []
+        for (const value of Object.values(costField)) {
+          this.costField.push(value)
+        }
+      }
+      // Log
+      console.log(this.tileTree)
+      console.log(this.costField)
+      // Render
+      this.drawGrid(true)
+      this.renderTiles(this.offsetVector)
+    },
+    pickMap: function () {
+      this.isPickingMap = true
+    },
+    handleMapSelected: function (data) {
+      const base64 = data.base64.split(',')[1]
+      const str = window.atob(base64)
+      const obj = JSON.parse(str)
+      this.loadMap(obj)
+      this.isPickingMap = false
     }
   }
 }
