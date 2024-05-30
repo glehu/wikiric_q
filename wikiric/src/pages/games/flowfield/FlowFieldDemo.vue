@@ -1781,6 +1781,10 @@ export default {
           break
       }
     },
+    /**
+     *
+     * @param e
+     */
     handleFFKeyUp: function (e) {
       switch (e.key) {
         case 'w':
@@ -1797,20 +1801,34 @@ export default {
           break
       }
     },
+    /**
+     *
+     * @return {*}
+     */
     getUUID: function () {
       return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
         (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
       )
     },
+    /**
+     *
+     * @param tile
+     */
     setBrush: function (tile) {
       this.tile = tile
     },
+    /**
+     *
+     */
     checkXP: function () {
       if (this.goalXP >= this.goalMaxXP) {
         this.handleLevelUp()
         this.showLevelUpOffers()
       }
     },
+    /**
+     *
+     */
     handleLevelUp: function () {
       this.goalXP = 0
       this.goalLevel += 1
@@ -1826,22 +1844,35 @@ export default {
       // Show level up screen
       this.isLevelUp = true
     },
+    /**
+     *
+     */
     dismissLevelUp: function () {
       this.isLevelUp = false
       this.modifyingWeapons = false
       this.handleSimulation()
     },
+    /**
+     *
+     */
     setUpPlayer: function () {
       this.goalWeapons = []
       const starterWeapon = this.getStarterWeapon()
       this.goalWeapons.push(starterWeapon)
       this.goalMaxRange = 10
     },
+    /**
+     *
+     * @return {FFWeapon}
+     */
     getStarterWeapon: function () {
       const weapon = this.weaponList.categories.starter[0]
       this.weaponList.categories.starter.splice(0, 1)
       return weapon
     },
+    /**
+     *
+     */
     showLevelUpOffers: function () {
       // Get unowned weapons as offers
       this.weaponOffers = []
@@ -1881,6 +1912,10 @@ export default {
         }
       }
     },
+    /**
+     *
+     * @param offer
+     */
     handleWeaponOffer: function (offer) {
       this.goalWeapons.push(offer)
       const ix = this.weaponList.categories.starter.indexOf(offer)
@@ -1896,6 +1931,10 @@ export default {
       this.chosenPowerup = offer
       this.modifyingWeapons = true
     },
+    /**
+     *
+     * @param weapon
+     */
     handleWeaponModification: function (weapon) {
       /**
        * @type {FFPowerUp}
@@ -1913,6 +1952,9 @@ export default {
       }
       this.dismissLevelUp()
     },
+    /**
+     *
+     */
     saveMap: function () {
       const tiles = this.tileTree.getContents(
         0, 0, this.xCells, this.yCells)
@@ -1930,6 +1972,9 @@ export default {
       tmpNode.click()
       tmpNode.remove()
     },
+    /**
+     * @param saveState
+     */
     loadMap: function (saveState) {
       this.clearAll()
       /**
