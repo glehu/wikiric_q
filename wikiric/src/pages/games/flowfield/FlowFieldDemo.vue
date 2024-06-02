@@ -332,8 +332,8 @@
                     Level Up Offers
                   </p>
                 </q-card-section>
-                <div class="flex gap-2">
-                  <q-card-section>
+                <div class="flex gap-2 pb16">
+                  <q-card-section class="flex-grow">
                     <p class="text-body1 fontbold mb2">
                       Choose a Weapon:
                     </p>
@@ -343,7 +343,7 @@
                           <q-btn unelevated dense no-caps flat
                                  @click="handleWeaponOffer(offer)"
                                  class="flex-grow">
-                            <FFWeaponDisplay :weapon="offer"/>
+                            <FFWeaponDisplay :weapon="offer" class="flex-grow"/>
                           </q-btn>
                         </template>
                       </div>
@@ -361,7 +361,7 @@
                                  class="flex-grow">
                             <div class="fmt_border rounded p2 my2
                                         wfull hfull">
-                              <FFPowerUpDisplay :power-ups="[offer]"/>
+                              <FFPowerUpDisplay :power-ups="[offer]" class="flex-grow"/>
                             </div>
                           </q-btn>
                         </template>
@@ -1639,8 +1639,8 @@ export default {
                     // Does the projectile explode?
                     if (projectile.radius > 0) {
                       tmp2 = new FFOnHitEffect(
-                        tmp2,
-                        tmp3,
+                        enemy.pos.x,
+                        enemy.pos.y,
                         'explosion',
                         projectile,
                         1)
@@ -1688,7 +1688,7 @@ export default {
               } else if (effect.type === 'explosion') {
                 if (this.enemies.size > 0) {
                   const projectile = effect.content
-                  dist = projectile.radius * 2
+                  dist = projectile.radius
                   const enemies = qtree.getContents(
                     projectile.pos.x - dist,
                     projectile.pos.y - dist,
@@ -1698,18 +1698,20 @@ export default {
                     tmp = new THREE.Vector2()
                     tmp.copy(projectile.pos)
                     this.ctx3.beginPath()
-                    this.ctx3.fillStyle = '#fff400'
-                    // Draw weapon effect
-                    tmp2 = ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2
-                    tmp3 = ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
-                    this.ctx3.arc(tmp2, tmp3, 50, 0, 2 * Math.PI)
-                    this.ctx3.fill()
                     for (const enemy of enemies) {
                       if (enemy.hp < 0) {
                         continue
                       }
                       dist = tmp.distanceToSquared(enemy.pos)
                       if (dist <= projectile.radius) {
+                        this.ctx3.fillStyle = '#fff400'
+                        // Draw weapon effect
+                        this.ctx3.arc(
+                          (effect.x + this.offsetVector.x) * this.gridSize,
+                          (effect.y + this.offsetVector.y) * this.gridSize,
+                          (dist * this.gridSize) / 4,
+                          0,
+                          2 * Math.PI)
                         // Trigger hit
                         enemy.hp -= projectile.dmg
                         if (enemy.hp <= 0) {
@@ -1732,6 +1734,7 @@ export default {
                         }
                       }
                     }
+                    this.ctx3.fill()
                   }
                 }
               }

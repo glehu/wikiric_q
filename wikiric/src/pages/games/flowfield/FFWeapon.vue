@@ -2,7 +2,7 @@
   <div>
     <q-tooltip style="padding: 0 !important;"
                max-height="90vh"
-               class="h-full bg-transparent backdrop-blur">
+               class="background">
       <FFWeaponDisplay :weapon="weapon"/>
     </q-tooltip>
     <template v-if="weapon._cd <= 0">

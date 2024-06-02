@@ -1,8 +1,8 @@
 <template>
   <q-card class="text-subtitle2 hfull fmt_border
                  flex items-center bg-transparent"
-          style="box-shadow: none !important;">
-    <div>
+          style="box-shadow: none !important">
+    <div class="flex">
       <q-card-section>
         <div class="flex items-center gap-2 mb1">
           <p class="text-body1 fontbold">

@@ -1,18 +1,18 @@
 <template>
   <template v-for="pup in powerUps" :key="pup">
-    <div class="flex items-center gap-2 mt2">
+    <div class="flex items-center gap-2">
       <p class="fontbold">
         {{ pup.name }}
       </p>
       <p>
         Lv. {{ pup.level }}
       </p>
+      <p class="italic text-start">
+        "{{ pup.desc }}"
+      </p>
     </div>
-    <p class="italic text-start">
-      {{ pup.desc }}
-    </p>
     <template v-for="eff in pup.effects" :key="eff">
-      <div class="flex items-center gap-2 mt2 fmt_border rounded p1">
+      <div class="flex items-center gap-2 mb2 fmt_border rounded p1">
         <div class="primary px1 py0.5 rounded text-xs w-fit
                     font-bold">
           <template v-if="eff.onHit">
