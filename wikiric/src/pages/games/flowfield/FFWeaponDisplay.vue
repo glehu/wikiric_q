@@ -12,23 +12,20 @@
             Lv. {{ weapon.level }}
           </p>
         </div>
-        <div class="flex column gap-2 text-start">
+        <div class="flex column text-start">
           <p>
             {{ weapon.dps }} Base Dmg
-            <br>
             <span class="italic">( +{{ weapon.dpsLevelUp }} per Lv. )</span>
           </p>
           <p>
             {{ weapon.cd }} ms Cooldown
-            <br>
             <span class="italic">( -{{ weapon.cdLevelUp }} per Lv. )</span>
           </p>
           <p>
-            {{ weapon.amount }} Amt
+            {{ weapon.amount }} Amount
           </p>
           <p>
             {{ weapon.pHitCount }} Hits
-            <br>
             <span class="italic">( +{{ weapon.pHitCountLevelUp }} per Lv. )</span>
           </p>
         </div>

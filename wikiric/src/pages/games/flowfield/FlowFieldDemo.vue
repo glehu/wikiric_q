@@ -53,6 +53,7 @@
                          @click="cancelSimulation"/>
                 </div>
               </template>
+              <hr>
               <q-btn color="brand-bg"
                      text-color="brand-p"
                      @click="saveMap"
@@ -60,7 +61,7 @@
                      label="Save Map"
                      align="left"
                      no-caps unelevated dense
-                     class="wfull mt2 fontbold text-body2"/>
+                     class="wfull fontbold text-body2"/>
               <q-btn color="brand-bg"
                      text-color="brand-p"
                      @click="pickMap"
@@ -337,10 +338,11 @@
                       Choose a Weapon:
                     </p>
                     <template v-if="weaponOffers">
-                      <div class="grid grid-cols-3 gap-2">
+                      <div class="flex gap-2 wfull hfull">
                         <template v-for="offer in weaponOffers" :key="offer">
                           <q-btn unelevated dense no-caps flat
-                                 @click="handleWeaponOffer(offer)">
+                                 @click="handleWeaponOffer(offer)"
+                                 class="flex-grow">
                             <FFWeaponDisplay :weapon="offer"/>
                           </q-btn>
                         </template>
@@ -352,10 +354,11 @@
                       Choose a Power-Up:
                     </p>
                     <template v-if="powerUpOffers">
-                      <div class="grid grid-cols-3 gap-2">
+                      <div class="flex gap-2 wfull hfull">
                         <template v-for="offer in powerUpOffers" :key="offer">
                           <q-btn unelevated dense no-caps flat
-                                 @click="handlePowerUpOffer(offer)">
+                                 @click="handlePowerUpOffer(offer)"
+                                 class="flex-grow">
                             <div class="fmt_border rounded p2 my2
                                         wfull hfull">
                               <FFPowerUpDisplay :power-ups="[offer]"/>
@@ -1131,13 +1134,16 @@ export default {
       const yNew = position.y * this.gridSize
       // Add enemy to list
       const id = this.getUUID()
+      // Scale HP with Level
+      let hp = 20
+      hp += ((this.goalLevel * hp) - (this.goalLevel * 1.5))
       const unit = new FFUnit(
         position.x,
         position.y,
         1,
         id,
         10,
-        20,
+        hp,
         100)
       this.enemies.set(id, unit)
       const image = document.getElementById('slime')
@@ -1590,11 +1596,12 @@ export default {
             this.ctx3.fill()
             // Did the projectile hit something?
             if (this.enemies.size > 0) {
+              dist = projectile.hitRange * 2
               const enemies = qtree.getContents(
-                projectile.pos.x - 2,
-                projectile.pos.y - 2,
-                projectile.pos.x + 2,
-                projectile.pos.y + 2)
+                projectile.pos.x - dist,
+                projectile.pos.y - dist,
+                projectile.pos.x + dist,
+                projectile.pos.y + dist)
               if (enemies && enemies.length > 0) {
                 tmp = new THREE.Vector2()
                 tmp.copy(projectile.pos)
@@ -1611,6 +1618,7 @@ export default {
                   }
                   dist = tmp.distanceToSquared(enemy.pos)
                   if (dist <= projectile.hitRange) {
+                    // Trigger hit
                     projectile.hitCount -= 1
                     enemy.hp -= projectile.dmg
                     if (enemy.hp <= 0) {
@@ -1628,15 +1636,25 @@ export default {
                     tmp2 = ((enemy.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2
                     tmp3 = ((enemy.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
                     this.ctx3.lineTo(tmp2, tmp3)
+                    // Does the projectile explode?
+                    if (projectile.radius > 0) {
+                      tmp2 = new FFOnHitEffect(
+                        tmp2,
+                        tmp3,
+                        'explosion',
+                        projectile,
+                        1)
+                      this.onHitEffects.push(tmp2)
+                    }
                     // Add floating damage number
-                    const dmgNumber = new FFOnHitEffect(
-                      enemy.pos.x,
-                      enemy.pos.y,
-                      'text',
-                      `${projectile.dmg}`,
-                      60)
                     if (this.drawDamageNumbers) {
-                      this.onHitEffects.push(dmgNumber)
+                      tmp2 = new FFOnHitEffect(
+                        enemy.pos.x,
+                        enemy.pos.y,
+                        'text',
+                        `${projectile.dmg}`,
+                        60)
+                      this.onHitEffects.push(tmp2)
                     }
                   }
                 }
@@ -1667,7 +1685,58 @@ export default {
                   (effect.x + this.offsetVector.x) * this.gridSize,
                   (effect.y + this.offsetVector.y) * this.gridSize
                 )
+              } else if (effect.type === 'explosion') {
+                if (this.enemies.size > 0) {
+                  const projectile = effect.content
+                  dist = projectile.radius * 2
+                  const enemies = qtree.getContents(
+                    projectile.pos.x - dist,
+                    projectile.pos.y - dist,
+                    projectile.pos.x + dist,
+                    projectile.pos.y + dist)
+                  if (enemies && enemies.length > 0) {
+                    tmp = new THREE.Vector2()
+                    tmp.copy(projectile.pos)
+                    this.ctx3.beginPath()
+                    this.ctx3.fillStyle = '#fff400'
+                    // Draw weapon effect
+                    tmp2 = ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2
+                    tmp3 = ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
+                    this.ctx3.arc(tmp2, tmp3, 50, 0, 2 * Math.PI)
+                    this.ctx3.fill()
+                    for (const enemy of enemies) {
+                      if (enemy.hp < 0) {
+                        continue
+                      }
+                      dist = tmp.distanceToSquared(enemy.pos)
+                      if (dist <= projectile.radius) {
+                        // Trigger hit
+                        enemy.hp -= projectile.dmg
+                        if (enemy.hp <= 0) {
+                          this.goalXP += enemy.xp
+                          this.checkXP()
+                          this.enemies.delete(enemy.id)
+                          this.goalKills += 1
+                        } else {
+                          this.enemies.set(enemy.id, enemy)
+                        }
+                        // Add floating damage number
+                        if (this.drawDamageNumbers) {
+                          tmp2 = new FFOnHitEffect(
+                            enemy.pos.x,
+                            enemy.pos.y,
+                            'text',
+                            `${projectile.dmg}`,
+                            60)
+                          this.onHitEffects.push(tmp2)
+                        }
+                      }
+                    }
+                  }
+                }
               }
+            } else {
+              this.onHitEffects.splice(i, 1)
             }
           }
         }
@@ -1823,7 +1892,20 @@ export default {
     checkXP: function () {
       if (this.goalXP >= this.goalMaxXP) {
         this.handleLevelUp()
-        this.showLevelUpOffers()
+        const offers = this.showLevelUpOffers()
+        if (offers) {
+          // Show level up screen
+          this.isLevelUp = true
+          // This actually just pauses the simulation
+          this.cancelSimulation()
+          // Cancel movement
+          // (sometimes it can get stuck upon level up,
+          // as keyboard inputs are stopped)
+          this.goalUp = false
+          this.goalLeft = false
+          this.goalDown = false
+          this.goalRight = false
+        }
       }
     },
     /**
@@ -1833,16 +1915,12 @@ export default {
       this.goalXP = 0
       this.goalLevel += 1
       this.goalMaxXP = Math.ceil(this.goalMaxXP * 2.5)
-      // This actually just pauses the simulation
-      this.cancelSimulation()
       if (this.goalWeapons.length < 1) {
         return
       }
       for (const weapon of this.goalWeapons) {
         weapon.levelUp()
       }
-      // Show level up screen
-      this.isLevelUp = true
     },
     /**
      *
@@ -1874,14 +1952,21 @@ export default {
      *
      */
     showLevelUpOffers: function () {
+      let hasOffer = false
       // Get unowned weapons as offers
       this.weaponOffers = []
-      for (const entry of this.weaponList.categories.starter) {
-        this.weaponOffers.push(entry)
+      if (this.weaponList.categories.starter.length > 0) {
+        hasOffer = true
+        for (const entry of this.weaponList.categories.starter) {
+          this.weaponOffers.push(entry)
+        }
       }
       // Get unowned power ups as offers
-      if (this.goalWeapons.length > 0) {
-        this.powerUpOffers = []
+      this.powerUpOffers = []
+      if (this.goalWeapons.length > 0 &&
+        this.powerUpList.categories.starter.length > 0
+      ) {
+        hasOffer = true
         const offers = []
         for (const entry of this.powerUpList.categories.starter) {
           offers.push(entry)
@@ -1890,7 +1975,7 @@ export default {
         // ...we cannot select 3 random ones -> use all
         if (offers.length < 4) {
           this.powerUpOffers = [].concat(offers)
-          return
+          return true
         }
         // Select 3 random power ups
         // Example of random index with 3 offers:
@@ -1911,6 +1996,8 @@ export default {
           cache.push(ix)
         }
       }
+      // Did we get offers?
+      return hasOffer
     },
     /**
      *

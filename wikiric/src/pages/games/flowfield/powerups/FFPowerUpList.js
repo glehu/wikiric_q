@@ -46,10 +46,10 @@ class FFPowerUpList {
     effect = new FFPowerUpEffect(
       false,
       'amt',
-      2,
       1,
+      0.1,
       0,
-      false,
+      true,
       true)
     powerUp.effects.push(effect)
     this.categories.starter.push(powerUp)
@@ -105,6 +105,25 @@ class FFPowerUpList {
       'speed',
       1,
       0.2,
+      0,
+      false,
+      true)
+    powerUp.effects.push(effect)
+    this.categories.starter.push(powerUp)
+    /**
+     * STARTER POWERUP: Explosion
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      1,
+      'Explosion',
+      'Projectiles explode when hitting enemies.')
+    effect = new FFPowerUpEffect(
+      true,
+      'radius',
+      1,
+      0.5,
       0,
       false,
       true)

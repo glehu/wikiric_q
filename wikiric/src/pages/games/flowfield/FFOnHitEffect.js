@@ -7,7 +7,11 @@ class FFOnHitEffect {
    * @param {any} content
    * @param {Number} ttl
    */
-  constructor (x, y, type, content, ttl) {
+  constructor (x,
+               y,
+               type,
+               content,
+               ttl) {
     this.x = x
     this.y = y
     this.type = type

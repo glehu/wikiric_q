@@ -83,6 +83,39 @@ class FFWeaponList {
     powerUp.effects.push(effect)
     weapon.powerUps.push(powerUp)
     this.categories.starter.push(weapon)
+    /**
+     * STARTER WEAPON: ROCKET LAUNCHER
+     * @type {FFWeapon}
+     */
+    weapon = new FFWeapon(
+      'Rocket Launcher',
+      40,
+      10,
+      5,
+      1,
+      60,
+      1,
+      20,
+      1,
+      0,
+      2,
+      0.1)
+    powerUp = new FFPowerUp(
+      0,
+      1,
+      'Explosion',
+      'Projectiles explode when hitting enemies.')
+    effect = new FFPowerUpEffect(
+      true,
+      'radius',
+      4,
+      0.5,
+      0,
+      false,
+      true)
+    powerUp.effects.push(effect)
+    weapon.powerUps.push(powerUp)
+    this.categories.starter.push(weapon)
   }
 }
 

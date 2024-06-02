@@ -159,6 +159,7 @@ class FFWeapon {
     let speed = this.pSpeed
     let hits = this.pHitCount
     let hitRange = this.hitRange
+    let radius = 0
     // Trigger weapon effects
     const effects = this.procEffects()
     if (effects.length > 0) {
@@ -179,6 +180,9 @@ class FFWeapon {
           case 'hitRange':
             hitRange += effect.value
             break
+          case 'radius':
+            radius += effect.value
+            break
         }
       }
     }
@@ -195,7 +199,8 @@ class FFWeapon {
         speed,
         hits,
         i,
-        hitRange))
+        hitRange,
+        radius))
     }
     return projectiles
   }
@@ -209,6 +214,7 @@ class FFWeapon {
    * @param {Number} hits
    * @param {Number} iteration
    * @param {Number} hitRange
+   * @param {Number} radius
    * @return {FFProjectile}
    */
   doShootProjectile (pos,
@@ -217,7 +223,8 @@ class FFWeapon {
                      speed,
                      hits,
                      iteration,
-                     hitRange) {
+                     hitRange,
+                     radius) {
     // Calculate projectile vector
     const vector = new THREE.Vector2(vec.x, vec.y)
     if (vector.lengthSq() === 0) {
@@ -229,13 +236,17 @@ class FFWeapon {
     spray.x = Math.random() - 0.5
     spray.y = Math.random() - 0.5
     spray.normalize()
-    const limit = Math.sin(iteration)
-    spray.multiplyScalar(limit)
+    if (iteration > 1) {
+      const limit = Math.sin(iteration)
+      spray.multiplyScalar(limit)
+    } else {
+      spray.multiplyScalar(0.2)
+    }
     vector.add(spray)
     vector.normalize()
     vector.multiplyScalar(speed)
     // Return projectile
-    return new FFProjectile(pos, vector, hits, dmg, hitRange)
+    return new FFProjectile(pos, vector, hits, dmg, hitRange, radius)
   }
 
   /**
