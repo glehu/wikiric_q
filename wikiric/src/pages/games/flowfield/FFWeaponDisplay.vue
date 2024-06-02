@@ -2,7 +2,7 @@
   <q-card class="text-subtitle2 hfull fmt_border
                  flex items-center bg-transparent"
           style="box-shadow: none !important">
-    <div class="flex">
+    <div class="lg:flex">
       <q-card-section>
         <div class="flex items-center gap-2 mb1">
           <p class="text-body1 fontbold">
@@ -14,11 +14,11 @@
         </div>
         <div class="flex column text-start">
           <p>
-            {{ weapon.dps }} Base Dmg
+            {{ weapon.dps.toLocaleString() }} Base Dmg
             <span class="italic">( +{{ weapon.dpsLevelUp }} per Lv. )</span>
           </p>
           <p>
-            {{ weapon.cd }} ms Cooldown
+            {{ weapon.cd.toLocaleString() }} ms Cooldown
             <span class="italic">( -{{ weapon.cdLevelUp }} per Lv. )</span>
           </p>
           <p>

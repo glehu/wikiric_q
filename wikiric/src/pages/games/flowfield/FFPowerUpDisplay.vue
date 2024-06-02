@@ -29,7 +29,7 @@
           </div>
         </template>
         <p>
-          {{ eff.value }} {{ capitalizeFirstLetter(eff.type) }}
+          {{ eff.value.toLocaleString() }} {{ capitalizeFirstLetter(eff.type) }}
           <span class="italic">( +{{ eff.valueLevelBonus }} per Lv. )</span>
           <template v-if="eff.onHit">
             every {{ eff.hitCount }} hits.

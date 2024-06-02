@@ -1040,10 +1040,23 @@ export default {
           return
         }
       }
-      const tile = new FFTile(position.x, position.y, xNew, yNew, this.tile)
-      this.tileTree.insert(tile)
       // Set highest cost value
       this.costField[arrayPos] = 255
+      // Check if there is already the same tile present
+      const contents = this.tileTree.getContents(
+        position.x - 1,
+        position.y - 1,
+        position.x + 1,
+        position.y + 1)
+      for (const elem of contents) {
+        if (elem.pos.x === position.x && elem.pos.y === position.y) {
+          if (elem.name === this.tile) {
+            return
+          }
+        }
+      }
+      const tile = new FFTile(position.x, position.y, xNew, yNew, this.tile)
+      this.tileTree.insert(tile)
       this.renderTiles(this.offsetVector)
     },
     addTile: function (position) {
@@ -1058,6 +1071,19 @@ export default {
       if (this.goalPosition) {
         if (xNew === this.goalPosition.x && yNew === this.goalPosition.y) {
           return
+        }
+      }
+      // Check if there is already the same tile present
+      const contents = this.tileTree.getContents(
+        position.x - 1,
+        position.y - 1,
+        position.x + 1,
+        position.y + 1)
+      for (const elem of contents) {
+        if (elem.pos.x === position.x && elem.pos.y === position.y) {
+          if (elem.name === this.tile) {
+            return
+          }
         }
       }
       const tile = new FFTile(position.x, position.y, xNew, yNew, this.tile)
