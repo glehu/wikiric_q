@@ -3,7 +3,7 @@
     <q-tooltip style="padding: 0 !important;"
                max-height="90vh"
                class="background">
-      <FFWeaponDisplay :weapon="weapon"/>
+      <FFWeaponDisplay :weapon="weapon" :small="small"/>
     </q-tooltip>
     <template v-if="weapon._cd <= 0">
       <q-circular-progress
@@ -42,6 +42,10 @@ export default {
     weapon: {
       type: FFWeapon,
       required: true
+    },
+    small: {
+      type: Boolean,
+      default: false
     }
   },
   name: 'FFWeapon'

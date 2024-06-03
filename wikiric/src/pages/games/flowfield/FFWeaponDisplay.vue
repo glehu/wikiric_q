@@ -31,7 +31,7 @@
         </div>
       </q-card-section>
       <q-card-section>
-        <FFPowerUpDisplay :power-ups="weapon.powerUps"/>
+        <FFPowerUpDisplay :power-ups="weapon.powerUps" :small="small"/>
       </q-card-section>
     </div>
   </q-card>
@@ -47,6 +47,10 @@ export default {
     weapon: {
       type: FFWeapon,
       required: true
+    },
+    small: {
+      type: Boolean,
+      default: false
     }
   },
   name: 'FFWeaponDisplay'

@@ -11,31 +11,33 @@
         "{{ pup.desc }}"
       </p>
     </div>
-    <template v-for="eff in pup.effects" :key="eff">
-      <div class="flex items-center gap-2 mb2 fmt_border rounded p1">
-        <div class="primary px1 py0.5 rounded text-xs w-fit
-                    font-bold">
-          <template v-if="eff.onHit">
-            <p>On-Hit</p>
-          </template>
-          <template v-else>
-            <p>Passive</p>
-          </template>
-        </div>
-        <template v-if="eff.autoLevelUp">
+    <template v-if="!small">
+      <template v-for="eff in pup.effects" :key="eff">
+        <div class="flex items-center gap-2 mb2 fmt_border rounded p1">
           <div class="primary px1 py0.5 rounded text-xs w-fit
-                      font-bold">
-            <p>Auto Level-Up</p>
+                    font-bold">
+            <template v-if="eff.onHit">
+              <p>On-Hit</p>
+            </template>
+            <template v-else>
+              <p>Passive</p>
+            </template>
           </div>
-        </template>
-        <p>
-          {{ eff.value.toLocaleString() }} {{ capitalizeFirstLetter(eff.type) }}
-          <span class="italic">( +{{ eff.valueLevelBonus }} per Lv. )</span>
-          <template v-if="eff.onHit">
-            every {{ eff.hitCount }} hits.
+          <template v-if="eff.autoLevelUp">
+            <div class="primary px1 py0.5 rounded text-xs w-fit
+                      font-bold">
+              <p>Auto Level-Up</p>
+            </div>
           </template>
-        </p>
-      </div>
+          <p>
+            {{ eff.value.toLocaleString() }} {{ capitalizeFirstLetter(eff.type) }}
+            <span class="italic">( +{{ eff.valueLevelBonus }} per Lv. )</span>
+            <template v-if="eff.onHit">
+              every {{ eff.hitCount }} hits.
+            </template>
+          </p>
+        </div>
+      </template>
     </template>
   </template>
 </template>
@@ -47,6 +49,10 @@ export default {
     powerUps: {
       type: Array,
       required: true
+    },
+    small: {
+      type: Boolean,
+      default: false
     }
   },
   name: 'FFPowerUpDisplay',

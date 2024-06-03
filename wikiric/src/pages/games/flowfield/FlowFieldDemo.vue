@@ -442,7 +442,7 @@
                   <div class="flex gap-1">
                     <template v-if="goalWeapons && goalWeapons.length > 0">
                       <template v-for="weapon in goalWeapons" :key="weapon">
-                        <FFWeaponComp :weapon="weapon"/>
+                        <FFWeaponComp :weapon="weapon" :small="true"/>
                       </template>
                     </template>
                   </div>
@@ -1335,21 +1335,12 @@ export default {
       this.goalAlive = true
       this.goalHP = 1000
       // Allocate memory for variables
-      let dist, diff
-      let min, minXY
-      let tmp, tmp2, tmp3, arrayPos
-      let tmpX, tmpY
-      let xy
-      let xNew, yNew
-      /**
-       * @type {THREE.Vector2[]}
-       */
-      let neighbors
+      let tmp
+      const image = document.getElementById('slime')
       /**
        * @type {THREE.Vector2}
        */
       let endVector
-      const image = document.getElementById('slime')
       let qtree
       const cacheMap = new Map()
       let cacheDiff
@@ -1359,7 +1350,6 @@ export default {
       let lastTime = performance.now()
       let timeDelta
       let lastPos
-      let projectiles
       const step = () => {
         if (this.goalAlive) {
           // Calculate FPS
@@ -1408,366 +1398,18 @@ export default {
           for (const [id, unit] of this.enemies) {
             if (id) qtree.insert(unit)
           }
-          // Calculate new position vectors for all enemies
-          for (const [id, current] of this.enemies) {
-            if (!id) continue
-            // Get current position
-            tmpX = Math.round(current.pos.x)
-            tmpY = Math.round(current.pos.y)
-            tmp = this.convertXYToArrayPos(tmpX, tmpY)
-            if (this.costField[tmp] === 255) {
-              // We cannot move on a wall
-              // In this case, we simply continue with nextPos
-              xy[0] = current.newPos.x
-              xy[1] = current.newPos.y
-              neighbors = this.getNeighbors(current.pos.x, current.pos.y)
-              if (neighbors.length < 1) {
-                continue
-              }
-            } else {
-              neighbors = this.getNeighbors(tmpX, tmpY)
-              if (neighbors.length < 1) {
-                continue
-              }
-              // Calculate the new direction
-              // Figure out what neighbor has the lowest cost
-              min = 65535
-              minXY = undefined
-              for (let j = 0; j < neighbors.length; j++) {
-                arrayPos = this.convertXYToArrayPos(
-                  neighbors[j].x,
-                  neighbors[j].y)
-                tmp = this.integrationField[arrayPos]
-                if (tmp < min) {
-                  min = tmp
-                  minXY = neighbors[j]
-                }
-              }
-              if (!minXY) {
-                continue
-              }
-              xy = [minXY.x, minXY.y]
-            }
-            // Calculate new position vector
-            endVector = new THREE.Vector2(xy[0], xy[1])
-            current.newPos.copy(endVector)
-            endVector.sub(current.pos)
-            endVector.multiplyScalar(current.maxSpeed)
-            endVector.clampScalar(-current.maxSpeed, current.maxSpeed)
-            endVector.multiplyScalar(timeDelta)
-            current.pos.add(endVector)
-            // Calculate distance vector to avoid crowding
-            tmp = 0
-            endVector = null
-            const others = qtree.getContents(
-              tmpX - 1,
-              tmpY - 1,
-              tmpX + 1,
-              tmpY + 1)
-            for (const other of others) {
-              // Ignore self
-              if (other === current) {
-                continue
-              }
-              // Did we check this yet?
-              // A-B will cache A:B
-              // When B wants to check B-A it can simply check,
-              // If the other has already checked this combination
-              cacheDiff = cacheMap.get(`${other.id}:${current.id}`)
-              if (!cacheDiff) {
-                // Calculate distance vector
-                dist = current.pos.distanceToSquared(other.pos)
-                if (dist < 0.5) {
-                  tmp += 1
-                  diff = new THREE.Vector2(current.pos.x, current.pos.y)
-                  diff.sub(other.pos)
-                  diff.divideScalar(Math.pow(dist, 2))
-                  if (!endVector) {
-                    endVector = new THREE.Vector2()
-                  }
-                  endVector.add(diff)
-                  // Cache the difference for the other unit
-                  diff.multiplyScalar(-1)
-                  cacheMap.set(`${current.id}:${other.id}`, diff)
-                }
-              } else {
-                tmp += 1
-                // Use cached vector
-                if (!endVector) {
-                  endVector = new THREE.Vector2()
-                }
-                endVector.add(cacheDiff)
-              }
-            }
-            if (tmp > 0) {
-              // Get average
-              endVector.divideScalar(tmp)
-              endVector.multiplyScalar(current.maxSpeed)
-              endVector.clampScalar(-current.maxSpeed, current.maxSpeed)
-              endVector.multiplyScalar(timeDelta)
-              current.pos.add(endVector)
-            }
-            // Write back enemy
-            this.enemies.set(id, current)
-            // Draw enemy
-            if (image) {
-              xNew = (current.pos.x + this.offsetVector.x) * this.gridSize
-              yNew = (current.pos.y + this.offsetVector.y) * this.gridSize
-              this.ctx3.drawImage(image, xNew, yNew, 32, 32)
-            }
-          }
+          this.applyEnemyMovement(image, cacheMap, cacheDiff, qtree, timeDelta)
           // Now check if any enemy has come close to the player
-          const others = qtree.getContents(
-            this.goalPosition.x - this.offsetVector.x - this.goalMaxRange,
-            this.goalPosition.y - this.offsetVector.y - this.goalMaxRange,
-            this.goalPosition.x - this.offsetVector.x + this.goalMaxRange,
-            this.goalPosition.y - this.offsetVector.y + this.goalMaxRange)
-          if (others && others.length > 0) {
-            tmp = new THREE.Vector2()
-            tmp.copy(this.goalPosition)
-            tmp.sub(this.offsetVector)
-            this.ctx3.beginPath()
-            this.ctx3.strokeStyle = '#F00'
-            this.ctx3.lineHeight = 4
-            this.ctx3.lineWidth = 4
-            const position = new THREE.Vector2()
-            position.copy(this.goalPosition)
-            position.sub(this.offsetVector)
-            let direction
-            for (const other of others) {
-              dist = tmp.distanceToSquared(other.pos)
-              for (let k = 0; k < this.goalWeapons.length; k++) {
-                // Calculate aim vector
-                direction = new THREE.Vector2()
-                direction.copy(other.pos)
-                direction.sub(position)
-                // Trigger weapon
-                projectiles = this.goalWeapons[k].shoot(
-                  position,
-                  direction,
-                  dist
-                )
-                if (projectiles) {
-                  for (let j = 0; j < projectiles.length; j++) {
-                    if (projectiles[j].speed === 0) {
-                      // Beam - Directly damage enemy
-                      other.hp -= projectiles[j].dmg
-                      if (other.hp <= 0) {
-                        this.goalXP += other.xp
-                        this.checkXP()
-                        this.enemies.delete(other.id)
-                        this.goalKills += 1
-                      } else {
-                        this.enemies.set(other.id, other)
-                      }
-                      // Draw weapon effect
-                      this.ctx3.moveTo(
-                        (this.goalPosition.x * this.gridSize) + this.gridSize / 2,
-                        (this.goalPosition.y * this.gridSize) + this.gridSize / 2
-                      )
-                      this.ctx3.lineTo(
-                        ((other.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
-                        ((other.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
-                      )
-                    } else {
-                      // Projectile - Add to projectiles
-                      this.goalWeaponProjectiles.push(projectiles[j])
-                    }
-                  }
-                }
-              }
-              // Respect invincibility frames before damage
-              if (this.goalInvincibilityFrames === 0) {
-                if (dist <= 0.5) {
-                  this.goalHP -= other.dps
-                  this.goalInvincibilityFrames = 20
-                  if (this.goalHP <= 0) {
-                    this.goalHP = 0
-                    this.goalAlive = false
-                  }
-                  break
-                }
-              }
-            }
-            this.ctx3.stroke()
-          }
+          this.checkProximityDamage(qtree)
         }
         // #### WEAPON ACTIONS ####
         // Render projectiles
         if (this.goalWeaponProjectiles.length > 0) {
-          let projectile
-          let newVec
-          for (let i = this.goalWeaponProjectiles.length - 1; i > 0; i--) {
-            projectile = this.goalWeaponProjectiles[i]
-            // Move projectile
-            newVec = new THREE.Vector2(projectile.vec.x, projectile.vec.y)
-            newVec.multiplyScalar(timeDelta)
-            projectile.pos.add(newVec)
-            // Is the projectile still inside bounds?
-            if (projectile.pos.x < 0 || projectile.pos.x > this.xCells ||
-              projectile.pos.y < 0 || projectile.pos.y > this.yCells) {
-              this.goalWeaponProjectiles.splice(i, 1)
-              continue
-            }
-            // Render projectile
-            this.ctx3.beginPath()
-            this.ctx3.fillStyle = '#F00'
-            this.ctx3.lineHeight = 4
-            this.ctx3.lineWidth = 4
-            this.ctx3.rect(
-              ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
-              ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
-              4, 4
-            )
-            this.ctx3.fill()
-            // Did the projectile hit something?
-            if (this.enemies.size > 0) {
-              dist = projectile.hitRange * 2
-              const enemies = qtree.getContents(
-                projectile.pos.x - dist,
-                projectile.pos.y - dist,
-                projectile.pos.x + dist,
-                projectile.pos.y + dist)
-              if (enemies && enemies.length > 0) {
-                tmp = new THREE.Vector2()
-                tmp.copy(projectile.pos)
-                this.ctx3.beginPath()
-                this.ctx3.strokeStyle = '#fff400'
-                this.ctx3.lineHeight = 2
-                this.ctx3.lineWidth = 2
-                for (const enemy of enemies) {
-                  if (projectile.hitCount === 0) {
-                    break
-                  }
-                  if (enemy.hp < 0) {
-                    continue
-                  }
-                  dist = tmp.distanceToSquared(enemy.pos)
-                  if (dist <= projectile.hitRange) {
-                    // Trigger hit
-                    projectile.hitCount -= 1
-                    enemy.hp -= projectile.dmg
-                    if (enemy.hp <= 0) {
-                      this.goalXP += enemy.xp
-                      this.checkXP()
-                      this.enemies.delete(enemy.id)
-                      this.goalKills += 1
-                    } else {
-                      this.enemies.set(enemy.id, enemy)
-                    }
-                    // Draw weapon effect
-                    tmp2 = ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2
-                    tmp3 = ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
-                    this.ctx3.moveTo(tmp2, tmp3)
-                    tmp2 = ((enemy.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2
-                    tmp3 = ((enemy.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
-                    this.ctx3.lineTo(tmp2, tmp3)
-                    // Does the projectile explode?
-                    if (projectile.radius > 0) {
-                      tmp2 = new FFOnHitEffect(
-                        enemy.pos.x,
-                        enemy.pos.y,
-                        'explosion',
-                        projectile,
-                        1)
-                      this.onHitEffects.push(tmp2)
-                    }
-                    // Add floating damage number
-                    if (this.drawDamageNumbers) {
-                      tmp2 = new FFOnHitEffect(
-                        enemy.pos.x,
-                        enemy.pos.y,
-                        'text',
-                        `${projectile.dmg}`,
-                        60)
-                      this.onHitEffects.push(tmp2)
-                    }
-                  }
-                }
-                if (projectile.hitCount <= 0) {
-                  this.goalWeaponProjectiles.splice(i, 1)
-                  continue
-                }
-                this.ctx3.stroke()
-              }
-            }
-            this.goalWeaponProjectiles[i] = projectile
-          }
+          this.handleProjectiles(qtree, timeDelta)
         }
         // #### ON HIT EFFECTS ####
         if (this.onHitEffects.length > 0) {
-          /**
-           * @type FFOnHitEffect
-           */
-          let effect
-          for (let i = this.onHitEffects.length - 1; i >= 0; i--) {
-            effect = this.onHitEffects[i]
-            if (effect.tick()) {
-              if (effect.type === 'text') {
-                this.ctx3.font = '1rem serif'
-                this.ctx3.fillStyle = '#ffc800'
-                this.ctx3.fillText(
-                  effect.content,
-                  (effect.x + this.offsetVector.x) * this.gridSize,
-                  (effect.y + this.offsetVector.y) * this.gridSize
-                )
-              } else if (effect.type === 'explosion') {
-                if (this.enemies.size > 0) {
-                  const projectile = effect.content
-                  dist = projectile.radius
-                  const enemies = qtree.getContents(
-                    projectile.pos.x - dist,
-                    projectile.pos.y - dist,
-                    projectile.pos.x + dist,
-                    projectile.pos.y + dist)
-                  if (enemies && enemies.length > 0) {
-                    tmp = new THREE.Vector2()
-                    tmp.copy(projectile.pos)
-                    this.ctx3.beginPath()
-                    for (const enemy of enemies) {
-                      if (enemy.hp < 0) {
-                        continue
-                      }
-                      dist = tmp.distanceToSquared(enemy.pos)
-                      if (dist <= projectile.radius) {
-                        this.ctx3.fillStyle = '#fff400'
-                        // Draw weapon effect
-                        this.ctx3.arc(
-                          (effect.x + this.offsetVector.x) * this.gridSize,
-                          (effect.y + this.offsetVector.y) * this.gridSize,
-                          (dist * this.gridSize) / 4,
-                          0,
-                          2 * Math.PI)
-                        // Trigger hit
-                        enemy.hp -= projectile.dmg
-                        if (enemy.hp <= 0) {
-                          this.goalXP += enemy.xp
-                          this.checkXP()
-                          this.enemies.delete(enemy.id)
-                          this.goalKills += 1
-                        } else {
-                          this.enemies.set(enemy.id, enemy)
-                        }
-                        // Add floating damage number
-                        if (this.drawDamageNumbers) {
-                          tmp2 = new FFOnHitEffect(
-                            enemy.pos.x,
-                            enemy.pos.y,
-                            'text',
-                            `${projectile.dmg}`,
-                            60)
-                          this.onHitEffects.push(tmp2)
-                        }
-                      }
-                    }
-                    this.ctx3.fill()
-                  }
-                }
-              }
-            } else {
-              this.onHitEffects.splice(i, 1)
-            }
-          }
+          this.handleOnHitEffects(qtree)
         }
       }
       // Start first simulation step
@@ -1804,40 +1446,70 @@ export default {
      * @param {Number} timeDelta
      */
     applyGoalMovement: function (endVector, timeDelta) {
+      const offsetX = this.goalPosition.x >= (this.xCells / 4)
+      const offsetY = this.goalPosition.y >= (this.yCells / 4)
       // If the player moved half the screen's distance
       // ...in any direction, we will translate the movement
       // ...that would further exceed this to the environment.
       this.goalMovementVector = new THREE.Vector2()
       endVector = new THREE.Vector2()
-      if (this.goalUp) {
-        if (this.goalPosition.y >= (this.yCells / 4)) {
-          endVector.add(this.goalSouth)
-        } else {
-          this.goalMovementVector.add(this.goalNorth)
-        }
-      }
+      // *** ***    X-Axis    *** ***
       if (this.goalLeft) {
-        if (this.goalPosition.x >= (this.xCells / 4)) {
+        if (offsetX) {
           endVector.add(this.goalEast)
         } else {
           this.goalMovementVector.add(this.goalWest)
         }
       }
-      if (this.goalDown) {
-        if (this.goalPosition.y >= (this.yCells / 4)) {
-          endVector.add(this.goalNorth)
-        } else {
-          this.goalMovementVector.add(this.goalSouth)
-        }
-      }
       if (this.goalRight) {
-        if (this.goalPosition.x >= (this.xCells / 4)) {
+        if (offsetX) {
           endVector.add(this.goalWest)
         } else {
           this.goalMovementVector.add(this.goalEast)
         }
       }
-      // // Don't forget to free the player!
+      // *** ***    Y-Axis    *** ***
+      if (this.goalUp) {
+        if (offsetY) {
+          endVector.add(this.goalSouth)
+        } else {
+          this.goalMovementVector.add(this.goalNorth)
+        }
+      }
+      if (this.goalDown) {
+        if (offsetY) {
+          endVector.add(this.goalNorth)
+        } else {
+          this.goalMovementVector.add(this.goalSouth)
+        }
+      }
+      const neighbors = this.getNeighbors(
+        this.goalPosition.x,
+        this.goalPosition.y)
+      let dist
+      let diff
+      let count = 0
+      const wallVec = new THREE.Vector2()
+      for (const cell of neighbors) {
+        // Calculate distance vector
+        dist = this.goalPosition.distanceToSquared(cell)
+        if (dist < 0.5) {
+          count += 1
+          diff = new THREE.Vector2(this.goalPosition.x, this.goalPosition.y)
+          diff.sub(cell)
+          diff.divideScalar(Math.pow(dist, 2))
+          wallVec.add(diff)
+        }
+      }
+      if (count > 0) {
+        wallVec.divideScalar(count)
+        if (offsetX || offsetY) {
+          endVector.add(wallVec)
+        } else {
+          this.goalMovementVector.add(wallVec)
+        }
+      }
+      // Don't forget to free the player!
       if (this.offsetVector.x > 0) {
         this.offsetVector.x = 0
         this.goalMovementVector.add(this.goalWest)
@@ -1846,13 +1518,393 @@ export default {
         this.offsetVector.y = 0
         this.goalMovementVector.add(this.goalNorth)
       }
+      // Apply movement to player position and offset
       endVector.multiplyScalar(this.goalSpeed)
       endVector.multiplyScalar(timeDelta)
       this.offsetVector.add(endVector)
-      // Apply movement to player position
       this.goalMovementVector.multiplyScalar(this.goalSpeed)
       this.goalMovementVector.multiplyScalar(timeDelta)
       this.goalPosition.add(this.goalMovementVector)
+    },
+    applyEnemyMovement: function (image, cacheMap, cacheDiff, qtree, timeDelta) {
+      /**
+       * @type {THREE.Vector2[]}
+       */
+      let neighbors
+      /**
+       * @type {THREE.Vector2}
+       */
+      let endVector
+      let dist, diff
+      let min, minXY
+      let arrayPos
+      let xy = []
+      let xNew, yNew
+      let tmp
+      // Calculate new position vectors for all enemies
+      for (const [id, current] of this.enemies) {
+        if (!id) continue
+        // Get current position
+        const tmpX = Math.round(current.pos.x)
+        const tmpY = Math.round(current.pos.y)
+        tmp = this.convertXYToArrayPos(tmpX, tmpY)
+        if (this.costField[tmp] === 255) {
+          // We cannot move on a wall
+          // In this case, we simply continue with nextPos
+          xy[0] = current.newPos.x
+          xy[1] = current.newPos.y
+          neighbors = this.getNeighbors(current.pos.x, current.pos.y)
+          if (neighbors.length < 1) {
+            continue
+          }
+        } else {
+          neighbors = this.getNeighbors(tmpX, tmpY)
+          if (neighbors.length < 1) {
+            continue
+          }
+          // Calculate the new direction
+          // Figure out what neighbor has the lowest cost
+          min = 65535
+          minXY = undefined
+          for (let j = 0; j < neighbors.length; j++) {
+            arrayPos = this.convertXYToArrayPos(
+              neighbors[j].x,
+              neighbors[j].y)
+            tmp = this.integrationField[arrayPos]
+            if (tmp < min) {
+              min = tmp
+              minXY = neighbors[j]
+            }
+          }
+          if (!minXY) {
+            continue
+          }
+          xy = [minXY.x, minXY.y]
+        }
+        // Calculate new position vector
+        endVector = new THREE.Vector2(xy[0], xy[1])
+        current.newPos.copy(endVector)
+        endVector.sub(current.pos)
+        endVector.multiplyScalar(current.maxSpeed)
+        endVector.clampScalar(-current.maxSpeed, current.maxSpeed)
+        endVector.multiplyScalar(timeDelta)
+        current.pos.add(endVector)
+        // Calculate distance vector to avoid crowding
+        tmp = 0
+        endVector = null
+        const others = qtree.getContents(
+          tmpX - 1,
+          tmpY - 1,
+          tmpX + 1,
+          tmpY + 1)
+        for (const other of others) {
+          // Ignore self
+          if (other === current) {
+            continue
+          }
+          // Did we check this yet?
+          // A-B will cache A:B
+          // When B wants to check B-A it can simply check,
+          // If the other has already checked this combination
+          cacheDiff = cacheMap.get(`${other.id}:${current.id}`)
+          if (!cacheDiff) {
+            // Calculate distance vector
+            dist = current.pos.distanceToSquared(other.pos)
+            if (dist < 0.5) {
+              tmp += 1
+              diff = new THREE.Vector2(current.pos.x, current.pos.y)
+              diff.sub(other.pos)
+              diff.divideScalar(Math.pow(dist, 2))
+              if (!endVector) {
+                endVector = new THREE.Vector2()
+              }
+              endVector.add(diff)
+              // Cache the difference for the other unit
+              diff.multiplyScalar(-1)
+              cacheMap.set(`${current.id}:${other.id}`, diff)
+            }
+          } else {
+            tmp += 1
+            // Use cached vector
+            if (!endVector) {
+              endVector = new THREE.Vector2()
+            }
+            endVector.add(cacheDiff)
+          }
+        }
+        if (tmp > 0) {
+          // Get average
+          endVector.divideScalar(tmp)
+          endVector.multiplyScalar(current.maxSpeed)
+          endVector.clampScalar(-current.maxSpeed, current.maxSpeed)
+          endVector.multiplyScalar(timeDelta)
+          current.pos.add(endVector)
+        }
+        // Write back enemy
+        this.enemies.set(id, current)
+        // Draw enemy
+        if (image) {
+          xNew = (current.pos.x + this.offsetVector.x) * this.gridSize
+          yNew = (current.pos.y + this.offsetVector.y) * this.gridSize
+          this.ctx3.drawImage(image, xNew, yNew, 32, 32)
+        }
+      }
+    },
+    checkProximityDamage: function (qtree) {
+      const others = qtree.getContents(
+        this.goalPosition.x - this.offsetVector.x - this.goalMaxRange,
+        this.goalPosition.y - this.offsetVector.y - this.goalMaxRange,
+        this.goalPosition.x - this.offsetVector.x + this.goalMaxRange,
+        this.goalPosition.y - this.offsetVector.y + this.goalMaxRange)
+      if (others && others.length > 0) {
+        const goalVec = new THREE.Vector2()
+        goalVec.copy(this.goalPosition)
+        goalVec.sub(this.offsetVector)
+        this.ctx3.beginPath()
+        this.ctx3.strokeStyle = '#F00'
+        this.ctx3.lineHeight = 4
+        this.ctx3.lineWidth = 4
+        const position = new THREE.Vector2()
+        position.copy(this.goalPosition)
+        position.sub(this.offsetVector)
+        let direction
+        let dist
+        let projectiles
+        for (const other of others) {
+          dist = goalVec.distanceToSquared(other.pos)
+          for (let k = 0; k < this.goalWeapons.length; k++) {
+            // Calculate aim vector
+            direction = new THREE.Vector2()
+            direction.copy(other.pos)
+            direction.sub(position)
+            // Trigger weapon
+            projectiles = this.goalWeapons[k].shoot(
+              position,
+              direction,
+              dist
+            )
+            if (projectiles) {
+              for (let j = 0; j < projectiles.length; j++) {
+                if (projectiles[j].speed === 0) {
+                  // Beam - Directly damage enemy
+                  other.hp -= projectiles[j].dmg
+                  if (other.hp <= 0) {
+                    this.goalXP += other.xp
+                    this.checkXP()
+                    this.enemies.delete(other.id)
+                    this.goalKills += 1
+                  } else {
+                    this.enemies.set(other.id, other)
+                  }
+                  // Draw weapon effect
+                  this.ctx3.moveTo(
+                    (this.goalPosition.x * this.gridSize) + this.gridSize / 2,
+                    (this.goalPosition.y * this.gridSize) + this.gridSize / 2
+                  )
+                  this.ctx3.lineTo(
+                    ((other.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+                    ((other.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
+                  )
+                } else {
+                  // Projectile - Add to projectiles
+                  this.goalWeaponProjectiles.push(projectiles[j])
+                }
+              }
+            }
+          }
+          // Respect invincibility frames before damage
+          if (this.goalInvincibilityFrames === 0) {
+            if (dist <= 0.5) {
+              this.goalHP -= other.dps
+              this.goalInvincibilityFrames = 20
+              if (this.goalHP <= 0) {
+                this.goalHP = 0
+                this.goalAlive = false
+              }
+              break
+            }
+          }
+        }
+        this.ctx3.stroke()
+      }
+    },
+    handleProjectiles: function (qtree, timeDelta) {
+      let dist
+      let tmp, tmp2, tmp3
+      let projectile
+      let newVec
+      for (let i = this.goalWeaponProjectiles.length - 1; i > 0; i--) {
+        projectile = this.goalWeaponProjectiles[i]
+        // Move projectile
+        newVec = new THREE.Vector2(projectile.vec.x, projectile.vec.y)
+        newVec.multiplyScalar(timeDelta)
+        projectile.pos.add(newVec)
+        // Is the projectile still inside bounds?
+        if (projectile.pos.x < 0 || projectile.pos.x > this.xCells ||
+          projectile.pos.y < 0 || projectile.pos.y > this.yCells) {
+          this.goalWeaponProjectiles.splice(i, 1)
+          continue
+        }
+        // Render projectile
+        this.ctx3.beginPath()
+        this.ctx3.fillStyle = '#F00'
+        this.ctx3.lineHeight = 4
+        this.ctx3.lineWidth = 4
+        this.ctx3.rect(
+          ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+          ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+          4, 4
+        )
+        this.ctx3.fill()
+        // Did the projectile hit something?
+        if (this.enemies.size > 0) {
+          dist = projectile.hitRange * 2
+          const enemies = qtree.getContents(
+            projectile.pos.x - dist,
+            projectile.pos.y - dist,
+            projectile.pos.x + dist,
+            projectile.pos.y + dist)
+          if (enemies && enemies.length > 0) {
+            tmp = new THREE.Vector2()
+            tmp.copy(projectile.pos)
+            this.ctx3.beginPath()
+            this.ctx3.strokeStyle = '#fff400'
+            this.ctx3.lineHeight = 2
+            this.ctx3.lineWidth = 2
+            for (const enemy of enemies) {
+              if (projectile.hitCount === 0) {
+                break
+              }
+              if (enemy.hp < 0) {
+                continue
+              }
+              dist = tmp.distanceToSquared(enemy.pos)
+              if (dist <= projectile.hitRange) {
+                // Trigger hit
+                projectile.hitCount -= 1
+                enemy.hp -= projectile.dmg
+                if (enemy.hp <= 0) {
+                  this.goalXP += enemy.xp
+                  this.checkXP()
+                  this.enemies.delete(enemy.id)
+                  this.goalKills += 1
+                } else {
+                  this.enemies.set(enemy.id, enemy)
+                }
+                // Draw weapon effect
+                tmp2 = ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2
+                tmp3 = ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
+                this.ctx3.moveTo(tmp2, tmp3)
+                tmp2 = ((enemy.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2
+                tmp3 = ((enemy.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
+                this.ctx3.lineTo(tmp2, tmp3)
+                // Does the projectile explode?
+                if (projectile.radius > 0) {
+                  tmp2 = new FFOnHitEffect(
+                    enemy.pos.x,
+                    enemy.pos.y,
+                    'explosion',
+                    projectile,
+                    1)
+                  this.onHitEffects.push(tmp2)
+                }
+                // Add floating damage number
+                if (this.drawDamageNumbers) {
+                  tmp2 = new FFOnHitEffect(
+                    enemy.pos.x,
+                    enemy.pos.y,
+                    'text',
+                    `${projectile.dmg}`,
+                    60)
+                  this.onHitEffects.push(tmp2)
+                }
+              }
+            }
+            if (projectile.hitCount <= 0) {
+              this.goalWeaponProjectiles.splice(i, 1)
+              continue
+            }
+            this.ctx3.stroke()
+          }
+        }
+        this.goalWeaponProjectiles[i] = projectile
+      }
+    },
+    handleOnHitEffects: function (qtree) {
+      /**
+       * @type FFOnHitEffect
+       */
+      let effect
+      let tmp, tmp2
+      let dist
+      for (let i = this.onHitEffects.length - 1; i >= 0; i--) {
+        effect = this.onHitEffects[i]
+        if (effect.tick()) {
+          if (effect.type === 'text') {
+            this.ctx3.font = '1rem serif'
+            this.ctx3.fillStyle = '#ffc800'
+            this.ctx3.fillText(
+              effect.content,
+              (effect.x + this.offsetVector.x) * this.gridSize,
+              (effect.y + this.offsetVector.y) * this.gridSize
+            )
+          } else if (effect.type === 'explosion') {
+            if (this.enemies.size > 0) {
+              const projectile = effect.content
+              dist = projectile.radius
+              const enemies = qtree.getContents(
+                projectile.pos.x - dist,
+                projectile.pos.y - dist,
+                projectile.pos.x + dist,
+                projectile.pos.y + dist)
+              if (enemies && enemies.length > 0) {
+                tmp = new THREE.Vector2()
+                tmp.copy(projectile.pos)
+                this.ctx3.beginPath()
+                for (const enemy of enemies) {
+                  if (enemy.hp < 0) {
+                    continue
+                  }
+                  dist = tmp.distanceToSquared(enemy.pos)
+                  if (dist <= projectile.radius) {
+                    this.ctx3.fillStyle = '#fff400'
+                    // Draw weapon effect
+                    this.ctx3.arc(
+                      (effect.x + this.offsetVector.x) * this.gridSize,
+                      (effect.y + this.offsetVector.y) * this.gridSize,
+                      (dist * this.gridSize) / 4,
+                      0,
+                      2 * Math.PI)
+                    // Trigger hit
+                    enemy.hp -= projectile.dmg
+                    if (enemy.hp <= 0) {
+                      this.goalXP += enemy.xp
+                      this.checkXP()
+                      this.enemies.delete(enemy.id)
+                      this.goalKills += 1
+                    } else {
+                      this.enemies.set(enemy.id, enemy)
+                    }
+                    // Add floating damage number
+                    if (this.drawDamageNumbers) {
+                      tmp2 = new FFOnHitEffect(
+                        enemy.pos.x,
+                        enemy.pos.y,
+                        'text',
+                        `${projectile.dmg}`,
+                        60)
+                      this.onHitEffects.push(tmp2)
+                    }
+                  }
+                }
+                this.ctx3.fill()
+              }
+            }
+          }
+        } else {
+          this.onHitEffects.splice(i, 1)
+        }
+      }
     },
     cancelSimulation: function () {
       this.goalAlive = false
@@ -2076,7 +2128,7 @@ export default {
         0, 0, this.xCells, this.yCells)
       const costSaveState = this.costField
       const saveState = {
-        tiles: tiles,
+        tiles,
         costField: costSaveState
       }
       const saveStr = 'data:text/json;charset=utf-8,' +
