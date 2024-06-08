@@ -317,6 +317,11 @@
                           color="blue"
                           track-size="16px" thumb-size="18px"
                           class="w-full"/>
+                <div class="flex wfull justify-end px3">
+                  <p>
+                    {{ goalKills }} Kills
+                  </p>
+                </div>
               </div>
             </div>
           </q-page-sticky>
@@ -359,8 +364,8 @@
                           <q-btn unelevated dense no-caps flat
                                  @click="handlePowerUpOffer(offer)"
                                  class="flex-grow">
-                            <div class="fmt_border rounded p2 my2
-                                        wfull hfull">
+                            <div class="fmt_border rounded p2
+                                        wfull hfull surface">
                               <FFPowerUpDisplay :power-ups="[offer]" class="flex-grow"/>
                             </div>
                           </q-btn>
@@ -394,11 +399,12 @@
                     Choose a weapon to modify:
                   </p>
                   <template v-if="goalWeapons">
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 wfull h-full">
                       <template v-for="weapon in goalWeapons" :key="weapon">
                         <q-btn unelevated dense no-caps flat
-                               @click="handleWeaponModification(weapon)">
-                          <FFWeaponDisplay :weapon="weapon"/>
+                               @click="handleWeaponModification(weapon)"
+                               class="wfull hfull">
+                          <FFWeaponDisplay :weapon="weapon" class="flex-grow"/>
                         </q-btn>
                       </template>
                     </div>
@@ -429,9 +435,6 @@
                           flex gap-2 items-center">
                 <div class="flex column gap-1">
                   <div class="flex gap-2">
-                    <p>
-                      Kills: {{ goalKills }}
-                    </p>
                     <p>
                       Lv: {{ goalLevel }}
                     </p>
@@ -1208,7 +1211,7 @@ export default {
       while (open.length > 0) {
         current = open.pop()
         currentArrayPos = this.convertXYToArrayPos(current.x, current.y)
-        neighbors = this.getNeighbors(current.x, current.y)
+        neighbors = this.getNeighbors(current.x, current.y, false)
         if (debugFirst) {
           debugFirst = false
         }
@@ -1298,9 +1301,10 @@ export default {
      *
      * @param {Number} x
      * @param {Number} y
+     * @param {Boolean=false} includeSelf
      * @return {Array}
      */
-    getNeighbors: function (x, y) {
+    getNeighbors: function (x, y, includeSelf = false) {
       // Guard
       if (x < 0 || y < 0 || x >= this.xCells || y >= this.yCells) {
         return []
@@ -1314,7 +1318,7 @@ export default {
           if (yi < 0 || yi >= this.yCells) {
             continue
           }
-          if (xi === x && yi === y) {
+          if (!includeSelf && xi === x && yi === y) {
             continue
           }
           list.push(new THREE.Vector2(xi, yi))
@@ -1483,30 +1487,42 @@ export default {
           this.goalMovementVector.add(this.goalSouth)
         }
       }
-      const neighbors = this.getNeighbors(
-        this.goalPosition.x,
-        this.goalPosition.y)
+      let tmpX, tmpY
+      tmpX = Math.round(this.goalPosition.x + this.offsetVector.x)
+      tmpY = Math.round(this.goalPosition.y + this.offsetVector.y)
+      const neighbors = this.getNeighbors(tmpX, tmpY, true)
       let dist
       let diff
       let count = 0
+      let pos
       const wallVec = new THREE.Vector2()
       for (const cell of neighbors) {
-        // Calculate distance vector
-        dist = this.goalPosition.distanceToSquared(cell)
-        if (dist < 0.5) {
-          count += 1
-          diff = new THREE.Vector2(this.goalPosition.x, this.goalPosition.y)
-          diff.sub(cell)
-          diff.divideScalar(Math.pow(dist, 2))
-          wallVec.add(diff)
+        tmpX = Math.round(cell.x)
+        tmpY = Math.round(cell.y)
+        pos = this.convertXYToArrayPos(tmpX, tmpY)
+        if (this.costField[pos] === 255) {
+          // Calculate distance vector
+          dist = this.goalPosition.distanceToSquared(cell)
+          if (dist <= 1) {
+            count += 1
+            diff = new THREE.Vector2(this.goalPosition.x, this.goalPosition.y)
+            diff.sub(cell)
+            diff.divideScalar(Math.pow(dist, 2))
+            wallVec.add(diff)
+          }
         }
       }
       if (count > 0) {
         wallVec.divideScalar(count)
-        if (offsetX || offsetY) {
-          endVector.add(wallVec)
+        if (offsetX) {
+          endVector.x += wallVec.x
         } else {
-          this.goalMovementVector.add(wallVec)
+          this.goalMovementVector.x += wallVec.x
+        }
+        if (offsetY) {
+          endVector.y += wallVec.y
+        } else {
+          this.goalMovementVector.y += wallVec.y
         }
       }
       // Don't forget to free the player!
@@ -1539,26 +1555,26 @@ export default {
       let min, minXY
       let arrayPos
       let xy = []
-      let xNew, yNew
+      let xNew, yNew, tmpX, tmpY
       let tmp
       // Calculate new position vectors for all enemies
       for (const [id, current] of this.enemies) {
         if (!id) continue
         // Get current position
-        const tmpX = Math.round(current.pos.x)
-        const tmpY = Math.round(current.pos.y)
+        tmpX = Math.round(current.pos.x)
+        tmpY = Math.round(current.pos.y)
         tmp = this.convertXYToArrayPos(tmpX, tmpY)
         if (this.costField[tmp] === 255) {
           // We cannot move on a wall
           // In this case, we simply continue with nextPos
           xy[0] = current.newPos.x
           xy[1] = current.newPos.y
-          neighbors = this.getNeighbors(current.pos.x, current.pos.y)
+          neighbors = this.getNeighbors(current.pos.x, current.pos.y, false)
           if (neighbors.length < 1) {
             continue
           }
         } else {
-          neighbors = this.getNeighbors(tmpX, tmpY)
+          neighbors = this.getNeighbors(tmpX, tmpY, false)
           if (neighbors.length < 1) {
             continue
           }

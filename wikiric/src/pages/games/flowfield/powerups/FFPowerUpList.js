@@ -118,7 +118,7 @@ class FFPowerUpList {
       0,
       1,
       'Explosion',
-      'Projectiles explode when hitting enemies.')
+      'Projectiles explode when hitting enemies. Radius scales with Area.')
     effect = new FFPowerUpEffect(
       true,
       'radius',

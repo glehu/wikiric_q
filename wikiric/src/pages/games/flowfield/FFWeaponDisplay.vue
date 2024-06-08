@@ -1,6 +1,6 @@
 <template>
-  <q-card class="text-subtitle2 hfull fmt_border
-                 flex items-center bg-transparent"
+  <q-card class="text-subtitle2 fmt_border
+                 flex items-center surface"
           style="box-shadow: none !important">
     <div class="lg:flex">
       <q-card-section>
@@ -12,7 +12,7 @@
             Lv. {{ weapon.level }}
           </p>
         </div>
-        <div class="flex column text-start">
+        <div v-if="!small" class="flex column text-start">
           <p>
             {{ weapon.dps.toLocaleString() }} Base Dmg
             <span class="italic">( +{{ weapon.dpsLevelUp }} per Lv. )</span>

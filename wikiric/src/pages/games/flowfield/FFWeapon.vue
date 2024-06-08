@@ -2,8 +2,10 @@
   <div>
     <q-tooltip style="padding: 0 !important;"
                max-height="90vh"
-               class="background">
-      <FFWeaponDisplay :weapon="weapon" :small="small"/>
+               class="bg-transparent hfull">
+      <div class="flex items-end hfull">
+        <FFWeaponDisplay :weapon="weapon" :small="small"/>
+      </div>
     </q-tooltip>
     <template v-if="weapon._cd <= 0">
       <q-circular-progress
