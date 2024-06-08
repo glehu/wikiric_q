@@ -129,9 +129,9 @@
                 </template>
               </div>
               <div class="grid grid-cols-5">
-                <q-btn @click="setBrush('floor')">
-                  <img id="floor"
-                       src="https://wikiric.xyz/files/public/get/018f9ca3-73c2-738d-8a28-03610cb178e5"
+                <q-btn @click="setBrush('wall_inner')">
+                  <img id="wall_inner"
+                       src="https://wikiric.xyz/files/public/get/018f9d2f-e5b6-738d-bf08-62f0e4fc3804"
                        width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('floor_alt_1')">
@@ -228,9 +228,103 @@
                        src="https://wikiric.xyz/files/public/get/018f9d30-0121-738d-9e2f-69ef1577ee75"
                        width="50" height="50" alt="img"/>
                 </q-btn>
-                <q-btn @click="setBrush('wall_inner')">
-                  <img id="wall_inner"
-                       src="https://wikiric.xyz/files/public/get/018f9d2f-e5b6-738d-bf08-62f0e4fc3804"
+                <q-btn @click="setBrush('tile_floor_top_left')">
+                  <img id="tile_floor_top_left"
+                       src="https://wikiric.xyz/files/public/get/018ff89b-2be3-726d-8f5b-3fd169bef028"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('tile_floor_top')">
+                  <img id="tile_floor_top"
+                       src="https://wikiric.xyz/files/public/get/018ff89b-3a8d-726d-8599-f136d6cf4f9f"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('tile_floor_top_right')">
+                  <img id="tile_floor_top_right"
+                       src="https://wikiric.xyz/files/public/get/018ff89b-334f-726d-8682-5e0349842350"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('tile_wall_col_top')">
+                  <img id="tile_wall_col_top"
+                       src="https://wikiric.xyz/files/public/get/018ff89a-ee17-726d-8b70-d8a4bb5fb0b0"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <div></div>
+                <q-btn @click="setBrush('tile_floor_left')">
+                  <img id="tile_floor_left"
+                       src="https://wikiric.xyz/files/public/get/018ff89b-2365-726d-b1fd-e73cd5b94db5"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('floor')">
+                  <img id="floor"
+                       src="https://wikiric.xyz/files/public/get/018f9ca3-73c2-738d-8a28-03610cb178e5"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('tile_floor_right')">
+                  <img id="tile_floor_right"
+                       src="https://wikiric.xyz/files/public/get/018ff89b-1b17-726d-8cba-20fc99a2eb07"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('tile_wall_col_middle')">
+                  <img id="tile_wall_col_middle"
+                       src="https://wikiric.xyz/files/public/get/018ff89a-e3a5-726d-b8b0-86fca58347a7"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <div></div>
+                <q-btn @click="setBrush('tile_floor_bottom_left')">
+                  <img id="tile_floor_bottom_left"
+                       src="https://wikiric.xyz/files/public/get/018ff89a-fe4f-726d-8cbe-c24a0bdbf554"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('tile_floor_bottom')">
+                  <img id="tile_floor_bottom"
+                       src="https://wikiric.xyz/files/public/get/018ff89b-05da-726d-b59f-ca5d553eb816"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('tile_floor_bottom_right')">
+                  <img id="tile_floor_bottom_right"
+                       src="https://wikiric.xyz/files/public/get/018ff89b-0c99-726d-9f39-d19440513f8d"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('tile_wall_col_bottom')">
+                  <img id="tile_wall_col_bottom"
+                       src="https://wikiric.xyz/files/public/get/018ff89a-dc3c-726d-8ad4-0952740cde0f"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <div></div>
+                <q-btn @click="setBrush('tile_wall_left')">
+                  <img id="tile_wall_left"
+                       src="https://wikiric.xyz/files/public/get/018ff89a-b89e-726d-859f-12c7e353b742"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('tile_wall_middle')">
+                  <img id="tile_wall_middle"
+                       src="https://wikiric.xyz/files/public/get/018ff89a-c267-726d-8ed7-4ef504382a55"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('tile_wall_right')">
+                  <img id="tile_wall_right"
+                       src="https://wikiric.xyz/files/public/get/018ff89a-cdd6-726d-9f0a-386d6490eb86"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('tile_wall_col_base')">
+                  <img id="tile_wall_col_base"
+                       src="https://wikiric.xyz/files/public/get/018ff89a-d566-726d-8e82-17b39c29ede5"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <div></div>
+                <q-btn @click="setBrush('tile_wall_base_left_2')">
+                  <img id="tile_wall_base_left_2"
+                       src="https://wikiric.xyz/files/public/get/018ff89a-982c-726d-9405-f555e6c1247a"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('tile_wall_base_middle_2')">
+                  <img id="tile_wall_base_middle_2"
+                       src="https://wikiric.xyz/files/public/get/018ff89a-a452-726d-aac1-46b39f8ef66a"
+                       width="50" height="50" alt="img"/>
+                </q-btn>
+                <q-btn @click="setBrush('tile_wall_base_right_2')">
+                  <img id="tile_wall_base_right_2"
+                       src="https://wikiric.xyz/files/public/get/018ff89a-b1b4-726d-9610-9d1c8d19defb"
                        width="50" height="50" alt="img"/>
                 </q-btn>
               </div>
@@ -317,10 +411,11 @@
                           color="blue"
                           track-size="16px" thumb-size="18px"
                           class="w-full"/>
-                <div class="flex wfull justify-end px3">
-                  <p>
+                <div class="flex wfull justify-end px2 fontbold
+                            -translate-y-2">
+                  <span>
                     {{ goalKills }} Kills
-                  </p>
+                  </span>
                 </div>
               </div>
             </div>
@@ -434,7 +529,7 @@
                           rounded-tl text-subtitle2
                           flex gap-2 items-center">
                 <div class="flex column gap-1">
-                  <div class="flex gap-2">
+                  <div class="flex gap-2 fontbold">
                     <p>
                       Lv: {{ goalLevel }}
                     </p>
@@ -564,6 +659,14 @@ export default {
       tile_floor: '',
       tile_alt_1: '',
       tile_alt_2: '',
+      tile_floor_top_left: '',
+      tile_floor_top_right: '',
+      tile_floor_bottom_left: '',
+      tile_floor_bottom_right: '',
+      tile_floor_top: '',
+      tile_floor_bottom: '',
+      tile_floor_left: '',
+      tile_floor_right: '',
       tile_bloody: '',
       tile_box: '',
       tile_wall_top_left: '',
@@ -577,11 +680,21 @@ export default {
       tile_wall_base_left: '',
       tile_wall_base_middle: '',
       tile_wall_base_right: '',
+      tile_wall_base_left_2: '',
+      tile_wall_base_middle_2: '',
+      tile_wall_base_right_2: '',
       tile_wall_inner: '',
       tile_wall_inner_top_left: '',
       tile_wall_inner_top_right: '',
       tile_wall_inner_bottom_left: '',
       tile_wall_inner_bottom_right: '',
+      tile_wall_col_base: '',
+      tile_wall_col_bottom: '',
+      tile_wall_col_middle: '',
+      tile_wall_col_top: '',
+      tile_wall_left: '',
+      tile_wall_middle: '',
+      tile_wall_right: '',
 
       // GAME DATA
 
@@ -750,6 +863,24 @@ export default {
       this.tile_wall_inner_bottom_left = document.getElementById('wall_inner_bottom_left')
       this.tile_wall_inner_bottom_right = document.getElementById('wall_inner_bottom_right')
       this.tile_wall_inner = document.getElementById('wall_inner')
+      this.tile_floor_top_left = document.getElementById('tile_floor_top_left')
+      this.tile_floor_top_right = document.getElementById('tile_floor_top_right')
+      this.tile_floor_bottom_left = document.getElementById('tile_floor_bottom_left')
+      this.tile_floor_bottom_right = document.getElementById('tile_floor_bottom_right')
+      this.tile_floor_top = document.getElementById('tile_floor_top')
+      this.tile_floor_bottom = document.getElementById('tile_floor_bottom')
+      this.tile_floor_left = document.getElementById('tile_floor_left')
+      this.tile_floor_right = document.getElementById('tile_floor_right')
+      this.tile_wall_base_left_2 = document.getElementById('tile_wall_base_left_2')
+      this.tile_wall_base_middle_2 = document.getElementById('tile_wall_base_middle_2')
+      this.tile_wall_base_right_2 = document.getElementById('tile_wall_base_right_2')
+      this.tile_wall_col_base = document.getElementById('tile_wall_col_base')
+      this.tile_wall_col_bottom = document.getElementById('tile_wall_col_bottom')
+      this.tile_wall_col_middle = document.getElementById('tile_wall_col_middle')
+      this.tile_wall_col_top = document.getElementById('tile_wall_col_top')
+      this.tile_wall_left = document.getElementById('tile_wall_left')
+      this.tile_wall_middle = document.getElementById('tile_wall_middle')
+      this.tile_wall_right = document.getElementById('tile_wall_right')
     },
     getTile: function (override = '') {
       let val
@@ -801,6 +932,42 @@ export default {
           return this.tile_wall_inner_bottom_right
         case 'wall_inner':
           return this.tile_wall_inner
+        case 'tile_floor_top_left':
+          return this.tile_floor_top_left
+        case 'tile_floor_top_right':
+          return this.tile_floor_top_right
+        case 'tile_floor_bottom_left':
+          return this.tile_floor_bottom_left
+        case 'tile_floor_bottom_right':
+          return this.tile_floor_bottom_right
+        case 'tile_floor_top':
+          return this.tile_floor_top
+        case 'tile_floor_bottom':
+          return this.tile_floor_bottom
+        case 'tile_floor_left':
+          return this.tile_floor_left
+        case 'tile_floor_right':
+          return this.tile_floor_right
+        case 'tile_wall_base_left_2':
+          return this.tile_wall_base_left_2
+        case 'tile_wall_base_middle_2':
+          return this.tile_wall_base_middle_2
+        case 'tile_wall_base_right_2':
+          return this.tile_wall_base_right_2
+        case 'tile_wall_col_base':
+          return this.tile_wall_col_base
+        case 'tile_wall_col_bottom':
+          return this.tile_wall_col_bottom
+        case 'tile_wall_col_middle':
+          return this.tile_wall_col_middle
+        case 'tile_wall_col_top':
+          return this.tile_wall_col_top
+        case 'tile_wall_left':
+          return this.tile_wall_left
+        case 'tile_wall_middle':
+          return this.tile_wall_middle
+        case 'tile_wall_right':
+          return this.tile_wall_right
       }
     },
     initializeCanvas: function () {
@@ -1487,14 +1654,15 @@ export default {
           this.goalMovementVector.add(this.goalSouth)
         }
       }
-      let tmpX, tmpY
-      tmpX = Math.round(this.goalPosition.x + this.offsetVector.x)
-      tmpY = Math.round(this.goalPosition.y + this.offsetVector.y)
-      const neighbors = this.getNeighbors(tmpX, tmpY, true)
-      let dist
+      // Wall Collision
+      const goalX = Math.round(this.goalPosition.x - this.offsetVector.x)
+      const goalY = Math.round(this.goalPosition.y - this.offsetVector.y)
+      const neighbors = this.getNeighbors(goalX, goalY, true)
       let diff
+      let dist
       let count = 0
       let pos
+      let tmpX, tmpY
       const wallVec = new THREE.Vector2()
       for (const cell of neighbors) {
         tmpX = Math.round(cell.x)
@@ -1502,18 +1670,23 @@ export default {
         pos = this.convertXYToArrayPos(tmpX, tmpY)
         if (this.costField[pos] === 255) {
           // Calculate distance vector
-          dist = this.goalPosition.distanceToSquared(cell)
-          if (dist <= 1) {
-            count += 1
-            diff = new THREE.Vector2(this.goalPosition.x, this.goalPosition.y)
-            diff.sub(cell)
-            diff.divideScalar(Math.pow(dist, 2))
-            wallVec.add(diff)
+          if (goalX >= tmpX - 0.2 && goalY >= tmpY - 0.2) {
+            if (goalX <= tmpX + 0.2 && goalY <= tmpY + 0.2) {
+              count += 1
+              diff = new THREE.Vector2(
+                this.goalPosition.x - this.offsetVector.x,
+                this.goalPosition.y - this.offsetVector.y)
+              dist = diff.distanceToSquared(cell)
+              diff.sub(cell)
+              diff.divideScalar(Math.pow(dist, 2))
+              wallVec.add(diff)
+            }
           }
         }
       }
       if (count > 0) {
         wallVec.divideScalar(count)
+        wallVec.clampScalar(-this.goalSpeed / 2, this.goalSpeed / 2)
         if (offsetX) {
           endVector.x += wallVec.x
         } else {
