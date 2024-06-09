@@ -116,6 +116,42 @@ class FFWeaponList {
     powerUp.effects.push(effect)
     weapon.powerUps.push(powerUp)
     this.categories.starter.push(weapon)
+    /**
+     * STARTER WEAPON: SHOTGUN
+     * @type {FFWeapon}
+     */
+    weapon = new FFWeapon(
+      'Shotgun',
+      40,
+      15,
+      1,
+      2,
+      120,
+      4,
+      6,
+      2,
+      0,
+      0.2,
+      0)
+    this.categories.starter.push(weapon)
+    /**
+     * STARTER WEAPON: SNIPER
+     * @type {FFWeapon}
+     */
+    weapon = new FFWeapon(
+      'Sniper',
+      40,
+      40,
+      1,
+      1,
+      200,
+      10,
+      10,
+      3,
+      0,
+      0.4,
+      0)
+    this.categories.starter.push(weapon)
   }
 }
 

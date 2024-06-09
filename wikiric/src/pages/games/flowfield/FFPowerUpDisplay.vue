@@ -1,7 +1,7 @@
 <template>
   <template v-for="pup in powerUps" :key="pup">
-    <p class="break-words">
-      <span class="fontbold">
+    <p class="break-words text-start mb1">
+      <span class="fontbold text-body2">
         {{ pup.name }}
       </span>
       <span class="px1">

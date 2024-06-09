@@ -1870,81 +1870,101 @@ export default {
     },
     checkProximityDamage: function (qtree) {
       const others = qtree.getContents(
-        this.goalPosition.x - this.offsetVector.x - this.goalMaxRange,
-        this.goalPosition.y - this.offsetVector.y - this.goalMaxRange,
-        this.goalPosition.x - this.offsetVector.x + this.goalMaxRange,
-        this.goalPosition.y - this.offsetVector.y + this.goalMaxRange)
-      if (others && others.length > 0) {
-        const goalVec = new THREE.Vector2()
-        goalVec.copy(this.goalPosition)
-        goalVec.sub(this.offsetVector)
-        this.ctx3.beginPath()
-        this.ctx3.strokeStyle = '#F00'
-        this.ctx3.lineHeight = 4
-        this.ctx3.lineWidth = 4
-        const position = new THREE.Vector2()
-        position.copy(this.goalPosition)
-        position.sub(this.offsetVector)
-        let direction
-        let dist
-        let projectiles
-        for (const other of others) {
-          dist = goalVec.distanceToSquared(other.pos)
-          for (let k = 0; k < this.goalWeapons.length; k++) {
-            // Calculate aim vector
-            direction = new THREE.Vector2()
-            direction.copy(other.pos)
-            direction.sub(position)
-            // Trigger weapon
-            projectiles = this.goalWeapons[k].shoot(
-              position,
-              direction,
-              dist
-            )
-            if (projectiles) {
-              for (let j = 0; j < projectiles.length; j++) {
-                if (projectiles[j].speed === 0) {
-                  // Beam - Directly damage enemy
-                  other.hp -= projectiles[j].dmg
-                  if (other.hp <= 0) {
-                    this.goalXP += other.xp
-                    this.checkXP()
-                    this.enemies.delete(other.id)
-                    this.goalKills += 1
-                  } else {
-                    this.enemies.set(other.id, other)
-                  }
-                  // Draw weapon effect
-                  this.ctx3.moveTo(
-                    (this.goalPosition.x * this.gridSize) + this.gridSize / 2,
-                    (this.goalPosition.y * this.gridSize) + this.gridSize / 2
-                  )
-                  this.ctx3.lineTo(
-                    ((other.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
-                    ((other.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
-                  )
-                } else {
-                  // Projectile - Add to projectiles
-                  this.goalWeaponProjectiles.push(projectiles[j])
-                }
-              }
-            }
-          }
-          // Respect invincibility frames before damage
-          if (this.goalInvincibilityFrames === 0) {
-            if (dist <= 0.5) {
-              this.goalHP -= other.dps
-              this.goalInvincibilityFrames = 20
-              if (this.goalHP <= 0) {
-                this.goalHP = 0
-                this.goalAlive = false
-              }
+        this.goalPosition.x - this.offsetVector.x - (this.goalMaxRange / 2),
+        this.goalPosition.y - this.offsetVector.y - (this.goalMaxRange / 2),
+        this.goalPosition.x - this.offsetVector.x + (this.goalMaxRange / 2),
+        this.goalPosition.y - this.offsetVector.y + (this.goalMaxRange / 2))
+      if (!others || others.length < 1) {
+        return
+      }
+      const goalVec = new THREE.Vector2()
+      goalVec.copy(this.goalPosition)
+      goalVec.sub(this.offsetVector)
+      this.ctx3.beginPath()
+      this.ctx3.strokeStyle = '#F00'
+      this.ctx3.lineHeight = 4
+      this.ctx3.lineWidth = 4
+      const position = new THREE.Vector2()
+      position.copy(this.goalPosition)
+      position.sub(this.offsetVector)
+      let direction
+      /**
+       * @type number
+       */
+      let dist
+      let projectiles
+      const targets = []
+      for (const other of others) {
+        dist = goalVec.distanceToSquared(other.pos)
+        // Add to targets
+        targets.push({
+          d: dist,
+          o: other
+        })
+        // Respect invincibility frames before damage
+        if (this.goalInvincibilityFrames === 0) {
+          if (dist <= 0.5) {
+            this.goalHP -= other.dps
+            this.goalInvincibilityFrames = 20
+            if (this.goalHP <= 0) {
+              this.goalHP = 0
+              this.goalAlive = false
               break
             }
           }
         }
-        this.ctx3.stroke()
       }
+      // Sort targets by distance
+      targets.sort((a, b) => a.d - b.d)
+      // Shoot weapons
+      let other
+      for (let i = 0; i < targets.length; i++) {
+        other = targets[i].o
+        dist = targets[i].d
+        for (let k = 0; k < this.goalWeapons.length; k++) {
+          // Calculate aim vector
+          direction = new THREE.Vector2()
+          direction.copy(other.pos)
+          direction.sub(position)
+          // Trigger weapon
+          projectiles = this.goalWeapons[k].shoot(
+            position,
+            direction,
+            dist
+          )
+          if (!projectiles) {
+            continue
+          }
+          console.log(projectiles)
+          for (let j = 0; j < projectiles.length; j++) {
+            if (projectiles[j].vec.lengthSq() > 0) {
+              // Projectile - Add to projectiles
+              this.goalWeaponProjectiles.push(projectiles[j])
+              continue
+            }
+            // Beam - Directly damage enemy
+            other.hp -= projectiles[j].dmg
+            if (other.hp <= 0) {
+              this.goalXP += other.xp
+              this.checkXP()
+              this.enemies.delete(other.id)
+              this.goalKills += 1
+            } else {
+              this.enemies.set(other.id, other)
+            }
+            // Draw weapon effect
+            this.ctx3.moveTo(
+              (this.goalPosition.x * this.gridSize) + this.gridSize / 2,
+              (this.goalPosition.y * this.gridSize) + this.gridSize / 2
+            )
+            this.ctx3.lineTo(
+              ((other.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+              ((other.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
+            )
+          }
+        }
+      }
+      this.ctx3.stroke()
     },
     handleProjectiles: function (qtree, timeDelta) {
       let dist
@@ -2251,14 +2271,17 @@ export default {
      *
      */
     showLevelUpOffers: function () {
+      let offers
       let hasOffer = false
       // Get unowned weapons as offers
       this.weaponOffers = []
       if (this.weaponList.categories.starter.length > 0) {
         hasOffer = true
+        offers = []
         for (const entry of this.weaponList.categories.starter) {
-          this.weaponOffers.push(entry)
+          offers.push(entry)
         }
+        this.weaponOffers = this.selectRandomFromArray(3, offers)
       }
       // Get unowned power ups as offers
       this.powerUpOffers = []
@@ -2266,37 +2289,48 @@ export default {
         this.powerUpList.categories.starter.length > 0
       ) {
         hasOffer = true
-        const offers = []
+        offers = []
         for (const entry of this.powerUpList.categories.starter) {
           offers.push(entry)
         }
-        // If there are less than 4 power ups,
-        // ...we cannot select 3 random ones -> use all
-        if (offers.length < 4) {
-          this.powerUpOffers = [].concat(offers)
-          return true
-        }
-        // Select 3 random power ups
-        // Example of random index with 3 offers:
-        //    0.9 * 3 = 2.97 => Math.floor() => 2
-        // Index will never go out of bounds as seen above
-        let ix
-        /**
-         * @type {Number[]}
-         */
-        const cache = []
-        for (let i = 0; i < 3; i++) {
-          ix = Math.floor(Math.random() * offers.length)
-          if (cache.length > 0 && cache.includes(ix)) {
-            i -= 1
-            continue
-          }
-          this.powerUpOffers.push(offers[ix])
-          cache.push(ix)
-        }
+        this.powerUpOffers = this.selectRandomFromArray(3, offers)
+        hasOffer = this.powerUpOffers.length > 0
       }
       // Did we get offers?
       return hasOffer
+    },
+    /**
+     * Returns an array with n random results from offers
+     * @param {Number} n
+     * @param {Array} offers
+     */
+    selectRandomFromArray: function (n, offers) {
+      let randomResults = []
+      // If there are less than or n power ups,
+      // ...we cannot select n random ones -> use all
+      if (offers.length <= n) {
+        randomResults = [].concat(offers)
+        return randomResults
+      }
+      // Select n random power ups
+      // Example of random index with 3 offers:
+      //    0.9 * 3 = 2.97 => Math.floor() => 2
+      // Index will never go out of bounds as seen above
+      let ix
+      /**
+       * @type {Number[]}
+       */
+      const cache = []
+      for (let i = 0; i < n; i++) {
+        ix = Math.floor(Math.random() * offers.length)
+        if (cache.length > 0 && cache.includes(ix)) {
+          i -= 1
+          continue
+        }
+        randomResults.push(offers[ix])
+        cache.push(ix)
+      }
+      return randomResults
     },
     /**
      *
