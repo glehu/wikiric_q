@@ -1347,6 +1347,7 @@ export default {
             }
             // Remove active state on member
             this.clearActivity(msg.usr, false, true)
+            this.scrollToBottomIfClose()
             return
           }
         }
@@ -1463,6 +1464,7 @@ export default {
       }
       // Remove active state on member
       this.clearActivity(msg.usr, false, true)
+      this.scrollToBottomIfClose()
     },
     /**
      *
@@ -1729,6 +1731,24 @@ export default {
         this.getMessages(true)
       }
     },
+    scrollToBottomIfClose: function () {
+      const { getVerticalScrollPosition } = scroll
+      let y = null
+      try {
+        y = getVerticalScrollPosition(this.$refs.ref_messages)
+      } catch (e) {
+        if (e) {
+          y = null
+        }
+      }
+      if (!y) {
+        return
+      }
+      y = Math.abs(y)
+      if (y < 200) {
+        this.$refs.ref_messages.scrollTop = 0
+      }
+    },
     /**
      *
      */
@@ -1914,6 +1934,7 @@ export default {
       })
       .then((result) => {
         for (const key of this.members.keys()) {
+          if (!this.members[key]) continue
           this.members[key].active = this.members[key].usr === this.store.user.username
         }
         for (let i = 0; i < result.data.active.length; i++) {

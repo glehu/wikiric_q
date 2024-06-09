@@ -209,7 +209,9 @@ export default {
       if (e.app !== 'editor') return
       if (e.id && this.eId !== e.id) return
       if (e.type === 'focus') {
-        this.editor.commands.focus('end')
+        setTimeout(() => {
+          this.editor.commands.focus('end')
+        }, 1)
       } else if (e.type === 'add') {
         this.handleInternalCommandAdd(e)
       }
