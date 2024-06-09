@@ -28,6 +28,7 @@ import { common, createLowlight } from 'lowlight'
 import Image from '@tiptap/extension-image'
 import { FileHandler } from '@tiptap-pro/extension-file-handler'
 import UniqueID from '@tiptap-pro/extension-unique-id'
+import Placeholder from '@tiptap/extension-placeholder'
 
 const lowlight = createLowlight(common)
 
@@ -188,6 +189,9 @@ export default {
           UniqueID.configure({
             attributeName: 'wikiric-id',
             types: ['heading']
+          }),
+          Placeholder.configure({
+            placeholder: 'Write something …'
           }),
           shiftEnterExtension
         ],
@@ -393,5 +397,14 @@ export default {
 
 .wkrg-emote {
   font-size: 1.5rem;
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--md-sys-color-on-surface);
+  opacity: 0.7;
+  pointer-events: none;
+  height: 0;
 }
 </style>
