@@ -1427,13 +1427,6 @@ export default {
                     t: message.msg,
                     _t: message.msg
                   })
-                  // setTimeout(() => {
-                  //   const elem = document.getElementById(
-                  //     'react_' + message.uid + '_' + message.msg)
-                  //   elem.style.display = 'flex'
-                  //   document.getElementById('react_' + message.uid + '_' + message.msg).title =
-                  //     message.usr + ' reacted to this message.'
-                  // }, 0)
                 }
               } catch (e) {
                 console.debug(e.message)
@@ -1754,7 +1747,6 @@ export default {
      */
     transmitActivity: function () {
       this.checkCommands()
-      this.checkLastInput()
       this.inputResize()
       if (this.lastActivity) {
         // Send activity every 5 seconds max
@@ -1775,30 +1767,6 @@ export default {
         return
       }
       this.isViewingGIFs = raw.startsWith('/gif')
-    },
-    /**
-     *
-     */
-    checkLastInput: function () {
-      // const pos = toRaw(this.$refs.ref_editor.caret._range.endOffset)
-      // const msg = this.newMessage
-      // if (!msg) return
-      // const lastChar = msg.substring(pos, pos + 1)
-      // // Get surrounding chars
-      // let atStart = true
-      // let atEnd = true
-      // let leftChar = ''
-      // let rightChar = ''
-      // if (pos > 0) {
-      //   atStart = false
-      //   leftChar = msg.substring(pos - 1, pos)
-      // }
-      // if (pos < msg.length - 1) {
-      //   atEnd = false
-      //   rightChar = msg.substring(pos + 1, pos + 2)
-      // }
-      // console.log(msg)
-      // console.log(pos, atStart, leftChar, lastChar, rightChar, atEnd)
     },
     /**
      *
@@ -1964,17 +1932,6 @@ export default {
     },
     /**
      *
-     * @param name
-     */
-    addToEditor (name) {
-      // this.$refs.tokenRef.hide()
-      // const edit = this.$refs.ref_editor
-      // edit.caret.restore()
-      // edit.runCmd('insertHTML', `&nbsp;<div class="editor_token row inline items-center" contenteditable="false"><span>@${name}</span><i class="q-icon material-icons cursor-pointer" onclick="this.parentNode.parentNode.removeChild(this.parentNode)">close</i></div>&nbsp;`)
-      // edit.focus()
-    },
-    /**
-     *
      * @param uid
      */
     handleReplyMessage: function (uid) {
@@ -1985,7 +1942,6 @@ export default {
             // Shallow copy the message to reply to
             this.replyingMessage = { ...this.messages[i]._msgs[j] }
             this.inputResize()
-            // this.$refs.ref_editor.focus()
             done = true
             break
           }
@@ -2019,21 +1975,12 @@ export default {
               this.editingMessage = this.messages[i]._msgs[j]
               this.newMessage = this.messages[i]._msgs[j]._msg
               this.inputResize()
-              // this.$refs.ref_editor.editor.commands.focus('end')
             } else {
               this.last_message = this.messages[i]._msgs[j]
               this.last_message.msgDay = this.messages[i]._msgs[j]._time.day
               this.last_message.msgMonth = this.messages[i]._msgs[j]._time.day
               this.last_message.msgYear = this.messages[i]._msgs[j]._time.day
             }
-            // if (this.$refs.ref_editor) {
-            //   try {
-            //     this.$refs.ref_editor.focus()
-            //   } catch (e) {
-            //     console.debug(e.message)
-            //   }
-            // }
-            // this.$refs.ref_editor.editor.commands.focus('end')
             done = true
             break
           }
@@ -2668,25 +2615,8 @@ export default {
         this.peerStreamOutgoing = null
       }
     },
-    hideFilePicker: function () {
-      this.pickingFile = false
-      setTimeout(() => {
-        this.inputResize()
-      }, 0)
-    },
     showFiles: function () {
       this.isViewingFiles = !this.isViewingFiles
-    },
-    handleEmoteConfirm: function (emote) {
-      // this.newMessage = ''
-      // setTimeout(() => {
-      //   const edit = this.$refs.ref_editor
-      //   edit.caret.restore()
-      //   edit.runCmd('insertHTML', `&nbsp;<img src="${emote._pth}" alt="${emote.t}" style="width: 48px; height: 48px; object-fit: contain"/>&nbsp;`)
-      //   this.newMessage = this.msgCache + this.newMessage
-      //   edit.focus()
-      //   this.inputResize()
-      // }, 0)
     },
     /**
      *
