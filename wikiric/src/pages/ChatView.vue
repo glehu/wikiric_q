@@ -2706,12 +2706,12 @@ export default {
         resolve()
       })
     },
-    handleGIFSelection: function (url) {
+    handleGIFSelection: function (url, name) {
       const prefix = '[c:GIF]'
       const payload = JSON.stringify({
         msg: '<p></p>',
         url: url,
-        fileName: ''
+        fileName: name
       })
       if (this.chatroom.crypt) {
         this.setMemberPubkeys()

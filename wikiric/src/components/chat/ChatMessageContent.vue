@@ -128,7 +128,7 @@
                                   fmt_border_top">
                         <div class="hfull">
                           <div>
-                            <span class="text-subtitle2">{{ msg._ts }}:</span>
+                            <span class="text-subtitle2 mr2">{{ msg._ts }}:</span>
                             <template v-if="msg._fileName">
                               <span class="text-subtitle2">{{ msg._fileName }}</span>
                             </template>

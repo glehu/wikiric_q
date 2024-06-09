@@ -1,7 +1,8 @@
 <template>
-  <q-dialog v-model="show" class="z-top" seamless no-focus full-width
+  <q-dialog v-model="show" class="z-top" seamless no-focus
             position="bottom">
     <q-card class="background wfull
+                   max-w-[min(500px,90dvw)]
                    column
                    pb1 mb35"
             flat bordered>
@@ -11,7 +12,9 @@
         <div class="wfull hfull flex max-h-[calc(100dvh-250px)] px3">
           <template v-for="gif in gifs" :key="gif">
             <q-btn class="wfit hfit flex-grow"
-                   @click="handleGIFClick(gif.media_formats.tinygif.url)">
+                   @click="handleGIFClick(
+                           gif.media_formats.tinygif.url,
+                           gif.content_description)">
               <div class="wfull hfull"
                    :style="{width: gif.media_formats.tinygif.dims[0] + 'px',
                           height: gif.media_formats.tinygif.dims[1] + 'px'}">
@@ -87,16 +90,26 @@ export default {
       // }, 0)
     },
     queryGIF: async function (query) {
-      if (!this.show) return
+      if (!this.show || !query || query === '') {
+        this.gifs = []
+        return
+      }
       // Search for nice gifs!
       let gifs = null
-      const key = 'AIzaSyCeOS6pEu8-TMQfxgic4m8y6cChU8Z-Sf4'
-      await fetch(`https://tenor.googleapis.com/v2/search?q=${query}&key=${key}&client_key=wikiric&limit=20`)
-      .then((res) => res.json())
-      .then((data) => {
+      // Variables
+      const url = 'https://tenor.googleapis.com/v2/search'
+      const key = '&key=AIzaSyCeOS6pEu8-TMQfxgic4m8y6cChU8Z-Sf4'
+      const cKey = '&client_key=wikiric'
+      const mFil = '&media_filter=tinygif'
+      const lim = 30
+      // Get GIFs
+      await fetch(
+        `${url}?q=${query}${key}${cKey}${mFil}&limit=${lim}`
+      ).then(
+        (res) => res.json()
+      ).then((data) => {
         gifs = data.results
-      })
-      .catch((e) => {
+      }).catch((e) => {
         console.debug(e.message)
       })
       if (gifs == null) {
@@ -105,8 +118,8 @@ export default {
       }
       this.gifs = gifs
     },
-    handleGIFClick: function (url) {
-      this.$emit('selected', url)
+    handleGIFClick: function (url, name) {
+      this.$emit('selected', url, name)
       this.show = false
       this.gifs = []
     }
