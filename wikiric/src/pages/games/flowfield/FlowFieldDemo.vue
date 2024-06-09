@@ -366,6 +366,7 @@
               </template>
               <q-checkbox label="Damage Numbers" v-model="drawDamageNumbers"/>
               <q-checkbox label="Heatmap" v-model="drawHeatmap"/>
+              <q-checkbox label="Wall Collisions" v-model="drawWallCollision"/>
             </div>
           </div>
         </q-scroll-area>
@@ -785,11 +786,13 @@ export default {
       isCalculating: false,
       isSimulating: false,
       timeDelta: 0,
+      theta: 0,
 
       // DEBUG DATA
 
       drawHeatmap: false,
-      drawDamageNumbers: true
+      drawDamageNumbers: true,
+      drawWallCollision: false
     }
   },
   mounted () {
@@ -1322,7 +1325,7 @@ export default {
     },
     addEnemy: function (position) {
       const arrayPos = this.convertXYToArrayPos(position.x, position.y)
-      if (arrayPos > this.costField.length) {
+      if (arrayPos < 0 || arrayPos > this.costField.length) {
         return
       }
       // Calculate positions
@@ -1529,6 +1532,7 @@ export default {
             timestamp = tmp
             this.timeDelta = stepCount
             stepCount = 0
+            this.procPerSecondTriggers()
           }
           // How many seconds passed?
           tmp = performance.now()
@@ -1683,7 +1687,9 @@ export default {
       let tmpX, tmpY
       let tVec
       const wallVec = new THREE.Vector2()
-      this.ctx2.clearRect(0, 0, this.width, this.height)
+      if (this.drawWallCollision) {
+        this.ctx2.clearRect(0, 0, this.width, this.height)
+      }
       for (const cell of neighbors) {
         tmpX = Math.round(cell.x)
         tmpY = Math.round(cell.y)
@@ -1699,17 +1705,19 @@ export default {
               diff.sub(tVec)
               diff.divideScalar(Math.pow(dist, 2))
               wallVec.add(diff)
-              this.ctx2.strokeStyle = '#F00'
-              this.ctx2.lineWidth = 4
-              this.ctx2.lineHeight = 4
-              this.ctx2.beginPath()
-              this.ctx2.moveTo(
-                (goalPosX + 0.5 + this.offsetVector.x) * this.gridSize,
-                (goalPosY + 0.5 + this.offsetVector.y) * this.gridSize)
-              this.ctx2.lineTo(
-                (cell.x + 0.5 + this.offsetVector.x) * this.gridSize,
-                (cell.y + 0.5 + this.offsetVector.y) * this.gridSize)
-              this.ctx2.stroke()
+              if (this.drawWallCollision) {
+                this.ctx2.strokeStyle = '#F00'
+                this.ctx2.lineWidth = 4
+                this.ctx2.lineHeight = 4
+                this.ctx2.beginPath()
+                this.ctx2.moveTo(
+                  (goalPosX + 0.5 + this.offsetVector.x) * this.gridSize,
+                  (goalPosY + 0.5 + this.offsetVector.y) * this.gridSize)
+                this.ctx2.lineTo(
+                  (cell.x + 0.5 + this.offsetVector.x) * this.gridSize,
+                  (cell.y + 0.5 + this.offsetVector.y) * this.gridSize)
+                this.ctx2.stroke()
+              }
             }
           }
         }
@@ -2398,6 +2406,31 @@ export default {
       const obj = JSON.parse(str)
       this.loadMap(obj)
       this.isPickingMap = false
+    },
+    /**
+     * Actions happening or being checked every second
+     * ...are placed here.
+     */
+    procPerSecondTriggers: function () {
+      this.checkAndSpawnEnemies()
+    },
+    /**
+     * Spawns enemies around the map
+     */
+    checkAndSpawnEnemies: function () {
+      // Circle-Spawner rotating around the screen
+      for (let i = 0; i < 2; i++) {
+        const x = (this.width * Math.cos(this.theta)) +
+          this.width / 2 - (this.offsetVector.x * this.gridSize)
+        const y = (this.height * Math.sin(this.theta)) +
+          this.height / 2 - (this.offsetVector.y * this.gridSize)
+        this.theta += 0.1
+        const pos = new THREE.Vector2(
+          Math.round(x / this.gridSize),
+          Math.round(y / this.gridSize))
+        // Spawn regular enemies
+        this.addEnemy(pos)
+      }
     }
   }
 }
