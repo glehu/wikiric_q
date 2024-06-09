@@ -1654,50 +1654,6 @@ export default {
           this.goalMovementVector.add(this.goalSouth)
         }
       }
-      // Wall Collision
-      const goalX = Math.round(this.goalPosition.x - this.offsetVector.x)
-      const goalY = Math.round(this.goalPosition.y - this.offsetVector.y)
-      const neighbors = this.getNeighbors(goalX, goalY, true)
-      let diff
-      let dist
-      let count = 0
-      let pos
-      let tmpX, tmpY
-      const wallVec = new THREE.Vector2()
-      for (const cell of neighbors) {
-        tmpX = Math.round(cell.x)
-        tmpY = Math.round(cell.y)
-        pos = this.convertXYToArrayPos(tmpX, tmpY)
-        if (this.costField[pos] === 255) {
-          // Calculate distance vector
-          if (goalX >= tmpX - 0.2 && goalY >= tmpY - 0.2) {
-            if (goalX <= tmpX + 0.2 && goalY <= tmpY + 0.2) {
-              count += 1
-              diff = new THREE.Vector2(
-                this.goalPosition.x - this.offsetVector.x,
-                this.goalPosition.y - this.offsetVector.y)
-              dist = diff.distanceToSquared(cell)
-              diff.sub(cell)
-              diff.divideScalar(Math.pow(dist, 2))
-              wallVec.add(diff)
-            }
-          }
-        }
-      }
-      if (count > 0) {
-        wallVec.divideScalar(count)
-        wallVec.clampScalar(-this.goalSpeed / 2, this.goalSpeed / 2)
-        if (offsetX) {
-          endVector.x += wallVec.x
-        } else {
-          this.goalMovementVector.x += wallVec.x
-        }
-        if (offsetY) {
-          endVector.y += wallVec.y
-        } else {
-          this.goalMovementVector.y += wallVec.y
-        }
-      }
       // Don't forget to free the player!
       if (this.offsetVector.x > 0) {
         this.offsetVector.x = 0
@@ -1707,13 +1663,78 @@ export default {
         this.offsetVector.y = 0
         this.goalMovementVector.add(this.goalNorth)
       }
-      // Apply movement to player position and offset
       endVector.multiplyScalar(this.goalSpeed)
       endVector.multiplyScalar(timeDelta)
-      this.offsetVector.add(endVector)
       this.goalMovementVector.multiplyScalar(this.goalSpeed)
       this.goalMovementVector.multiplyScalar(timeDelta)
+      // Apply movement vectors
+      this.offsetVector.add(endVector)
       this.goalPosition.add(this.goalMovementVector)
+      // Wall Collision
+      const goalPosX = this.goalPosition.x - this.offsetVector.x
+      const goalX = Math.round(goalPosX)
+      const goalPosY = this.goalPosition.y - this.offsetVector.y
+      const goalY = Math.round(goalPosY)
+      const neighbors = this.getNeighbors(goalX, goalY, true)
+      let diff
+      let dist
+      let count = 0
+      let pos
+      let tmpX, tmpY
+      let tVec
+      const wallVec = new THREE.Vector2()
+      this.ctx2.clearRect(0, 0, this.width, this.height)
+      for (const cell of neighbors) {
+        tmpX = Math.round(cell.x)
+        tmpY = Math.round(cell.y)
+        pos = this.convertXYToArrayPos(tmpX, tmpY)
+        if (this.costField[pos] === 255) {
+          // Calculate distance vector
+          if (goalPosX >= tmpX - 0.7 && goalPosY >= tmpY - 0.7) {
+            if (goalPosX <= tmpX + 0.7 && goalPosY <= tmpY + 0.7) {
+              count += 1
+              tVec = new THREE.Vector2(cell.x, cell.y)
+              diff = new THREE.Vector2(goalPosX, goalPosY)
+              dist = diff.distanceToSquared(tVec)
+              diff.sub(tVec)
+              diff.divideScalar(Math.pow(dist, 2))
+              wallVec.add(diff)
+              this.ctx2.strokeStyle = '#F00'
+              this.ctx2.lineWidth = 4
+              this.ctx2.lineHeight = 4
+              this.ctx2.beginPath()
+              this.ctx2.moveTo(
+                (goalPosX + 0.5 + this.offsetVector.x) * this.gridSize,
+                (goalPosY + 0.5 + this.offsetVector.y) * this.gridSize)
+              this.ctx2.lineTo(
+                (cell.x + 0.5 + this.offsetVector.x) * this.gridSize,
+                (cell.y + 0.5 + this.offsetVector.y) * this.gridSize)
+              this.ctx2.stroke()
+            }
+          }
+        }
+      }
+      // Add anti wall collision vector
+      if (count > 0) {
+        this.goalMovementVector = new THREE.Vector2()
+        endVector = new THREE.Vector2()
+        wallVec.normalize()
+        wallVec.multiplyScalar(this.goalSpeed)
+        wallVec.multiplyScalar(timeDelta)
+        if (offsetX) {
+          endVector.x -= wallVec.x
+        } else {
+          this.goalMovementVector.x += wallVec.x
+        }
+        if (offsetY) {
+          endVector.y -= wallVec.y
+        } else {
+          this.goalMovementVector.y += wallVec.y
+        }
+        // Apply movement vectors
+        this.offsetVector.add(endVector)
+        this.goalPosition.add(this.goalMovementVector)
+      }
     },
     applyEnemyMovement: function (image, cacheMap, cacheDiff, qtree, timeDelta) {
       /**
