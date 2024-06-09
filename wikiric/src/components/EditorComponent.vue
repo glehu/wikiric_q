@@ -234,7 +234,7 @@ export default {
       }
       this.autoSaveTimer = setTimeout(() => {
         this.$emit('autosave')
-        console.log('AUTOSAVE')
+        console.debug('AUTOSAVE')
       }, 2_000)
     }
   }

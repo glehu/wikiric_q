@@ -426,6 +426,9 @@
                   @refresh="getChatroom"/>
   <files-viewer :is-open="isViewingFiles"
                 :group-id="chatroom.uid"/>
+  <g-i-f-viewer :is-open="isViewingGIFs"
+                :override-query="newMessage"
+                @selected="handleGIFSelection"/>
 </template>
 
 <script>
@@ -456,10 +459,12 @@ import FilePicker from 'components/FilePicker.vue'
 import FilesViewer from 'components/chat/FilesViewer.vue'
 import Editor from 'components/EditorComponent.vue'
 import WikiricUtils from 'src/libs/wikiric-utils'
+import GIFViewer from 'components/GIFViewer.vue'
 
 export default {
   name: 'ChatView',
   components: {
+    GIFViewer,
     FilePicker,
     FilesViewer,
     GroupSettings,
@@ -508,6 +513,7 @@ export default {
       isDragging: false,
       isViewingFiles: false,
       isSelectingEmote: false,
+      isViewingGIFs: false,
       dragTimer: null,
       filePreference: null,
       lastActivity: undefined,
@@ -1598,6 +1604,7 @@ export default {
       } else {
         this.sdk.sendMessage(prefix + payload)
       }
+      this.isViewingGIFs = false
     },
     /**
      *
@@ -1726,6 +1733,7 @@ export default {
      *
      */
     transmitActivity: function () {
+      this.checkCommands()
       this.checkLastInput()
       this.inputResize()
       if (this.lastActivity) {
@@ -1739,6 +1747,14 @@ export default {
       this.lastActivity = DateTime.now()
       this.receiveActivity(this.store.user.username, true)
       this.sdk.sendMessage('[c:SC]' + '[activity]' + this.store.user.username)
+    },
+    checkCommands: function () {
+      const raw = WikiricUtils.htmlToString(this.newMessage)
+      if (!raw.startsWith('/')) {
+        this.isViewingGIFs = false
+        return
+      }
+      this.isViewingGIFs = raw.startsWith('/gif')
     },
     /**
      *
@@ -2689,6 +2705,24 @@ export default {
       return new Promise((resolve) => {
         resolve()
       })
+    },
+    handleGIFSelection: function (url) {
+      const prefix = '[c:GIF]'
+      const payload = JSON.stringify({
+        msg: '<p></p>',
+        url: url,
+        fileName: ''
+      })
+      if (this.chatroom.crypt) {
+        this.setMemberPubkeys()
+        this.sdk._wcrypt.encryptPayload(payload)
+        .then((encr) => {
+          this.sdk.sendMessage(prefix + encr)
+        })
+      } else {
+        this.sdk.sendMessage(prefix + payload)
+      }
+      this.newMessage = ''
     }
   }
 }
