@@ -437,7 +437,8 @@ import {
   dbGetData,
   dbGetDisplayName,
   dbGetSession,
-  dbGetTimestamp, dbSetData,
+  dbGetTimestamp,
+  dbSetData,
   dbSetDisplayName,
   dbSetSession,
   dbSetTimestamp
@@ -1338,6 +1339,8 @@ export default {
                 break
               }
             }
+            // Remove active state on member
+            this.clearActivity(msg.usr, false, true)
             return
           }
         }
@@ -1377,6 +1380,8 @@ export default {
         }
         // Reset the edit background
         this.resetEditing()
+        // Remove active state on member
+        this.clearActivity(msg.usr, false, true)
         return
       } else if (message._mType === 'ReactNotification') {
         if (message.uid == null) return
@@ -1488,6 +1493,12 @@ export default {
         }
         if (!valid) return
       }
+      // Is the message a command?
+      const raw = WikiricUtils.htmlToString(this.newMessage)
+      if (raw.startsWith('/')) {
+        this.handleCommandMessage(raw)
+        return
+      }
       // Add one to the skip count
       this.extraSkipCount += 1
       // Retrieve and limit the message's content
@@ -1540,6 +1551,53 @@ export default {
       // Clear activity
       this.clearActivity(this.store.user.username, false, true)
       this.inputResize()
+    },
+    /**
+     *
+     * @param {String} msg
+     */
+    handleCommandMessage: function (msg) {
+      if (msg.startsWith('/gif')) {
+        this.handleGIFCommand(msg)
+      }
+    },
+    /**
+     *
+     * @param {String} msg
+     */
+    handleGIFCommand: async function (msg) {
+      const split = msg.split('/gif')
+      if (split.length < 2) return
+      const query = split[1].trim()
+      if (!query || query.length < 1) return
+      // Search for a nice gif!
+      let gifs = null
+      const key = 'AIzaSyCeOS6pEu8-TMQfxgic4m8y6cChU8Z-Sf4'
+      await fetch(`https://tenor.googleapis.com/v2/search?q=${query}&key=${key}&client_key=wikiric&limit=1`)
+      .then((res) => res.json())
+      .then((data) => {
+        gifs = data.results
+      })
+      .catch((e) => {
+        console.debug(e.message)
+      })
+      if (gifs == null) return
+      const firstGif = gifs[0].media_formats.tinygif.url
+      this.newMessage = ''
+      const prefix = '[c:GIF]'
+      const payload = JSON.stringify({
+        msg: '<p></p>',
+        url: firstGif,
+        fileName: ''
+      })
+      if (this.chatroom.crypt) {
+        this.setMemberPubkeys()
+        this.sdk.sendMessage(prefix +
+          await this.sdk._wcrypt.encryptPayload(payload)
+        )
+      } else {
+        this.sdk.sendMessage(prefix + payload)
+      }
     },
     /**
      *
@@ -1755,6 +1813,9 @@ export default {
           this.clearActivity(username, idle)
         }, Math.abs(threshold) - 1_000)
       }
+    },
+    clearSelfActivity: function () {
+      this.clearActivity(this.store.user.username, false, true)
     },
     /**
      * Sets member online status and updates members if a new member was found
