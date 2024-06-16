@@ -2514,7 +2514,7 @@ export default {
           //   this.startTimeCounter()
           //   this.enterCinemaMode()
           // }
-        }, 500)
+        }, 3_000)
       }
     },
     startCall: async function (userId, constraints = null) {
@@ -2661,7 +2661,7 @@ export default {
       const prefix = '[c:GIF]'
       const payload = JSON.stringify({
         msg: '<p></p>',
-        url: url,
+        url,
         fileName: name
       })
       if (this.chatroom.crypt) {

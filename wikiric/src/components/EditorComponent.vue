@@ -4,7 +4,9 @@
                 overflow-x-hidden
                 overflow-y-auto
                 fmt_border">
-      <menu-bar :editor="editor"/>
+      <template v-if="!hideMenu">
+        <menu-bar :editor="editor"/>
+      </template>
       <editor-content :editor="editor"
                       class="p3 markedView"
                       :style="{ minHeight: eMinHeight,
@@ -59,6 +61,10 @@ export default {
       default: '100%'
     },
     preventEnter: {
+      type: Boolean,
+      default: false
+    },
+    hideMenu: {
       type: Boolean,
       default: false
     }
