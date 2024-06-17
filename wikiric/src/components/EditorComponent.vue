@@ -67,6 +67,10 @@ export default {
     hideMenu: {
       type: Boolean,
       default: false
+    },
+    preventEdit: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['update:modelValue', 'kpress', 'fpaste', 'autosave'],
@@ -127,6 +131,16 @@ export default {
           },
           handleDOMEvents: {
             keydown: (_, event) => {
+              if (this.preventEdit) {
+                // Check if we want to copy
+                if (event.key === 'c' && (event.shiftKey || event.metaKey)) {
+                  return false
+                }
+                // Prevent other actions
+                event.preventDefault()
+                event.stopPropagation()
+                return true
+              }
               this.$emit('kpress', event)
               if (event.key === 'Enter') {
                 if (this.preventEnter && !event.shiftKey) {

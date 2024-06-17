@@ -13,7 +13,7 @@
                  autofocus
                  class="text-body1 flex-grow"/>
       </div>
-      <template v-if="method === 'POST'">
+      <template v-if="method === 'POST' || method === 'PUT' || method === 'PATCH'">
         <div class="wfull relative mt4 background p2 rounded">
           <p class="mb2 text-subtitle2">
             Payload to send with this request:
@@ -66,7 +66,7 @@ export default {
       show: false,
       urlString: '',
       method: 'GET',
-      methodOptions: ['GET', 'POST', 'PUT', 'DELETE'],
+      methodOptions: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
       payloadOptions: ['application/json', 'text/xml', 'text/plain'],
       payload: '',
       contentType: 'text/plain'
