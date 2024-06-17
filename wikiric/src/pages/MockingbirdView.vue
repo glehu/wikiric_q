@@ -1055,7 +1055,7 @@ export default {
     getChartData: function (data, label) {
       const chartData = toRaw(data)
       return {
-        label: label,
+        label,
         data: chartData.map(row => row.count),
         fill: true
       }
