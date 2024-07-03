@@ -3,7 +3,7 @@
             @before-hide="$emit('close')">
     <q-card class="surface p4 w-[99dvw] max-w-xl" flat bordered>
       <p class="mb2 text-body1 fontbold">
-        New Collection
+        New Account
       </p>
       <q-input v-model="coll.t" label="Title" autofocus
                color="brand-p"/>

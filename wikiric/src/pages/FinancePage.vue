@@ -107,7 +107,7 @@
                       <q-icon name="add" size="1.4rem"/>
                       <div>
                         <p class="fontbold text-body1">
-                          New Collection
+                          New Account
                         </p>
                       </div>
                     </div>
@@ -126,12 +126,13 @@
                       <q-icon name="sym_o_join" size="1.4rem"/>
                       <div>
                         <p class="fontbold text-body1">
-                          Join Collection
+                          Join Account
                         </p>
                       </div>
                     </div>
                     <p class="text-subtitle2">
-                      Join a collection to split the costs.
+                      Join a collection to split the costs
+                      and receive payments.
                     </p>
                   </q-item-label>
                 </q-item>
@@ -140,64 +141,90 @@
                 <p class="text-h5 fontbold mt8 mb4 mrauto">
                   Collections
                 </p>
-                <template v-for="coll in collections" :key="coll">
-                  <div v-if="coll"
-                       class="wfull surface px3 py1 rounded mb3">
-                    <div class="flex items-center gap-2">
-                      <p class="fontbold text-body1">
-                        <template v-if="coll.t">
-                        {{ coll.t }}
-                        </template>
-                        <template v-else>
-                          (No Title)
-                        </template>
-                      </p>
-                      <p class="text-subtitle2">
-                        <template v-if="coll.t">
-                        {{ coll.desc }}
-                        </template>
-                      </p>
-                      <template v-if="coll._summary">
-                        <div class="mlauto flex items-center gap-4">
-                          <template v-if="coll._summary._ownIncome">
-                            <p class="text-green fontbold text-h5">
-                              {{ Math.abs(coll._summary._ownIncome) }} €
-                            </p>
-                          </template>
-                          <template v-if="coll._summary._ownPayment">
-                            <p class="text-red fontbold text-h5">
-                              {{ Math.abs(coll._summary._ownPayment) }} €
-                            </p>
-                          </template>
+                <div class="grid wfull gap-4
+                            grid-cols-1
+                            sm:grid-cols-2
+                            limit-screen">
+                  <template v-for="coll in collections" :key="coll">
+                    <div v-if="coll"
+                         class="surface px3 py3 rounded flex-grow">
+                      <div class="flex gap-2">
+                        <div class="mr4">
+                          <p class="fontbold text-h5">
+                            <template v-if="coll.t">
+                              {{ coll.t }}
+                            </template>
+                            <template v-else>
+                              (No Title)
+                            </template>
+                          </p>
+                          <p class="text-subtitle2">
+                            <template v-if="coll.t">
+                              {{ coll.desc }}
+                            </template>
+                          </p>
                         </div>
-                      </template>
+                        <template v-if="coll._summary">
+                          <div class="mlauto text-end rounded fmt_border
+                                      background pr2 pl4 py2">
+                            <template v-if="coll._summary._ownIncome">
+                              <p class="text-green fontbold text-h6">
+                                {{
+                                  Math.abs(coll._summary._ownIncome).toLocaleString(
+                                    'de-DE', {
+                                      style: 'currency',
+                                      currency: 'EUR'
+                                    })
+                                }}
+                                <q-icon name="sym_o_arrow_drop_up"
+                                        color="green"
+                                        size="2rem"/>
+                              </p>
+                            </template>
+                            <template v-if="coll._summary._ownPayment">
+                              <p class="text-red fontbold text-h6">
+                                {{
+                                  Math.abs(coll._summary._ownPayment).toLocaleString(
+                                    'de-DE', {
+                                      style: 'currency',
+                                      currency: 'EUR'
+                                    })
+                                }}
+                                <q-icon name="sym_o_arrow_drop_down"
+                                        color="red"
+                                        size="2rem"/>
+                              </p>
+                            </template>
+                          </div>
+                        </template>
+                      </div>
+                      <div class="flex gap-2 mt4 pb2 wfull">
+                        <q-btn label="View"
+                               icon="search"
+                               no-caps flat class="fmt_border flex-grow"
+                               @click="showCollection(coll)"/>
+                        <q-btn label="Add Payment"
+                               icon="sym_o_contract"
+                               no-caps flat class="fmt_border flex-grow"
+                               @click="addPaymentToColl(coll)"/>
+                        <q-btn label="Add Income"
+                               icon="sym_o_account_balance"
+                               no-caps flat class="fmt_border flex-grow"
+                               @click="addIncomeToColl(coll)"/>
+                      </div>
+                      <div class="flex gap-2 pb2 wfull justify-end">
+                        <q-btn label="Share Collection"
+                               icon="link"
+                               no-caps flat
+                               @click="showCollectionID(coll)"/>
+                        <q-btn label="Remove Collection"
+                               icon="delete"
+                               no-caps flat
+                               @click="removeCollection(coll)"/>
+                      </div>
                     </div>
-                    <div class="flex gap-2 mt2 pb2 wfull">
-                      <q-btn label="View"
-                             icon="search"
-                             no-caps flat class="fmt_border flex-grow"
-                             @click="showCollection(coll)"/>
-                      <q-btn label="Add Payment"
-                             icon="sym_o_contract"
-                             no-caps flat class="fmt_border flex-grow"
-                             @click="addPaymentToColl(coll)"/>
-                      <q-btn label="Add Income"
-                             icon="sym_o_account_balance"
-                             no-caps flat class="fmt_border flex-grow"
-                             @click="addIncomeToColl(coll)"/>
-                    </div>
-                    <div class="flex gap-2 pb2 wfull justify-end">
-                      <q-btn label="Share Collection"
-                             icon="link"
-                             no-caps flat
-                             @click="showCollectionID(coll)"/>
-                      <q-btn label="Remove Collection"
-                             icon="delete"
-                             no-caps flat
-                             @click="removeCollection(coll)"/>
-                    </div>
-                  </div>
-                </template>
+                  </template>
+                </div>
               </template>
             </div>
           </div>
@@ -225,9 +252,11 @@
                               @close="isViewingTransaction = false"/>
   <finance-collection-editor :is-open="isViewingCollection"
                              :collection="{}"
-                             @collsubmit="handleCollectionSubmit"/>
+                             @collsubmit="handleCollectionSubmit"
+                             @close="isViewingCollection = false"/>
   <finance-collection-join :is-open="isViewingCollectionJoin"
-                           @selected="handleCollectionJoin"/>
+                           @selected="handleCollectionJoin"
+                           @close="isViewingCollectionJoin = false"/>
   <q-dialog v-model="isViewingCollectionID" class="z-fab">
     <q-card class="surface p4 wfull" flat bordered>
       <div class="flex gap-2 items-center justify-center p2">
@@ -264,13 +293,13 @@
   </q-dialog>
   <q-dialog v-model="isViewingCollectionDetails"
             class="z-fab">
-    <q-card class="surface p4 wfull" flat bordered>
+    <q-card class="surface p4 <sm:px2 wfull" flat bordered>
       <div class="flex gap-2">
         <div class="wfull">
-          <p class="text-h5 fontbold">
+          <p class="text-h5 fontbold <sm:pl1">
             {{ viewingCollection.t }}
           </p>
-          <p class="mt1 text-subtitle2">
+          <p class="mt1 text-subtitle2 <sm:pl1">
             {{ viewingCollection.desc }}
           </p>
           <div class="my2">
@@ -278,7 +307,7 @@
           </div>
           <div class="flex gap-x-8 gap-y-2 mt3">
             <div class="">
-              <p class="mb3 fontbold text-body1">
+              <p class="mb3 fontbold text-body1 <sm:pl1">
                 Collaborators - {{ viewingCollection.coll.length }}
               </p>
               <template v-if="viewingCollection.coll && viewingCollection.coll.length > 0">
@@ -304,20 +333,28 @@
                 </div>
               </template>
             </div>
-            <template v-if="summary && summary._compensation?.length > 0">
+            <template v-if="summary && summary.compensation?.length > 0">
               <div class="">
-                <p class="mb3 fontbold text-body1">
-                  Compensations - {{ summary._compensation.length }}
+                <p class="mb3 fontbold text-body1 <sm:pl1">
+                  Compensations - {{ summary.compensation.length }}
                 </p>
                 <div class="flex gap-2">
-                  <template v-for="comp in summary._compensation" :key="comp">
+                  <template v-for="comp in summary.compensation" :key="comp">
                     <template v-if="comp.val > 0">
                       <div class="fmt_border rounded px4 py2">
                         <p>
                           <span class="fontbold mr1">{{ comp.from }}</span>
                           owes
                           <span class="fontbold mx1">{{ comp.to }}</span>
-                          <span class="fontbold ml1">{{ comp.val }} €</span>
+                          <span class="fontbold ml1">
+                            {{
+                              comp.val.toLocaleString(
+                                'de-DE', {
+                                  style: 'currency',
+                                  currency: 'EUR'
+                                })
+                            }}
+                          </span>
                         </p>
                       </div>
                     </template>
@@ -327,43 +364,49 @@
             </template>
             <template v-if="summary && summary.summary?.length > 0">
               <div class="">
-                <p class="mb3 fontbold text-body1">
+                <p class="mb3 fontbold text-body1 <sm:pl1">
                   Total - {{ summary.summary.length }}
                 </p>
                 <div class="flex gap-2">
                   <template v-for="sum in summary.summary" :key="sum">
-                    <div class="fmt_border rounded px2 pt1 pb2 flex gap-4">
+                    <div class="fmt_border rounded px3 pt1 pb2 flex gap-6">
                       <p class="text-subtitle1 fontbold">
                         {{ sum.from }}
                       </p>
                       <div class="mt0.5">
                         <p class="text-subtitle2 fontbold text-green
                                   line-height-snug text-end">
-                          + {{
-                            sum._totalIncome.toLocaleString(
+                          {{
+                            sum.total_income.toLocaleString(
                               'de-DE', {
                                 style: 'currency',
                                 currency: 'EUR'
                               })
                           }}
+                          <q-icon name="sym_o_arrow_drop_up"
+                                  color="green"
+                                  size="1.6rem"/>
                         </p>
                         <p class="text-subtitle2 fontbold text-red
                                   line-height-snug text-end">
-                          – {{
-                            sum._totalPayment.toLocaleString(
+                          {{
+                            sum.total_payment.toLocaleString(
                               'de-DE', {
                                 style: 'currency',
                                 currency: 'EUR'
                               })
                           }}
+                          <q-icon name="sym_o_arrow_drop_down"
+                                  color="red"
+                                  size="1.6rem"/>
                         </p>
                         <div class="my1">
                           <hr style="margin: 0 !important;">
                         </div>
-                        <p class="text-subtitle1 fontbold
+                        <p class="text-subtitle1 fontbold mr7
                                   line-height-snug text-end">
                           {{
-                            (sum._totalIncome - sum._totalPayment).toLocaleString(
+                            (sum.total_income - sum.total_payment).toLocaleString(
                               'de-DE', {
                                 style: 'currency',
                                 currency: 'EUR'
@@ -379,7 +422,7 @@
           </div>
           <template v-if="summary && summary.transactions?.length > 0">
             <div class="mt3">
-              <p class="mb4 fontbold text-body1">
+              <p class="mb4 fontbold text-body1 <sm:pl1">
                 Transactions - {{ summary.transactions.length }}
               </p>
               <div class="flex column gap-2">
@@ -389,7 +432,7 @@
                       <p class="text-subtitle2">
                         # {{ summary.transactions.length - i }}
                       </p>
-                      <p class="text-subtitle2 fontbold flex items-center">
+                      <p class="text-subtitle2 fontbold flex items-center gap-2">
                         <template v-if="trx.from !== ''">
                           {{ trx.from }}
                         </template>
@@ -422,13 +465,13 @@
                             })
                         }}
                       </p>
-                      <p class="text-subtitle2 ml4">
-                        {{ getHumanReadableDateText(trx.ts, true, true) }}
-                      </p>
                     </div>
+                    <p class="text-subtitle2 fmt_border_top pt2 mt1">
+                      {{ getHumanReadableDateText(trx.ts, true, true) }}
+                    </p>
                     <template v-if="trx.comment">
                       <div class="flex gap-2 items-center mt2
-                                  fmt_border_top pt2 pb1">
+                                  pt2 pb1">
                         <p class="text-subtitle2">
                           <q-icon name="sym_o_info" size="1.2rem" class="mr1"/>
                           {{ trx.comment }}
@@ -445,7 +488,33 @@
                           Details
                         </p>
                       </template>
-                      <div class="px4 py2 wfull text-subtitle2 surface break-all">
+                      <div class="px4 py2 wfull text-subtitle2 surface">
+                        <template v-if="trx.dist && trx.dist.length > 0">
+                          <p class="fontbold">Compensation:</p>
+                          <div class="flex gap-2 p2">
+                            <template v-for="dist in trx.dist" :key="dist">
+                              <div class="fmt_border rounded-2 px2 py0.5">
+                                <p class="text-subtitle2 fontbold">
+                                  <q-icon name="sym_o_arrow_drop_down"
+                                          color="red"
+                                          size="1.8rem"/>
+                                  {{ dist.from }}
+                                  <q-icon name="sym_o_arrow_right"/>
+                                  pays
+                                  {{ dist.val }}
+                                  {{ trx.unit }}
+                                  ( {{ (dist.val / trx.val) * 100 }} % )
+                                  to
+                                  <q-icon name="sym_o_arrow_right"/>
+                                  {{ dist.to }}
+                                  <q-icon name="sym_o_arrow_drop_up"
+                                          color="green"
+                                          size="1.8rem"/>
+                                </p>
+                              </div>
+                            </template>
+                          </div>
+                        </template>
                         <p>
                           <span class="fontbold">Signature:</span>
                           <template v-if="trx.sig && trx.sig !== ''">
@@ -465,7 +534,14 @@
                         </p>
                         <p>
                           <span class="fontbold">Hash:</span>
-                          <span class="ml1">{{ trx.hash }}</span>
+                          <span class="ml1">
+                            {{ midTruncate(trx.hash) }}
+                          </span>
+                          <q-btn label="Copy"
+                                 icon="sym_o_content_copy"
+                                 dense flat size="sm"
+                                 class="ml2"
+                                 @click="copyHash(trx.hash)"/>
                         </p>
                         <p>
                           <span class="fontbold">Previous:</span>
@@ -487,6 +563,21 @@
                     </q-expansion-item>
                   </div>
                 </template>
+              </div>
+            </div>
+          </template>
+          <template v-else>
+            <div class="mt3">
+              <p class="mb4 fontbold text-body1">
+                Transactions
+              </p>
+              <div class="background p3 rounded-2">
+                <p class="text-body1 italic text-weight-medium">
+                  Nothing here, yet!
+                </p>
+                <p class="text-subtitle2">
+                  No transactions have been found.
+                </p>
               </div>
             </div>
           </template>
@@ -528,9 +619,9 @@ export default {
       isViewingCollectionID: false,
       isViewingCollectionDetails: false,
       isViewingCollection: false,
-      viewingCollection: null,
+      viewingCollection: {},
       summary: null,
-      lastCollection: null,
+      lastCollection: {},
       trxFrom: '',
       trxTo: ''
     }
@@ -540,10 +631,10 @@ export default {
       this.$router.back()
     },
     newCollection: function () {
-      this.isViewingCollection = !this.isViewingCollection
+      this.isViewingCollection = true
     },
     joinCollection: function () {
-      this.isViewingCollectionJoin = !this.isViewingCollectionJoin
+      this.isViewingCollectionJoin = true
     },
     handleCollectionSubmit: async function (collection) {
       if (collection == null) return
@@ -557,6 +648,7 @@ export default {
         const key = `finance_coll_${response.data}`
         dbSetData(key, collection)
         this.getCollections()
+        this.isViewingCollection = false
       }).catch((e) => {
         console.debug(e.message)
       })
@@ -575,6 +667,7 @@ export default {
           t: query
         })
         this.getCollections()
+        this.isViewingCollectionJoin = false
       }).catch((e) => {
         if (e) {
           query = ''
@@ -592,7 +685,7 @@ export default {
       this.isViewingTransaction = true
     },
     getCollections: async function () {
-      this.lastCollection = null
+      this.lastCollection = {}
       const keys = await dbGetAllDataKeys()
       if (!keys || keys.length < 1) {
         this.collections = []
@@ -658,7 +751,7 @@ export default {
         this.$q.notify({
           color: 'primary',
           position: 'top-right',
-          message: 'Collection ID copied',
+          message: 'Account ID copied',
           caption: '',
           actions: [
             {
@@ -703,147 +796,19 @@ export default {
     },
     processViewingCollection: function (collection) {
       if (!this.summary) return
-      /**
-       * @type {Map<String, Object>}
-       */
-      const compensation = new Map()
-      if (this.summary.compensation) {
-        let tmp
-        let key
-        for (let i = 0; i < this.summary.compensation.length; i++) {
-          // Calculate directional compensation
-          if (this.summary.compensation[i].from === '' ||
-            this.summary.compensation[i].to === '') {
-            continue
-          }
-          key = `${this.summary.compensation[i].from}->${this.summary.compensation[i].to}`
-          if (!compensation.has(key)) {
-            compensation.set(key, {
-              from: this.summary.compensation[i].from,
-              to: this.summary.compensation[i].to,
-              val: this.summary.compensation[i].val
-            })
-          } else {
-            tmp = compensation.get(key)
-            tmp.val += this.summary.compensation[i].val
-            compensation.set(key, tmp)
+      if (this.summary.compensation?.length > 0) {
+        for (let i = this.summary.compensation.length - 1; i >= 0; i--) {
+          if (this.summary.compensation[i].val <= 0.0) {
+            this.summary.compensation.splice(i, 1)
           }
         }
-        this.summary._compensation = []
-        for (const [i, comp] of compensation) {
-          if (i) {
-            this.summary._compensation.push({
-              from: comp.from,
-              to: comp.to,
-              val: comp.val
-            })
-          }
-        }
-        // Reduce the amount of unnecessary payments
-        // E.g. Alice owes 10 to Bob and Bob owes 5 to Alice
-        //   -> Alice only owes 5 and Bob owes nothing
-        let i = 0
-        for (const comp of this.summary._compensation) {
-          key = `${comp.to}->${comp.from}`
-          if (compensation.has(key)) {
-            tmp = compensation.get(key)
-            if (comp.val <= tmp.val && comp.val > 0 && tmp.val > 0) {
-              tmp.val -= comp.val
-              comp.val = 0
-              compensation.set(key, tmp)
-              this.summary._compensation[i] = comp
-              for (let j = 0; j < this.summary._compensation.length; j++) {
-                if (this.summary._compensation[j].from === comp.to &&
-                  this.summary._compensation[j].to === comp.from) {
-                  this.summary._compensation[j] = tmp
-                }
-              }
-            }
-          }
-          i += 1
-        }
-        const totalPayment = new Map()
-        const totalIncome = new Map()
-        let tmpFrom
-        let tmpTo
-        let tmpVal
-        for (let j = 0; j < this.summary.compensation.length; j++) {
-          tmpFrom = this.summary.compensation[j].from
-          tmpTo = this.summary.compensation[j].to
-          tmpVal = this.summary.compensation[j].val
-          if (tmpFrom === '' && tmpTo !== '') {
-            // Income
-            if (!totalIncome.has(tmpTo)) {
-              totalIncome.set(tmpTo, tmpVal)
-            } else {
-              tmpVal = totalIncome.get(tmpTo)
-              tmpVal += this.summary.compensation[j].val
-              totalIncome.set(tmpTo, tmpVal)
-            }
-          } else {
-            if (tmpVal > 0 && tmpFrom !== '') {
-              // Payment for tmpFrom
-              if (!totalPayment.has(tmpFrom)) {
-                totalPayment.set(tmpFrom, tmpVal)
-              } else {
-                tmpVal = totalPayment.get(tmpFrom)
-                tmpVal += this.summary.compensation[j].val
-                totalPayment.set(tmpFrom, tmpVal)
-              }
-              if (tmpTo !== '') {
-                // Income for tmpTo
-                if (!totalIncome.has(tmpTo)) {
-                  totalIncome.set(tmpTo, this.summary.compensation[j].val)
-                } else {
-                  tmpVal = totalIncome.get(tmpTo)
-                  tmpVal += this.summary.compensation[j].val
-                  totalIncome.set(tmpTo, tmpVal)
-                }
-                // // Expected income through compensation is
-                // // ... considered a kind of payment
-                // if (!totalPayment.has(tmpTo)) {
-                //   totalPayment.set(tmpTo, this.summary.compensation[j].val)
-                // } else {
-                //   tmpVal = totalPayment.get(tmpTo)
-                //   tmpVal += this.summary.compensation[j].val
-                //   totalPayment.set(tmpTo, tmpVal)
-                // }
-              }
-            }
-          }
-        }
-        for (let j = this.summary.summary.length - 1; j >= 0; j--) {
-          if (this.summary.summary[j].from === '' &&
-            this.summary.summary[j].to === '') {
-            this.summary.summary.splice(j, 1)
-            continue
-          }
-          this.summary.summary[j]._totalPayment = Math.abs(
-            totalPayment.get(this.summary.summary[j].from))
-          if (!this.summary.summary[j]._totalPayment) {
-            this.summary.summary[j]._totalPayment = 0.0
-          }
-          this.summary.summary[j]._totalIncome = Math.abs(
-            totalIncome.get(this.summary.summary[j].from))
-          if (!this.summary.summary[j]._totalIncome) {
-            this.summary.summary[j]._totalIncome = 0.0
-          }
-          // Personal Income and Spending's
-          if (this.summary.summary[j].from === this.store.user.username) {
-            this.summary._ownPayment =
-              this.summary.summary[j]._totalPayment
-            this.summary._ownIncome =
-              this.summary.summary[j]._totalIncome
-          }
-        }
-        // If a compensation doesn't start and end with a person,
-        // ... we can discard it
-        // (nobody can be held responsive for the missing end)
-        for (let j = this.summary._compensation.length - 1; j >= 0; j--) {
-          if (this.summary._compensation[j].to === '' ||
-            this.summary._compensation[j].from === '' ||
-            this.summary._compensation[j].val === 0.0) {
-            this.summary._compensation.splice(j, 1)
+      }
+      if (this.summary.summary?.length > 0) {
+        for (let i = this.summary.summary.length - 1; i >= 0; i--) {
+          if (this.summary.summary[i].from === this.store.user.username) {
+            this.summary._ownIncome = this.summary.summary[i].total_income
+            this.summary._ownPayment = this.summary.summary[i].total_payment
+            break
           }
         }
       }
@@ -943,6 +908,35 @@ export default {
       this.trxTo = this.store.user.username
       this.lastCollection = coll
       this.isViewingTransaction = true
+    },
+    midTruncate: function (txt) {
+      if (typeof txt !== 'string') {
+        txt = txt.toString()
+      }
+      if (!txt) return ''
+      if (txt.length < 20) {
+        return txt
+      }
+      return txt.slice(0, 10) + '...' + txt.slice(txt.length - 10)
+    },
+    copyHash: function (text) {
+      if (!text) return
+      copyToClipboard(text)
+      this.$q.notify({
+        color: 'primary',
+        position: 'top-right',
+        message: 'Transaction hash copied',
+        caption: '',
+        actions: [
+          {
+            icon: 'close',
+            color: 'white',
+            round: true,
+            handler: () => {
+            }
+          }
+        ]
+      })
     }
   }
 }

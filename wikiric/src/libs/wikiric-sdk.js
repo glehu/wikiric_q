@@ -40,8 +40,8 @@ import Wikiricrypt from './wikiricrypt'
  * await wikiric.login('yourUsername', 'yourPassword')
  * await wikiric.doSync()
  *
- * // 2. Connect to the chat group (or channel if provided)
- * wikiric.connect('yourChatID', 'yourPrivateKey', 'yourOptionalChannelID')
+ * // 2. Connect to the chat group's channel
+ * wikiric.connect('yourChannelID', 'yourPrivateKey')
  *
  * // 3. Listen to the chat group's incoming messages
  * const messages = new BroadcastChannel('wikiric_msg')

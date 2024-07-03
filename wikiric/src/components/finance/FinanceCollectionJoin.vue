@@ -1,9 +1,13 @@
 <template>
-  <q-dialog v-model="show" class="z-fab">
+  <q-dialog v-model="show" class="z-fab"
+            @before-hide="$emit('close')">
     <q-card class="surface px4 pb4 w-[99dvw] max-w-xl" flat bordered>
       <q-input v-model="collectionID" color="brand-p"
-               label="Collection ID"
+               label="Account ID"
                @update:model-value="queryCollection"/>
+      <p class="text-subtitle2 mt2">
+        Paste an Account ID to automatically join it!
+      </p>
     </q-card>
   </q-dialog>
 </template>
@@ -20,11 +24,13 @@ export default {
     }
   },
   name: 'FinanceCollectionJoin',
-  emits: ['selected'],
+  emits: ['selected', 'close'],
   watch: {
-    isOpen () {
-      this.show = true
-      this.handleDialogOpen()
+    isOpen (newVal) {
+      this.show = newVal
+      if (this.show) {
+        this.handleDialogOpen()
+      }
     }
   },
   created () {

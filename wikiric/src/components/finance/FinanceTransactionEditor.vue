@@ -70,15 +70,17 @@
                   {{ dist.to }}
                 </template>
               </p>
-              <q-circular-progress
+              <q-knob
                 show-value
                 font-size="14px"
-                :value="dist.ratio * 100"
+                v-model="dist._ratio"
+                @update:model-value="handleRatioChange"
+                min="0" max="1" step="0.001"
                 size="96px"
-                :thickness="0.2"
                 color="primary"
                 track-color="grey-4"
-                class="fontbold">
+                class="fontbold"
+              >
                 {{
                   (dist.val).toLocaleString(
                     'de-DE', {
@@ -86,19 +88,72 @@
                       currency: trx.unit
                     })
                 }}
-              </q-circular-progress>
+              </q-knob>
             </div>
           </template>
-          <template v-if="trx.dist.length < 2">
-            <div class="flex column gap-2 wfit fmt_border
-                      rounded py2 px4 items-center justify-center">
+        </div>
+      </template>
+      <template v-else>
+        <div class="flex gap-2 py2">
+          <div class="flex column gap-2 wfit fmt_border p2 mr3
+                      rounded items-center justify-center">
+            <template v-if="trx.type === 'income'">
+              <q-icon name="sym_o_account_balance" size="32px"/>
+              <p class="text-subtitle2 non-selectable">
+                Income
+              </p>
+            </template>
+            <template v-else-if="trx.type === 'payment'">
+              <q-icon name="sym_o_contract" size="32px"/>
+              <p class="text-subtitle2 non-selectable">
+                Payment
+              </p>
+            </template>
+            <template v-else>
               <q-icon name="sym_o_arrow_split" size="32px"/>
               <p class="text-subtitle2 non-selectable">
                 Invite People
                 <br>to split costs.
               </p>
+            </template>
+          </div>
+          <div class="hfit flex-grow">
+            <div class="flex gap-2 items-center hfit justify-center
+                        px2 py1 rounded background">
+              <template v-if="trx.type === 'payment'">
+                <div>
+                  <p class="text-body1 fontbold">
+                    {{ trx.from }}
+                  </p>
+                </div>
+                <div class="wfit">
+                  <q-icon name="sym_o_arrow_right" size="2rem"/>
+                </div>
+              </template>
+              <div>
+                <p class="text-body1 fontbold">
+                  {{ trx.val }} {{ trx.unit }}
+                </p>
+              </div>
+              <div>
+                <q-icon name="sym_o_arrow_right" size="2rem"/>
+              </div>
+              <div>
+                <p class="text-body1 fontbold">
+                  {{ trx.to }}
+                </p>
+              </div>
             </div>
-          </template>
+            <div class="mt2 max-w-sm">
+              <p class="text-subtitle2">
+                Is this right? Check before making any payment.
+              </p>
+              <p class="text-subtitle2 mt2">
+                Keep in mind that a transaction can only be cancelled
+                if it is the very last transaction made until that point.
+              </p>
+            </div>
+          </div>
         </div>
       </template>
       <div class="mt4 mb1">
@@ -108,7 +163,8 @@
         <p class="text-subtitle2 fontbold non-selectable">
           {{ capitalizeFirstLetter(trx.type) }}
         </p>
-        <q-btn label="Submit" color="primary"
+        <q-btn label="Submit Transaction" color="primary"
+               :disabled="trx.val <= 0.0"
                @click="submitTransaction"/>
       </div>
     </q-card>
@@ -183,7 +239,7 @@ export default {
         comment: ''
       }
       this.coll = this.collection
-      if (this.coll.coll.length < 1) {
+      if (this.coll.coll?.length < 1) {
         this.coll.coll = [{
           from: this.store.user.username
         }]
@@ -213,66 +269,32 @@ export default {
         this.isDirectional = false
       }
       this.trx.dist = []
+      // Do not calculate compensation if the transaction is directional
+      // ... or income, as that would be unfair!
+      if (this.isDirectional === true || this.trx.type === 'income') {
+        return
+      }
       let ratioTmp
       for (let i = 0; i < this.coll.coll.length; i++) {
         // Check if user is collaborator if this is directional
-        if (this.isDirectional || this.trx.type === 'income') {
+        if (this.isDirectional) {
           if (this.trx.to !== this.coll.coll[i]) {
             continue
           }
         }
         if (this.trx.from === this.coll.coll[i]) {
-          // Negative since user will expect money back
-          ratioTmp = 1 / this.coll.coll.length * -1
-          if (this.coll.coll.length === 1) {
-            // If there is nobody else, cover the full cost
-            ratioTmp = 1
-            this.trx.dist.push({
-              from: this.coll.coll[i],
-              ratio: ratioTmp,
-              val: this.trx.val * ratioTmp
-            })
-          } else {
-            this.trx.dist.push({
-              from: this.coll.coll[i],
-              ratio: ratioTmp,
-              val: this.trx.val * ratioTmp
-            })
-          }
-        } else {
-          // Positive since user owes money
-          ratioTmp = 1 / this.coll.coll.length
-          if (this.trx.type === 'income') {
-            // If its pure income, receive it all
-            ratioTmp = 1
-            this.trx.dist.push({
-              from: '',
-              to: this.coll.coll[i],
-              ratio: ratioTmp,
-              val: this.trx.val * ratioTmp
-            })
-            continue
-          } else if (this.coll.coll.length === 1) {
-            // If its pure income, pay it all
-            ratioTmp = 1
-          }
-          if (this.isDirectional) {
-            ratioTmp = -1
-            this.trx.dist.push({
-              from: this.trx.from,
-              to: this.coll.coll[i],
-              ratio: ratioTmp,
-              val: this.trx.val * ratioTmp
-            })
-          } else {
-            this.trx.dist.push({
-              from: this.coll.coll[i],
-              to: this.trx.from,
-              ratio: ratioTmp,
-              val: this.trx.val * ratioTmp
-            })
-          }
+          continue
         }
+        // Positive since user owes money
+        ratioTmp = 1 / this.coll.coll.length
+        this.trx.dist.push({
+          from: this.coll.coll[i],
+          to: this.trx.from,
+          ratio: ratioTmp,
+          _ratio: ratioTmp,
+          val: Math.abs(this.trx.val * ratioTmp),
+          _val: Math.abs(this.trx.val * ratioTmp)
+        })
       }
     },
     submitTransaction: function () {
@@ -281,6 +303,13 @@ export default {
     },
     capitalizeFirstLetter: function ([first, ...rest], locale = navigator.language) {
       return first === undefined ? '' : first.toLocaleUpperCase(locale) + rest.join('')
+    },
+    handleRatioChange: function () {
+      for (let i = 0; i < this.trx.dist.length; i++) {
+        if (this.trx.dist[i]._ratio) {
+          this.trx.dist[i].val = this.trx.val * this.trx.dist[i]._ratio
+        }
+      }
     }
   }
 }

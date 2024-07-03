@@ -35,19 +35,19 @@
                     <sm:px4
                     md:justify-start">
           <q-btn color="primary" no-caps
-                 class="muArrow q-mr-sm q-mb-sm rounded-18
+                 class="muArrow q-mr-sm q-mb-sm rounded-4
                         <sm:wfull"
                  v-on:click="gotoLogin()">
-            <div class="column text-left q-pa-md px10">
+            <div class="column text-left q-pa-md">
               <p class="text-h5 text-weight-bold q-ma-none">Sign In</p>
             </div>
           </q-btn>
           <q-btn color="transparent" no-caps
-                 class="muArrow q-mb-sm backdrop-blur-3xl rounded-18
+                 class="muArrow q-mb-sm backdrop-blur-3xl rounded-4
                         fmt_border <sm:wfull"
                  v-on:click="gotoRegistration()">
-            <div class="column text-left q-pa-md">
-              <p class="text-h5 text-weight-bold q-ma-none">Sign Up</p>
+            <div class="column text-left">
+              <p class="text-h5 text-weight-bold q-ma-none">Register</p>
             </div>
           </q-btn>
         </div>
