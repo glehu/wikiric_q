@@ -65,3 +65,11 @@ export async function dbGetData (key) {
 export async function dbSetData (key, val) {
   return (await dbPromise).put('data', toRaw(val), key)
 }
+
+export async function dbDelData (key) {
+  return (await dbPromise).delete('data', key)
+}
+
+export async function dbGetAllDataKeys () {
+  return (await dbPromise).getAllKeys('data')
+}

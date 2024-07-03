@@ -85,6 +85,12 @@ export default {
           desc: 'Analyse HTTP requests',
           icon: 'sym_o_travel_explore',
           link: '/mockingbird'
+        },
+        {
+          t: 'Finance',
+          desc: 'Track payments and split with others',
+          icon: 'sym_o_finance_mode',
+          link: '/finance'
         }
       ],
       games: [

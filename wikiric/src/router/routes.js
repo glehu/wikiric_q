@@ -44,6 +44,9 @@ const routes = [{
     path: 'flowfielddemo',
     component: () => import('pages/games/flowfield/FlowFieldDemo.vue')
   }, {
+    path: 'finance',
+    component: () => import('pages/FinancePage.vue')
+  }, {
     path: 'redir',
     component: () => import('pages/RedirectPage.vue')
   }, {
