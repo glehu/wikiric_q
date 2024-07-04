@@ -53,9 +53,9 @@
                         surface-variant"
                  @click="clickedBack">
           </q-btn>
-          <div class="flex gap-2">
+          <div class="flex gap-2 justify-center wfull">
             <div class="flex column items-center justify-center p4
-                        flex-grow">
+                        flex-grow max-w-screen-2xl">
               <div class="grid wfull gap-4
                           grid-cols-1
                           sm:grid-cols-2
@@ -167,34 +167,30 @@
                         <template v-if="coll._summary">
                           <div class="mlauto text-end rounded fmt_border
                                       background pr2 pl4 py2">
-                            <template v-if="coll._summary._ownIncome">
-                              <p class="text-green fontbold text-h6">
-                                {{
-                                  Math.abs(coll._summary._ownIncome).toLocaleString(
-                                    'de-DE', {
-                                      style: 'currency',
-                                      currency: 'EUR'
-                                    })
-                                }}
-                                <q-icon name="sym_o_arrow_drop_up"
-                                        color="green"
-                                        size="2rem"/>
-                              </p>
-                            </template>
-                            <template v-if="coll._summary._ownPayment">
-                              <p class="text-red fontbold text-h6">
-                                {{
-                                  Math.abs(coll._summary._ownPayment).toLocaleString(
-                                    'de-DE', {
-                                      style: 'currency',
-                                      currency: 'EUR'
-                                    })
-                                }}
-                                <q-icon name="sym_o_arrow_drop_down"
-                                        color="red"
-                                        size="2rem"/>
-                              </p>
-                            </template>
+                            <p class="text-green fontbold text-h6">
+                              {{
+                                Math.abs(coll._summary._ownIncome).toLocaleString(
+                                  'de-DE', {
+                                    style: 'currency',
+                                    currency: 'EUR'
+                                  })
+                              }}
+                              <q-icon name="sym_o_arrow_drop_up"
+                                      color="green"
+                                      size="2rem"/>
+                            </p>
+                            <p class="text-red fontbold text-h6">
+                              {{
+                                Math.abs(coll._summary._ownPayment).toLocaleString(
+                                  'de-DE', {
+                                    style: 'currency',
+                                    currency: 'EUR'
+                                  })
+                              }}
+                              <q-icon name="sym_o_arrow_drop_down"
+                                      color="red"
+                                      size="2rem"/>
+                            </p>
                           </div>
                         </template>
                       </div>
@@ -421,10 +417,14 @@
             </template>
           </div>
           <template v-if="summary && summary.transactions?.length > 0">
-            <div class="mt3">
+            <div class="mt3 wfull">
               <p class="mb4 fontbold text-body1 <sm:pl1">
                 Transactions - {{ summary.transactions.length }}
               </p>
+              <div class="fmt_border rounded p2 mb4 max-w-[84vw] overflow-hidden"
+                   style="position: relative; width:500px">
+                <canvas id="summary_chart"></canvas>
+              </div>
               <div class="flex column gap-2">
                 <template v-for="(trx, i) in summary.transactions" :key="trx">
                   <div class="rounded background px2 py1">
@@ -596,6 +596,8 @@ import FinanceCollectionJoin from 'components/finance/FinanceCollectionJoin.vue'
 import { copyToClipboard } from 'quasar'
 import { DateTime } from 'luxon'
 import { useStore } from 'stores/wikistate'
+import Chart from 'chart.js/auto'
+import { toRaw } from 'vue'
 
 export default {
   name: 'FinancePage',
@@ -608,6 +610,7 @@ export default {
     this.getCollections()
   },
   data () {
+    this.graphCalls = null
     return {
       store: useStore(),
       fab: false,
@@ -623,7 +626,14 @@ export default {
       summary: null,
       lastCollection: {},
       trxFrom: '',
-      trxTo: ''
+      trxTo: '',
+      graphData: {
+        methods: [],
+        endpoints: [],
+        requestsQueue: new Map(),
+        endpointIx: new Map(),
+        callsIteration: 0
+      }
     }
   },
   methods: {
@@ -743,6 +753,124 @@ export default {
       })
       this.isViewingCollectionDetails = true
       await this.getCollections()
+      this.initializeCallsGraph()
+      setTimeout(() => {
+        this.analyseTransactions()
+      }, 100)
+    },
+    initializeCallsGraph: function () {
+      const ctx = document.getElementById('summary_chart')
+      this.graphCalls = new Chart(ctx, {
+        type: 'line',
+        data: {
+          datasets: []
+        },
+        options: {
+          animation: false,
+          responsive: true,
+          plugins: {
+            tooltip: {
+              intersect: false
+            },
+            colors: {
+              enabled: true,
+              forceOverride: true
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      })
+    },
+    analyseTransactions: function () {
+      if (!this.summary || this.summary.transactions?.length < 1) {
+        return
+      }
+      this.graphData.requestsQueue = new Map()
+      this.graphData.endpointIx = new Map()
+      this.graphData.callsIteration = 0
+      for (let i = 0; i < this.viewingCollection.coll.length; i++) {
+        this.graphData.requestsQueue.set(
+          this.viewingCollection.coll[i], 0.0)
+      }
+      let trx
+      let lastDate = ''
+      for (let i = this.summary.transactions.length - 1; i >= 0; i--) {
+        trx = this.summary.transactions[i]
+        const dateTs = this.getHumanReadableDateText(
+          trx.ts, true, false)
+        if (trx.from !== '') {
+          this.addQueueVal(trx.from, trx.val * -1)
+        }
+        if (trx.to !== '') {
+          this.addQueueVal(trx.to, trx.val)
+        }
+        if (dateTs !== lastDate) {
+          this.graphCalls.data.labels.push(dateTs)
+          this.processNewRequests(dateTs)
+        }
+        lastDate = dateTs
+        this.graphData.callsIteration += 1
+      }
+      this.processNewRequests(lastDate)
+      this.graphCalls.update()
+      this.graphCalls.resize(600, 300)
+    },
+    addQueueVal: function (key, val) {
+      if (this.graphData.requestsQueue.has(key)) {
+        let tmp = this.graphData.requestsQueue.get(key)
+        tmp += val
+        this.graphData.requestsQueue.set(key, tmp)
+      } else {
+        this.graphData.requestsQueue.set(key, val)
+      }
+    },
+    processNewRequests: function (dateTs) {
+      if (this.graphData.requestsQueue.size > 0) {
+        this.graphData.requestsQueue.forEach((val, key) => {
+          if (key) {
+            // Do we know this dataset?
+            if (this.graphData.endpointIx.has(key)) {
+              // Update dataset index
+              const index = this.graphData.endpointIx.get(key)
+              index.d.push({
+                ts: dateTs,
+                count: val
+              })
+              index.c = this.graphData.callsIteration
+              // Modify existing dataset
+              this.graphCalls.data.datasets[index.i] =
+                this.getChartData(index.d, key)
+            } else {
+              // Add new dataset to index
+              // First, we need to add empty values to reach the current time
+              const newData = []
+              for (let i = 0; i < this.graphData.callsIteration; i++) {
+                newData.push({
+                  ts: dateTs,
+                  count: 0.0
+                })
+              }
+              // Now append actual data
+              newData.push({
+                ts: dateTs,
+                count: val
+              })
+              this.graphData.endpointIx.set(key, {
+                i: this.graphData.endpointIx.size,
+                d: newData,
+                c: this.graphData.callsIteration
+              })
+              // Append new dataset
+              this.graphCalls.data.datasets.push(
+                this.getChartData(newData, key))
+            }
+          }
+        })
+      }
     },
     copyCollectionID: function () {
       if (!this.viewingCollection.uid) return
@@ -937,6 +1065,14 @@ export default {
           }
         ]
       })
+    },
+    getChartData: function (data, label) {
+      const chartData = toRaw(data)
+      return {
+        label,
+        data: chartData.map(row => row.count),
+        fill: true
+      }
     }
   }
 }
