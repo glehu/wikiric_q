@@ -63,6 +63,7 @@
       </q-header>
     </q-bar>
     <q-drawer
+      id="left_drawer"
       class="surface"
       v-model="leftDrawerOpen"
       :breakpoint="1023"
@@ -78,6 +79,7 @@
           v-for="link in essentialLinks"
           :key="link.title"
           v-bind="link"
+          @close="leftDrawerOpen = false"
         />
       </q-list>
     </q-drawer>

@@ -139,11 +139,9 @@
               </div>
               <template v-if="collections && collections.length > 0">
                 <p class="text-h5 fontbold mt8 mb4 mrauto">
-                  Collections
+                  Finance Accounts
                 </p>
-                <div class="grid wfull gap-4
-                            grid-cols-1
-                            sm:grid-cols-2
+                <div class="flex wfull gap-4
                             limit-screen">
                   <template v-for="coll in collections" :key="coll">
                     <div v-if="coll"
@@ -292,84 +290,100 @@
     <q-card class="surface p4 <sm:px2 wfull" flat bordered>
       <div class="flex gap-2">
         <div class="wfull">
-          <p class="text-h5 fontbold <sm:pl1">
-            {{ viewingCollection.t }}
-          </p>
-          <p class="mt1 text-subtitle2 <sm:pl1">
-            {{ viewingCollection.desc }}
-          </p>
+          <div class="flex wfull gap-2 items-start">
+            <div>
+              <p class="text-h5 fontbold <sm:pl1 sm:text-4xl">
+                {{ viewingCollection.t }}
+              </p>
+              <p class="mt1 text-subtitle2 <sm:pl1">
+                {{ viewingCollection.desc }}
+              </p>
+            </div>
+            <q-btn flat label="Close" color="text-brand-p" v-close-popup
+                   class="mlauto"/>
+          </div>
           <div class="my2">
             <hr style="color: var(--md-sys-color-outline-variant); margin: 0 !important;">
           </div>
-          <div class="flex gap-x-8 gap-y-2 mt3">
-            <div class="">
-              <p class="mb3 fontbold text-body1 <sm:pl1">
-                Collaborators - {{ viewingCollection.coll.length }}
-              </p>
-              <template v-if="viewingCollection.coll && viewingCollection.coll.length > 0">
-                <div class="flex gap-4">
-                  <template v-for="coll in viewingCollection.coll" :key="coll">
-                    <div class="flex gap-2 items-center fmt_border rounded px2 py1">
-                      <q-icon name="person"/>
-                      <p class="text-subtitle1 fontbold">
-                        {{ coll }}
-                      </p>
-                    </div>
-                  </template>
-                </div>
-              </template>
-              <template v-else>
-                <div class="flex column gap-2 wfit fmt_border
+          <div class="flex-grow">
+            <p class="mb3 fontbold text-body1 <sm:pl1">
+              Collaborators - {{ viewingCollection.coll.length }}
+            </p>
+            <template v-if="viewingCollection.coll && viewingCollection.coll.length > 0">
+              <div class="flex gap-2">
+                <template v-for="coll in viewingCollection.coll" :key="coll">
+                  <div class="flex gap-2 items-center fmt_border rounded px2 py1">
+                    <q-icon name="person"/>
+                    <p class="text-subtitle1 fontbold">
+                      {{ coll }}
+                    </p>
+                  </div>
+                </template>
+              </div>
+            </template>
+            <template v-else>
+              <div class="flex column gap-2 wfit fmt_border
                           rounded py2 px4 items-center justify-center">
-                  <q-icon name="sym_o_arrow_split" size="32px"/>
-                  <p class="text-subtitle2 non-selectable">
-                    Invite People
-                    <br>to split costs.
-                  </p>
-                </div>
-              </template>
-            </div>
+                <q-icon name="sym_o_arrow_split" size="32px"/>
+                <p class="text-subtitle2 non-selectable">
+                  Invite People
+                  <br>to split costs.
+                </p>
+              </div>
+            </template>
+          </div>
+          <div class="flex gap-4 mt3 wfull">
             <template v-if="summary && summary.compensation?.length > 0">
-              <div class="">
+              <div class="flex-grow background p2 rounded">
                 <p class="mb3 fontbold text-body1 <sm:pl1">
                   Compensations - {{ summary.compensation.length }}
                 </p>
-                <div class="flex gap-2">
+                <table class="wfull table_start border-spacing-none">
+                  <tr>
+                    <th class="fmt_border_bottom">From</th>
+                    <th class="fmt_border_bottom">To</th>
+                    <th class="fmt_border_bottom">Amount</th>
+                  </tr>
                   <template v-for="comp in summary.compensation" :key="comp">
                     <template v-if="comp.val > 0">
-                      <div class="fmt_border rounded px4 py2">
-                        <p>
+                      <tr class="fmt_border rounded px4 py2">
+                        <td>
                           <span class="fontbold mr1">{{ comp.from }}</span>
-                          owes
+                        </td>
+                        <td>
                           <span class="fontbold mx1">{{ comp.to }}</span>
+                        </td>
+                        <td>
                           <span class="fontbold ml1">
-                            {{
+                              {{
                               comp.val.toLocaleString(
                                 'de-DE', {
                                   style: 'currency',
                                   currency: 'EUR'
                                 })
                             }}
-                          </span>
-                        </p>
-                      </div>
+                            </span>
+                        </td>
+                      </tr>
                     </template>
                   </template>
-                </div>
+                </table>
               </div>
             </template>
             <template v-if="summary && summary.summary?.length > 0">
-              <div class="">
+              <div class="flex-grow background p2 rounded">
                 <p class="mb3 fontbold text-body1 <sm:pl1">
                   Total - {{ summary.summary.length }}
                 </p>
                 <div class="flex gap-2">
                   <template v-for="sum in summary.summary" :key="sum">
-                    <div class="fmt_border rounded px3 pt1 pb2 flex gap-6">
+                    <div class="fmt_border rounded <sm:flex-grow
+                                max-w-80
+                                px3 pt1 pb2 flex gap-6">
                       <p class="text-subtitle1 fontbold">
                         {{ sum.from }}
                       </p>
-                      <div class="mt0.5">
+                      <div class="mt0.5 mlauto">
                         <p class="text-subtitle2 fontbold text-green
                                   line-height-snug text-end">
                           {{
@@ -418,110 +432,137 @@
           </div>
           <template v-if="summary && summary.transactions?.length > 0">
             <div class="mt3 wfull">
-              <p class="mb4 fontbold text-body1 <sm:pl1">
+              <p class="mb2 fontbold text-body1 <sm:pl1 wfull">
                 Transactions - {{ summary.transactions.length }}
               </p>
-              <div id="summary_chart_container"
-                   class="chart-container wfull fmt_border rounded mb2"
-                   style="position: relative; height:40vh; width:80vw">
-                <canvas id="summary_chart"></canvas>
-              </div>
-              <div class="flex column gap-2">
-                <template v-for="(trx, i) in summary.transactions" :key="trx">
-                  <div class="rounded background px2 py1">
-                    <div class="flex gap-4 items-center">
-                      <p class="text-subtitle2">
-                        # {{ summary.transactions.length - i }}
-                      </p>
-                      <p class="text-subtitle2 fontbold flex items-center gap-2">
-                        <template v-if="trx.from !== ''">
-                          {{ trx.from }}
-                        </template>
-                        <template v-else>
-                          <q-icon name="sym_o_account_balance"/>
-                        </template>
-                        <q-icon name="sym_o_arrow_right"/>
-                        <template v-if="trx.to !== ''">
-                          {{ trx.to }}
-                        </template>
-                        <template v-else>
-                          <q-icon name="sym_o_contract"/>
-                        </template>
-                      </p>
-                      <p class="text-subtitle2">
-                        {{ capitalizeFirstLetter(trx.type) }}
-                      </p>
-                      <p class="fontbold text-body1 mlauto">
-                        <template v-if="trx.type === 'income'">
-                          +
-                        </template>
-                        <template v-else-if="trx.type === 'payment'">
-                          –
-                        </template>
-                        {{
-                          trx.val.toLocaleString(
-                            'de-DE', {
-                              style: 'currency',
-                              currency: trx.unit
-                            })
-                        }}
-                      </p>
-                    </div>
-                    <p class="text-subtitle2 fmt_border_top pt2 mt1">
-                      {{ getHumanReadableDateText(trx.ts, true, true) }}
-                    </p>
-                    <template v-if="trx.comment">
-                      <div class="flex gap-2 items-center mt2
-                                  pt2 pb1">
-                        <p class="text-subtitle2">
-                          <q-icon name="sym_o_info" size="1.2rem" class="mr1"/>
-                          {{ trx.comment }}
-                        </p>
-                      </div>
-                    </template>
-                    <q-expansion-item dense
-                                      class="surface rounded rounded
-                                             mt2 mb1"
-                                      header-class="background flex
-                                                    items-center">
-                      <template v-slot:header>
-                        <p class="wfull text-subtitle2 rounded">
-                          Details
-                        </p>
+              <div class="flex gap-4 wfull">
+                <div id="summary_chart_container"
+                     class="chart-container fmt_border
+                            max-w-[700px] <lg:max-w-[min(400px,100%)]
+                            rounded mb2 min-h-[320px] flex-grow"
+                     style="position: relative;">
+                  <canvas id="summary_chart"></canvas>
+                </div>
+                <div class="flex gap-2 column flex-grow">
+                  <div class="flex gap4 max-w-xl">
+                    <q-input ref="transaction_query_input"
+                             filled
+                             label="Filter Transactions"
+                             v-model="transactionQuery"
+                             text-color="brand-p"
+                             label-color="brand-p"
+                             class="flex-grow"
+                             @update:model-value="filterTransactions">
+                      <template v-slot:prepend>
+                        <q-icon name="search" class=""/>
                       </template>
-                      <div class="px4 py2 wfull text-subtitle2 surface">
-                        <template v-if="trx.dist && trx.dist.length > 0">
-                          <p class="fontbold">Compensation:</p>
-                          <div class="flex gap-2 p2">
-                            <template v-for="dist in trx.dist" :key="dist">
-                              <div class="fmt_border rounded-2 px2 py0.5">
-                                <p class="text-subtitle2 fontbold">
-                                  <q-icon name="sym_o_arrow_drop_down"
-                                          color="red"
-                                          size="1.8rem"/>
-                                  {{ dist.from }}
-                                  <q-icon name="sym_o_arrow_right"/>
-                                  pays
-                                  {{ dist.val }}
-                                  {{ trx.unit }}
-                                  ( {{ (dist.val / trx.val) * 100 }} % )
-                                  to
-                                  <q-icon name="sym_o_arrow_right"/>
-                                  {{ dist.to }}
-                                  <q-icon name="sym_o_arrow_drop_up"
-                                          color="green"
-                                          size="1.8rem"/>
-                                </p>
-                              </div>
-                            </template>
-                          </div>
-                        </template>
-                        <p>
-                          <span class="fontbold">Signature:</span>
-                          <template v-if="trx.sig && trx.sig !== ''">
-                            <span class="ml1">{{ trx.sig }}</span>
+                    </q-input>
+                    <q-select v-model="typeQuery" :options="typeOpts"
+                              text-color="brand-p"
+                              label-color="brand-p"
+                              label="Type"
+                              class="min-w-30"
+                              filled
+                              @update:model-value="filterTransactions"/>
+                  </div>
+                  <template v-for="(trx, i) in summary.transactions" :key="trx">
+                    <div class="rounded background px2 py1 max-w-xl"
+                         v-if="!trx._hidden">
+                      <div class="flex gap-4 items-center">
+                        <p class="text-subtitle2">
+                          # {{ summary.transactions.length - i }}
+                        </p>
+                        <p class="text-subtitle2 fontbold flex
+                                  items-center gap-2">
+                          <template v-if="trx.from !== ''">
+                            {{ trx.from }}
                           </template>
                           <template v-else>
+                            <q-icon name="sym_o_account_balance"/>
+                          </template>
+                          <q-icon name="sym_o_arrow_right"/>
+                          <template v-if="trx.to !== ''">
+                            {{ trx.to }}
+                          </template>
+                          <template v-else>
+                            <q-icon name="sym_o_contract"/>
+                          </template>
+                        </p>
+                        <p class="text-subtitle2">
+                          {{ capitalizeFirstLetter(trx.type) }}
+                        </p>
+                        <p class="fontbold text-body1 mlauto">
+                          <template v-if="trx.type === 'income'">
+                            +
+                          </template>
+                          <template v-else-if="trx.type === 'payment'">
+                            –
+                          </template>
+                          {{
+                            trx.val.toLocaleString(
+                              'de-DE', {
+                                style: 'currency',
+                                currency: trx.unit
+                              })
+                          }}
+                        </p>
+                      </div>
+                      <p class="text-subtitle2 fmt_border_top pt2 mt1">
+                        {{ getHumanReadableDateText(trx.ts, true, true) }}
+                      </p>
+                      <template v-if="trx.comment">
+                        <div class="flex gap-2 items-center mt2
+                                  pt2 pb1">
+                          <p class="text-subtitle2">
+                            <q-icon name="sym_o_info" size="1.2rem"
+                                    class="mr1"/>
+                            {{ trx.comment }}
+                          </p>
+                        </div>
+                      </template>
+                      <q-expansion-item dense
+                                        class="surface rounded rounded
+                                             mt2 mb1"
+                                        header-class="background flex
+                                                    items-center">
+                        <template v-slot:header>
+                          <p class="wfull text-subtitle2 rounded">
+                            Details
+                          </p>
+                        </template>
+                        <div class="px4 py2 wfull text-subtitle2 surface">
+                          <template v-if="trx.dist && trx.dist.length > 0">
+                            <p class="fontbold">Compensation:</p>
+                            <div class="flex gap-2 p2">
+                              <template v-for="dist in trx.dist" :key="dist">
+                                <div class="fmt_border rounded-2 px2 py0.5">
+                                  <p class="text-subtitle2 fontbold">
+                                    <q-icon name="sym_o_arrow_drop_down"
+                                            color="red"
+                                            size="1.8rem"/>
+                                    {{ dist.from }}
+                                    <q-icon name="sym_o_arrow_right"/>
+                                    pays
+                                    {{ dist.val }}
+                                    {{ trx.unit }}
+                                    ( {{ (dist.val / trx.val) * 100 }} % )
+                                    to
+                                    <q-icon name="sym_o_arrow_right"/>
+                                    {{ dist.to }}
+                                    <q-icon name="sym_o_arrow_drop_up"
+                                            color="green"
+                                            size="1.8rem"/>
+                                  </p>
+                                </div>
+                              </template>
+                            </div>
+                          </template>
+                          <p>
+                            <span class="fontbold">Signature:</span>
+                            <template v-if="trx.sig && trx.sig !== ''">
+                              <span class="ml1">{{ trx.sig }}</span>
+                            </template>
+                            <template v-else>
                             <span class="ml1">
                               Unsigned thus unverified
                               <q-tooltip>
@@ -531,25 +572,25 @@
                                 </span>
                               </q-tooltip>
                             </span>
-                          </template>
-                        </p>
-                        <p>
-                          <span class="fontbold">Hash:</span>
-                          <span class="ml1">
+                            </template>
+                          </p>
+                          <p>
+                            <span class="fontbold">Hash:</span>
+                            <span class="ml1">
                             {{ midTruncate(trx.hash) }}
                           </span>
-                          <q-btn label="Copy"
-                                 icon="sym_o_content_copy"
-                                 dense flat size="sm"
-                                 class="ml2"
-                                 @click="copyHash(trx.hash)"/>
-                        </p>
-                        <p>
-                          <span class="fontbold">Previous:</span>
-                          <template v-if="trx.prev && trx.prev !== ''">
-                            <span class="ml1">{{ trx.prev }}</span>
-                          </template>
-                          <template v-else>
+                            <q-btn label="Copy"
+                                   icon="sym_o_content_copy"
+                                   dense flat size="sm"
+                                   class="ml2"
+                                   @click="copyHash(trx.hash)"/>
+                          </p>
+                          <p>
+                            <span class="fontbold">Previous:</span>
+                            <template v-if="trx.prev && trx.prev !== ''">
+                              <span class="ml1">{{ trx.prev }}</span>
+                            </template>
+                            <template v-else>
                             <span>
                               Genesis Block
                               <q-tooltip>
@@ -558,12 +599,13 @@
                                 </span>
                               </q-tooltip>
                             </span>
-                          </template>
-                        </p>
-                      </div>
-                    </q-expansion-item>
-                  </div>
-                </template>
+                            </template>
+                          </p>
+                        </div>
+                      </q-expansion-item>
+                    </div>
+                  </template>
+                </div>
               </div>
             </div>
           </template>
@@ -594,7 +636,7 @@ import FinanceCollectionEditor from 'components/finance/FinanceCollectionEditor.
 import { dbDelData, dbGetAllDataKeys, dbGetData, dbSetData } from 'src/libs/wikistore'
 import FinanceTransactionEditor from 'components/finance/FinanceTransactionEditor.vue'
 import FinanceCollectionJoin from 'components/finance/FinanceCollectionJoin.vue'
-import { copyToClipboard } from 'quasar'
+import { copyToClipboard, debounce } from 'quasar'
 import { DateTime } from 'luxon'
 import { useStore } from 'stores/wikistate'
 import Chart from 'chart.js/auto'
@@ -609,6 +651,7 @@ export default {
   },
   created () {
     this.getCollections()
+    this.filterTransactions = debounce(this.filterTransactions, 200)
   },
   data () {
     this.graphCalls = null
@@ -634,7 +677,10 @@ export default {
         requestsQueue: new Map(),
         endpointIx: new Map(),
         callsIteration: 0
-      }
+      },
+      transactionQuery: '',
+      typeOpts: ['any', 'payment', 'income'],
+      typeQuery: 'any'
     }
   },
   methods: {
@@ -757,7 +803,7 @@ export default {
       this.initializeCallsGraph()
       setTimeout(() => {
         this.analyseTransactions()
-      }, 100)
+      }, 0)
     },
     initializeCallsGraph: function () {
       const ctx = document.getElementById('summary_chart')
@@ -819,11 +865,12 @@ export default {
       this.graphCalls.data.labels.push(lastDate)
       this.processNewRequests(lastDate)
       this.graphCalls.update()
-      const elem = document.getElementById('summary_chart_container')
-      if (elem) {
-        elem.style.width = '100%'
-        elem.style.height = '100%'
-      }
+      // const elem = document.getElementById('summary_chart_container')
+      // if (elem) {
+      //   elem.style.width = '100%'
+      //   elem.style.maxWidth = '600px'
+      //   elem.style.height = '100%'
+      // }
     },
     addQueueVal: function (key, val) {
       if (this.graphData.requestsQueue.has(key)) {
@@ -1079,11 +1126,38 @@ export default {
         data: chartData.map(row => row.count),
         fill: true
       }
+    },
+    filterTransactions: function () {
+      if (!this.summary) return
+      let trx
+      const query = this.transactionQuery.trim().toLowerCase()
+      const typeQuery = this.typeQuery.trim().toLowerCase()
+      for (let i = 0; i < this.summary.transactions.length; i++) {
+        trx = this.summary.transactions[i]
+        trx._hidden = false
+        if (query !== '' &&
+          !trx.comment.toLowerCase().includes(query) &&
+          !trx.from.toLowerCase().includes(query) &&
+          !trx.to.toLowerCase().includes(query)) {
+          trx._hidden = true
+        }
+        if (typeQuery !== 'any' && typeQuery !== '' &&
+          trx.type.toLowerCase() !== typeQuery) {
+          trx._hidden = true
+        }
+        this.summary.transactions[i] = trx
+      }
     }
   }
 }
 </script>
 
 <style scoped>
+
+.table_start tr td,
+.table_start tr th {
+  text-align: left;
+  padding: 0.2rem 1rem 0.2rem 1rem;
+}
 
 </style>

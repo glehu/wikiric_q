@@ -37,8 +37,10 @@ export default defineComponent({
       default: ''
     }
   },
+  emits: ['close'],
   methods: {
     gotoLink: function (link) {
+      this.$emit('close')
       this.$router.push(link)
     }
   }
