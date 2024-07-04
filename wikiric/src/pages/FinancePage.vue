@@ -288,7 +288,7 @@
     </q-card>
   </q-dialog>
   <q-dialog v-model="isViewingCollectionDetails"
-            class="z-fab">
+            class="z-fab" full-width full-height>
     <q-card class="surface p4 <sm:px2 wfull" flat bordered>
       <div class="flex gap-2">
         <div class="wfull">
@@ -421,8 +421,9 @@
               <p class="mb4 fontbold text-body1 <sm:pl1">
                 Transactions - {{ summary.transactions.length }}
               </p>
-              <div class="fmt_border rounded p2 mb4 max-w-[84vw] overflow-hidden"
-                   style="position: relative; width:500px">
+              <div id="summary_chart_container"
+                   class="chart-container wfull fmt_border rounded mb2"
+                   style="position: relative; height:40vh; width:80vw">
                 <canvas id="summary_chart"></canvas>
               </div>
               <div class="flex column gap-2">
@@ -815,9 +816,14 @@ export default {
         lastDate = dateTs
         this.graphData.callsIteration += 1
       }
+      this.graphCalls.data.labels.push(lastDate)
       this.processNewRequests(lastDate)
       this.graphCalls.update()
-      this.graphCalls.resize(600, 300)
+      const elem = document.getElementById('summary_chart_container')
+      if (elem) {
+        elem.style.width = '100%'
+        elem.style.height = '100%'
+      }
     },
     addQueueVal: function (key, val) {
       if (this.graphData.requestsQueue.has(key)) {
