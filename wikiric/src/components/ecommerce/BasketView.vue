@@ -1,5 +1,6 @@
 <template>
   <q-dialog v-model="show" class="z-fab"
+            position="right" full-height
             @before-hide="$emit('close')">
     <q-card class="surface pt4 px4 pb8 w-[99dvw] max-w-xl"
             flat bordered>

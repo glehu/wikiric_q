@@ -134,13 +134,13 @@
                     <div class="flex justify-center flex-grow-2 hfit">
                       <div class="">
                         <p class="mb6 text-2xl fontbold wfull non-selectable">
-                          Delivery & Payment
+                          Billing & Delivery Form
                         </p>
                         <div class="p4 surface wfull fmt_border
-                                    max-w-screen-lg justify-evenly
+                                    justify-evenly
                                     rounded-2 flex gap-10">
                           <div class="flex-grow">
-                            <p class="mb2 text-2xl fontbold wfull">
+                            <p class="mb2 text-2xl fontbold wfull non-selectable">
                               Billing Address
                             </p>
                             <div class="h-14"/>
@@ -245,7 +245,7 @@
                                      class="wfull"/>
                           </div>
                           <div class="flex-grow">
-                            <p class="mb2 text-2xl fontbold wfull">
+                            <p class="mb2 text-2xl fontbold wfull non-selectable">
                               Delivery Address
                             </p>
                             <div class="h-14">
@@ -354,20 +354,23 @@
                                      ref="d12"
                                      class="wfull"/>
                           </div>
+                          <div class="flex-grow">
+                            <p class="mb2 text-2xl fontbold wfull non-selectable">
+                              Payment
+                            </p>
+                            <p class="text-subtitle2">
+                              Placing the order entails an obligation
+                              to pay the seller.
+                            </p>
+                            <p class="text-subtitle2 mt2">
+                              There is no guarantee an order can be cancelled,
+                              <br>so it is best to attempt before confirmation
+                              by the seller.
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <div class="mt8 p2">
-                    <p class="text-subtitle2">
-                      Placing the order entails an obligation
-                      to pay the trader.
-                    </p>
-                    <p class="text-subtitle2 mt2">
-                      There is no guarantee an order can be cancelled,
-                      <br>so it is best to attempt before confirmation
-                      by the trader.
-                    </p>
                   </div>
                 </template>
                 <template v-else>

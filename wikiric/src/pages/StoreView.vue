@@ -346,9 +346,8 @@
                             Includes {{ res._vat }} ({{ res._vatp }} %) VAT
                           </p>
                           <q-btn label="View Product"
-                                 color="primary"
                                  icon="sym_o_search"
-                                 class="fontbold mt2"/>
+                                 class="fontbold mt4 fmt_border surface"/>
                         </div>
                       </div>
                     </div>
