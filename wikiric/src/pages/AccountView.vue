@@ -91,6 +91,12 @@ export default {
           desc: 'Track payments and split with others',
           icon: 'sym_o_finance_mode',
           link: '/finance'
+        },
+        {
+          t: 'E-Commerce',
+          desc: 'Find or create a store for services or products',
+          icon: 'sym_o_store',
+          link: '/stores'
         }
       ],
       games: [

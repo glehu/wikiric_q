@@ -231,6 +231,24 @@ const linksList = [
     caption: 'Communication Platform',
     icon: 'code',
     link: '/groups'
+  },
+  {
+    title: 'API Mockingbird',
+    caption: 'Analyse HTTP requests',
+    icon: 'sym_o_travel_explore',
+    link: '/mockingbird'
+  },
+  {
+    title: 'Finance',
+    caption: 'Track payments and split with others',
+    icon: 'sym_o_finance_mode',
+    link: '/finance'
+  },
+  {
+    title: 'E-Commerce',
+    caption: 'Find or create a store for services or products',
+    icon: 'sym_o_store',
+    link: '/stores'
   }
 ]
 
@@ -463,6 +481,9 @@ export default defineComponent({
       } else if (msg.typ === '[s:chat]') {
         if (msg.act === 'mark') {
           // Check if we're already connected to this channel
+          if (!this.$route || !this.$route.query) {
+            return
+          }
           const subchatID = this.$route.query.chan
           if (subchatID) {
             if (this.$route.fullPath.includes('&chan=' + msg.pid)) {

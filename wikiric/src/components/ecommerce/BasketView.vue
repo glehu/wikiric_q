@@ -1,0 +1,405 @@
+<template>
+  <q-dialog v-model="show" class="z-fab"
+            @before-hide="$emit('close')">
+    <q-card class="surface pt4 px4 pb8 w-[99dvw] max-w-xl"
+            flat bordered>
+      <template v-if="isAdding && item">
+        <p class="mb4 text-lg fontbold">
+          Item added to cart
+        </p>
+        <div class="flex gap-4 mb6 mx2">
+          <div class="w-20 max-h-20 max-w-20 hauto
+                      rounded
+                      flex justify-center">
+            <q-carousel
+              v-model="item._iurl"
+              transition-prev="jump-right"
+              transition-next="jump-left"
+              swipeable
+              animated
+              control-color="brand-p"
+              prev-icon="arrow_left"
+              next-icon="arrow_right"
+              height="264px"
+              class="scaled_carousel
+                     w-20 max-h-20 max-w-20 hauto">
+              <template v-for="img in item.iurls" :key="img">
+                <q-carousel-slide :img-src="getImg(img.url, true)"
+                                  :name="img.url"
+                                  class="wfull hfull">
+                </q-carousel-slide>
+              </template>
+            </q-carousel>
+          </div>
+          <div class="rounded no-wrap
+                      flex column gap-2">
+            <p class="text-weight-bolder text-lg">
+              {{ item.t }}
+            </p>
+            <p class="text-lg fontbold px4 py1 rounded-full
+                      background wfit">
+              {{ amount }}
+            </p>
+          </div>
+        </div>
+      </template>
+      <template v-if="basket && basket.items?.length > 0">
+        <div class="sticky top-0 z-fab">
+          <div class="wfull flex justify-between rounded-2
+                      dshadow surface
+                      items-center mb4 fmt_border px3 py2">
+            <div>
+              <p class="text-2xl fontbold">
+                Total: {{ total }}
+              </p>
+              <p class="text-subtitle2">
+                Includes {{ totalVat }} VAT
+              </p>
+            </div>
+            <q-btn label="Go To Checkout" color="primary"
+                   class="fontbold"
+                   @click="$router.push('/checkout')"/>
+          </div>
+        </div>
+        <p class="mt2 mb2 text-lg fontbold wfull">
+          Your Cart
+        </p>
+        <div v-for="entry in basket.items" :key="entry">
+          <div class="flex gap-4 ml2 mb4 fmt_border_bottom pb4">
+            <div class="w-20 max-h-20 max-w-20 hauto
+                        rounded
+                        flex justify-center">
+              <q-carousel
+                v-model="entry.itemObj._iurl"
+                transition-prev="jump-right"
+                transition-next="jump-left"
+                swipeable
+                animated
+                control-color="brand-p"
+                prev-icon="arrow_left"
+                next-icon="arrow_right"
+                height="264px"
+                class="scaled_carousel
+                       w-20 max-h-20 max-w-20 hauto">
+                <template v-for="img in entry.itemObj.iurls" :key="img">
+                  <q-carousel-slide :img-src="getImg(img.url, true)"
+                                    :name="img.url"
+                                    class="wfull hfull">
+                  </q-carousel-slide>
+                </template>
+              </q-carousel>
+            </div>
+            <div class="rounded no-wrap flex-grow
+                        flex column gap-2">
+              <p class="text-weight-bolder text-xl
+                        fmt_border_bottom pb2">
+                {{ entry.itemObj.t }}
+              </p>
+              <template v-if="entry.itemObj.vars">
+                <div class="flex items-center gap-2">
+                  <q-icon name="sym_o_style" size="1.4rem"/>
+                  <p class="text-subtitle2">
+                    Selected Variations:
+                  </p>
+                </div>
+                <div v-for="vari in entry.itemObj.vars" :key="vari"
+                     class="flex items-center gap-2 my1">
+                  <p class="fontbold text-subtitle1">
+                    * {{ vari.t }}:
+                  </p>
+                  <div v-for="sub in vari.vars" :key="sub"
+                       class="px2 py0.5 rounded fmt_border surface">
+                    <p class="text-subtitle2">
+                      {{ sub.sval }}
+                    </p>
+                  </div>
+                </div>
+              </template>
+              <div class="flex items-center gap-x-4 gap-y-2 pr1
+                          rounded fmt_border justify-between">
+                <q-input v-model="entry.amount" filled
+                         type="number"
+                         color="brand-p" dense borderless
+                         class="w18 text-body1"
+                         @update:model-value="handleAmountEdit(entry)"/>
+                <p class="wfit text-lg fontbold px4">
+                  {{ entry.itemObj._gross }}
+                </p>
+                <q-btn label="Remove from cart"
+                       dense unelevated no-caps
+                       class="wfit px2 fmt_border"
+                       @click="removeItem(entry.itemObj)"/>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+      <template v-else>
+        <div class="flex items-center justify-center wfull p4">
+          <p class="fontbold text-body1">
+            Nothing here, yet!
+          </p>
+        </div>
+      </template>
+    </q-card>
+  </q-dialog>
+</template>
+
+<script>
+
+import { useStore } from 'stores/wikistate'
+import { dbGetData, dbSetData } from 'src/libs/wikistore'
+import { toRaw } from 'vue'
+
+export default {
+  props: {
+    isOpen: {
+      type: Boolean,
+      required: true
+    },
+    isAdding: {
+      type: Boolean,
+      required: true
+    },
+    itemObj: {
+      type: Object,
+      required: false
+    },
+    amount: {
+      type: Number,
+      required: false
+    }
+  },
+  emits: ['close'],
+  name: 'BasketView',
+  watch: {
+    isOpen (newVal) {
+      this.show = newVal
+      if (this.show) {
+        this.handleDialogOpen()
+      }
+    }
+  },
+  data () {
+    return {
+      store: useStore(),
+      show: false,
+      basket: null,
+      item: null,
+      total: 0.0,
+      totalVat: 0.0
+    }
+  },
+  methods: {
+    handleDialogOpen: function () {
+      if (this.itemObj) {
+        this.item = this.itemObj
+      }
+      dbGetData('basket').then((res) => {
+        this.basket = res
+        if (!this.basket) {
+          this.initBasket()
+        }
+      }).catch((err) => {
+        console.debug(err.message)
+        this.initBasket()
+      }).finally(() => {
+        if (this.isAdding) {
+          this.addItem()
+        }
+        this.calculateGrossPrices()
+        this.calculateTotal()
+      })
+    },
+    initBasket: function () {
+      this.basket = {
+        lastEdit: Date.now(),
+        items: []
+      }
+      this.basket.lastEdit = Date.now()
+      dbSetData('basket', this.basket)
+    },
+    getImg: function (imgGUID, get = false) {
+      if (imgGUID == null || imgGUID === '') {
+        return ''
+      } else {
+        let ret = imgGUID
+        if (get) ret = this.store.serverIP + imgGUID
+        return ret
+      }
+    },
+    addItem: function () {
+      if (!this.item) return
+      const payload = { ...toRaw(this.item) }
+      let amt = this.amount
+      if (!amt) {
+        amt = 1
+      }
+      // Did we add this item yet?
+      let found = false
+      for (let i = 0; i < this.basket.items.length; i++) {
+        if (this.basket.items[i].itemObj.uid === payload.uid) {
+          if (this.compareVariations(this.basket.items[i].itemObj, payload)) {
+            this.basket.items[i].amount += amt
+            found = true
+            break
+          }
+        }
+      }
+      if (!found) {
+        // Add to cart
+        this.basket.items.push({
+          itemObj: payload,
+          amount: amt
+        })
+      }
+      this.basket.lastEdit = Date.now()
+      dbSetData('basket', this.basket)
+    },
+    calculateTotal: function () {
+      this.total = 0.0
+      this.totalVat = 0.0
+      let tmp
+      let amt
+      let tot = 0.0
+      let vat = 0.0
+      for (let i = 0; i < this.basket.items.length; i++) {
+        tmp = this.basket.items[i].itemObj
+        amt = this.basket.items[i].amount
+        tot += amt * (tmp.net * (tmp.vatp + 1))
+        vat += amt * (tmp.net * (tmp.vatp))
+      }
+      this.total = tot.toLocaleString(
+        'de-DE', {
+          style: 'currency',
+          currency: 'EUR'
+        })
+      this.totalVat = vat.toLocaleString(
+        'de-DE', {
+          style: 'currency',
+          currency: 'EUR'
+        })
+    },
+    removeItem: function (itemObj) {
+      if (!itemObj) return
+      const uid = itemObj.uid
+      for (let i = 0; i < this.basket.items.length; i++) {
+        if (this.basket.items[i].itemObj.uid === uid) {
+          this.basket.items.splice(i, 1)
+          break
+        }
+      }
+      if (this.basket.items.length < 1) {
+        this.item = null
+      }
+      this.basket.lastEdit = Date.now()
+      dbSetData('basket', this.basket)
+    },
+    calculateGrossPrices: function () {
+      if (!this.basket.items) return
+      for (let i = 0; i < this.basket.items.length; i++) {
+        if (this.basket.items[i].amount < 0.0) {
+          this.basket.items[i].amount = 0.0
+        }
+        const item = this.basket.items[i].itemObj
+        item._gross =
+          (item.net * (item.vatp + 1)) * this.basket.items[i].amount
+        item._gross = item._gross.toLocaleString(
+          'de-DE', {
+            style: 'currency',
+            currency: 'EUR'
+          })
+        this.basket.items[i].itemObj = item
+      }
+      this.basket.lastEdit = Date.now()
+      dbSetData('basket', this.basket)
+    },
+    handleAmountEdit: function (entry) {
+      if (!entry || !entry.itemObj) return
+      const uid = entry.itemObj.uid
+      for (let i = 0; i < this.basket.items.length; i++) {
+        if (this.basket.items[i].itemObj.uid === uid) {
+          if (this.compareVariations(this.basket.items[i].itemObj, entry.itemObj)) {
+            if (this.basket.items[i].amount < 0.0) {
+              this.basket.items[i].amount = 0.0
+            }
+            // Recalculate gross price
+            const item = this.basket.items[i].itemObj
+            item._gross = (item.net * (item.vatp + 1)) * this.basket.items[i].amount
+            item._gross = item._gross.toLocaleString(
+              'de-DE', {
+                style: 'currency',
+                currency: 'EUR'
+              })
+            this.basket.items[i].itemObj = item
+            break
+          }
+        }
+      }
+      this.basket.lastEdit = Date.now()
+      dbSetData('basket', this.basket)
+      this.calculateTotal()
+    },
+    compareVariations: function (a, b) {
+      // Compare length of variations
+      if (a.vars.length !== b.vars.length) {
+        return false
+      }
+      let variationFound = false
+      let subVariationFound = false
+      // Iterate through a's variations and match b's variations
+      for (let i = 0; i < a.vars.length; i++) {
+        // Look in b's vars for a's current var
+        variationFound = false
+        for (let j = 0; j < b.vars.length; j++) {
+          // Match title (unique)
+          if (b.vars[j].t === a.vars[i].t) {
+            // Variation match - Compare sub-variations
+            variationFound = true
+            // Compare length of sub-variations
+            if (a.vars[i].vars.length !== b.vars[j].vars.length) {
+              return false
+            }
+            // Iterate through a's sub-variations
+            // ...and match b's sub-variations
+            for (let k = 0; k < a.vars[i].vars.length; k++) {
+              subVariationFound = false
+              for (let l = 0; l < b.vars[j].vars.length; l++) {
+                // Compare sval (unique)
+                if (b.vars[j].vars[l].sval === a.vars[i].vars[k].sval) {
+                  subVariationFound = true
+                  break
+                }
+              }
+              if (!subVariationFound) {
+                return false
+              }
+            }
+            break
+          }
+        }
+        if (!variationFound) {
+          return false
+        }
+      }
+      // Objects match in variations and sub-variations
+      return true
+    }
+  }
+}
+</script>
+
+<style scoped>
+
+.scaled_carousel .q-carousel__slide {
+  background-color: transparent;
+  background-size: contain !important;
+  background-repeat: no-repeat;
+}
+
+.field_bold * {
+  font-weight: bolder !important;
+  font-size: 20rem;
+}
+
+</style>

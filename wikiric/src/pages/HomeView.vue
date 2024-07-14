@@ -44,7 +44,7 @@
           </q-btn>
           <q-btn color="transparent" no-caps
                  class="muArrow q-mb-sm backdrop-blur-3xl rounded-4
-                        fmt_border <sm:wfull"
+                        fmt_border <sm:wfull p2"
                  v-on:click="gotoRegistration()">
             <div class="column text-left">
               <p class="text-h5 text-weight-bold q-ma-none">Register</p>

@@ -47,6 +47,15 @@ const routes = [{
     path: 'finance',
     component: () => import('pages/FinancePage.vue')
   }, {
+    path: 'stores',
+    component: () => import('pages/StoreHubView.vue')
+  }, {
+    path: 'shop',
+    component: () => import('pages/StoreView.vue')
+  }, {
+    path: 'checkout',
+    component: () => import('pages/CheckoutPage.vue')
+  }, {
     path: 'redir',
     component: () => import('pages/RedirectPage.vue')
   }, {

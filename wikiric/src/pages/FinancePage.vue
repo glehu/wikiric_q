@@ -652,6 +652,11 @@ export default {
   created () {
     this.getCollections()
     this.filterTransactions = debounce(this.filterTransactions, 200)
+    // Listen for backend messages
+    const connector = new BroadcastChannel('wikiric_connector')
+    connector.onmessage = event => {
+      this.handleIncomingConnectorMessages(event.data)
+    }
   },
   data () {
     this.graphCalls = null
@@ -1147,6 +1152,17 @@ export default {
         }
         this.summary.transactions[i] = trx
       }
+    },
+    handleIncomingConnectorMessages: function (msg) {
+      if (!msg) return
+      if (msg.typ === '[s:CHANGE>FINANCE]') {
+        if (msg.act === 'reload' && msg.pid) {
+          this.reloadCollection(msg.pid)
+        }
+      }
+    },
+    reloadCollection: function (id) {
+      console.log(id)
     }
   }
 }
