@@ -155,7 +155,12 @@
               </q-btn>
               <q-toolbar-title class="text-subtitle1 non-selectable">
                 <q-breadcrumbs active-color="brand-p">
-                  <q-breadcrumbs-el label="Store"/>
+                  <template v-if="sidebarLeft">
+                    <q-breadcrumbs-el label="Hide Filters"/>
+                  </template>
+                  <template v-else>
+                    <q-breadcrumbs-el label="Show Filters"/>
+                  </template>
                 </q-breadcrumbs>
               </q-toolbar-title>
               <q-btn flat
@@ -169,7 +174,7 @@
           </q-page-sticky>
           <div class="pb4 flex items-center column wfull">
             <template v-if="viewingStore">
-              <div class="mt4 wfull max-w-screen-lg
+              <div class="wfull
                           dshadow rounded
                           p4 flex gap-8 <lg:gap-6">
                 <div class="relative wfull
@@ -333,6 +338,9 @@
                                 <td>
                                   {{ attr.sval }}
                                 </td>
+                                <td>
+                                  {{ attr.desc }}
+                                </td>
                               </tr>
                             </template>
                           </table>
@@ -396,6 +404,7 @@
   <product-view :item-id="viewingProductId"
                 :item-obj="viewingProduct"
                 :is-open="isViewingProduct"
+                :can-edit="canEdit"
                 @close="isViewingProduct = false; getBasket()"/>
   <basket-view :is-adding="false"
                :is-open="isViewingBasked"
@@ -448,13 +457,16 @@ export default {
       mustIncludeWhole: false,
       variations: [],
       variationQuery: [],
+      categories: [],
+      brands: [],
       results: null,
       respTime: 0.0,
       sortAsc: false,
       sortingRelevance: true,
       sortingPrice: false,
       isRequestUndergoing: false,
-      basket: null
+      basket: null,
+      canEdit: false
     }
   },
   created () {
@@ -508,6 +520,7 @@ export default {
           `${this.store.serverIP}stores/public/get/${this.storeID}`)
         .then((response) => {
           this.viewingStore = response.data
+          this.canEdit = this.viewingStore.usr === this.store.user.username
         }).catch((e) => {
           console.debug(e.message)
         }).then(() => {
@@ -528,6 +541,8 @@ export default {
           this.priceMax = data.max + 1
           this.priceAvg = data.avg
           this.variations = data.vars
+          this.categories = data.cats
+          this.brands = data.brands
           // Sanitize query
           this.priceRange.min = this.priceMin
           this.priceRange.max = this.priceMax
@@ -573,6 +588,9 @@ export default {
         fieldsT += 'attr '
       }
       fieldsT = fieldsT.trim()
+      // Check if we can pre-filter items by category
+      const categories = this.checkCategories(queryText)
+      // Send it!
       const payload = {
         query: queryText,
         type: '',
@@ -580,7 +598,8 @@ export default {
         state: '',
         minCost: this.priceRange.min,
         maxCost: this.priceRange.max,
-        vars: this.variationQuery
+        vars: this.variationQuery,
+        cats: categories
       }
       return new Promise((resolve) => {
         axios.post(
@@ -741,6 +760,17 @@ export default {
       }).catch((err) => {
         console.debug(err.message)
       })
+    },
+    checkCategories: function (query) {
+      if (query === '' || this.categories.length < 1) return []
+      const arr = []
+      const q = query.toLowerCase().split(' ')
+      for (let i = 0; i < this.categories.length; i++) {
+        if (q.includes(this.categories[i].toLowerCase())) {
+          arr.push(this.categories[i])
+        }
+      }
+      return arr
     }
   }
 }

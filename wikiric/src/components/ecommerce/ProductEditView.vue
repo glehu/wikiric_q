@@ -46,20 +46,9 @@
             <template v-if="isRequestUndergoing">
               <q-skeleton width="90%" height="30px"></q-skeleton>
             </template>
-            <div class="fmt_border_bottom pb2 mb1 flex
-                        justify-between
-                        gap-4 items-baseline">
-              <p class="text-weight-bolder text-xl sm:text-2xl">
-                {{ item.t }}
-              </p>
-              <template v-if="canEdit">
-                <q-btn icon="edit" label="Edit"
-                       class="wfit"
-                       dense flat
-                       @click="isEditingItem = true"/>
-              </template>
-            </div>
-            <div class="flex items-center gap-4">
+            <q-input v-model="item.t"
+                     class="text-weight-bolder text-xl sm:text-2xl"/>
+            <div class="flex items-center gap-8">
               <template v-if="item.vars && item.vars.length > 0">
                 <q-btn class="px2 py1 rounded secondary wfit
                               fontbold text-sm"
@@ -70,10 +59,13 @@
               </template>
               <template v-if="itemObj && itemObj.views">
                 <p class="fontbold text-subtitle2">
-                  <q-icon name="visibility" size="1.4rem" class="mr2 ml4"/>
+                  <q-icon name="visibility" size="1.2rem" class="mr1"/>
                   {{ itemObj.views }} Views
                 </p>
               </template>
+            </div>
+            <div class="my4">
+              <q-input v-model="item.keys" label="Keywords"/>
             </div>
             <q-expansion-item class="overflow-hidden mt2"
                               default-opened dense>
@@ -90,28 +82,22 @@
                 <q-skeleton width="65%" height="20px" class="mb1"></q-skeleton>
                 <q-skeleton width="80%" height="20px" class="mb1"></q-skeleton>
               </template>
-              <div class="markedView mt2 line-height-snug
-                          text-subtitle2 whitespace-break-spaces"
-                   v-html="item.desc"></div>
+              <q-input v-model="item.desc" class="mt2" autogrow/>
             </q-expansion-item>
-            <template v-if="item.brand">
-              <q-expansion-item class="overflow-hidden mt2"
-                                default-opened dense>
-                <template v-slot:header>
-                  <div class="flex items-center justify-between wfull">
-                    <p class="fontbold text-subtitle2">
-                      <q-icon name="sym_o_apartment" size="1.4rem" class="mr2"/>
-                      Brand:
-                    </p>
-                  </div>
-                </template>
-                <div class="px4 py2 rounded-2 background wfit mt2">
-                  <p class="text-subtitle1 text-weight-medium">
-                    {{ item.brand }}
+            <q-expansion-item class="overflow-hidden mt2"
+                              default-opened dense>
+              <template v-slot:header>
+                <div class="flex items-center justify-between wfull">
+                  <p class="fontbold text-subtitle2">
+                    <q-icon name="sym_o_apartment" size="1.4rem" class="mr2"/>
+                    Brand:
                   </p>
                 </div>
-              </q-expansion-item>
-            </template>
+              </template>
+              <div>
+                <q-input v-model="item.brand" label="Brand Name"/>
+              </div>
+            </q-expansion-item>
             <template v-if="item.attr && item.attr.length > 0">
               <q-expansion-item class="overflow-hidden mt2"
                                 default-opened dense>
@@ -125,22 +111,61 @@
                 </template>
                 <table class="table_start border-spacing-none
                               text-subtitle2 mt2
-                              background rounded-2 wfit p2">
-                  <template v-for="attr in item.attr" :key="attr">
+                              background rounded-2 wfull px2 pt2 pb6">
+                  <tr>
+                    <th>Name/Type (e.g. Size)</th>
+                    <th>Value (e.g. XL)</th>
+                    <th>Description (e.g. Slightly larger)</th>
+                    <th></th>
+                  </tr>
+                  <template v-for="(attr, i) in item.attr" :key="attr">
                     <tr>
                       <td class="fontbold">
-                        {{ attr.t }}:
+                        <q-input v-model="attr.t"/>
                       </td>
                       <td>
-                        {{ attr.sval }}
+                        <q-input v-model="attr.sval"/>
                       </td>
                       <td>
-                        {{ attr.desc }}
+                        <q-input v-model="attr.desc"/>
+                      </td>
+                      <td>
+                        <div class="wfull hfull flex pt4
+                                  items-center justify-end">
+                          <q-btn icon="delete"
+                                 class="px2 wfit" dense flat
+                                 @click="item.attr.splice(i,1)"/>
+                        </div>
                       </td>
                     </tr>
                   </template>
+                  <tr>
+                    <td>
+                      <div class="wfull hfull flex pt4
+                                  items-center justify-start">
+                        <q-btn label="Add Row" icon="add"
+                               class="surface px2" dense
+                               @click="item.attr.push({t:'',sval:'',desc:''})"/>
+                      </div>
+                    </td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                  </tr>
                 </table>
               </q-expansion-item>
+            </template>
+            <template v-else>
+              <div class="my8 wfull fmt_border rounded-2 p4">
+                <p class="fontbold text-subtitle2 wfit">
+                  <q-icon name="warning" size="1.2rem" class="mr1"/>
+                  No attributes found!
+                </p>
+                <q-btn label="Add Attributes" icon="add"
+                       color="primary"
+                       class="px2 mt4" dense
+                       @click="item.attr.push({t:'',sval:'',desc:''})"/>
+              </div>
             </template>
             <template v-if="item.vars && item.vars.length > 0">
               <q-expansion-item class="overflow-hidden mt2"
@@ -155,37 +180,53 @@
                 </template>
                 <div id="item_variations"
                      class="flex gap-2 column mt4">
-                  <div v-for="vari in item.vars" :key="vari"
+                  <div v-for="(vari, i) in item.vars" :key="vari"
                        class="fmt_border rounded-2 px4 pt3 pb4">
                     <div class="flex gap-2 items-center justify-between">
-                      <p class="fontbold text-xl">
-                        {{ vari.t }}
-                      </p>
-                      <template v-if="!vari.opt">
-                        <div class="px1 py0.1 background rounded wfit">
-                          <p class="text-subtitle2 fontbold">
-                            Mandatory
-                          </p>
+                      <q-input v-model="vari.t" label="Name" class="flex-grow"/>
+                      <q-btn icon="delete"
+                             class="px2 wfit" dense flat
+                             @click="item.vars.splice(i,1)"/>
+                      <q-checkbox v-model="vari.opt" label="Optional"/>
+                    </div>
+                    <p class="text-body1 fontbold mt8">
+                      Variations
+                    </p>
+                    <div class="flex gap-2 mt2">
+                      <template v-for="(sub, j) in vari.vars" :key="sub">
+                        <div class="flex gap-2 items-center">
+                          <q-input v-model="sub.sval" label="Variation"/>
+                          <q-btn icon="delete"
+                                 class="px2 wfit" dense flat
+                                 @click="vari.vars.splice(j,1)"/>
                         </div>
                       </template>
+                      <q-btn label="Add Variation" icon="add"
+                             class="surface px2 mt4" dense flat
+                             @click="vari.vars.push({sval:''})"/>
                     </div>
-                    <div class="flex gap-2 mt4">
-                      <template v-for="sub in vari.vars" :key="sub">
-                        <q-btn class="px2 py1 rounded fmt_border"
-                               :class="{'primary': checkVariationActive(vari.t, sub.sval)}"
-                               flat dense no-caps
-                               v-on:click="toggleVariationQuery(vari.t, sub.sval)">
-                          <p class="text-sm fontbold">
-                            {{ sub.sval }}
-                          </p>
-                        </q-btn>
-                      </template>
-                    </div>
+                  </div>
+                  <div class="pb2 px2 wfull flex justify-start">
+                    <q-btn label="Add Variation Group" icon="add"
+                           class="background px2 mt4" dense
+                           @click="item.vars.push({t:'',opt:false,desc:'',vars:[{sval:''}]})"/>
                   </div>
                 </div>
               </q-expansion-item>
             </template>
-            <template v-if="item.cats && item.cats.length > 0">
+            <template v-else>
+              <div class="my8 wfull fmt_border rounded-2 p4">
+                <p class="fontbold text-subtitle2 wfit">
+                  <q-icon name="warning" size="1.2rem" class="mr1"/>
+                  No variations found!
+                </p>
+                <q-btn label="Add Variations" icon="add"
+                       color="primary"
+                       class="px2 mt4" dense
+                       @click="item.vars.push({t:'',opt:false,desc:'',vars:[{sval:''}]})"/>
+              </div>
+            </template>
+            <template v-if="item._cats && item._cats.length > 0">
               <q-expansion-item class="overflow-hidden mt2"
                                 default-opened dense>
                 <template v-slot:header>
@@ -199,17 +240,52 @@
                 <div>
                   <table class="table_start border-spacing-none
                                 text-subtitle2 mt2
-                                background rounded-2 wfit p2">
-                    <template v-for="cat in item.cats" :key="cat">
+                                background rounded-2 wfull px2 pt2 pb6">
+                    <tr>
+                      <th>Category (e.g. Clothing)</th>
+                      <th></th>
+                    </tr>
+                    <template v-for="(cat, i) in item._cats" :key="cat">
                       <tr>
-                        <td class="fontbold">
-                          {{ cat }}
+                        <td class="fontbold wfull">
+                          <q-input v-model="cat.t"/>
+                        </td>
+                        <td>
+                          <div class="wfull hfull flex pt4
+                                      items-center justify-end">
+                            <q-btn icon="delete"
+                                   class="px2 wfit" dense flat
+                                   @click="item._cats.splice(i,1)"/>
+                          </div>
                         </td>
                       </tr>
                     </template>
+                    <tr>
+                      <td>
+                        <div class="wfull hfull flex pt4
+                                  items-center justify-start">
+                          <q-btn label="Add Row" icon="add"
+                                 class="surface px2" dense
+                                 @click="item._cats.push({t:''})"/>
+                        </div>
+                      </td>
+                      <td></td>
+                    </tr>
                   </table>
                 </div>
               </q-expansion-item>
+            </template>
+            <template v-else>
+              <div class="my8 wfull fmt_border rounded-2 p4">
+                <p class="fontbold text-subtitle2 wfit">
+                  <q-icon name="warning" size="1.2rem" class="mr1"/>
+                  No categories found!
+                </p>
+                <q-btn label="Add Categories" icon="add"
+                       color="primary"
+                       class="px2 mt4" dense
+                       @click="item._cats.push({t:''})"/>
+              </div>
             </template>
           </div>
         </div>
@@ -222,23 +298,18 @@
           <p class="text-xs text-weight-bold">
             Includes {{ item._vat }} ({{ item._vatp }} %) VAT
           </p>
-          <q-btn label="Add to Cart"
-                 color="primary"
-                 icon="sym_o_shopping_cart"
-                 class="fontbold mt2"
-                 @click="handleAddToCart"/>
+          <div class="mt2 pl4 pr1 py1 surface-variant rounded-2
+                      flex gap-4 items-center">
+            <p class="fontbold non-selectable">
+              EDITING
+            </p>
+            <q-btn label="Save Changes" color="primary" class="wfit"
+                   @click="saveChanges"/>
+          </div>
         </div>
       </div>
     </q-card>
   </q-dialog>
-  <basket-view :is-adding="isAddToCart"
-               :is-open="isAddToCart"
-               :item-obj="item"
-               :amount="amount"
-               @close="onBasketClose"/>
-  <product-edit-view :item-id="itemId"
-                     :is-open="isEditingItem"
-                     @close="isEditingItem = false; getProduct()"/>
 </template>
 
 <script>
@@ -246,18 +317,13 @@
 import axios from 'axios'
 import { useStore } from 'stores/wikistate'
 import { scroll } from 'quasar'
-import BasketView from 'components/ecommerce/BasketView.vue'
-import ProductEditView from 'components/ecommerce/ProductEditView.vue'
+import { api } from 'boot/axios'
 
 const {
   setVerticalScrollPosition
 } = scroll
 
 export default {
-  components: {
-    ProductEditView,
-    BasketView
-  },
   props: {
     isOpen: {
       type: Boolean,
@@ -270,13 +336,9 @@ export default {
     itemObj: {
       type: Object,
       required: false
-    },
-    canEdit: {
-      type: Boolean,
-      required: true
     }
   },
-  name: 'ProductView',
+  name: 'ProductEditView',
   emits: ['close'],
   watch: {
     isOpen (newVal) {
@@ -298,8 +360,7 @@ export default {
       variationQuery: [],
       isAddToCart: false,
       amount: 1,
-      isRequestUndergoing: false,
-      isEditingItem: false
+      isRequestUndergoing: false
     }
   },
   methods: {
@@ -345,6 +406,15 @@ export default {
           } else {
             this.item._iurl = this.item.iurls[0].url
           }
+          // Add temp-categories as we need objects for v-model
+          this.item._cats = []
+          if (this.item.cats && this.item.cats.length > 1) {
+            for (let i = 0; i < this.item.cats.length; i++) {
+              this.item._cats.push({
+                t: this.item.cats[i]
+              })
+            }
+          }
         }).catch((e) => {
           this.item = {
             t: '',
@@ -367,63 +437,6 @@ export default {
         return ret
       }
     },
-    /**
-     *
-     * @param {String} t
-     * @param {String} sval
-     */
-    toggleVariationQuery: function (t, sval) {
-      for (let i = 0; i < this.variationQuery.length; i++) {
-        if (this.variationQuery[i]?.t === t) {
-          // We found the variation
-          if (!this.variationQuery[i].svals ||
-            this.variationQuery[i].svals.length < 1) {
-            // Variation did not have sub-variations yet
-            this.variationQuery[i].svals = [sval]
-            return
-          }
-          for (let j = 0; j < this.variationQuery[i].svals.length; j++) {
-            if (this.variationQuery[i].svals[j] === sval) {
-              // We found the sub-variation, so we remove it
-              this.variationQuery[i].svals.splice(j, 1)
-              if (this.variationQuery[i].svals.length < 1) {
-                this.variationQuery.splice(i, 1)
-              }
-              return
-            }
-          }
-          // We did not find the sub-variation yet, so we add it
-          this.variationQuery[i].svals.push(sval)
-          return
-        }
-      }
-      // Variation did not exist yet, so we add it
-      this.variationQuery.push({
-        t,
-        svals: [sval]
-      })
-    },
-    checkVariationActive: function (t, sval) {
-      if (this.variationQuery.length < 1) {
-        return false
-      }
-      for (let i = 0; i < this.variationQuery.length; i++) {
-        if (this.variationQuery[i]?.t && this.variationQuery[i].t === t) {
-          // We found the variation
-          if (!this.variationQuery[i].svals) {
-            // Variation did not have sub-variations yet
-            continue
-          }
-          for (let j = 0; j < this.variationQuery[i].svals.length; j++) {
-            if (this.variationQuery[i].svals[j] === sval) {
-              // We found the sub-variation
-              return true
-            }
-          }
-        }
-      }
-      return false
-    },
     viewItemVariations: function () {
       const elem = document.getElementById('item_variations')
       if (elem) {
@@ -439,31 +452,57 @@ export default {
       const duration = 300
       setVerticalScrollPosition(target, offset, duration)
     },
-    handleAddToCart: function () {
-      // Add user selected variations to item
-      this.item._vars = this.item.vars
-      this.item.vars = []
-      let tmp
-      for (let i = 0; i < this.variationQuery.length; i++) {
-        tmp = {
-          t: this.variationQuery[i].t,
-          vars: []
-        }
-        for (let j = 0; j < this.variationQuery[i].svals.length; j++) {
-          tmp.vars.push({
-            sval: this.variationQuery[i].svals[j]
+    saveChanges: function () {
+      this.cleanItem()
+      return new Promise((resolve) => {
+        api({
+          method: 'post',
+          url: 'items/private/edit/' + this.itemId,
+          data: this.item
+        }).then(() => {
+          this.$q.notify({
+            color: 'primary',
+            position: 'top-right',
+            message: 'Item Updated!',
+            caption: '',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
           })
-        }
-        this.item.vars.push(tmp)
-      }
-      // Add item to cart (basket does this automatically)
-      this.isAddToCart = true
+        }).catch((err) => {
+          this.$q.notify({
+            color: 'negative',
+            position: 'top-right',
+            message: 'Error!' + err.message,
+            caption: 'Maybe you aren\'t the owner of the Store.',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          console.debug(err.message)
+        }).finally(() => {
+          this.$emit('close')
+          resolve()
+        })
+      })
     },
-    onBasketClose: function () {
-      this.isAddToCart = false
-      if (this.item._vars) {
-        this.item.vars = this.item._vars
-        delete this.item._vars
+    cleanItem: function () {
+      // Removes empty categories, attributes, variations etc.
+      this.item.cats = []
+      for (let i = 0; i < this.item._cats.length; i++) {
+        this.item.cats.push(this.item._cats[i].t)
       }
     }
   }

@@ -17,15 +17,15 @@
                 clickable
                 @click="gotoLink(res.link)">
           <q-item-section>
-            <q-item-label class="flex items-center gap-4">
+            <q-item-label class="flex items-center gap-4 no-wrap">
               <template v-if="res.icon">
                 <q-icon :name="res.icon" size="2rem"/>
               </template>
               <div>
-                <p class="text-2xl fontbold">
+                <p class="text-xl md:text-2xl fontbold">
                   {{ res.t }}
                 </p>
-                <p>
+                <p class="text-subtitle2">
                   {{ res.desc }}
                 </p>
               </div>
@@ -37,15 +37,15 @@
                 clickable
                 @click="gotoLink(res.link)">
           <q-item-section>
-            <q-item-label class="flex items-center gap-4">
+            <q-item-label class="flex items-center gap-4 no-wrap">
               <template v-if="res.icon">
                 <q-icon :name="res.icon" size="2rem"/>
               </template>
               <div>
-                <p class="text-2xl fontbold">
+                <p class="text-xl md:text-2xl fontbold">
                   {{ res.t }}
                 </p>
-                <p>
+                <p class="text-subtitle2">
                   {{ res.desc }}
                 </p>
               </div>

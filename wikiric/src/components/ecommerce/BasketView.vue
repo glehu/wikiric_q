@@ -5,9 +5,12 @@
     <q-card class="surface pt4 px4 pb8 w-[99dvw] max-w-xl"
             flat bordered>
       <template v-if="isAdding && item">
-        <p class="mb4 text-lg fontbold">
-          Item added to cart
-        </p>
+        <div class="flex wfull justify-start items-center
+                    mb4">
+          <p class="text-lg fontbold">
+            Item added to cart
+          </p>
+        </div>
         <div class="flex gap-4 mb6 mx2">
           <div class="w-20 max-h-20 max-w-20 hauto
                       rounded
@@ -62,9 +65,13 @@
                    @click="$router.push('/checkout')"/>
           </div>
         </div>
-        <p class="mt2 mb2 text-lg fontbold wfull">
-          Your Cart
-        </p>
+        <div class="flex wfull justify-between items-center
+                    mb4 mt2">
+          <p class="text-lg fontbold">
+            Your Cart
+          </p>
+          <q-btn label="Close Cart" v-close-popup/>
+        </div>
         <div v-for="entry in basket.items" :key="entry">
           <div class="flex gap-4 ml2 mb4 fmt_border_bottom pb4">
             <div class="w-20 max-h-20 max-w-20 hauto
@@ -97,20 +104,13 @@
                 {{ entry.itemObj.t }}
               </p>
               <template v-if="entry.itemObj.vars">
-                <div class="flex items-center gap-2">
-                  <q-icon name="sym_o_style" size="1.4rem"/>
-                  <p class="text-subtitle2">
-                    Selected Variations:
-                  </p>
-                </div>
                 <div v-for="vari in entry.itemObj.vars" :key="vari"
-                     class="flex items-center gap-2 my1">
-                  <p class="fontbold text-subtitle1">
+                     class="flex items-center gap-2 mt1">
+                  <p class="fontbold text-subtitle2">
                     * {{ vari.t }}:
                   </p>
-                  <div v-for="sub in vari.vars" :key="sub"
-                       class="px2 py0.5 rounded fmt_border surface">
-                    <p class="text-subtitle2">
+                  <div v-for="sub in vari.vars" :key="sub">
+                    <p class="text-subtitle2 fontbold">
                       {{ sub.sval }}
                     </p>
                   </div>
@@ -136,10 +136,11 @@
         </div>
       </template>
       <template v-else>
-        <div class="flex items-center justify-center wfull p4">
+        <div class="flex items-center justify-between wfull p4">
           <p class="fontbold text-body1">
             Nothing here, yet!
           </p>
+          <q-btn label="Close Cart" v-close-popup/>
         </div>
       </template>
     </q-card>
