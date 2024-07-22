@@ -408,7 +408,7 @@ export default {
           }
           // Add temp-categories as we need objects for v-model
           this.item._cats = []
-          if (this.item.cats && this.item.cats.length > 1) {
+          if (this.item.cats && this.item.cats.length > 0) {
             for (let i = 0; i < this.item.cats.length; i++) {
               this.item._cats.push({
                 t: this.item.cats[i]
