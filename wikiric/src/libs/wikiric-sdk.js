@@ -63,6 +63,8 @@ const wikiricSDK = {
   connectorChannel: new BroadcastChannel('wikiric_connector'),
 
   // Internal variables
+  _serverURL: 'https://wikiric.xyz', // 'http://localhost:9999'
+  _wssURL: 'wss://wikiric.xyz', // 'ws://localhost:9999'
   _username: '',
   _token: '',
   _key: null,
@@ -93,7 +95,7 @@ const wikiricSDK = {
       let response = null
       const headers = new Headers()
       headers.set('Authorization', 'Basic ' + _u)
-      fetch('https://wikiric.xyz/auth/private/signin', {
+      fetch(`${this._serverURL}/auth/private/signin`, {
         method: 'get',
         headers
       })
@@ -131,7 +133,7 @@ const wikiricSDK = {
    */
   doSync: async function () {
     return new Promise((resolve, reject) => {
-      this._connector = new WebSocket('wss://wikiric.xyz/ws/connector')
+      this._connector = new WebSocket(`${this._wssURL}/ws/connector`)
       this._connectorState = 'CLOSED'
       this._connector.onopen = async () => {
         this._connector.onmessage = (event) => {
@@ -195,7 +197,7 @@ const wikiricSDK = {
         searchParams = `?${searchParams}`
       }
       // Connect to backend and listen for welcome and banned message
-      this._websocket = new WebSocket(`wss://wikiric.xyz/ws/chat/${chatID}${searchParams}`)
+      this._websocket = new WebSocket(`${this._wssURL}/ws/chat/${chatID}${searchParams}`)
       this._websocketState = 'CLOSED'
       this._websocket.onopen = async () => {
         this._websocket.onmessage = (event) => {

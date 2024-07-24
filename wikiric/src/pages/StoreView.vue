@@ -174,25 +174,25 @@
           </q-page-sticky>
           <div class="pb4 flex items-center column wfull">
             <template v-if="viewingStore">
-              <div class="wfull
-                          dshadow rounded
-                          p4 flex gap-8 <lg:gap-6">
-                <div class="relative wfull
-                            max-w-64 max-h-32">
-                  <template v-if="viewingStore.iurl">
-                    <q-img :src="getImg(viewingStore.iurl, true)"
-                           alt="Store" fit="contain" position="0 0"
-                           class="hfull wfull relative rounded"/>
-                  </template>
-                </div>
-                <div class="wfit flex column justify-center pr8">
-                  <p class="text-5xl <lg:text-3xl <sm:text-[6vw]
+              <div class="wfull dshadow rounded p4 flex justify-center">
+                <div class="max-w-screen-lg wfull flex gap-8 <lg:gap-6">
+                  <div class="relative wfull
+                              max-w-64 max-h-32">
+                    <template v-if="viewingStore.iurl">
+                      <q-img :src="getImg(viewingStore.iurl, true)"
+                             alt="Store" fit="contain" position="0 0"
+                             class="hfull wfull relative rounded"/>
+                    </template>
+                  </div>
+                  <div class="wfit flex column justify-center pr8">
+                    <p class="text-5xl <lg:text-3xl <sm:text-[6vw]
                             fontbold wfit">
-                    {{ viewingStore.t }}
-                  </p>
-                  <p class="text-subtitle2 mt2 wfit">
-                    {{ viewingStore.desc }}
-                  </p>
+                      {{ viewingStore.t }}
+                    </p>
+                    <p class="text-subtitle2 mt2 wfit">
+                      {{ viewingStore.desc }}
+                    </p>
+                  </div>
                 </div>
               </div>
               <div id="query_container"

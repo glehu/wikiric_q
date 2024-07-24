@@ -4,7 +4,7 @@ export const useStore = defineStore('general', {
   state: () => ({
     loggedIn: false,
     user: {},
-    serverIP: 'https://wikiric.xyz/'
+    serverIP: 'https://wikiric.xyz/' // 'http://localhost:9999/'
   }),
   getters: {
     isLoggedIn: (state) => state.loggedIn
