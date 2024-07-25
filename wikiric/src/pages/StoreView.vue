@@ -239,50 +239,65 @@
                 </div>
               </div>
               <div class="mt4 wfull max-w-screen-lg md:px4 flex">
-                <div id="results_container"
+                <div v-if="results && results.length > 0"
+                     id="results_container"
                      class="fmt_border background wfull
                             hfit md:rounded-2 gap-y-1
-                            flex column mb100 p1"
-                     v-if="results && results.length > 0">
+                            flex column mb100 p1">
                   <div class="flex my2 gap-y-2
                               column px4">
-                    <div class="non-selectable">
-                      <p class="text-subtitle2">
-                        {{ results.length }} Results in
-                        {{ respTime }} seconds
-                      </p>
+                    <div class="flex gap-x-4 gap-y-2 wfull items-center">
+                      <div class="non-selectable">
+                        <p class="text-subtitle2">
+                          {{ results.length }} Results in
+                          {{ respTime }} seconds
+                        </p>
+                      </div>
+                      <div class="flex gap-2 items-center mlauto">
+                        <p class="text-subtitle2 non-selectable">
+                          Sort by:
+                        </p>
+                        <q-icon name="sym_o_arrow_upward" size="1.2rem"
+                                class="text-weight-bold"
+                                v-on:click="sortByRelevance(false)"
+                                v-if="sortingRelevance && !sortAsc"/>
+                        <q-icon name="sym_o_arrow_downward" size="1.2rem"
+                                class="text-weight-bold"
+                                v-on:click="sortByRelevance(false)"
+                                v-if="sortingRelevance && sortAsc"/>
+                        <q-btn icon="sym_o_target" label="Relevance"
+                               no-caps flat align="left" dense
+                               class="text-subtitle2 rounded-2 px2"
+                               :class="{'surface fmt_border': sortingRelevance}"
+                               @click="sortByRelevance(false)"/>
+                        <q-icon name="sym_o_arrow_upward" size="1.2rem"
+                                class="text-weight-bold"
+                                v-on:click="sortByPrice(false)"
+                                v-if="sortingPrice && !sortAsc"/>
+                        <q-icon name="sym_o_arrow_downward" size="1.2rem"
+                                class="text-weight-bold"
+                                v-on:click="sortByPrice(false)"
+                                v-if="sortingPrice && sortAsc"/>
+                        <q-btn icon="payments" label="Price"
+                               class="text-subtitle2 rounded-2 px2"
+                               :class="{'surface fmt_border': sortingPrice}"
+                               no-caps flat align="left" dense
+                               @click="sortByPrice(false)"/>
+                      </div>
                     </div>
-                    <div class="flex gap-2 items-center mlauto">
-                      <p class="text-subtitle2 non-selectable">
-                        Sort by:
-                      </p>
-                      <q-icon name="sym_o_arrow_upward" size="1.2rem"
-                              class="text-weight-bold"
-                              v-on:click="sortByRelevance(false)"
-                              v-if="sortingRelevance && !sortAsc"/>
-                      <q-icon name="sym_o_arrow_downward" size="1.2rem"
-                              class="text-weight-bold"
-                              v-on:click="sortByRelevance(false)"
-                              v-if="sortingRelevance && sortAsc"/>
-                      <q-btn icon="sym_o_target" label="Relevance"
-                             no-caps flat align="left" dense
-                             class="text-subtitle2 rounded-2 px2"
-                             :class="{'surface fmt_border': sortingRelevance}"
-                             @click="sortByRelevance(false)"/>
-                      <q-icon name="sym_o_arrow_upward" size="1.2rem"
-                              class="text-weight-bold"
-                              v-on:click="sortByPrice(false)"
-                              v-if="sortingPrice && !sortAsc"/>
-                      <q-icon name="sym_o_arrow_downward" size="1.2rem"
-                              class="text-weight-bold"
-                              v-on:click="sortByPrice(false)"
-                              v-if="sortingPrice && sortAsc"/>
-                      <q-btn icon="payments" label="Price"
-                             class="text-subtitle2 rounded-2 px2"
-                             :class="{'surface fmt_border': sortingPrice}"
-                             no-caps flat align="left" dense
-                             @click="sortByPrice(false)"/>
-                    </div>
+                    <template v-if="categoryFilters && categoryFilters.length > 0">
+                      <div class="flex gap-2 items-center mt4">
+                        <p class="text-subtitle2">
+                          Categories:
+                        </p>
+                        <div v-for="cat in categoryFilters" :key="cat"
+                             class="surface rounded px2 py1">
+                          <p class="text-subtitle2">
+                            {{ cat }}
+                          </p>
+                        </div>
+                      </div>
+                    </template>
                   </div>
                   <q-item v-for="res in results" :key="res"
                           dense clickable class="wfull"
@@ -294,28 +309,40 @@
                                   <md:w-80 <md:min-w-80 <md:min-h-80
                                   <md:wfull md:ml4
                                   flex justify-center">
-                        <q-carousel
-                          v-model="res._iurl"
-                          transition-prev="jump-right"
-                          transition-next="jump-left"
-                          swipeable
-                          animated
-                          control-color="brand-p"
-                          prev-icon="arrow_left"
-                          next-icon="arrow_right"
-                          :thumbnails="res.iurls.length > 1"
-                          height="264px"
-                          class="rounded wfull hfull
-                                 scaled_carousel transparent
-                                 w-50 min-w-50 min-h-50
-                                 <md:w-80 <md:min-w-80 <md:min-h-80">
-                          <template v-for="img in res.iurls" :key="img">
-                            <q-carousel-slide :img-src="getImg(img.url, true)"
-                                              :name="img.url"
-                                              class="wfull hfull">
-                            </q-carousel-slide>
-                          </template>
-                        </q-carousel>
+                        <template v-if="res.iurls?.length > 0">
+                          <q-carousel
+                            v-model="res._iurl"
+                            transition-prev="jump-right"
+                            transition-next="jump-left"
+                            swipeable
+                            animated
+                            control-color="brand-p"
+                            prev-icon="arrow_left"
+                            next-icon="arrow_right"
+                            :thumbnails="res.iurls.length > 1"
+                            height="264px"
+                            class="rounded scaled_carousel transparent
+                                   w-50 min-w-50 min-h-50
+                                   <md:w-80 <md:min-w-80 <md:min-h-80">
+                            <template v-for="img in res.iurls" :key="img">
+                              <q-carousel-slide :img-src="getImg(img.url, true)"
+                                                :name="img.url"
+                                                class="wfull hfull">
+                              </q-carousel-slide>
+                            </template>
+                          </q-carousel>
+                        </template>
+                        <template v-else>
+                          <div class="rounded flex items-center
+                                      background justify-center
+                                      w-50 min-w-50 h-50 min-h-50
+                                      <md:w-80 <md:h-80
+                                      <md:min-w-80 <md:min-h-80">
+                            <p class="text-subtitle2">
+                              NO IMAGE
+                            </p>
+                          </div>
+                        </template>
                       </div>
                       <div class="p2 flex-grow mt4
                                   flex column gap-2">
@@ -360,10 +387,22 @@
                       </div>
                     </div>
                   </q-item>
-                  <div class="mt100 wfull flex items-center p2
+                  <div class="mt50 wfull flex items-center p2
                               column fmt_border_top">
                     <p class="text-subtitle2 text-weight-bolder">
                       Not what you were looking for?
+                    </p>
+                    <p class="text-subtitle2">
+                      Maybe include more words describing what you mean.
+                    </p>
+                  </div>
+                </div>
+                <div v-if="noResults"
+                     class="flex column wfull">
+                  <div class="mt10 wfull flex items-center p4
+                              column fmt_border_top">
+                    <p class="text-subtitle2 text-weight-bolder">
+                      No results for your search!
                     </p>
                     <p class="text-subtitle2">
                       Maybe include more words describing what you mean.
@@ -466,7 +505,9 @@ export default {
       sortingPrice: false,
       isRequestUndergoing: false,
       basket: null,
-      canEdit: false
+      canEdit: false,
+      noResults: false,
+      categoryFilters: []
     }
   },
   created () {
@@ -590,6 +631,7 @@ export default {
       fieldsT = fieldsT.trim()
       // Check if we can pre-filter items by category
       const categories = this.checkCategories(queryText)
+      this.applyCategoryFilters(categories)
       // Send it!
       const payload = {
         query: queryText,
@@ -607,6 +649,11 @@ export default {
           payload)
         .then((response) => {
           const data = response.data
+          if (!data.items || data.items.length === 0) {
+            this.noResults = true
+          } else {
+            this.noResults = data.items.length > 0
+          }
           this.results = data.items
           this.respTime = data.respTime.toPrecision(2)
           for (let i = 0, len = data.items.length; i < len; i++) {
@@ -653,6 +700,12 @@ export default {
           resolve()
         })
       })
+    },
+    applyCategoryFilters: function (categories) {
+      if (!categories) {
+        this.categoryFilters = []
+      }
+      this.categoryFilters = categories
     },
     /**
      *
