@@ -17,28 +17,40 @@
             <template v-if="isRequestUndergoing">
               <q-skeleton width="90%" height="90%"></q-skeleton>
             </template>
-            <q-carousel
-              v-model="item._iurl"
-              transition-prev="jump-right"
-              transition-next="jump-left"
-              swipeable
-              animated
-              control-color="brand-p"
-              prev-icon="arrow_left"
-              next-icon="arrow_right"
-              arrows
-              :thumbnails="item?.iurls?.length > 1"
-              height="264px"
-              class="scaled_carousel
-                     w-100 min-w-100 min-h-100
-                     xl:w-140 xl:min-w-140 xl:min-h-140">
-              <template v-for="img in item.iurls" :key="img">
-                <q-carousel-slide :img-src="getImg(img.url, true)"
-                                  :name="img.url"
-                                  class="wfull hfull">
-                </q-carousel-slide>
-              </template>
-            </q-carousel>
+            <template v-if="item.iurls?.length > 0">
+              <q-carousel
+                v-model="item._iurl"
+                transition-prev="jump-right"
+                transition-next="jump-left"
+                swipeable
+                animated
+                control-color="brand-p"
+                prev-icon="arrow_left"
+                next-icon="arrow_right"
+                arrows
+                :thumbnails="item?.iurls?.length > 1"
+                height="264px"
+                class="scaled_carousel
+                       w-100 min-w-100 min-h-100
+                       xl:w-140 xl:min-w-140 xl:min-h-140">
+                <template v-for="img in item.iurls" :key="img">
+                  <q-carousel-slide :img-src="getImg(img.url, true)"
+                                    :name="img.url"
+                                    class="wfull hfull">
+                  </q-carousel-slide>
+                </template>
+              </q-carousel>
+            </template>
+            <template v-else>
+              <div class="w-100 min-w-100 min-h-100
+                          xl:w-140 xl:min-w-140 xl:min-h-140
+                          rounded-2 background flex
+                          items-center justify-center">
+                <p class="text-subtitle2">
+                  NO IMAGE
+                </p>
+              </div>
+            </template>
           </div>
           <div class="p4 wfull rounded
                       no-wrap flex-grow

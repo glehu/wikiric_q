@@ -79,6 +79,13 @@
                       Filter keywords
                     </q-tooltip>
                   </q-checkbox>
+                  <q-checkbox v-model="fieldClrs"
+                              label="Colors"
+                              @update:model-value="processQuery">
+                    <q-tooltip class="text-subtitle2">
+                      Filter colors
+                    </q-tooltip>
+                  </q-checkbox>
                 </div>
                 <div class="flex column text-subtitle2">
                   <q-checkbox v-model="fieldCats"
@@ -95,6 +102,13 @@
                       Filter attributes
                     </q-tooltip>
                   </q-checkbox>
+                  <q-checkbox v-model="fieldBrand"
+                              label="Brand"
+                              @update:model-value="processQuery">
+                    <q-tooltip class="text-subtitle2">
+                      Filter brands
+                    </q-tooltip>
+                  </q-checkbox>
                   <q-checkbox v-model="mustIncludeWhole"
                               label="Match Whole"
                               @update:model-value="processQuery">
@@ -103,6 +117,20 @@
                     </q-tooltip>
                   </q-checkbox>
                 </div>
+              </div>
+            </div>
+            <div v-if="brands && brands.length > 0"
+                 class="pt1 px2 pb2 mt2">
+              <div class="flex items-center gap-2 mb3">
+                <q-icon name="sym_o_apartment" size="1.2rem"/>
+                <p class="text-subtitle2 fontbold non-selectable">
+                  Brands
+                </p>
+              </div>
+              <div class="px2">
+                <q-select v-model="brandQuery" :options="brands"
+                          label="Filter by brand"
+                          @update:model-value="processQuery"/>
               </div>
             </div>
             <div class="pt1 px2 pb2 mt2">
@@ -175,23 +203,32 @@
           <div class="pb4 flex items-center column wfull">
             <template v-if="viewingStore">
               <div class="wfull dshadow rounded p4 flex justify-center">
-                <div class="max-w-screen-lg wfull flex gap-8 <lg:gap-6">
+                <div class="max-w-screen-lg wfull flex gap-8 <lg:gap-6
+                            justify-center">
                   <div class="relative wfull
                               max-w-64 max-h-32">
                     <template v-if="viewingStore.iurl">
                       <q-img :src="getImg(viewingStore.iurl, true)"
-                             alt="Store" fit="contain" position="0 0"
+                             alt="Store" fit="contain" position="50% 0"
                              class="hfull wfull relative rounded"/>
                     </template>
                   </div>
-                  <div class="wfit flex column justify-center pr8">
+                  <div class="flex-grow flex column justify-center pr8">
                     <p class="text-5xl <lg:text-3xl <sm:text-[6vw]
-                            fontbold wfit">
+                              fontbold wfit">
                       {{ viewingStore.t }}
                     </p>
                     <p class="text-subtitle2 mt2 wfit">
                       {{ viewingStore.desc }}
                     </p>
+                    <div v-if="totalOffers > 0"
+                         class="mt2 rounded-2 fmt_border gap-x-2
+                                px3 py1 wfit flex items-center">
+                      <div class="w-2 h-2 rounded-full bg-green"/>
+                      <p class="text-subtitle2 fontbold">
+                        {{ totalOffers.toLocaleString() }} active offers
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -285,19 +322,36 @@
                                @click="sortByPrice(false)"/>
                       </div>
                     </div>
-                    <template v-if="categoryFilters && categoryFilters.length > 0">
-                      <div class="flex gap-2 items-center mt4">
-                        <p class="text-subtitle2">
-                          Categories:
-                        </p>
-                        <div v-for="cat in categoryFilters" :key="cat"
-                             class="surface rounded px2 py1">
-                          <p class="text-subtitle2">
-                            {{ cat }}
+                    <div class="flex gap-4">
+                      <template v-if="categoryFilters && categoryFilters.length > 0">
+                        <div class="flex gap-2 items-center mt4">
+                          <p class="text-subtitle2 non-selectable">
+                            Categories:
                           </p>
+                          <div v-for="cat in categoryFilters" :key="cat"
+                               class="surface rounded px2 py1">
+                            <p class="text-subtitle2">
+                              {{ cat }}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                    </template>
+                      </template>
+                      <template v-if="brandQuery !== ''">
+                        <div class="flex gap-2 items-center mt4">
+                          <p class="text-subtitle2 non-selectable">
+                            Brand:
+                          </p>
+                          <div class="surface rounded px2 py1 flex items-center">
+                            <p class="text-subtitle2">
+                              {{ brandQuery }}
+                            </p>
+                            <q-btn icon="close" flat dense
+                                   class="ml1"
+                                   @click="brandQuery = ''; processQuery()"/>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
                   </div>
                   <q-item v-for="res in results" :key="res"
                           dense clickable class="wfull"
@@ -493,6 +547,8 @@ export default {
       fieldKeys: true,
       fieldCats: true,
       fieldAttr: true,
+      fieldClrs: true,
+      fieldBrand: true,
       mustIncludeWhole: false,
       variations: [],
       variationQuery: [],
@@ -507,11 +563,13 @@ export default {
       basket: null,
       canEdit: false,
       noResults: false,
-      categoryFilters: []
+      categoryFilters: [],
+      totalOffers: 0,
+      brandQuery: ''
     }
   },
   created () {
-    this.processQuery = debounce(this.processQuery, 200)
+    this.processQuery = debounce(this.processQuery, 400)
     this.storeID = this.$route.query.id
     this.getViewingStore()
     this.getStoreFilters()
@@ -584,6 +642,7 @@ export default {
           this.variations = data.vars
           this.categories = data.cats
           this.brands = data.brands
+          this.totalOffers = data.amt
           // Sanitize query
           this.priceRange.min = this.priceMin
           this.priceRange.max = this.priceMax
@@ -628,6 +687,12 @@ export default {
       if (this.fieldAttr) {
         fieldsT += 'attr '
       }
+      if (this.fieldClrs) {
+        fieldsT += 'clrs '
+      }
+      if (this.fieldBrand) {
+        fieldsT += 'brand '
+      }
       fieldsT = fieldsT.trim()
       // Check if we can pre-filter items by category
       const categories = this.checkCategories(queryText)
@@ -641,7 +706,8 @@ export default {
         minCost: this.priceRange.min,
         maxCost: this.priceRange.max,
         vars: this.variationQuery,
-        cats: categories
+        cats: categories,
+        brand: this.brandQuery
       }
       return new Promise((resolve) => {
         axios.post(
