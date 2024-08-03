@@ -72,6 +72,22 @@
               </template>
             </div>
             <div class="flex items-center gap-4">
+              <div class="flex items-center gap-2 wfit h9
+                          px3 py0.5 background rounded">
+                <template v-if="item.stock > 0">
+                  <div class="w2 h2 rounded-full bg-green"></div>
+                  <p class="text-subtitle2">
+                    <span class="fontbold">{{ item.stock }}</span>
+                    available
+                  </p>
+                </template>
+                <template v-else>
+                  <div class="w2 h2 rounded-full bg-gray"></div>
+                  <p class="text-subtitle2">
+                    out of stock
+                  </p>
+                </template>
+              </div>
               <template v-if="item.vars && item.vars.length > 0">
                 <q-btn class="px2 py1 rounded secondary wfit
                               fontbold text-sm"

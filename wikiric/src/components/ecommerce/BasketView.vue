@@ -15,25 +15,36 @@
           <div class="w-20 max-h-20 max-w-20 hauto
                       rounded
                       flex justify-center">
-            <q-carousel
-              v-model="item._iurl"
-              transition-prev="jump-right"
-              transition-next="jump-left"
-              swipeable
-              animated
-              control-color="brand-p"
-              prev-icon="arrow_left"
-              next-icon="arrow_right"
-              height="264px"
-              class="scaled_carousel
-                     w-20 max-h-20 max-w-20 hauto">
-              <template v-for="img in item.iurls" :key="img">
-                <q-carousel-slide :img-src="getImg(img.url, true)"
-                                  :name="img.url"
-                                  class="wfull hfull">
-                </q-carousel-slide>
-              </template>
-            </q-carousel>
+            <template v-if="item.iurls.length > 0">
+              <q-carousel
+                v-model="item._iurl"
+                transition-prev="jump-right"
+                transition-next="jump-left"
+                swipeable
+                animated
+                control-color="brand-p"
+                prev-icon="arrow_left"
+                next-icon="arrow_right"
+                height="264px"
+                class="scaled_carousel
+                       w-20 max-h-20 max-w-20 hauto">
+                <template v-for="img in item.iurls" :key="img">
+                  <q-carousel-slide :img-src="getImg(img.url, true)"
+                                    :name="img.url"
+                                    class="wfull hfull">
+                  </q-carousel-slide>
+                </template>
+              </q-carousel>
+            </template>
+            <template v-else>
+              <div class="rounded flex items-center
+                                      background justify-center
+                                      w-20 h-20">
+                <p class="text-subtitle2">
+                  NO IMG
+                </p>
+              </div>
+            </template>
           </div>
           <div class="rounded no-wrap
                       flex column gap-2">
@@ -48,58 +59,76 @@
         </div>
       </template>
       <template v-if="basket && basket.items?.length > 0">
-        <div class="sticky top-0 z-fab">
-          <div class="wfull flex justify-between rounded-2
-                      dshadow surface
-                      items-center mb4 fmt_border px3 py2">
-            <div>
-              <p class="text-2xl fontbold">
-                Total: {{ total }}
-              </p>
-              <p class="text-subtitle2">
-                Includes {{ totalVat }} VAT
-              </p>
+        <div class="sticky top-0 z-fab pb4">
+          <div class="wfull rounded-2
+                      dshadow background
+                      mb4 fmt_border px3 py4">
+            <div class="mb4">
+              <div class="flex wfull justify-between items-start">
+                <p class="text-lg fontbold">
+                  Your Cart
+                </p>
+                <q-btn label="Close Cart" v-close-popup
+                       no-caps flat
+                       class="w50 surface fmt_border"/>
+              </div>
             </div>
-            <q-btn label="Go To Checkout" color="primary"
-                   class="fontbold"
-                   @click="$router.push('/checkout')"/>
+            <div class="flex justify-between items-center">
+              <div>
+                <p class="text-2xl fontbold">
+                  Total: {{ total }}
+                </p>
+                <p class="text-subtitle2">
+                  Includes {{ totalVat }} VAT
+                </p>
+              </div>
+              <q-btn label="Go To Checkout" color="primary"
+                     unelevated
+                     class="fontbold w50 h16
+                            text-body1 fmt_border"
+                     @click="$router.push('/checkout')"/>
+            </div>
           </div>
         </div>
-        <div class="flex wfull justify-between items-center
-                    mb4 mt2">
-          <p class="text-lg fontbold">
-            Your Cart
-          </p>
-          <q-btn label="Close Cart" v-close-popup/>
-        </div>
         <div v-for="entry in basket.items" :key="entry">
-          <div class="flex gap-4 ml2 mb4 fmt_border_bottom pb4">
+          <div class="flex gap-4 ml2 mb4 fmt_border_bottom pb4 no-wrap">
             <div class="w-20 max-h-20 max-w-20 hauto
                         rounded
                         flex justify-center">
-              <q-carousel
-                v-model="entry.itemObj._iurl"
-                transition-prev="jump-right"
-                transition-next="jump-left"
-                swipeable
-                animated
-                control-color="brand-p"
-                prev-icon="arrow_left"
-                next-icon="arrow_right"
-                height="264px"
-                class="scaled_carousel
-                       w-20 max-h-20 max-w-20 hauto">
-                <template v-for="img in entry.itemObj.iurls" :key="img">
-                  <q-carousel-slide :img-src="getImg(img.url, true)"
-                                    :name="img.url"
-                                    class="wfull hfull">
-                  </q-carousel-slide>
-                </template>
-              </q-carousel>
+              <template v-if="entry.itemObj.iurls.length > 0">
+                <q-carousel
+                  v-model="entry.itemObj._iurl"
+                  transition-prev="jump-right"
+                  transition-next="jump-left"
+                  swipeable
+                  animated
+                  control-color="brand-p"
+                  prev-icon="arrow_left"
+                  next-icon="arrow_right"
+                  height="264px"
+                  class="scaled_carousel
+                         w-20 max-h-20 max-w-20 hauto">
+                  <template v-for="img in entry.itemObj.iurls" :key="img">
+                    <q-carousel-slide :img-src="getImg(img.url, true)"
+                                      :name="img.url"
+                                      class="wfull hfull">
+                    </q-carousel-slide>
+                  </template>
+                </q-carousel>
+              </template>
+              <template v-else>
+                <div class="rounded flex items-center
+                                      background justify-center
+                                      w-20 h-20">
+                  <p class="text-subtitle2">
+                    NO IMG
+                  </p>
+                </div>
+              </template>
             </div>
             <div class="rounded no-wrap flex-grow
                         flex column gap-2">
-              <p class="text-weight-bolder text-xl
+              <p class="text-weight-bolder text-md <md:text-sm
                         fmt_border_bottom pb2">
                 {{ entry.itemObj.t }}
               </p>

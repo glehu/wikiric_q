@@ -49,6 +49,73 @@
                 @update:model-value="processQuery"
               />
             </div>
+            <div v-if="brands && brands.length > 0"
+                 class="pt1 px2 pb2 mt2">
+              <div class="flex items-center gap-2">
+                <q-icon name="sym_o_apartment" size="1.2rem"/>
+                <p class="text-subtitle2 fontbold non-selectable">
+                  Brands
+                </p>
+              </div>
+              <div class="px2">
+                <q-select v-model="brandQuery" :options="brands"
+                          label="Filter by brand"
+                          @update:model-value="processQuery"/>
+              </div>
+            </div>
+            <div class="px2 pb8">
+              <div class="flex items-center gap-2 mb1">
+                <q-icon name="sym_o_shelves" size="1.2rem"/>
+                <p class="text-subtitle2 fontbold non-selectable">
+                  Minimum Stock
+                </p>
+              </div>
+              <q-slider
+                v-model="minStock"
+                :min="0"
+                :max="100"
+                :step="1"
+                track-size="8px" thumb-size="24px"
+                label-always switch-label-side
+                label-color="primary"
+                color="primary"
+                class="px4 fontbold"
+                @update:model-value="processQuery"
+              />
+            </div>
+            <div class="pt1 px2 pb2 mt2">
+              <div class="flex items-center gap-2 mb3">
+                <q-icon name="sym_o_style" size="1.2rem"/>
+                <p class="text-subtitle2 fontbold non-selectable">
+                  Variations
+                </p>
+              </div>
+              <div class="flex column gap-2">
+                <template v-if="variations && variations.length > 0">
+                  <template v-for="variation in variations" :key="variation">
+                    <div class="rounded-2 px2 py1 background">
+                      <p class="text-sm text-weight-bolder">
+                        {{ variation.t }}
+                      </p>
+                      <div class="flex gap-2 mt1 pb1">
+                        <template v-if="variation.vars && variation.vars.length > 0">
+                          <template v-for="vari in variation.vars" :key="vari">
+                            <q-btn class="px2 py1 rounded fmt_border"
+                                   :class="{'primary': checkVariationActive(variation.t, vari.sval)}"
+                                   flat dense no-caps
+                                   v-on:click="toggleVariationQuery(variation.t, vari.sval)">
+                              <p class="text-sm fontbold">
+                                {{ vari.sval }}
+                              </p>
+                            </q-btn>
+                          </template>
+                        </template>
+                      </div>
+                    </div>
+                  </template>
+                </template>
+              </div>
+            </div>
             <div class="pt1 px2 pb2 mt2">
               <div class="flex items-center gap-2 mb1">
                 <q-icon name="sym_o_filter_alt" size="1.2rem"/>
@@ -117,53 +184,6 @@
                     </q-tooltip>
                   </q-checkbox>
                 </div>
-              </div>
-            </div>
-            <div v-if="brands && brands.length > 0"
-                 class="pt1 px2 pb2 mt2">
-              <div class="flex items-center gap-2 mb3">
-                <q-icon name="sym_o_apartment" size="1.2rem"/>
-                <p class="text-subtitle2 fontbold non-selectable">
-                  Brands
-                </p>
-              </div>
-              <div class="px2">
-                <q-select v-model="brandQuery" :options="brands"
-                          label="Filter by brand"
-                          @update:model-value="processQuery"/>
-              </div>
-            </div>
-            <div class="pt1 px2 pb2 mt2">
-              <div class="flex items-center gap-2 mb3">
-                <q-icon name="sym_o_style" size="1.2rem"/>
-                <p class="text-subtitle2 fontbold non-selectable">
-                  Variations
-                </p>
-              </div>
-              <div class="flex column gap-2">
-                <template v-if="variations && variations.length > 0">
-                  <template v-for="variation in variations" :key="variation">
-                    <div class="rounded-2 px2 py1 background">
-                      <p class="text-sm text-weight-bolder">
-                        {{ variation.t }}
-                      </p>
-                      <div class="flex gap-2 mt1 pb1">
-                        <template v-if="variation.vars && variation.vars.length > 0">
-                          <template v-for="vari in variation.vars" :key="vari">
-                            <q-btn class="px2 py1 rounded fmt_border"
-                                   :class="{'primary': checkVariationActive(variation.t, vari.sval)}"
-                                   flat dense no-caps
-                                   v-on:click="toggleVariationQuery(variation.t, vari.sval)">
-                              <p class="text-sm fontbold">
-                                {{ vari.sval }}
-                              </p>
-                            </q-btn>
-                          </template>
-                        </template>
-                      </div>
-                    </div>
-                  </template>
-                </template>
               </div>
             </div>
           </div>
@@ -246,6 +266,7 @@
                       label-color="brand-p"
                       v-model="query"
                       @update:model-value="processQuery"
+                      @keyup.enter="processQuery"
                       class="text-lg md:rounded-t-2 fmt_border_bottom transition-all">
                       <template v-slot:prepend>
                         <template v-if="!isRequestUndergoing">
@@ -360,6 +381,7 @@
                                 md:rounded-2 fmt_border p2
                                 overflow-hidden hfull">
                       <div class="w-50 min-w-50 min-h-50
+                                  mt4
                                   <md:w-80 <md:min-w-80 <md:min-h-80
                                   <md:wfull md:ml4
                                   flex justify-center">
@@ -398,7 +420,7 @@
                           </div>
                         </template>
                       </div>
-                      <div class="p2 flex-grow mt4
+                      <div class="p2 flex-grow <md:mt4 md:mt1
                                   flex column gap-2">
                         <p class="text-weight-bolder text-xl lg:text-2xl">
                           {{ res.t }}
@@ -408,35 +430,58 @@
                           {{ res.desc }}
                         </p>
                         <template v-if="res.attr && res.attr.length > 0">
-                          <table class="table_start border-spacing-none
+                          <table class="border-spacing-none
                                         text-subtitle2
-                                        rounded mt2 py1 wfit fmt_border">
+                                        rounded mt2 py1 wfit">
                             <template v-for="attr in res.attr" :key="attr">
                               <tr>
-                                <td class="fontbold">
-                                  {{ attr.t }}:
+                                <td class="fontbold pr3">
+                                  {{ capitalizeFirstLetter(attr.t) }}:
                                 </td>
-                                <td>
+                                <td class="pr3">
                                   {{ attr.sval }}
                                 </td>
-                                <td>
+                                <td class="">
                                   {{ attr.desc }}
                                 </td>
                               </tr>
                             </template>
                           </table>
                         </template>
-                        <div class="wfull flex column mtauto
-                                    items-end">
-                          <p class="text-3xl <sm:text-2xl text-weight-bold">
-                            {{ res._gross }}
-                          </p>
-                          <p class="text-xs text-weight-bold">
-                            Includes {{ res._vat }} ({{ res._vatp }} %) VAT
-                          </p>
-                          <q-btn label="View Product"
-                                 icon="sym_o_search"
-                                 class="fontbold mt4 fmt_border surface"/>
+                        <div class="mtauto">
+                          <div class="flex gap-6 mt4 wfull column items-end">
+                            <div class="flex column
+                                        items-end">
+                              <p class="text-3xl <sm:text-2xl text-weight-bold">
+                                {{ res._gross }}
+                              </p>
+                              <p class="text-xs text-weight-bold">
+                                Includes {{ res._vat }} ({{ res._vatp }} %) VAT
+                              </p>
+                              <div class="flex items-start gap-4 mt4">
+                                <div v-if="this.minStock > 0"
+                                     class="flex items-center gap-2 wfit h9
+                                            px3 py0.5 background rounded">
+                                  <template v-if="res.stock > 0.0">
+                                    <div class="w2 h2 rounded-full bg-green"></div>
+                                    <p class="text-subtitle2">
+                                      <span class="fontbold">{{ res.stock }}</span>
+                                      available
+                                    </p>
+                                  </template>
+                                  <template v-else>
+                                    <div class="w2 h2 rounded-full bg-gray"></div>
+                                    <p class="text-subtitle2">
+                                      out of stock
+                                    </p>
+                                  </template>
+                                </div>
+                                <q-btn label="View Product"
+                                       icon="sym_o_search"
+                                       class="fontbold fmt_border surface"/>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -539,6 +584,7 @@ export default {
         min: 0.0,
         max: 1000.0
       },
+      minStock: 0,
       priceMin: 0.0,
       priceMax: 1000.0,
       priceAvg: 0.0,
@@ -707,7 +753,8 @@ export default {
         maxCost: this.priceRange.max,
         vars: this.variationQuery,
         cats: categories,
-        brand: this.brandQuery
+        brand: this.brandQuery,
+        minStock: this.minStock
       }
       return new Promise((resolve) => {
         axios.post(
@@ -890,6 +937,9 @@ export default {
         }
       }
       return arr
+    },
+    capitalizeFirstLetter: function ([first, ...rest], locale = navigator.language) {
+      return first === undefined ? '' : first.toLocaleUpperCase(locale) + rest.join('')
     }
   }
 }

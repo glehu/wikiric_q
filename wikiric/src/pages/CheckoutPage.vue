@@ -63,37 +63,49 @@
                       </p>
                       <div v-for="entry in basket.items" :key="entry"
                            class="flex gap-4 ml2 mb2 pb4
+                                  xl:flex-nowrap
                                   fmt_border surface
                                   p2 rounded-2">
                         <div class="w-20 max-h-20 max-w-20 hauto
-                              rounded flex justify-center">
-                          <q-carousel
-                            v-model="entry.itemObj._iurl"
-                            transition-prev="jump-right"
-                            transition-next="jump-left"
-                            swipeable
-                            animated
-                            control-color="brand-p"
-                            prev-icon="arrow_left"
-                            next-icon="arrow_right"
-                            height="264px"
-                            class="scaled_carousel
-                                   w-20 max-h-20 max-w-20 hauto">
-                            <template v-for="img in entry.itemObj.iurls" :key="img">
-                              <q-carousel-slide :img-src="getImg(img.url, true)"
-                                                :name="img.url"
-                                                class="wfull hfull">
-                              </q-carousel-slide>
-                            </template>
-                          </q-carousel>
+                                    rounded flex justify-center">
+                          <template v-if="entry.itemObj.iurls.length > 0">
+                            <q-carousel
+                              v-model="entry.itemObj._iurl"
+                              transition-prev="jump-right"
+                              transition-next="jump-left"
+                              swipeable
+                              animated
+                              control-color="brand-p"
+                              prev-icon="arrow_left"
+                              next-icon="arrow_right"
+                              height="264px"
+                              class="scaled_carousel
+                                     w-20 max-h-20 max-w-20 hauto">
+                              <template v-for="img in entry.itemObj.iurls" :key="img">
+                                <q-carousel-slide :img-src="getImg(img.url, true)"
+                                                  :name="img.url"
+                                                  class="wfull hfull">
+                                </q-carousel-slide>
+                              </template>
+                            </q-carousel>
+                          </template>
+                          <template v-else>
+                            <div class="rounded flex items-center
+                                        background justify-center
+                                        w-20 h-20">
+                              <p class="text-subtitle2">
+                                NO IMG
+                              </p>
+                            </div>
+                          </template>
                         </div>
                         <div class="rounded no-wrap flex-grow max-w-120
                                     flex column gap-2">
-                          <p class="text-weight-bolder text-xl
+                          <p class="text-weight-bolder text-md
                                     pb2 fmt_border_bottom">
                             {{ entry.itemObj.t }}
                           </p>
-                          <template v-if="entry.itemObj.vars">
+                          <template v-if="entry.itemObj.vars && entry.itemObj.vars.length > 0">
                             <div class="flex items-center gap-2">
                               <q-icon name="sym_o_style" size="1.4rem"/>
                               <p class="text-subtitle2">
@@ -407,7 +419,7 @@
                 </div>
                 <template v-if="basket && basket.items?.length > 0">
                   <q-btn label="order with obligation to pay"
-                         type="submit"
+                         type="submit" unelevated
                          color="primary" class="fontbold"/>
                 </template>
                 <template v-else>
