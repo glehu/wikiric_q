@@ -1386,7 +1386,9 @@ export default {
           if (done) break
         }
         // Reset the edit background
-        this.resetEditing()
+        if (msg.usr === this.store.user.username) {
+          this.resetEditing()
+        }
         // Remove active state on member
         this.clearActivity(msg.usr, false, true)
         return
