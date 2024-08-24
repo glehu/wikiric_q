@@ -37,9 +37,30 @@
         </div>
       </div>
       <template v-if="member.usr === store.user.username">
-        <q-btn icon="edit" label="Edit Profile" color="primary"
-               class="mt4"
-               @click="isViewingSettings = !isViewingSettings"/>
+        <div class="mt4 flex gap-2 wfull">
+          <q-btn icon="edit" label="Edit Profile" no-caps
+                 color="primary" align="left"
+                 class="wfull"
+                 @click="isViewingSettings = !isViewingSettings"/>
+          <q-btn icon="key" label="Replace Encryption Key" no-caps
+                 color="primary" align="left"
+                 class="wfull"
+                 @click="$emit('replacekey')">
+            <q-tooltip>
+              <p class="text-sm fontbold">
+                ! WARNING !
+                <br><br>
+                By replacing the encryption key you will lose the
+                <br>
+                ability to read any message sent or received up to now!
+                <br><br>
+                Other users might have to refresh the page to use your
+                <br>
+                new key.
+              </p>
+            </q-tooltip>
+          </q-btn>
+        </div>
       </template>
     </q-card-section>
   </q-card>
@@ -64,7 +85,7 @@ export default {
       required: true
     }
   },
-  emits: ['refresh'],
+  emits: ['refresh', 'replacekey'],
   name: 'MemberCard',
   data () {
     return {

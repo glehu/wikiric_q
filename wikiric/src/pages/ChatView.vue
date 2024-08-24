@@ -151,10 +151,11 @@
                   clickable>
             <q-menu>
               <member-card :member="member"
-                           @refresh="getMainMembers"/>
+                           @refresh="getMainMembers"
+                           @replacekey="generateRSAKeyPair(true)"/>
             </q-menu>
             <q-item-section v-if="key">
-              <q-item-label class="fontbold text-lg">
+              <q-item-label class="fontbold text-md">
                 <member-icon :iurl="member.iurl"
                              :iurla="member.iurla"
                              :online="member.online"
@@ -1241,12 +1242,21 @@ export default {
         })
         .then(() => {
           if (force === true) {
-            // this.$notify(
-            //   {
-            //     title: 'Encryption Key Replaced',
-            //     text: '',
-            //     type: 'fmt_notify'
-            //   })
+            this.$q.notify({
+              color: 'primary',
+              position: 'top-right',
+              message: 'Encryption Key Replaced',
+              caption: '',
+              actions: [
+                {
+                  icon: 'close',
+                  color: 'white',
+                  round: true,
+                  handler: () => {
+                  }
+                }
+              ]
+            })
           }
         })
         .then(() => {
@@ -1263,6 +1273,7 @@ export default {
             }
             dbSetSession(this.chatID, payload)
             .then(() => {
+              this.getMainMembers()
               resolve()
             })
             .catch((err) => {
