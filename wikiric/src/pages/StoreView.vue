@@ -73,7 +73,7 @@
               <q-slider
                 v-model="minStock"
                 :min="0"
-                :max="100"
+                :max="20"
                 :step="1"
                 track-size="8px" thumb-size="24px"
                 label-always switch-label-side
@@ -258,27 +258,43 @@
                 <div class="fmt_border surface dshadow
                             hfit md:rounded-2">
                   <div class="px3 pb2">
-                    <q-input
-                      autofocus
-                      for="storeQuery"
-                      label="Search for products and services..."
-                      color="brand-p"
-                      label-color="brand-p"
-                      v-model="query"
-                      @update:model-value="processQuery"
-                      @keyup.enter="processQuery"
-                      class="text-lg md:rounded-t-2 fmt_border_bottom transition-all">
-                      <template v-slot:prepend>
-                        <template v-if="!isRequestUndergoing">
-                          <div class="w10 flex justify-center">
-                            <q-icon name="search" size="2rem"/>
-                          </div>
+                    <q-form autocomplete="off" spellcheck="false">
+                      <q-input
+                        autofocus
+                        for="storeQuery"
+                        label="Search for products and services..."
+                        color="brand-p"
+                        label-color="brand-p"
+                        v-model="query"
+                        @keyup.enter="processQuery"
+                        @focus="showSuggestions"
+                        input-class="suggestion_source"
+                        class="text-lg md:rounded-t-2 fmt_border_bottom transition-all">
+                        <template v-slot:prepend>
+                          <template v-if="!isRequestUndergoing">
+                            <div class="w10 flex justify-center">
+                              <q-icon name="search" size="2rem"/>
+                            </div>
+                          </template>
+                          <template v-else>
+                            <q-spinner-rings size="2.5rem" color="primary"/>
+                          </template>
                         </template>
-                        <template v-else>
-                          <q-spinner-rings size="2.5rem" color="primary"/>
+                      </q-input>
+                    </q-form>
+                    <div id="query_suggestions"
+                         class="query_suggestions wfull pt2">
+                      <div v-if="query.trim() !== ''"
+                           class="max-h-60 overflow-y-scroll column no-wrap wfull">
+                        <template v-for="cat in categories" :key="cat">
+                          <template v-if="cat.toLowerCase().startsWith(query.toLowerCase()) && cat !== ''">
+                            <q-btn @click="query = cat; processQuery()" :label="cat"
+                                   class="wfull"
+                                   flat align="left"/>
+                          </template>
                         </template>
-                      </template>
-                    </q-input>
+                      </div>
+                    </div>
                   </div>
                   <template v-if="basket?.items?.length > 0">
                     <div class="px3 pb2 wfull flex justify-end
@@ -381,9 +397,9 @@
                                 md:rounded-2 fmt_border p2
                                 overflow-hidden hfull">
                       <div class="w-50 min-w-50 min-h-50
-                                  mt4
+                                  mt4 md:ml4 md:mb4
                                   <md:w-80 <md:min-w-80 <md:min-h-80
-                                  <md:wfull md:ml4
+                                  <md:wfull
                                   flex justify-center">
                         <template v-if="res.iurls?.length > 0">
                           <q-carousel
@@ -459,7 +475,7 @@
                                 Includes {{ res._vat }} ({{ res._vatp }} %) VAT
                               </p>
                               <div class="flex items-start gap-4 mt4">
-                                <div v-if="this.minStock > 0"
+                                <div v-if="showingStock"
                                      class="flex items-center gap-2 wfit h9
                                             px3 py0.5 background rounded">
                                   <template v-if="res.stock > 0.0">
@@ -533,6 +549,12 @@
                             label="View Cart" label-position="left"
                             @close="isViewingBasked = false"
                             @click="isViewingBasked = true"/>
+              <template v-if="canEdit">
+                <q-fab-action color="primary" icon="sym_o_library_add"
+                              label="Add Item" label-position="left"
+                              @close="isViewingProduct = false"
+                              @click="startCreatingItem"/>
+              </template>
             </q-fab>
           </q-page-sticky>
         </q-page>
@@ -543,7 +565,14 @@
                 :item-obj="viewingProduct"
                 :is-open="isViewingProduct"
                 :can-edit="canEdit"
-                @close="isViewingProduct = false; getBasket()"/>
+                :show-stock="showingStock"
+                @close="isViewingProduct = false; getBasket()"
+                @deleted="handleItemDeleted"/>
+  <product-edit-view item-id="x"
+                     :is-open="isViewingProductCreate"
+                     :is-create="true"
+                     :storeID="storeID"
+                     @close="isViewingProductCreate = false"/>
   <basket-view :is-adding="false"
                :is-open="isViewingBasked"
                @close="isViewingBasked = false; getBasket()"/>
@@ -552,10 +581,11 @@
 <script>
 import { useStore } from 'stores/wikistate'
 import axios from 'axios'
-import { debounce, scroll } from 'quasar'
+import { scroll } from 'quasar'
 import ProductView from 'components/ecommerce/ProductView.vue'
 import { dbGetData } from 'src/libs/wikistore'
 import BasketView from 'components/ecommerce/BasketView.vue'
+import ProductEditView from 'components/ecommerce/ProductEditView.vue'
 
 const {
   getScrollTarget,
@@ -565,6 +595,7 @@ const {
 export default {
   name: 'StoreView',
   components: {
+    ProductEditView,
     BasketView,
     ProductView
   },
@@ -576,6 +607,7 @@ export default {
       viewingStore: null,
       isViewingBasked: false,
       isViewingProduct: false,
+      isViewingProductCreate: false,
       viewingProductId: '',
       viewingProduct: {},
       storeID: '',
@@ -611,15 +643,22 @@ export default {
       noResults: false,
       categoryFilters: [],
       totalOffers: 0,
-      brandQuery: ''
+      brandQuery: '',
+      showingStock: false
     }
   },
   created () {
-    this.processQuery = debounce(this.processQuery, 400)
+    // this.processQuery = debounce(this.processQuery, 400)
     this.storeID = this.$route.query.id
     this.getViewingStore()
     this.getStoreFilters()
     this.getBasket()
+  },
+  mounted () {
+    document.addEventListener('keydown', this.storeHandleKeydown, false)
+  },
+  beforeUnmount () {
+    document.removeEventListener('keydown', this.storeHandleKeydown, false)
   },
   computed: {
     minPriceLabel () {
@@ -686,7 +725,7 @@ export default {
           this.priceMax = data.max + 1
           this.priceAvg = data.avg
           this.variations = data.vars
-          this.categories = data.cats
+          this.categories = data.cats.sort()
           this.brands = data.brands
           this.totalOffers = data.amt
           // Sanitize query
@@ -711,8 +750,9 @@ export default {
     processQuery: async function () {
       // Avoid multiple requests at the same time
       if (this.isRequestUndergoing) return
-      this.isRequestUndergoing = true
       let queryText = this.query.trim()
+      if (queryText === '') return
+      this.isRequestUndergoing = true
       if (this.mustIncludeWhole) {
         queryText = queryText.replaceAll(
           ' ', '\\s')
@@ -802,14 +842,20 @@ export default {
         }).finally(() => {
           // ***
           setTimeout(() => {
-            const elem = document.getElementById(
+            let elem = document.getElementById(
               'results_container')
             if (elem) {
               this.scrollToElement(elem)
             }
+            elem = document.getElementById('storeQuery')
+            if (elem) {
+              elem.blur()
+            }
           }, 0)
           // ***
           this.isRequestUndergoing = false
+          this.showingStock = (this.minStock > 0)
+          this.hideSuggestions()
           resolve()
         })
       })
@@ -930,9 +976,12 @@ export default {
     checkCategories: function (query) {
       if (query === '' || this.categories.length < 1) return []
       const arr = []
-      const q = query.toLowerCase().split(' ')
+      const q1 = query.toLowerCase().split(' ')
+      const q2 = query.toLowerCase()
+      let comp
       for (let i = 0; i < this.categories.length; i++) {
-        if (q.includes(this.categories[i].toLowerCase())) {
+        comp = this.categories[i].toLowerCase()
+        if (q1.includes(comp) || q2 === comp) {
           arr.push(this.categories[i])
         }
       }
@@ -940,6 +989,33 @@ export default {
     },
     capitalizeFirstLetter: function ([first, ...rest], locale = navigator.language) {
       return first === undefined ? '' : first.toLocaleUpperCase(locale) + rest.join('')
+    },
+    startCreatingItem: function () {
+      this.isViewingProductCreate = true
+    },
+    showSuggestions: function () {
+      const elem = document.getElementById('query_suggestions')
+      if (!elem) return
+      elem.style.display = 'flex'
+    },
+    hideSuggestions: function () {
+      setTimeout(() => {
+        const elem = document.getElementById('query_suggestions')
+        if (!elem) return
+        elem.style.display = 'none'
+      }, 200)
+    },
+    storeHandleKeydown: function (e) {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        this.hideSuggestions()
+      }
+    },
+    handleItemDeleted: function () {
+      this.isViewingProduct = false
+      this.processQuery()
+      this.getBasket()
     }
   }
 }

@@ -57,14 +57,36 @@
             <template v-if="isRequestUndergoing">
               <q-skeleton width="90%" height="30px"></q-skeleton>
             </template>
-            <div class="my2 fmt_border p3 rounded-2 wfit">
-              <p class="fontbold text-subtitle2">
-                Availability
-              </p>
-              <q-input v-model="item.stock"
-                       type="number"
-                       label="Stock"
-                       class="wfull max-w-30"/>
+            <div class="flex gap-2">
+              <div class="my2 fmt_border p3 rounded-2 wfit">
+                <p class="fontbold text-subtitle2">
+                  Price
+                </p>
+                <q-input v-model="item.net"
+                         type="number"
+                         color="brand-p"
+                         suffix="€"
+                         label="Net"
+                         class="wfull max-w-20"
+                         @update:model-value="calculatePrice"/>
+                <q-input v-model="item.vatp"
+                         type="number"
+                         color="brand-p"
+                         suffix="%"
+                         label="VAT %"
+                         class="wfull max-w-20"
+                         @update:model-value="calculatePrice"/>
+              </div>
+              <div class="my2 fmt_border p3 rounded-2 wfit">
+                <p class="fontbold text-subtitle2">
+                  Availability
+                </p>
+                <q-input v-model="item.stock"
+                         type="number"
+                         color="brand-p"
+                         label="Stock"
+                         class="wfull max-w-30"/>
+              </div>
             </div>
             <q-input v-model="item.t"
                      label="Title"
@@ -323,10 +345,33 @@
           <div class="mt2 pl4 pr1 py1 surface-variant rounded-2
                       flex gap-4 items-center">
             <p class="fontbold non-selectable">
-              EDITING
+              <template v-if="!isCreate">
+                EDITING
+              </template>
+              <template v-else>
+                CREATING
+              </template>
             </p>
-            <q-btn label="Save Changes" color="primary" class="wfit"
-                   @click="saveChanges"/>
+            <template v-if="!isCreate">
+              <template v-if="deleteCounter === 0">
+                <q-btn icon="delete" label="Delete"
+                       class=""
+                       no-caps dense
+                       @click="setDeleteCounter"/>
+              </template>
+              <template v-else-if="deleteCounter === 1">
+                <q-btn icon="delete" label="Confirm Delete"
+                       class="fontbold"
+                       color="negative"
+                       @click="handleDeleteItem"/>
+              </template>
+              <q-btn label="Save Changes" color="primary" class="wfit"
+                     @click="saveChanges"/>
+            </template>
+            <template v-else>
+              <q-btn label="Save Item" color="primary" class="wfit"
+                     @click="saveChanges"/>
+            </template>
           </div>
         </div>
       </div>
@@ -358,10 +403,18 @@ export default {
     itemObj: {
       type: Object,
       required: false
+    },
+    isCreate: {
+      type: Boolean,
+      required: true
+    },
+    storeID: {
+      type: String,
+      required: true
     }
   },
   name: 'ProductEditView',
-  emits: ['close'],
+  emits: ['close', 'deleted'],
   watch: {
     isOpen (newVal) {
       this.show = newVal
@@ -377,18 +430,29 @@ export default {
       item: {
         t: '',
         desc: '',
-        keys: ''
+        keys: '',
+        vatp: 0.0
       },
       variationQuery: [],
       isAddToCart: false,
       amount: 1,
       isRequestUndergoing: false,
-      originalStock: null
+      originalStock: null,
+      deleteCounter: 0
     }
   },
   methods: {
     handleDialogOpen: function () {
-      this.getProduct()
+      if (!this.isCreate) {
+        this.getProduct()
+      } else {
+        if (this.item.vatp === 0.0) {
+          this.item.vatp = 0.19
+        }
+        this.item._cats = []
+        this.item.vars = []
+        this.item.attr = []
+      }
       this.variationQuery = []
     },
     getProduct: async function () {
@@ -407,22 +471,7 @@ export default {
         .then((response) => {
           this.item = response.data
           // Sanitize
-          this.item._vatp = this.item.vatp * 100
-          this.item._vat =
-            this.item.net * this.item.vatp
-          this.item._gross =
-            this.item.net * (this.item.vatp + 1)
-          // Make it human-readable
-          this.item._vat = this.item._vat.toLocaleString(
-            'de-DE', {
-              style: 'currency',
-              currency: 'EUR'
-            })
-          this.item._gross = this.item._gross.toLocaleString(
-            'de-DE', {
-              style: 'currency',
-              currency: 'EUR'
-            })
+          this.calculatePrice()
           // Set first image for carousel
           if (!this.item.iurls || this.item.iurls.length < 1) {
             this.item._iurl = ''
@@ -477,6 +526,10 @@ export default {
       setVerticalScrollPosition(target, offset, duration)
     },
     saveChanges: function () {
+      if (this.isCreate) {
+        this.createItem()
+        return
+      }
       this.cleanItem()
       return new Promise((resolve) => {
         // If the stock has been modified, update it
@@ -581,12 +634,190 @@ export default {
         })
       })
     },
+    createItem: function () {
+      this.cleanItem()
+      let itemUID = null
+      return new Promise((resolve) => {
+        if (this.item.stock && this.item.stock > 0) {
+          api({
+            method: 'post',
+            url: 'items/private/create/' + this.storeID.trim(),
+            data: this.item
+          }).then((response) => {
+            itemUID = response.data.trim()
+            this.$q.notify({
+              color: 'primary',
+              position: 'top-right',
+              message: 'Item Created!',
+              caption: '',
+              actions: [
+                {
+                  icon: 'close',
+                  color: 'white',
+                  round: true,
+                  handler: () => {
+                  }
+                }
+              ]
+            })
+          }).catch((err) => {
+            this.$q.notify({
+              color: 'negative',
+              position: 'top-right',
+              message: 'Error!' + err.message,
+              caption: 'Maybe you aren\'t the owner of the Store.',
+              actions: [
+                {
+                  icon: 'close',
+                  color: 'white',
+                  round: true,
+                  handler: () => {
+                  }
+                }
+              ]
+            })
+            console.debug(err.message)
+          }).then(() => {
+            api({
+              method: 'post',
+              url: 'items/private/bulk/stock/' + this.storeID.trim(),
+              data: {
+                type: 'SET',
+                mods: [
+                  {
+                    uid: itemUID,
+                    amt: parseFloat(this.item.stock.toString())
+                  }
+                ]
+              }
+            })
+          }).finally(() => {
+            this.$emit('close')
+            resolve()
+          })
+          return
+        }
+        api({
+          method: 'post',
+          url: 'items/private/create/' + this.storeID.trim(),
+          data: this.item
+        }).then(() => {
+          this.$q.notify({
+            color: 'primary',
+            position: 'top-right',
+            message: 'Item Created!',
+            caption: '',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+        }).catch((err) => {
+          this.$q.notify({
+            color: 'negative',
+            position: 'top-right',
+            message: 'Error! ' + err.message,
+            caption: 'Maybe you aren\'t the owner of the Store.',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          console.debug(err.message)
+        }).finally(() => {
+          this.$emit('close')
+          resolve()
+        })
+      })
+    },
     cleanItem: function () {
+      this.item.net = Number.parseFloat(
+        Number.parseFloat(this.item.net).toFixed(2))
       // Removes empty categories, attributes, variations etc.
       this.item.cats = []
       for (let i = 0; i < this.item._cats.length; i++) {
         this.item.cats.push(this.item._cats[i].t)
       }
+    },
+    calculatePrice: function () {
+      this.item._vatp = this.item.vatp * 100
+      this.item._vat =
+        this.item.net * this.item.vatp
+      this.item._gross =
+        this.item.net * (this.item.vatp + 1)
+      // Make it human-readable
+      this.item._vat = this.item._vat.toLocaleString(
+        'de-DE', {
+          style: 'currency',
+          currency: 'EUR'
+        })
+      this.item._gross = this.item._gross.toLocaleString(
+        'de-DE', {
+          style: 'currency',
+          currency: 'EUR'
+        })
+    },
+    setDeleteCounter: function () {
+      this.deleteCounter = 1
+      setTimeout(() => {
+        this.deleteCounter = 0
+      }, 5000)
+    },
+    handleDeleteItem: function () {
+      return new Promise((resolve) => {
+        // If the stock has been modified, update it
+        api({
+          method: 'get',
+          url: 'items/private/delete/' + this.itemId.trim()
+        }).then(() => {
+          this.$q.notify({
+            color: 'primary',
+            position: 'top-right',
+            message: 'Item Deleted!',
+            caption: '',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          this.deleteCounter = 0
+          this.$emit('deleted')
+        }).catch((err) => {
+          this.$q.notify({
+            color: 'negative',
+            position: 'top-right',
+            message: 'Error! ' + err.message,
+            caption: 'Maybe you aren\'t the owner of the Store.',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          console.debug(err.message)
+        }).finally(() => {
+          resolve()
+        })
+      })
     }
   }
 }

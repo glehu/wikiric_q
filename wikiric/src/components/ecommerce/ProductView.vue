@@ -31,8 +31,8 @@
                 :thumbnails="item?.iurls?.length > 1"
                 height="264px"
                 class="scaled_carousel
-                       w-100 min-w-100 min-h-100
-                       xl:w-140 xl:min-w-140 xl:min-h-140">
+                       w-100 min-w-100 min-h-100 max-h-100
+                       xl:w-140 xl:min-w-140 xl:min-h-140 xl:max-h-140">
                 <template v-for="img in item.iurls" :key="img">
                   <q-carousel-slide :img-src="getImg(img.url, true)"
                                     :name="img.url"
@@ -42,8 +42,8 @@
               </q-carousel>
             </template>
             <template v-else>
-              <div class="w-100 min-w-100 min-h-100
-                          xl:w-140 xl:min-w-140 xl:min-h-140
+              <div class="w-100 min-w-100 min-h-100 max-h-100
+                          xl:w-140 xl:min-w-140 xl:min-h-140 xl:max-h-140
                           rounded-2 background flex
                           items-center justify-center">
                 <p class="text-subtitle2">
@@ -72,7 +72,8 @@
               </template>
             </div>
             <div class="flex items-center gap-4">
-              <div class="flex items-center gap-2 wfit h9
+              <div v-if="showStock"
+                   class="flex items-center gap-2 wfit h9
                           px3 py0.5 background rounded">
                 <template v-if="item.stock > 0">
                   <div class="w2 h2 rounded-full bg-green"></div>
@@ -266,7 +267,10 @@
                @close="onBasketClose"/>
   <product-edit-view :item-id="itemId"
                      :is-open="isEditingItem"
-                     @close="isEditingItem = false; getProduct()"/>
+                     :is-create="false"
+                     store-i-d=""
+                     @close="isEditingItem = false; getProduct()"
+                     @deleted="isEditingItem = false; $emit('deleted')"/>
 </template>
 
 <script>
@@ -302,10 +306,14 @@ export default {
     canEdit: {
       type: Boolean,
       required: true
+    },
+    showStock: {
+      type: Boolean,
+      required: true
     }
   },
   name: 'ProductView',
-  emits: ['close'],
+  emits: ['close', 'deleted'],
   watch: {
     isOpen (newVal) {
       this.show = newVal

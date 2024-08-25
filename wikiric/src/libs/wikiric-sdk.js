@@ -63,8 +63,8 @@ const wikiricSDK = {
   connectorChannel: new BroadcastChannel('wikiric_connector'),
 
   // Internal variables
-  _serverURL: 'https://wikiric.xyz', // 'http://localhost:9999'
-  _wssURL: 'wss://wikiric.xyz', // 'ws://localhost:9999'
+  _serverURL: 'https://wikiric.xyz', // 'http://localhost:9999' 'https://wikiric.xyz'
+  _wssURL: 'wss://wikiric.xyz', // 'ws://localhost:9999' 'wss://wikiric.xyz'
   _username: '',
   _token: '',
   _key: null,

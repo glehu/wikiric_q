@@ -26,6 +26,14 @@
                  @click="clickedBack">
             <span class="ml4 text-body1">Back</span>
           </q-btn>
+          <div class="wfull p4">
+            <template v-if="!ownStore">
+              <q-btn color="primary" label="Create Store"
+                     icon="sym_o_add_business"
+                     class="wfull"
+                     @click="isViewingStoreEdit = true"></q-btn>
+            </template>
+          </div>
         </q-scroll-area>
       </q-drawer>
       <q-page-container>
@@ -78,10 +86,16 @@
                 </div>
               </div>
             </template>
+            <template v-else>
+              <div class="wfull hfull flex justify-center items-center">
+                <p>You have no store, yet.</p>
+              </div>
+            </template>
           </div>
           <q-page-sticky position="bottom-right" :offset="[18, 18]">
             <q-fab
               v-model="fab"
+              class="hidden"
               label=""
               vertical-actions-align="right"
               color="primary"
@@ -94,20 +108,29 @@
       </q-page-container>
     </q-layout>
   </q-page>
+  <store-edit-view :is-open="isViewingStoreEdit"
+                   :is-create="isCreatingStore"
+                   @close="isViewingStoreEdit = false"
+                   @refresh="getOwnStore">
+  </store-edit-view>
 </template>
 
 <script>
 import { api } from 'boot/axios'
 import { useStore } from 'stores/wikistate'
+import StoreEditView from 'components/ecommerce/StoreEditView.vue'
 
 export default {
   name: 'StoreHubView',
+  components: { StoreEditView },
   data () {
     return {
       store: useStore(),
       fab: false,
       sidebarLeft: false,
-      ownStore: null
+      ownStore: null,
+      isViewingStoreEdit: false,
+      isCreatingStore: true
     }
   },
   created () {
@@ -125,7 +148,7 @@ export default {
           this.ownStore = response.data
         }).catch((e) => {
           console.debug(e.message)
-        }).then(() => {
+        }).finally(() => {
           resolve()
         })
       })
