@@ -8,7 +8,7 @@
       <q-drawer
         side="left"
         v-model="sidebarLeft"
-        show-if-above
+        behavior="desktop"
         :width="300"
         :breakpoint="768"
         class="surface-variant hfit">
@@ -99,6 +99,26 @@
                           text-subtitle2 px2">
                 <p>Performance:</p>
                 <p>{{ timeDelta }} FPS</p>
+              </div>
+              <div class="flex justify-between items-center gap-2
+                          text-subtitle2 px2">
+                <p>Server:</p>
+                <p>{{ roomId }}</p>
+              </div>
+              <div class="flex justify-between items-center gap-2
+                          text-subtitle2 px2">
+                <p>Players:</p>
+                <p>{{ sessions.size }}</p>
+              </div>
+              <div class="flex justify-between items-center gap-2
+                          text-subtitle2 px2">
+                <p>Latency:</p>
+                <p>{{ latency }} ms</p>
+              </div>
+              <div class="flex justify-between items-center gap-2
+                          text-subtitle2 px2">
+                <p>Host:</p>
+                <p>{{ isHost }}</p>
               </div>
             </div>
             <div class="p3 rounded surface">
@@ -400,8 +420,14 @@
                     class="ffd_canvas"></canvas>
             <div class="ffd_main" ref="ffd_main"></div>
           </div>
+          <div id="ffd_size"
+               class="min-w-[100dvw] max-w-[100dvw]
+                      min-h-[100dvh] max-h-[100dvh]
+                      fixed top-0 left-0 pointer-events-none"></div>
           <q-page-sticky position="top" :offset="[0, 38]">
-            <div class="flex wfull px2 min-w-[calc(100dvw-280px)]
+            <div id="ffd_exp_gui"
+                 class="flex wfull px2
+                        min-w-[100dvw] max-w-[100dvw]
                         justify-center items-start">
               <div class="wfull
                           rounded-b-2 text-subtitle2
@@ -414,16 +440,40 @@
                           class="w-full"/>
                 <div class="flex wfull justify-end px2 fontbold
                             -translate-y-2">
-                  <span>
-                    {{ goalKills }} Kills
-                  </span>
+                  <div class="text-right">
+                    <p class="text-sm cursor-default">
+                      {{ goalKills }} Kills
+                    </p>
+                    <div class="flex column gap-1 text-right">
+                      <p class="text-sm cursor-default">
+                        {{ roomId }}
+                      </p>
+                      <template v-for="[key, val] of sessions.entries()" :key="key.u">
+                        <div class="flex items-center gap-1 text-right justify-end
+                                    cursor-default">
+                          <template v-if="val.o">
+                            <q-icon name="cell_tower" size="1rem">
+                              <q-tooltip>
+                                <p class="text-sm fontbold">
+                                  Host
+                                </p>
+                              </q-tooltip>
+                            </q-icon>
+                          </template>
+                          <p class="text-xs">
+                            {{ val.u }} ({{ val.l.toFixed(0) }} ms)
+                          </p>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </q-page-sticky>
           <template v-if="isLevelUp">
             <div class="flex gap-2 justify-center items-center
-                        wfull max-w-[calc(100dvw-300px)] top-0
+                        wfull max-w-[100dvw] top-0
                         backdrop-blur-lg
                         z-99 fixed hfull pt_nav overflow-y-scroll">
               <q-card flat style="background: transparent"
@@ -475,7 +525,7 @@
           </template>
           <template v-if="modifyingWeapons">
             <div class="flex gap-2 justify-center items-center
-                        wfull max-w-[calc(100dvw-300px)] top-0
+                        wfull max-w-[100dvw] top-0
                         backdrop-blur-lg
                         z-99 fixed hfull pt_nav overflow-y-scroll">
               <q-card flat style="background: transparent"
@@ -510,7 +560,7 @@
             </div>
           </template>
           <q-page-sticky position="bottom">
-            <div class="flex gap-2 wfull min-w-[calc(100dvw-300px)]
+            <div class="flex gap-2 wfull min-w-[100dvw]
                         justify-center items-end">
               <div class="backdrop-brightness-50
                           h-18 px w-[40%]
@@ -549,8 +599,8 @@
               </div>
             </div>
           </q-page-sticky>
-          <q-page-sticky position="bottom-right" :offset="[18, 18]"
-                         class="md:hidden">
+          <q-page-sticky position="bottom-right" :offset="[10, 80]"
+                         class="">
             <q-fab
               v-model="fab"
               label=""
@@ -605,6 +655,7 @@ import FFPowerUpList from 'pages/games/flowfield/powerups/FFPowerUpList'
 import FFWeaponDisplay from 'pages/games/flowfield/FFWeaponDisplay.vue'
 import FFPowerUpDisplay from 'pages/games/flowfield/FFPowerUpDisplay.vue'
 import FilePicker from 'components/FilePicker.vue'
+import { useStore } from 'stores/wikistate'
 
 export default {
   name: 'FlowFieldDemo',
@@ -616,6 +667,7 @@ export default {
   },
   data () {
     return {
+      store: useStore(),
       fab: false,
       sidebarLeft: false,
       isDrawing: false,
@@ -716,8 +768,10 @@ export default {
        */
       ctx3: null,
       gridSize: 50,
-      width: 1550,
-      height: 900,
+      width: 1500, // 1550,
+      height: 1500, // 900,
+      sWidth: 0,
+      sHeight: 0,
       totalCells: 0,
       xCells: 0,
       yCells: 0,
@@ -750,7 +804,8 @@ export default {
 
       // PLAYABLE CHARACTER DATA
 
-      goalPosition: new THREE.Vector2(0, 0),
+      canMove: false,
+      goalPosition: new THREE.Vector2(-1, -1),
       goalHP: 1000,
       goalMaxHP: 1000,
       goalXP: 0,
@@ -792,7 +847,19 @@ export default {
 
       drawHeatmap: false,
       drawDamageNumbers: true,
-      drawWallCollision: false
+      drawWallCollision: false,
+
+      // MULTIPLAYER DATA
+
+      roomId: 'wkrg_sync_ffa',
+      currentSRLatency: -1,
+      getQueue: new Map(),
+      lastPos: null,
+      isHost: false,
+      dataMap: new Map(),
+      playerData: new Map(),
+      sessions: new Map(),
+      coPlayers: new Map()
     }
   },
   mounted () {
@@ -800,6 +867,14 @@ export default {
   },
   beforeUnmount () {
     this.manageKeyListeners(true)
+  },
+  computed: {
+    latency () {
+      if (!this.currentSRLatency || this.currentSRLatency === -1) {
+        return ''
+      }
+      return this.currentSRLatency.toFixed(1)
+    }
   },
   methods: {
     clickedBack: function () {
@@ -835,6 +910,7 @@ export default {
       this.powerUpList = new FFPowerUpList()
       this.powerUpList.initiateStarterPowerUps()
       this.setUpPlayer()
+      this.setUpSyncRoom()
     },
     manageKeyListeners: function (forceRemove = false) {
       document.removeEventListener('keydown', this.handleFFKeyDown, false)
@@ -1098,6 +1174,11 @@ export default {
       this.ctxPlayer.clearRect(0, 0, this.width, this.height)
     },
     initializeGridValues: function () {
+      const elem = document.getElementById('ffd_size')
+      if (elem) {
+        this.sWidth = elem.clientWidth
+        this.sHeight = elem.clientHeight
+      }
       console.log('Initializing Grid...')
       if (this.ctx) {
         this.ctx.clearRect(0, 0, this.width, this.height)
@@ -1106,13 +1187,12 @@ export default {
         this.ctx2.clearRect(0, 0, this.width, this.height)
       }
       // Calculate amount of cells
-      const xCells = (this.width / this.gridSize) * 2
-      const yCells = (this.height / this.gridSize) * 2
+      const xCells = Math.ceil((this.width / this.gridSize) * 2)
+      const yCells = Math.ceil((this.height / this.gridSize) * 2)
       const totalCells = xCells * yCells
       this.xCells = xCells
       this.yCells = yCells
       this.totalCells = totalCells
-      console.log(`\tX(${this.xCells}) * Y(${this.yCells}) = ${this.totalCells} Cells`)
       // Initialize grid arrays
       this.costField = new Uint16Array(totalCells)
       this.integrationField = new Uint16Array(totalCells)
@@ -1121,7 +1201,8 @@ export default {
         this.costField[i] = 1
         this.integrationField[i] = 65535
       }
-      console.log('Grid initialized!')
+      console.log('> Grid initialized!')
+      console.log(`\tX(${this.xCells}) * Y(${this.yCells}) = ${this.totalCells} Cells`)
     },
     initializeIntegrationGrid: function () {
       for (let i = 0; i < this.totalCells; i++) {
@@ -1306,12 +1387,28 @@ export default {
     removeWall: function (position) {
     },
     addGoal: function (position) {
+      if (this.goalPosition.x !== -1 && this.goalPosition.y !== -1) {
+        return
+      }
       const arrayPos = this.convertXYToArrayPos(position.x, position.y)
       if (arrayPos > this.costField.length) {
         return
       }
       // Remember values
+      const x = position.x
+      const y = position.y
       this.goalPosition = position
+      if (x * this.gridSize > this.sWidth / 2) {
+        const tmp = Math.round((this.sWidth / 2) / this.gridSize)
+        this.goalPosition.x = tmp + 1
+        this.offsetVector.x = (x - tmp) * -1
+      }
+      if (y * this.gridSize > this.sHeight / 2) {
+        const tmp = Math.round((this.sHeight / 2) / this.gridSize)
+        this.goalPosition.y = tmp + 1
+        this.offsetVector.y = (y - tmp) * -1
+      }
+      this.srNotifyPosition()
       // Draw goal
       this.renderGoal()
       // Calculate integration field
@@ -1322,6 +1419,12 @@ export default {
       const yNew = this.goalPosition.y * this.gridSize
       this.ctxPlayer.clearRect(0, 0, this.width, this.height)
       this.ctxPlayer.drawImage(this.wizzard, xNew + 5, yNew + 5)
+      // Are there other players to render?
+      if (this.coPlayers.size > 0) {
+        for (const [key, val] in this.coPlayers.entries()) {
+          console.log(key, val)
+        }
+      }
     },
     addEnemy: function (position) {
       const arrayPos = this.convertXYToArrayPos(position.x, position.y)
@@ -1508,6 +1611,25 @@ export default {
       this.isSimulating = true
       this.goalAlive = true
       this.goalHP = 1000
+      this.canMove = false
+      // Notify simulation start
+      this.srNotifySimulation(true)
+      // Notify users we exist
+      this.srNotifyAlive(true)
+      // Retrieve current sessions and their data
+      this.$connector.sendSyncRoomMessage(
+        this.buildDataCommand('GET', 'SESH', 'DIST'))
+      this.$connector.sendSyncRoomMessage(
+        this.buildDataCommand('GET', 'UDAT'))
+      if (this.currentSRLatency < 0) {
+        setTimeout(() => {
+          this.canMove = true
+        }, 100)
+      } else {
+        setTimeout(() => {
+          this.canMove = true
+        }, this.currentSRLatency * 2)
+      }
       // Allocate memory for variables
       let tmp
       const image = document.getElementById('slime')
@@ -1533,6 +1655,9 @@ export default {
             this.timeDelta = stepCount
             stepCount = 0
             this.procPerSecondTriggers()
+            // Retrieve current sessions
+            this.$connector.sendSyncRoomMessage(
+              this.buildDataCommand('GET', 'SESH', 'DIST'))
           }
           // How many seconds passed?
           tmp = performance.now()
@@ -1621,8 +1746,8 @@ export default {
      * @param {Number} timeDelta
      */
     applyGoalMovement: function (endVector, timeDelta) {
-      const offsetX = this.goalPosition.x >= (this.xCells / 4)
-      const offsetY = this.goalPosition.y >= (this.yCells / 4)
+      const offsetX = this.goalPosition.x * this.gridSize >= (this.sWidth / 2)
+      const offsetY = this.goalPosition.y * this.gridSize >= (this.sHeight / 2)
       // If the player moved half the screen's distance
       // ...in any direction, we will translate the movement
       // ...that would further exceed this to the environment.
@@ -1706,18 +1831,19 @@ export default {
               diff.divideScalar(Math.pow(dist, 2))
               wallVec.add(diff)
               if (this.drawWallCollision) {
-                this.ctx2.strokeStyle = '#F00'
-                this.ctx2.lineWidth = 4
-                this.ctx2.lineHeight = 4
-                this.ctx2.beginPath()
-                this.ctx2.moveTo(
-                  (goalPosX + 0.5 + this.offsetVector.x) * this.gridSize,
-                  (goalPosY + 0.5 + this.offsetVector.y) * this.gridSize)
-                this.ctx2.lineTo(
-                  (cell.x + 0.5 + this.offsetVector.x) * this.gridSize,
-                  (cell.y + 0.5 + this.offsetVector.y) * this.gridSize)
-                this.ctx2.stroke()
+                continue
               }
+              this.ctx2.strokeStyle = '#F00'
+              this.ctx2.lineWidth = 4
+              this.ctx2.lineHeight = 4
+              this.ctx2.beginPath()
+              this.ctx2.moveTo(
+                (goalPosX + 0.5 + this.offsetVector.x) * this.gridSize,
+                (goalPosY + 0.5 + this.offsetVector.y) * this.gridSize)
+              this.ctx2.lineTo(
+                (cell.x + 0.5 + this.offsetVector.x) * this.gridSize,
+                (cell.y + 0.5 + this.offsetVector.y) * this.gridSize)
+              this.ctx2.stroke()
             }
           }
         }
@@ -1909,6 +2035,9 @@ export default {
             if (this.goalHP <= 0) {
               this.goalHP = 0
               this.goalAlive = false
+              this.canMove = false
+              this.srNotifyAlive(false)
+              this.srNotifyMoveStop()
               break
             }
           }
@@ -1935,7 +2064,6 @@ export default {
           if (!projectiles) {
             continue
           }
-          console.log(projectiles)
           for (let j = 0; j < projectiles.length; j++) {
             if (projectiles[j].vec.lengthSq() > 0) {
               // Projectile - Add to projectiles
@@ -2154,38 +2282,126 @@ export default {
       this.initFunction()
     },
     handleFFKeyDown: function (e) {
+      if (!this.canMove) return
       switch (e.key) {
         case 'w':
           this.goalUp = true
+          this.srNotifyMove()
           break
         case 'a':
           this.goalLeft = true
+          this.srNotifyMove()
           break
         case 's':
           this.goalDown = true
+          this.srNotifyMove()
           break
         case 'd':
           this.goalRight = true
+          this.srNotifyMove()
           break
       }
+    },
+    srNotifyMove: function () {
+      const v = `${this.goalUp};${this.goalRight};${this.goalDown};${this.goalLeft}`
+      if (this.lastPos === v) {
+        return
+      }
+      const k = `MOV-${this.store.user.username}`
+      // Send message to others
+      this.$connector.sendSyncRoomMessage(
+        `${k};${v}`)
+      this.lastPos = v
+      this.dataMap.set(k, v)
+      // Let server process data
+      this.$connector.sendSyncRoomMessage(
+        this.buildDataCommand('SET', 'DATA', k, v))
+    },
+    srNotifyMoveStop: function () {
+      const k = `MOV-${this.store.user.username}`
+      const v = 'false;false;false;false'
+      // Send message to others
+      this.$connector.sendSyncRoomMessage(
+        `${k};${v}`)
+      this.lastPos = v
+      this.dataMap.set(k, v)
+      // Let server process data
+      this.$connector.sendSyncRoomMessage(
+        this.buildDataCommand('SET', 'DATA', k, v))
+    },
+    srNotifyAlive: function (isAlive) {
+      let v
+      if (isAlive) {
+        v = 'TRUE'
+      } else {
+        v = 'FALSE'
+      }
+      const k = `ALIVE-${this.store.user.username}`
+      // Notify users
+      this.$connector.sendSyncRoomMessage(
+        `${k};${v}`)
+      this.dataMap.set(k, v)
+      // Let server process the data
+      this.$connector.sendSyncRoomMessage(
+        this.buildDataCommand('SET', 'DATA', k, v))
+    },
+    srNotifyPosition: function () {
+      const v = JSON.stringify({
+        x: this.goalPosition.x,
+        y: this.goalPosition.y,
+        xo: this.offsetVector.x,
+        yo: this.offsetVector.y
+      })
+      const k = `POS-${this.store.user.username}`
+      // Notify users
+      this.$connector.sendSyncRoomMessage(
+        `${k};${v}`)
+      this.dataMap.set(k, v)
+      // Let server process the data
+      this.$connector.sendSyncRoomMessage(
+        this.buildDataCommand('SET', 'DATA', k, v))
+    },
+    srNotifySimulation: function (isRunning) {
+      if (!this.isHost) {
+        return
+      }
+      let v
+      if (isRunning) {
+        v = 'TRUE'
+      } else {
+        v = 'FALSE'
+      }
+      const k = 'DOSIM'
+      this.dataMap.set(k, v)
+      // Let server process the data
+      this.$connector.sendSyncRoomMessage(
+        this.buildDataCommand('SET', 'DATA', k, v))
+      // Notify users
+      this.$connector.sendSyncRoomMessage(
+        `${k};${v}`)
     },
     /**
      *
      * @param e
      */
     handleFFKeyUp: function (e) {
+      if (!this.canMove) return
       switch (e.key) {
         case 'w':
           this.goalUp = false
+          this.srNotifyMove()
           break
         case 'a':
           this.goalLeft = false
+          this.srNotifyMove()
           break
         case 's':
           this.goalDown = false
+          this.srNotifyMove()
           break
         case 'd':
           this.goalRight = false
+          this.srNotifyMove()
           break
       }
     },
@@ -2412,7 +2628,6 @@ export default {
           this.tile = tiles[i].name
           this.addTile(tiles[i].pos)
         }
-        console.log(this.tileTree)
       }
       /**
        * @type []
@@ -2424,9 +2639,6 @@ export default {
           this.costField.push(value)
         }
       }
-      // Log
-      console.log(this.tileTree)
-      console.log(this.costField)
       // Render
       this.drawGrid(true)
       this.renderTiles(this.offsetVector)
@@ -2465,6 +2677,137 @@ export default {
         // Spawn regular enemies
         this.addEnemy(pos)
       }
+    },
+    setUpSyncRoom: async function () {
+      // Listen for SyncRoom messages
+      const events = new BroadcastChannel('wikiric_sync')
+      events.onmessage = event => {
+        // Sanitize
+        if (!event.data || !event.data.a) {
+          return
+        }
+        event.data.a = event.data.a.trim()
+        event.data.t = event.data.t.trim()
+        if (event.data.a.startsWith('[s:ANS]')) {
+          // Answer
+          console.log('> SyncRoom Response:', event.data.a.substring(7))
+        } else if (event.data.a.startsWith('[s:SESH]')) {
+          // Session Result
+          const sesh = JSON.parse(event.data.a.substring(8))
+          this.sessions.set(sesh.u, sesh)
+          if (sesh.u === this.store.user.username) {
+            if (sesh.o) {
+              this.isHost = true
+            }
+          } else {
+            if (!this.coPlayers.has(sesh.u)) {
+              // We did not encounter this co-player yet
+              this.coPlayers.set(sesh.u, {
+                usr: sesh.u,
+                x: -1,
+                y: -1,
+                xo: -1,
+                yo: -1
+              })
+              // Request position data
+              // ...simple hack: we just re-use the lag function
+              this.handleLatencyLag(this.currentSRLatency)
+            }
+          }
+        } else if (event.data.a.startsWith('[s:DAT]')) {
+          // Data Result
+          const data = event.data.a.substring(7).split(';')
+          if (data.length < 2) {
+            return
+          }
+          this.dataMap.set(data[0], JSON.parse(data[1]))
+        } else if (event.data.a.startsWith('[LAT]')) {
+          // Latency Result
+          this.currentSRLatency = parseFloat(event.data.a.substring(5))
+          console.log(`> ${this.currentSRLatency} ms latency`)
+          if (this.currentSRLatency > 100) {
+            this.handleLatencyLag(this.currentSRLatency)
+          }
+        } else if (event.data.a.startsWith('[s:UDAT]')) {
+          // User Data
+          const data = JSON.parse(event.data.a.substring(8))
+          if (data.u === this.store.user.username) {
+            this.dataMap.set(data.k, data.v)
+          } else {
+            if (!this.playerData.has(data.u)) {
+              this.playerData.set(data.u, new Map())
+            }
+            const plyD = this.playerData.get(data.u)
+            plyD.set(data.k, data.v)
+            this.playerData.set(data.u, plyD)
+          }
+        } else if (event.data.t.startsWith('qPOS')) {
+          // Some player requested our position
+          this.srNotifyPosition()
+        } else if (event.data.t.startsWith('POS-')) {
+          // Some player sent their position
+          // We can simply use this to counteract de-sync
+          const data = event.data.t.substring(4).split(';')
+          if (data.length < 2 || data[0] === this.store.user.username) {
+            return
+          }
+          this.setCoPlayerPosition(data)
+        }
+      }
+      // Connect to the SyncRoom
+      console.log('Connecting to wikiric sync room: generic_server...')
+      await this.$connector.doJoinSyncRoom(this.roomId)
+      console.log('> Connected')
+      // Calculate latency in ms (performance check)
+      console.log('Periodically checking latency...')
+      this.$connector.calculateSyncRoomLatency()
+      setInterval(() => {
+        this.$connector.calculateSyncRoomLatency()
+      }, 10_000)
+      // Are there any other users here, yet?
+      this.$connector.sendSyncRoomMessage(
+        this.buildDataCommand('GET', 'SESH', 'DIST'))
+      setTimeout(() => {
+        this.$connector.sendSyncRoomMessage(
+          this.buildDataCommand('GET', 'SESH', 'DIST'))
+      }, 2_000)
+    },
+    handleLatencyLag: function (delay) {
+      // Retrieve player positions since lag could cause de-sync
+      this.$connector.sendSyncRoomMessage('qPOS')
+      setTimeout(() => {
+        this.$connector.sendSyncRoomMessage(
+          this.buildDataCommand('GET', 'UDAT', 'POS'))
+      }, delay * 2)
+    },
+    setCoPlayerPosition: function (data) {
+      const player = JSON.parse(data[1])
+      if (this.coPlayers.has(data[0])) {
+        const pl = this.coPlayers.get(data[0])
+        pl.x = player.x
+        pl.y = player.y
+        pl.xo = player.xo
+        pl.yo = player.yo
+        this.coPlayers.set(data[0], pl)
+        return
+      }
+      this.coPlayers.set(data[0], {
+        usr: data[0],
+        x: player.x,
+        y: player.y,
+        xo: player.xo,
+        yo: player.yo
+      })
+    },
+    buildDataCommand: function (cmd, mod, key, value) {
+      if (!key) {
+        key = ''
+      }
+      let str = `[c:${cmd};${mod}]${key}`
+      if (value) {
+        str += `;${value}`
+      }
+      return str
     }
   }
 }

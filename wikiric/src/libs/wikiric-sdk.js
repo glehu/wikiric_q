@@ -53,6 +53,15 @@ import Wikiricrypt from './wikiricrypt'
  * // 5. Listen to backend messages
  * const events = new BroadcastChannel('wikiric_connector')
  * events.onmessage = event => { console.log('Connector', event.data) }
+ *
+ * // 6. Connect to a SyncRoom, which basically acts as a temporary
+ * //    websocket pool/room for message distribution,
+ * //    data setting and getting, latency testing and more.
+ * await wikiric.doJoinSyncRoom('yourRoomIdOrName')
+ *
+ * // 7. Listen for SyncRoom messages
+ * const eventsSync = new BroadcastChannel('wikiric_sync')
+ * eventsSync.onmessage = event => { console.log('SyncRoom', event.data) }
  * ```
  */
 const wikiricSDK = {
@@ -61,6 +70,9 @@ const wikiricSDK = {
 
   // Broadcast channel for connector (backend) messages
   connectorChannel: new BroadcastChannel('wikiric_connector'),
+
+  // Broadcast channel for sync room messages
+  syncRoomChannel: new BroadcastChannel('wikiric_sync'),
 
   // Internal variables
   _serverURL: 'https://wikiric.xyz', // 'http://localhost:9999' 'https://wikiric.xyz'
@@ -72,8 +84,15 @@ const wikiricSDK = {
   _websocketState: 'CLOSED',
   _connector: null,
   _connectorState: 'CLOSED',
+  _syncRoomID: '',
+  _syncRoom: null,
+  _syncRoomState: 'CLOSED',
   _isAuthorized: false,
   _isSynchronized: false,
+  _isSRoomSynchronized: false,
+  _isSRLatencyChecking: false,
+  _currentSRPPState: 0,
+  _currentSRLatency: -1,
   _isBanned: false,
   _wcrypt: Wikiricrypt,
   /**
@@ -162,6 +181,64 @@ const wikiricSDK = {
         this._connectorState = 'CLOSED'
       }
       resolve(true)
+    })
+  },
+  doJoinSyncRoom: async function (roomId) {
+    if (!roomId) return
+    if (!this._token) return
+    this._syncRoomID = roomId
+    return new Promise((resolve, reject) => {
+      this._syncRoom = new WebSocket(`${this._wssURL}/ws/synced/${this._syncRoomID}`)
+      this._syncRoomState = 'CLOSED'
+      this._syncRoom.onopen = async () => {
+        this._syncRoom.onmessage = (event) => {
+          let message = event.data
+          if (message.startsWith('[s:wlcm]')) {
+            this._isSRoomSynchronized = true
+            resolve(true)
+          } else {
+            // Parse JSON object if provided
+            if (message.startsWith('{')) {
+              message = JSON.parse(message)
+            } else {
+              // Create object
+              message = {
+                typ: message
+              }
+            }
+            // Sanitize
+            if (!message.a) {
+              message.a = ''
+            }
+            if (!message.t) {
+              message.t = ''
+            }
+            // Is this a special message?
+            if (message.a.startsWith('[s:A]')) {
+              // Respond with a Pong (B)
+              this._currentSRPPState += 1
+              this.sendSyncRoomMessage(('[c:B]'))
+            } else if (message.a.startsWith('[s:L]')) {
+              // Latency response
+              const lat = message.a.substring(5)
+              this._currentSRLatency = parseFloat(lat)
+              // Distribute message to broadcast channel
+              message.a = `[LAT]${this._currentSRLatency}`
+              this.syncRoomChannel.postMessage(message)
+            } else {
+              // Distribute message to broadcast channel
+              this.syncRoomChannel.postMessage(message)
+            }
+          }
+        }
+        this._syncRoom.send(this._token)
+        this._syncRoomState = 'OPEN'
+      }
+      this._syncRoom.onclose = async () => {
+        this._syncRoom = null
+        this._syncRoomState = 'CLOSED'
+        this._syncRoomID = ''
+      }
     })
   },
   /**
@@ -314,6 +391,39 @@ const wikiricSDK = {
     }
     this._connector.send(txt)
     return true
+  },
+  /**
+   * Sends a message to the current SyncRoom.
+   *
+   * Returns true if the message was sent, otherwise it will return false
+   *
+   * @param {Object|String} msg
+   * @returns {boolean}
+   */
+  sendSyncRoomMessage: function (msg) {
+    if (!this._isSRoomSynchronized) return false
+    let txt
+    if (typeof msg === 'object') {
+      txt = JSON.stringify(msg)
+    } else {
+      txt = msg
+    }
+    this._syncRoom.send(txt)
+    return true
+  },
+  /**
+   * Starts a Ping-Pong process by sending a latency request to the server.
+   * The process will be as follows:
+   *    1. Server Ping 1
+   *    2. Client Pong 1
+   *    3. Server Ping 2
+   *    4. Client Pong 2
+   *    5. Server responds with the average latency in ms
+   */
+  calculateSyncRoomLatency: function () {
+    this._currentSRPPState = 0
+    this._isSRLatencyChecking = true
+    this.sendSyncRoomMessage('[c:L]')
   },
   /**
    * Forwards a message to a specific user.

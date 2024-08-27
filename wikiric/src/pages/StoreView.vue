@@ -258,7 +258,7 @@
                 <div class="fmt_border surface dshadow
                             hfit md:rounded-2">
                   <div class="px3 pb2">
-                    <q-form autocomplete="off" spellcheck="false">
+                    <q-form autocomplete="off" spellcheck="false" @submit.prevent>
                       <q-input
                         autofocus
                         for="storeQuery"
@@ -288,7 +288,7 @@
                            class="max-h-60 overflow-y-scroll column no-wrap wfull">
                         <template v-for="cat in categories" :key="cat">
                           <template v-if="cat.toLowerCase().startsWith(query.toLowerCase()) && cat !== ''">
-                            <q-btn @click="query = cat; processQuery()" :label="cat"
+                            <q-btn @click="query = cat; focusQueryField()" :label="cat"
                                    class="wfull"
                                    flat align="left"/>
                           </template>
@@ -859,6 +859,12 @@ export default {
           resolve()
         })
       })
+    },
+    focusQueryField: function () {
+      const elem = document.getElementById('storeQuery')
+      if (elem) {
+        elem.focus()
+      }
     },
     applyCategoryFilters: function (categories) {
       if (!categories) {

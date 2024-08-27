@@ -260,11 +260,11 @@ export default defineComponent({
   },
   mounted () {
     this.manageKeyListeners()
+    // Check if there's a token saved to avoid refresh issues
+    this.checkToken()
   },
   created () {
     this.processQuery = debounce(this.processQuery, 50)
-    // Check if there's a token saved to avoid refresh issues
-    this.checkToken()
   },
   methods: {
     checkToken: async function () {
