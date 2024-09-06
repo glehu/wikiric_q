@@ -1,7 +1,7 @@
 <template>
   <q-dialog v-model="show" class="z-fab"
             full-width full-height
-            @before-hide="$emit('close')">
+            @before-hide="doClose">
     <q-card class="surface"
             flat bordered>
       <div id="item_scroller"
@@ -352,6 +352,10 @@
                 CREATING
               </template>
             </p>
+            <q-btn icon="close" label="Cancel"
+                   class=""
+                   no-caps dense
+                   @click="$emit('close')"/>
             <template v-if="!isCreate">
               <template v-if="deleteCounter === 0">
                 <q-btn icon="delete" label="Delete"
@@ -419,6 +423,7 @@ export default {
     isOpen (newVal) {
       this.show = newVal
       if (this.show) {
+        document.addEventListener('keydown', this.productEditHandleKeydown, false)
         this.handleDialogOpen()
       }
     }
@@ -818,6 +823,21 @@ export default {
           resolve()
         })
       })
+    },
+    productEditHandleKeydown: function (e) {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+        document.removeEventListener('keydown', this.productEditHandleKeydown, false)
+        setTimeout(() => {
+          this.$emit('close')
+        }, 10)
+      }
+    },
+    doClose: function () {
+      document.removeEventListener('keydown', this.productEditHandleKeydown, false)
+      this.$emit('close')
     }
   }
 }

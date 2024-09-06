@@ -510,6 +510,9 @@ export default {
     },
     productViewHandleKeydown: function (e) {
       if (e.key === 'Escape') {
+        if (this.isEditingItem) {
+          return
+        }
         this.$emit('close')
       }
     }

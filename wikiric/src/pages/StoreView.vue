@@ -73,7 +73,7 @@
               <q-slider
                 v-model="minStock"
                 :min="0"
-                :max="20"
+                :max="10"
                 :step="1"
                 track-size="8px" thumb-size="24px"
                 label-always switch-label-side
