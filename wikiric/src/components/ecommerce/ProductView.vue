@@ -338,6 +338,12 @@ export default {
       isEditingItem: false
     }
   },
+  mounted () {
+    document.addEventListener('keydown', this.productViewHandleKeydown, false)
+  },
+  beforeUnmount () {
+    document.removeEventListener('keydown', this.productViewHandleKeydown, false)
+  },
   methods: {
     handleDialogOpen: function () {
       this.getProduct()
@@ -500,6 +506,11 @@ export default {
       if (this.item._vars) {
         this.item.vars = this.item._vars
         delete this.item._vars
+      }
+    },
+    productViewHandleKeydown: function (e) {
+      if (e.key === 'Escape') {
+        this.$emit('close')
       }
     }
   }

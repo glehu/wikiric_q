@@ -288,7 +288,7 @@
                            class="max-h-60 overflow-y-scroll column no-wrap wfull">
                         <template v-for="cat in categories" :key="cat">
                           <template v-if="cat.toLowerCase().startsWith(query.toLowerCase()) && cat !== ''">
-                            <q-btn @click="query = cat; focusQueryField()" :label="cat"
+                            <q-btn @click="query = cat + ' '; focusQueryField()" :label="cat"
                                    class="wfull"
                                    flat align="left"/>
                           </template>

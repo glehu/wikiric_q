@@ -28,8 +28,7 @@
                   md:text-lg md:text-start
                   text-white">
           {{ $t("home.title") }}
-          <br>Powered by wikiric and
-          <span class="italic">{{ userCount }}</span> others.
+          <br>Powered by <span class="font-bold">wikiric</span>.
         </p>
         <div class="relative mt16 flex justify-center
                     <sm:px4
@@ -46,7 +45,7 @@
                  class="muArrow q-mb-sm backdrop-blur-3xl rounded-4
                         fmt_border <sm:wfull p2"
                  v-on:click="gotoRegistration()">
-            <div class="column text-left">
+            <div class="column text-left q-pa-md">
               <p class="text-h5 text-weight-bold q-ma-none">Register</p>
             </div>
           </q-btn>

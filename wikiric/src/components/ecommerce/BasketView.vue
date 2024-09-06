@@ -61,8 +61,8 @@
       <template v-if="basket && basket.items?.length > 0">
         <div class="sticky top-0 z-fab pb4">
           <div class="wfull rounded-2
-                      dshadow background
-                      mb4 fmt_border px3 py4">
+                      background
+                      mb4 fmt_border p4">
             <div class="mb4">
               <div class="flex wfull justify-between items-start">
                 <p class="text-lg fontbold">
@@ -70,7 +70,7 @@
                 </p>
                 <q-btn label="Close Cart" v-close-popup
                        no-caps flat
-                       class="w50 surface fmt_border"/>
+                       class="w50 surface fmt_border rounded"/>
               </div>
             </div>
             <div class="flex justify-between items-center">
@@ -84,7 +84,7 @@
               </div>
               <q-btn label="Go To Checkout" color="primary"
                      unelevated
-                     class="fontbold w50 h16
+                     class="fontbold w50 h16 rounded
                             text-body1 fmt_border"
                      @click="$router.push('/checkout')"/>
             </div>
