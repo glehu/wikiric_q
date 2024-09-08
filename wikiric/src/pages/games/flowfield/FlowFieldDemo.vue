@@ -34,7 +34,7 @@
               <template v-if="!isSimulating">
                 <q-btn color="brand-bg"
                        text-color="brand-p"
-                       @click="handleSimulation"
+                       @click="handleSimulation(false)"
                        icon="sym_o_network_intelligence_history"
                        label="Simulate"
                        align="left"
@@ -368,9 +368,15 @@
               <p class="text-body1 mb2">
                 Debugging
               </p>
+              <q-checkbox label="Damage Numbers" v-model="drawDamageNumbers"/>
+              <q-checkbox label="Heatmap" v-model="drawHeatmap"/>
+              <q-checkbox label="Wall Collisions" v-model="drawWallCollision"/>
+              <p class="text-body1 my2">
+                Position Data
+              </p>
               <template v-if="goalPosition">
                 <div class="flex items-center justify-between
-                            gap-2 px2">
+                            gap-2 px2 text-sm">
                   <div>
                     <p>X: {{ goalPosition.x.toFixed(2) }}</p>
                     <p>Y: {{ goalPosition.y.toFixed(2) }}</p>
@@ -384,9 +390,38 @@
                 </div>
                 <hr>
               </template>
-              <q-checkbox label="Damage Numbers" v-model="drawDamageNumbers"/>
-              <q-checkbox label="Heatmap" v-model="drawHeatmap"/>
-              <q-checkbox label="Wall Collisions" v-model="drawWallCollision"/>
+              <template v-if="coPlayers && coPlayers.size > 0">
+                <template v-for="[key, val] of coPlayers.entries()" :key="key">
+                  <div class="flex items-center justify-between
+                              gap-2 px2">
+                    <div class="text-sm">
+                      <p>{{ key }}</p>
+                      <p>X: {{ val.x.toFixed(2) }}</p>
+                      <p>Y: {{ val.y.toFixed(2) }}</p>
+                      <p>U: {{ val.up }}</p>
+                      <p>R: {{ val.right }}</p>
+                      <p>D: {{ val.down }}</p>
+                      <p>L: {{ val.left }}</p>
+                      <template v-if="val.weapons">
+                        <div v-for="wpn in val.weapons" :key="wpn"
+                             class="background p2 rounded mt2
+                                    text-sm">
+                          <p>
+                            <span class="font-bold pr2">{{ wpn.name }}</span>
+                            Lv. {{ wpn.level }}
+                          </p>
+                          <template v-if="wpn.powerUps">
+                            <div v-for="pup in wpn.powerUps" :key="pup">
+                              <p>{{ pup.name }}</p>
+                            </div>
+                          </template>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                  <hr>
+                </template>
+              </template>
             </div>
           </div>
         </q-scroll-area>
@@ -614,7 +649,7 @@
                             label="Calculate"
                             label-position="left"/>
               <q-fab-action color="primary"
-                            @click="handleSimulation"
+                            @click="handleSimulation(false)"
                             icon="sym_o_network_intelligence_history"
                             label="Simulate"
                             label-position="left"/>
@@ -1419,12 +1454,17 @@ export default {
       const yNew = this.goalPosition.y * this.gridSize
       this.ctxPlayer.clearRect(0, 0, this.width, this.height)
       this.ctxPlayer.drawImage(this.wizzard, xNew + 5, yNew + 5)
-      // Are there other players to render?
-      if (this.coPlayers.size > 0) {
-        for (const [key, val] in this.coPlayers.entries()) {
-          console.log(key, val)
-        }
+    },
+    renderCoPlayers: function () {
+      if (!this.coPlayers || this.coPlayers.size < 1) {
+        return
       }
+      let xNew, yNew
+      this.coPlayers.forEach((val) => {
+        xNew = (val.x + this.offsetVector.x) * this.gridSize
+        yNew = (val.y + this.offsetVector.y) * this.gridSize
+        this.ctxPlayer.drawImage(this.wizzard, xNew + 5, yNew + 5)
+      })
     },
     addEnemy: function (position) {
       const arrayPos = this.convertXYToArrayPos(position.x, position.y)
@@ -1463,15 +1503,28 @@ export default {
         return
       }
       this.isCalculating = true
-      const vec = new THREE.Vector2(
+      const open = []
+      let vec = new THREE.Vector2(
         Math.round(this.goalPosition.x - this.offsetVector.x),
         Math.round(this.goalPosition.y - this.offsetVector.y))
       // Set integration value of goal's position to zero
-      const goalArrayPos = this.convertXYToArrayPos(vec.x, vec.y)
+      let goalArrayPos = this.convertXYToArrayPos(vec.x, vec.y)
       this.integrationField[goalArrayPos] = 0
       // Add goal to open list
-      const open = []
       open.unshift(vec)
+      // Also add co-players
+      if (this.coPlayers && this.coPlayers.size > 0) {
+        this.coPlayers.forEach((val) => {
+          vec = new THREE.Vector2(
+            Math.round(val.x),
+            Math.round(val.y))
+          // Set integration value of goal's position to zero
+          goalArrayPos = this.convertXYToArrayPos(vec.x, vec.y)
+          this.integrationField[goalArrayPos] = 0
+          // Add goal to open list
+          open.unshift(vec)
+        })
+      }
       // Allocate memory for variables
       let current
       let neighbors
@@ -1606,14 +1659,18 @@ export default {
        */
       this.enemies.clear()
     },
-    handleSimulation: function () {
+    handleSimulation: function (srSilent) {
       console.log('Starting Simulation...')
       this.isSimulating = true
       this.goalAlive = true
       this.goalHP = 1000
       this.canMove = false
+      // Transmit weapon data
+      this.distributeGoalWeapons()
       // Notify simulation start
-      this.srNotifySimulation(true)
+      if (!srSilent) {
+        this.srNotifySimulation(true)
+      }
       // Notify users we exist
       this.srNotifyAlive(true)
       // Retrieve current sessions and their data
@@ -1655,9 +1712,6 @@ export default {
             this.timeDelta = stepCount
             stepCount = 0
             this.procPerSecondTriggers()
-            // Retrieve current sessions
-            this.$connector.sendSyncRoomMessage(
-              this.buildDataCommand('GET', 'SESH', 'DIST'))
           }
           // How many seconds passed?
           tmp = performance.now()
@@ -1667,15 +1721,19 @@ export default {
           // MDN Docs say it's best practice to put this here
           // ...so I guess we will just do it.
           requestAnimationFrame(step)
-          // Move the player!
+          // Move the players!
           this.applyGoalMovement(endVector, timeDelta)
+          this.applyCoPlayersMovement(timeDelta)
           // Draw environment
           this.drawGrid(false)
           lastPos = this.applyGoalCalculation(lastPos)
-          // Display player
+          // Display players
           this.renderGoal()
+          this.renderCoPlayers()
+          // Display walls/tiles etc.
           this.renderTiles(this.offsetVector)
         } else {
+          this.srNotifySimulation(false)
           this.isSimulating = false
           console.log('Simulation has ended!')
         }
@@ -1869,6 +1927,109 @@ export default {
         this.offsetVector.add(endVector)
         this.goalPosition.add(this.goalMovementVector)
       }
+    },
+    applyCoPlayersMovement: function (timeDelta) {
+      if (!this.coPlayers || this.coPlayers.size < 1) {
+        return
+      }
+      let posObj
+      for (const [key, val] of this.coPlayers.entries()) {
+        posObj = val
+        posObj = this.applyCoPlayerMovement(timeDelta, posObj)
+        this.coPlayers.set(key, posObj)
+      }
+    },
+    /**
+     * Moves the player (goal)
+     *
+     * @param {Number} timeDelta
+     * @param {Object} posObj
+     */
+    applyCoPlayerMovement: function (timeDelta, posObj) {
+      const goalPosition = new THREE.Vector2()
+      goalPosition.x = posObj.x
+      goalPosition.y = posObj.y
+      goalPosition.x -= posObj.xo
+      goalPosition.y -= posObj.yo
+      let goalMovementVector = new THREE.Vector2()
+      // *** ***    X-Axis    *** ***
+      if (posObj.left) {
+        goalMovementVector.add(this.goalWest)
+      }
+      if (posObj.right) {
+        goalMovementVector.add(this.goalEast)
+      }
+      // *** ***    Y-Axis    *** ***
+      if (posObj.up) {
+        goalMovementVector.add(this.goalNorth)
+      }
+      if (posObj.down) {
+        goalMovementVector.add(this.goalSouth)
+      }
+      goalMovementVector.multiplyScalar(this.goalSpeed)
+      goalMovementVector.multiplyScalar(timeDelta)
+      // Apply movement vectors
+      goalPosition.add(goalMovementVector)
+      // Wall Collision
+      const goalPosX = goalPosition.x
+      const goalX = Math.round(goalPosX)
+      const goalPosY = goalPosition.y
+      const goalY = Math.round(goalPosY)
+      const neighbors = this.getNeighbors(goalX, goalY, true)
+      let diff
+      let dist
+      let count = 0
+      let pos
+      let tmpX, tmpY
+      let tVec
+      const wallVec = new THREE.Vector2()
+      for (const cell of neighbors) {
+        tmpX = Math.round(cell.x)
+        tmpY = Math.round(cell.y)
+        pos = this.convertXYToArrayPos(tmpX, tmpY)
+        if (this.costField[pos] === 255) {
+          // Calculate distance vector
+          if (goalPosX >= tmpX - 0.7 && goalPosY >= tmpY - 0.7) {
+            if (goalPosX <= tmpX + 0.7 && goalPosY <= tmpY + 0.7) {
+              count += 1
+              tVec = new THREE.Vector2(cell.x, cell.y)
+              diff = new THREE.Vector2(goalPosX, goalPosY)
+              dist = diff.distanceToSquared(tVec)
+              diff.sub(tVec)
+              diff.divideScalar(Math.pow(dist, 2))
+              wallVec.add(diff)
+              if (this.drawWallCollision) {
+                continue
+              }
+              this.ctx2.strokeStyle = '#F00'
+              this.ctx2.lineWidth = 4
+              this.ctx2.lineHeight = 4
+              this.ctx2.beginPath()
+              this.ctx2.moveTo(
+                (goalPosX + 0.5) * this.gridSize,
+                (goalPosY + 0.5) * this.gridSize)
+              this.ctx2.lineTo(
+                (cell.x + 0.5) * this.gridSize,
+                (cell.y + 0.5) * this.gridSize)
+              this.ctx2.stroke()
+            }
+          }
+        }
+      }
+      // Add anti wall collision vector
+      if (count > 0) {
+        goalMovementVector = new THREE.Vector2()
+        wallVec.normalize()
+        wallVec.multiplyScalar(this.goalSpeed)
+        wallVec.multiplyScalar(timeDelta)
+        goalMovementVector.x += wallVec.x
+        goalMovementVector.y += wallVec.y
+        // Apply movement vectors
+        goalPosition.add(goalMovementVector)
+      }
+      posObj.x = goalPosition.x
+      posObj.y = goalPosition.y
+      return posObj
     },
     applyEnemyMovement: function (image, cacheMap, cacheDiff, qtree, timeDelta) {
       /**
@@ -2273,6 +2434,7 @@ export default {
       }
     },
     cancelSimulation: function () {
+      this.srNotifySimulation(false)
       this.goalAlive = false
     },
     clearAll: function () {
@@ -2286,25 +2448,25 @@ export default {
       switch (e.key) {
         case 'w':
           this.goalUp = true
-          this.srNotifyMove()
+          this.srNotifyMove(false)
           break
         case 'a':
           this.goalLeft = true
-          this.srNotifyMove()
+          this.srNotifyMove(false)
           break
         case 's':
           this.goalDown = true
-          this.srNotifyMove()
+          this.srNotifyMove(false)
           break
         case 'd':
           this.goalRight = true
-          this.srNotifyMove()
+          this.srNotifyMove(false)
           break
       }
     },
-    srNotifyMove: function () {
+    srNotifyMove: function (force) {
       const v = `${this.goalUp};${this.goalRight};${this.goalDown};${this.goalLeft}`
-      if (this.lastPos === v) {
+      if (this.lastPos === v && !force) {
         return
       }
       const k = `MOV-${this.store.user.username}`
@@ -2362,9 +2524,9 @@ export default {
         this.buildDataCommand('SET', 'DATA', k, v))
     },
     srNotifySimulation: function (isRunning) {
-      if (!this.isHost) {
-        return
-      }
+      // if (!this.isHost) {
+      //   return
+      // }
       let v
       if (isRunning) {
         v = 'TRUE'
@@ -2373,12 +2535,12 @@ export default {
       }
       const k = 'DOSIM'
       this.dataMap.set(k, v)
-      // Let server process the data
-      this.$connector.sendSyncRoomMessage(
-        this.buildDataCommand('SET', 'DATA', k, v))
       // Notify users
       this.$connector.sendSyncRoomMessage(
         `${k};${v}`)
+      // Let server process the data
+      this.$connector.sendSyncRoomMessage(
+        this.buildDataCommand('SET', 'DATA', k, v))
     },
     /**
      *
@@ -2389,19 +2551,19 @@ export default {
       switch (e.key) {
         case 'w':
           this.goalUp = false
-          this.srNotifyMove()
+          this.srNotifyMove(false)
           break
         case 'a':
           this.goalLeft = false
-          this.srNotifyMove()
+          this.srNotifyMove(false)
           break
         case 's':
           this.goalDown = false
-          this.srNotifyMove()
+          this.srNotifyMove(false)
           break
         case 'd':
           this.goalRight = false
-          this.srNotifyMove()
+          this.srNotifyMove(false)
           break
       }
     },
@@ -2440,6 +2602,7 @@ export default {
           this.goalLeft = false
           this.goalDown = false
           this.goalRight = false
+          this.srNotifyMove(true)
         }
       }
     },
@@ -2463,7 +2626,7 @@ export default {
     dismissLevelUp: function () {
       this.isLevelUp = false
       this.modifyingWeapons = false
-      this.handleSimulation()
+      this.handleSimulation(false)
     },
     /**
      *
@@ -2658,7 +2821,13 @@ export default {
      * ...are placed here.
      */
     procPerSecondTriggers: function () {
+      // Populate map
       this.checkAndSpawnEnemies()
+      // Retrieve and distribute current sessions
+      if (this.isHost) {
+        this.$connector.sendSyncRoomMessage(
+          this.buildDataCommand('GET', 'SESH', 'DIST'))
+      }
     },
     /**
      * Spawns enemies around the map
@@ -2683,14 +2852,13 @@ export default {
       const events = new BroadcastChannel('wikiric_sync')
       events.onmessage = event => {
         // Sanitize
-        if (!event.data || !event.data.a) {
+        if (!event.data || (!event.data.a && !event.data.t)) {
           return
         }
         event.data.a = event.data.a.trim()
         event.data.t = event.data.t.trim()
         if (event.data.a.startsWith('[s:ANS]')) {
           // Answer
-          console.log('> SyncRoom Response:', event.data.a.substring(7))
         } else if (event.data.a.startsWith('[s:SESH]')) {
           // Session Result
           const sesh = JSON.parse(event.data.a.substring(8))
@@ -2752,10 +2920,31 @@ export default {
             return
           }
           this.setCoPlayerPosition(data)
+        } else if (event.data.t.startsWith('MOV-')) {
+          // Some player sent movement data
+          // Format: (Bool)
+          //    UP;RIGHT;DOWN;LEFT
+          const data = event.data.t.substring(4).split(';')
+          this.setCoPlayerMovement(data)
+        } else if (event.data.t.startsWith('DOSIM')) {
+          const data = event.data.t.split(';')
+          if (data[1].toUpperCase() === 'TRUE') {
+            if (this.isSimulating) return
+            this.handleSimulation(true)
+          } else {
+            if (!this.isSimulating) return
+            this.cancelSimulation()
+          }
+        } else if (event.data.t.startsWith('WP-')) {
+          // Some player sent a weapon part
+          // Format:
+          //    PlayerName;WeaponName;PowerUpName;Type;JsonPayload
+          const data = event.data.t.substring(3).split(';')
+          this.setCoPlayerWeaponPart(data)
         }
       }
       // Connect to the SyncRoom
-      console.log('Connecting to wikiric sync room: generic_server...')
+      console.log('Connecting to wikiric sync room:', this.roomId)
       await this.$connector.doJoinSyncRoom(this.roomId)
       console.log('> Connected')
       // Calculate latency in ms (performance check)
@@ -2799,6 +2988,127 @@ export default {
         yo: player.yo
       })
     },
+    setCoPlayerMovement: function (data) {
+      if (this.coPlayers.has(data[0])) {
+        const pl = this.coPlayers.get(data[0])
+        pl.up = data[1].toUpperCase() === 'TRUE'
+        pl.right = data[2].toUpperCase() === 'TRUE'
+        pl.down = data[3].toUpperCase() === 'TRUE'
+        pl.left = data[4].toUpperCase() === 'TRUE'
+        this.coPlayers.set(data[0], pl)
+        return
+      }
+      this.coPlayers.set(data[0], {
+        usr: data[0],
+        up: data[1].toUpperCase() === 'TRUE',
+        right: data[2].toUpperCase() === 'TRUE',
+        down: data[3].toUpperCase() === 'TRUE',
+        left: data[4].toUpperCase() === 'TRUE'
+      })
+    },
+    setCoPlayerWeaponPart: function (data) {
+      let pl = {
+        weapons: []
+      }
+      if (this.coPlayers.has(data[0])) {
+        pl = this.coPlayers.get(data[0])
+        if (!pl.weapons) {
+          pl.weapons = []
+        }
+      }
+      // Data Format:
+      //    0          1          2           3    4
+      //    PlayerName;WeaponName;PowerUpName;Type;JsonPayload
+      // Find weapon
+      let ix = -1
+      if (data[1] !== '-') {
+        if (pl.weapons.length > 0) {
+          for (let i = 0; i < pl.weapons.length; i++) {
+            if (pl.weapons[i].name === data[1]) {
+              ix = i
+              break
+            }
+          }
+        }
+      }
+      // Find power-up
+      let pId = -1
+      if (data[2] !== '-') {
+        if (ix >= 0 && pl.weapons[ix].powerUps) {
+          if (pl.weapons[ix].powerUps.length > 0) {
+            for (let i = 0; i < pl.weapons[ix].powerUps.length; i++) {
+              if (pl.weapons[ix].powerUps[i].name === data[2]) {
+                pId = i
+                break
+              }
+            }
+          }
+        }
+      }
+      const obj = JSON.parse(data[4])
+      if (data[3] === '1') {
+        // Weapon
+        if (ix !== -1) {
+          // Update weapon (but not power-ups)
+          const powerUps = pl.weapons[ix].powerUps
+          pl.weapons[ix] = obj
+          pl.weapons[ix].powerUps = powerUps
+        } else {
+          pl.weapons.push(obj)
+        }
+      } else if (data[3] === '2') {
+        // Power-Up
+        if (ix !== -1) {
+          if (pId !== -1) {
+            // Update power-up (but not effects)
+            const effects = pl.weapons[ix].powerUps[pId].effects
+            pl.weapons[ix].powerUps[pId] = obj
+            pl.weapons[ix].powerUps[pId].effects = effects
+          } else {
+            pl.weapons[ix].powerUps.push(obj)
+          }
+        } else {
+          if (!pl._queue) {
+            pl._queue = []
+          }
+          pl._queue.push({
+            typ: 2,
+            wpn: data[1],
+            pup: obj
+          })
+        }
+      } else if (data[3] === '3') {
+        // Effect
+        if (pId !== -1 && ix !== -1) {
+          let eix = -1
+          for (let i = 0; i < pl.weapons[ix].powerUps[pId].effects.length; i++) {
+            if (pl.weapons[ix].powerUps[pId].effects[i].type === obj.type) {
+              eix = i
+              break
+            }
+          }
+          if (eix !== -1) {
+            pl.weapons[ix].powerUps[pId].effects[eix] = obj
+          } else {
+            pl.weapons[ix].powerUps[pId].effects.push(obj)
+          }
+        } else {
+          if (!pl._queue) {
+            pl._queue = []
+          }
+          pl._queue.push({
+            typ: 3,
+            wpn: data[1],
+            pup: data[2],
+            eff: obj
+          })
+        }
+      }
+      // Update co-player data
+      if (this.coPlayers.has(data[0])) {
+        this.coPlayers.set(data[0], pl)
+      }
+    },
     buildDataCommand: function (cmd, mod, key, value) {
       if (!key) {
         key = ''
@@ -2808,6 +3118,45 @@ export default {
         str += `;${value}`
       }
       return str
+    },
+    distributeGoalWeapons: function () {
+      if (!this.goalWeapons || this.goalWeapons.length < 1) {
+        return
+      }
+      let weapon, powers, power, effects, effect
+      for (let i = 0; i < this.goalWeapons.length; i++) {
+        // Since we want to keep all messages as small as possible
+        // ...we will deconstruct all weapons into their parts
+        //    1. Weapon
+        //    2. Power-Ups
+        //    3. Effects
+        weapon = this.goalWeapons.slice(i, i + 1)[0]
+        powers = weapon.powerUps
+        weapon.powerUps = []
+        this.srSendWeaponPart(
+          weapon.name, '-', '1', JSON.stringify(weapon))
+        if (powers.length > 0) {
+          for (let j = 0; j < powers.length; j++) {
+            power = powers.slice(j, j + 1)[0]
+            effects = power.effects
+            power.effects = []
+            this.srSendWeaponPart(
+              weapon.name, power.name, '2', JSON.stringify(power))
+            if (effects.length > 0) {
+              for (let k = 0; k < effects.length; k++) {
+                effect = effects[k]
+                this.srSendWeaponPart(
+                  weapon.name, power.name, '3', JSON.stringify(effect))
+              }
+            }
+          }
+        }
+      }
+    },
+    srSendWeaponPart: function (id, pId, type, payload) {
+      // Send message to others
+      this.$connector.sendSyncRoomMessage(
+        `WP-${this.store.user.username};${id};${pId};${type};${payload}`)
     }
   }
 }

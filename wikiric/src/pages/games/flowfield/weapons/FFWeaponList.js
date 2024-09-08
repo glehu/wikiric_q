@@ -37,7 +37,7 @@ class FFWeaponList {
     powerUp = new FFPowerUp(
       0,
       1,
-      'Critical Hit',
+      '_Critical Hit',
       'Deals more damage sometimes.')
     effect = new FFPowerUpEffect(
       true,
@@ -70,7 +70,7 @@ class FFWeaponList {
     powerUp = new FFPowerUp(
       0,
       1,
-      'Spam',
+      '_Spam',
       'More projectiles!')
     effect = new FFPowerUpEffect(
       false,
@@ -103,7 +103,7 @@ class FFWeaponList {
     powerUp = new FFPowerUp(
       0,
       1,
-      'Explosion',
+      '_Explosion',
       'Projectiles explode when hitting enemies. Radius scales with Area.')
     effect = new FFPowerUpEffect(
       true,
