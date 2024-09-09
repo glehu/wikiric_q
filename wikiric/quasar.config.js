@@ -54,7 +54,7 @@ module.exports = configure(function (/* ctx */) {
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#build
     build: {
       target: {
-        browser: ['es2019', 'edge88', 'firefox78', 'chrome87', 'safari13.1'],
+        browser: ['edge128', 'firefox130', 'chrome128', 'safari17.5', 'opera111'],
         node: 'node20'
       },
 

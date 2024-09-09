@@ -691,6 +691,9 @@ import FFWeaponDisplay from 'pages/games/flowfield/FFWeaponDisplay.vue'
 import FFPowerUpDisplay from 'pages/games/flowfield/FFPowerUpDisplay.vue'
 import FilePicker from 'components/FilePicker.vue'
 import { useStore } from 'stores/wikistate'
+import FFWeapon from 'pages/games/flowfield/FFWeapon'
+import FFPowerUp from 'pages/games/flowfield/FFPowerUp'
+import FFPowerUpEffect from 'pages/games/flowfield/FFPowerUpEffect'
 
 export default {
   name: 'FlowFieldDemo',
@@ -1454,6 +1457,8 @@ export default {
       const yNew = this.goalPosition.y * this.gridSize
       this.ctxPlayer.clearRect(0, 0, this.width, this.height)
       this.ctxPlayer.drawImage(this.wizzard, xNew + 5, yNew + 5)
+      this.ctxPlayer.fillStyle = '#FF0'
+      this.ctxPlayer.fillText(this.store.user.username, xNew, yNew)
     },
     renderCoPlayers: function () {
       if (!this.coPlayers || this.coPlayers.size < 1) {
@@ -1464,6 +1469,8 @@ export default {
         xNew = (val.x + this.offsetVector.x) * this.gridSize
         yNew = (val.y + this.offsetVector.y) * this.gridSize
         this.ctxPlayer.drawImage(this.wizzard, xNew + 5, yNew + 5)
+        this.ctxPlayer.fillStyle = '#FF0'
+        this.ctxPlayer.fillText(val.usr, xNew, yNew)
       })
     },
     addEnemy: function (position) {
@@ -1665,6 +1672,7 @@ export default {
       this.goalAlive = true
       this.goalHP = 1000
       this.canMove = false
+      this.theta = 0
       // Transmit weapon data
       this.distributeGoalWeapons()
       // Notify simulation start
@@ -1750,6 +1758,7 @@ export default {
         for (let i = 0; i < this.goalWeapons.length; i++) {
           this.goalWeapons[i].processTick()
         }
+        this.reduceCoPlayerWeaponCooldown()
         // #### ENEMY ACTIONS ####
         if (this.enemies && this.enemies.size > 0) {
           // Add all enemies to the quadtree
@@ -1757,8 +1766,9 @@ export default {
             if (id) qtree.insert(unit)
           }
           this.applyEnemyMovement(image, cacheMap, cacheDiff, qtree, timeDelta)
-          // Now check if any enemy has come close to the player
+          // Now check if any enemy has come close to the players
           this.checkProximityDamage(qtree)
+          this.checkCoPlayersProximityDamage(qtree)
         }
         // #### WEAPON ACTIONS ####
         // Render projectiles
@@ -2255,6 +2265,111 @@ export default {
       }
       this.ctx3.stroke()
     },
+    checkCoPlayersProximityDamage: function (qtree) {
+      if (!this.coPlayers || this.coPlayers.size < 1) {
+        return
+      }
+      let posObj
+      for (const [key, val] of this.coPlayers.entries()) {
+        posObj = val
+        posObj = this.checkCoPlayerProximityDamage(qtree, posObj)
+        this.coPlayers.set(key, posObj)
+      }
+    },
+    checkCoPlayerProximityDamage: function (qtree, coPlayer) {
+      const others = qtree.getContents(
+        coPlayer.x - (this.goalMaxRange / 2),
+        coPlayer.y - (this.goalMaxRange / 2),
+        coPlayer.x + (this.goalMaxRange / 2),
+        coPlayer.y + (this.goalMaxRange / 2))
+      if (!others || others.length < 1) {
+        return coPlayer
+      }
+      const goalVec = new THREE.Vector2()
+      goalVec.x = coPlayer.x
+      goalVec.y = coPlayer.y
+      this.ctx3.beginPath()
+      this.ctx3.strokeStyle = '#F00'
+      this.ctx3.lineHeight = 4
+      this.ctx3.lineWidth = 4
+      const position = new THREE.Vector2()
+      position.x = coPlayer.x
+      position.y = coPlayer.y
+      let direction
+      /**
+       * @type number
+       */
+      let dist
+      let projectiles
+      const targets = []
+      for (const other of others) {
+        dist = goalVec.distanceToSquared(other.pos)
+        // Add to targets
+        targets.push({
+          d: dist,
+          o: other
+        })
+      }
+      // Sort targets by distance
+      targets.sort((a, b) => a.d - b.d)
+      // Shoot weapons
+      let other
+      for (let i = 0; i < targets.length; i++) {
+        other = targets[i].o
+        dist = targets[i].d
+        for (let k = 0; k < coPlayer.weapons.length; k++) {
+          // Calculate aim vector
+          direction = new THREE.Vector2()
+          direction.copy(other.pos)
+          direction.sub(position)
+          // Trigger weapon
+          projectiles = coPlayer.weapons[k].shoot(
+            position,
+            direction,
+            dist
+          )
+          if (!projectiles) {
+            continue
+          }
+          for (let j = 0; j < projectiles.length; j++) {
+            if (projectiles[j].vec.lengthSq() > 0) {
+              // Projectile - Add to projectiles
+              this.goalWeaponProjectiles.push(projectiles[j])
+              continue
+            }
+            // Beam - Directly damage enemy
+            other.hp -= projectiles[j].dmg
+            if (other.hp <= 0) {
+              this.enemies.delete(other.id)
+            } else {
+              this.enemies.set(other.id, other)
+            }
+            // Draw weapon effect
+            this.ctx3.moveTo(
+              (coPlayer.x * this.gridSize) + this.gridSize / 2,
+              (coPlayer.y * this.gridSize) + this.gridSize / 2
+            )
+            this.ctx3.lineTo(
+              ((other.pos.x) * this.gridSize) + this.gridSize / 2,
+              ((other.pos.y) * this.gridSize) + this.gridSize / 2
+            )
+          }
+        }
+      }
+      this.ctx3.stroke()
+      return coPlayer
+    },
+    reduceCoPlayerWeaponCooldown: function () {
+      if (!this.coPlayers || this.coPlayers.size < 1) {
+        return
+      }
+      for (const [key, val] of this.coPlayers.entries()) {
+        for (let i = 0; i < val.weapons.length; i++) {
+          val.weapons[i].processTick()
+        }
+        this.coPlayers.set(key, val)
+      }
+    },
     handleProjectiles: function (qtree, timeDelta) {
       let dist
       let tmp, tmp2, tmp3
@@ -2624,6 +2739,7 @@ export default {
      *
      */
     dismissLevelUp: function () {
+      this.distributeGoalWeapons()
       this.isLevelUp = false
       this.modifyingWeapons = false
       this.handleSimulation(false)
@@ -3045,9 +3161,23 @@ export default {
           }
         }
       }
-      const obj = JSON.parse(data[4])
+      let obj = JSON.parse(data[4])
       if (data[3] === '1') {
         // Weapon
+        obj = new FFWeapon(
+          obj.name,
+          obj.range,
+          obj.dps,
+          obj.dpsLevelUp,
+          obj.amount,
+          obj.cd,
+          obj.cdLevelUp,
+          obj.pSpeed,
+          obj.hitCount,
+          obj.pHitCount,
+          obj.hitRange,
+          obj.hitRangeLevelUp
+        )
         if (ix !== -1) {
           // Update weapon (but not power-ups)
           const powerUps = pl.weapons[ix].powerUps
@@ -3058,6 +3188,12 @@ export default {
         }
       } else if (data[3] === '2') {
         // Power-Up
+        obj = new FFPowerUp(
+          obj.id,
+          obj.level,
+          obj.name,
+          obj.desc
+        )
         if (ix !== -1) {
           if (pId !== -1) {
             // Update power-up (but not effects)
@@ -3079,6 +3215,15 @@ export default {
         }
       } else if (data[3] === '3') {
         // Effect
+        obj = new FFPowerUpEffect(
+          obj.onHit,
+          obj.type,
+          obj.value,
+          obj.valueLevelBonus,
+          obj.hitCount,
+          obj.floorValueOnProc,
+          obj.autoLevelUp
+        )
         if (pId !== -1 && ix !== -1) {
           let eix = -1
           for (let i = 0; i < pl.weapons[ix].powerUps[pId].effects.length; i++) {
