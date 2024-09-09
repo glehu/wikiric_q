@@ -205,20 +205,31 @@
             <template v-if="channel.type === 'video'">
               <div class="h-[calc(100dvh-200px)] wfull overflow-hidden
                           grid gap-2 lg:grid-cols-2 relative">
-                <div class="wfull hfull overflow-hidden">
+                <div class="wfull hfull overflow-hidden relative surface
+                            rounded-2">
                   <video id="screenshare_video"
                          autoplay playsinline muted
-                         class="conference_media_element wfull hfull"></video>
+                         class="conference_media_element wfull hfull absolute"></video>
                 </div>
-                <template v-for="[key, username] of peerCons.entries()" :key="key">
+                <template v-for="[username, session] in peerCons" :key="session">
                   <div :id="'screenshare_container_' + username"
-                       class="wfull hfull overflow-hidden hidden">
+                       class="wfull hfull overflow-hidden relative surface
+                              rounded-2">
+                    <div class="pointer-events-none wfull hfull flex
+                                items-start justify-start absolute
+                                z-1 p1">
+                      <div class="background px2 py1 rounded-2">
+                        <p class="fontbold text-sm">
+                          {{ username }}
+                        </p>
+                      </div>
+                    </div>
                     <video :id="'screenshare_video_' + username"
                            autoplay playsinline muted
-                           class="conference_media_element wfull hfull"></video>
+                           class="conference_media_element wfull hfull absolute"></video>
                     <audio :id="'screenshare_audio_' + username"
                            autoplay controls
-                           class="conference_media_element wfull hfull"></audio>
+                           class="conference_media_element wfull hfull absolute"></audio>
                   </div>
                 </template>
               </div>
@@ -2485,7 +2496,7 @@ export default {
           let container
           if (this.channel.type === 'screenshare') {
             videoElem = document.getElementById('screenshare_video')
-          } else if (this.channel.type === 'webcam' || this.params) {
+          } else if (this.channel.type === 'video' || this.params) {
             videoElem = document.getElementById('screenshare_video_' + event.data.remoteName)
             audioElem = document.getElementById('screenshare_audio_' + event.data.remoteName)
             container = document.getElementById('screenshare_container_' + event.data.remoteName)
@@ -2527,7 +2538,7 @@ export default {
           //   this.startTimeCounter()
           //   this.enterCinemaMode()
           // }
-        }, 3_000)
+        }, 2_000)
       }
     },
     startCall: async function (userId, constraints = null) {
