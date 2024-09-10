@@ -204,9 +204,20 @@
           <div class="wfull hfull relative">
             <template v-if="channel.type === 'video'">
               <div class="h-[calc(100dvh-200px)] wfull overflow-hidden
-                          grid gap-2 lg:grid-cols-2 relative">
+                          grid gap-2 lg:grid-cols-2 relative p1">
                 <div class="wfull hfull overflow-hidden relative surface
-                            rounded-2">
+                            rounded">
+                  <div class="pointer-events-none wfull hfull flex
+                                items-start justify-start absolute
+                                z-1 p1">
+                    <div class="primary px2 py1 rounded
+                                flex gap-1 items-center">
+                      <q-icon name="person" size="1rem"/>
+                      <p class="fontbold text-sm">
+                        You
+                      </p>
+                    </div>
+                  </div>
                   <video id="screenshare_video"
                          autoplay playsinline muted
                          class="conference_media_element wfull hfull absolute"></video>
@@ -214,11 +225,11 @@
                 <template v-for="[username, session] in peerCons" :key="session">
                   <div :id="'screenshare_container_' + username"
                        class="wfull hfull overflow-hidden relative surface
-                              rounded-2">
+                              rounded">
                     <div class="pointer-events-none wfull hfull flex
                                 items-start justify-start absolute
                                 z-1 p1">
-                      <div class="background px2 py1 rounded-2">
+                      <div class="background px2 py1 rounded">
                         <p class="fontbold text-sm">
                           {{ username }}
                         </p>
@@ -226,12 +237,66 @@
                     </div>
                     <video :id="'screenshare_video_' + username"
                            autoplay playsinline muted
-                           class="conference_media_element wfull hfull absolute"></video>
+                           class="conference_media_element
+                                  wfull hfull absolute"></video>
                     <audio :id="'screenshare_audio_' + username"
                            autoplay controls
-                           class="conference_media_element wfull hfull absolute"></audio>
+                           class="conference_media_element
+                                  wfull hfull absolute"></audio>
                   </div>
                 </template>
+              </div>
+              <div class="wfull relative h-[88px] bottom-0
+                          flex items-end justify-center">
+                <div class="flex justify-center items-center h-[60px]
+                            surface-variant rounded-t-2">
+                  <q-btn-group push class="wfull hfull"
+                               unelevated flat>
+                    <template v-if="!peerStreamOutgoingPreferences.video">
+                      <q-btn push label="Turn on Webcam" icon="videocam"
+                             unelevated flat no-caps dense
+                             class="px4"
+                             @click="callSetUserMedia({
+                              video: true,
+                              audio: undefined
+                            })"/>
+                    </template>
+                    <template v-else>
+                      <q-btn push label="Turn off Webcam" icon="videocam_off"
+                             unelevated flat no-caps dense
+                             class="px4"
+                             @click="callSetUserMedia({
+                              video: false,
+                              audio: undefined
+                            })"/>
+                    </template>
+                    <template v-if="!peerStreamOutgoingPreferences.audio">
+                      <q-btn push label="Turn on Microphone" icon="mic"
+                             unelevated flat no-caps dense
+                             class="px4"
+                             @click="callSetUserMedia({
+                              video: undefined,
+                              audio: true
+                            })"/>
+                    </template>
+                    <template v-else>
+                      <q-btn push label="Turn off Microphone" icon="mic_off"
+                             unelevated flat no-caps dense
+                             class="px4"
+                             @click="callSetUserMedia({
+                              video: false,
+                              audio: undefined
+                            })"/>
+                    </template>
+                    <q-btn push label="Share Screen" icon="screen_share"
+                           unelevated flat no-caps dense
+                           class="px4"
+                           @click="callSetDisplayMedia({
+                              video: true,
+                              audio: false
+                            })"/>
+                  </q-btn-group>
+                </div>
               </div>
             </template>
             <div ref="ref_messages"
@@ -2569,6 +2634,9 @@ export default {
         this.wrtc.initiatePeerConnection(this.peerStreamOutgoing, calleeList[i])
       }
     },
+    callSetDisplayMedia: async function (constraints = null) {
+      await navigator.mediaDevices.getDisplayMedia(constraints)
+    },
     callSetUserMedia: async function (constraints = null) {
       let constraintsT
       if (constraints) {
@@ -2584,6 +2652,17 @@ export default {
       } else {
         // Defaults to preferences if no constraints were provided
         constraintsT = this.peerStreamOutgoingPreferences
+      }
+      // Turn off mic and/or webcam if preference changed
+      if (!constraintsT.audio) {
+        if (this.peerStreamOutgoingConstraints.audio) {
+          this.stopOutgoingStreamTracks(false, true)
+        }
+      }
+      if (!constraintsT.video) {
+        if (this.peerStreamOutgoingConstraints.video) {
+          this.stopOutgoingStreamTracks(true, false)
+        }
       }
       let stream
       // Get user media if there is no stream or constraints have changed

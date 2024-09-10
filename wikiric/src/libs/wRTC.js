@@ -345,6 +345,7 @@ const WRTC = {
   handleIncomingTrack: function (peerConnection, trackEvent) {
     if (trackEvent.streams) {
       trackEvent.track.onunmute = () => {
+        if (this.doLog) console.log('%cIncoming Track', this.logStyle, peerConnection.remoteName)
         trackEvent.track.onunmute = null
         // const [remoteStream] = trackEvent.streams
         const remoteStream = trackEvent.streams[0]
@@ -378,7 +379,9 @@ const WRTC = {
     }
   },
   async handleIncomingDescription (remoteName, description) {
-    console.log('INC DSC: ' + remoteName)
+    if (this.doLog) {
+      console.log(`%cIncoming ${description.type}`, this.logStyle, 'from', remoteName)
+    }
     let peerConnection = this.getPeerConnection(remoteName)
     if (peerConnection == null) {
       if (this.pause) {
