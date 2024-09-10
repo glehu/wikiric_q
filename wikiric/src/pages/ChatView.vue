@@ -284,8 +284,8 @@
                              unelevated flat no-caps dense
                              class="px4"
                              @click="callSetUserMedia({
-                              video: false,
-                              audio: undefined
+                              video: undefined,
+                              audio: false
                             })"/>
                     </template>
                     <q-btn push label="Share Screen" icon="screen_share"
