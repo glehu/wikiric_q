@@ -203,101 +203,154 @@
           </q-page-sticky>
           <div class="wfull hfull relative">
             <template v-if="channel.type === 'video'">
-              <div class="h-[calc(100dvh-200px)] wfull overflow-hidden
+              <template v-if="!peerCallEnded">
+                <div class="h-[calc(100dvh-200px)] wfull overflow-hidden
                           grid gap-2 lg:grid-cols-2 relative p1">
-                <div class="wfull hfull overflow-hidden relative surface
+                  <div class="wfull hfull overflow-hidden relative surface
                             rounded">
-                  <div class="pointer-events-none wfull hfull flex
-                                items-start justify-start absolute
-                                z-1 p1">
-                    <div class="primary px2 py1 rounded
-                                flex gap-1 items-center">
-                      <q-icon name="person" size="1rem"/>
-                      <p class="fontbold text-sm">
-                        You
-                      </p>
-                    </div>
-                  </div>
-                  <video id="screenshare_video"
-                         autoplay playsinline muted
-                         class="conference_media_element wfull hfull absolute"></video>
-                </div>
-                <template v-for="[username, session] in peerCons" :key="session">
-                  <div :id="'screenshare_container_' + username"
-                       class="wfull hfull overflow-hidden relative surface
-                              rounded">
                     <div class="pointer-events-none wfull hfull flex
                                 items-start justify-start absolute
-                                z-1 p1">
-                      <div class="background px2 py1 rounded">
-                        <p class="fontbold text-sm">
-                          {{ username }}
+                                z-1">
+                      <div class="background px2 py1 rounded-tl rounded-br
+                                flex gap-1 items-center">
+                        <q-icon name="person" size="0.8rem"/>
+                        <p class="fontbold text-xs">
+                          You
                         </p>
                       </div>
                     </div>
-                    <video :id="'screenshare_video_' + username"
+                    <video id="screenshare_video"
                            autoplay playsinline muted
-                           class="conference_media_element
-                                  wfull hfull absolute"></video>
-                    <audio :id="'screenshare_audio_' + username"
-                           autoplay controls
-                           class="conference_media_element
-                                  wfull hfull absolute"></audio>
+                           class="conference_media_element wfull hfull absolute"></video>
                   </div>
-                </template>
-              </div>
-              <div class="wfull relative h-[88px] bottom-0
+                  <template v-for="[username, session] in peerCons" :key="session">
+                    <div :id="'screenshare_container_' + username"
+                         class="wfull hfull overflow-hidden relative surface
+                              rounded">
+                      <div class="pointer-events-none wfull hfull flex
+                                items-start justify-start absolute
+                                z-1">
+                        <div class="background px2 py1 rounded-tl rounded-br">
+                          <p class="fontbold text-xs">
+                            {{ username }}
+                          </p>
+                        </div>
+                      </div>
+                      <video :id="'screenshare_video_' + username"
+                             autoplay playsinline muted
+                             class="conference_media_element
+                                  wfull hfull absolute"></video>
+                      <audio :id="'screenshare_audio_' + username"
+                             autoplay controls
+                             class="conference_media_element
+                                  wfull hfull absolute"></audio>
+                    </div>
+                  </template>
+                </div>
+                <div class="wfull relative h-[88px] bottom-0
                           flex items-end justify-center">
-                <div class="flex justify-center items-center h-[60px]
+                  <div class="flex justify-center items-center h-[60px]
                             surface-variant rounded-t-2">
-                  <q-btn-group push class="wfull hfull"
-                               unelevated flat>
-                    <template v-if="!peerStreamOutgoingPreferences.video">
-                      <q-btn push label="Turn on Webcam" icon="videocam"
+                    <q-btn-group push class="wfull hfull"
+                                 unelevated flat>
+                      <q-btn push label="Hang up" icon="call_end"
                              unelevated flat no-caps dense
                              class="px4"
-                             @click="callSetUserMedia({
+                             @click="hangup"/>
+                      <q-btn push label="Chat" icon="chat"
+                             unelevated flat no-caps dense
+                             class="px4"
+                             @click="toggleChatSidebar"/>
+                      <template v-if="!peerStreamOutgoingPreferences.video">
+                        <q-btn push label="Cam on" icon="videocam"
+                               unelevated flat no-caps dense
+                               class="px4"
+                               @click="callSetUserMedia({
                               video: true,
                               audio: undefined
                             })"/>
-                    </template>
-                    <template v-else>
-                      <q-btn push label="Turn off Webcam" icon="videocam_off"
-                             unelevated flat no-caps dense
-                             class="px4"
-                             @click="callSetUserMedia({
+                      </template>
+                      <template v-else>
+                        <q-btn push label="Cam off" icon="videocam_off"
+                               unelevated flat no-caps dense
+                               class="px4"
+                               @click="callSetUserMedia({
                               video: false,
                               audio: undefined
                             })"/>
-                    </template>
-                    <template v-if="!peerStreamOutgoingPreferences.audio">
-                      <q-btn push label="Turn on Microphone" icon="mic"
-                             unelevated flat no-caps dense
-                             class="px4"
-                             @click="callSetUserMedia({
+                      </template>
+                      <template v-if="!peerStreamOutgoingPreferences.audio">
+                        <q-btn push label="Mic on" icon="mic"
+                               unelevated flat no-caps dense
+                               class="px4"
+                               @click="callSetUserMedia({
                               video: undefined,
                               audio: true
                             })"/>
-                    </template>
-                    <template v-else>
-                      <q-btn push label="Turn off Microphone" icon="mic_off"
-                             unelevated flat no-caps dense
-                             class="px4"
-                             @click="callSetUserMedia({
+                      </template>
+                      <template v-else>
+                        <q-btn push label="Mic off" icon="mic_off"
+                               unelevated flat no-caps dense
+                               class="px4"
+                               @click="callSetUserMedia({
                               video: undefined,
                               audio: false
                             })"/>
-                    </template>
-                    <q-btn push label="Share Screen" icon="screen_share"
-                           unelevated flat no-caps dense
-                           class="px4"
-                           @click="callSetDisplayMedia({
+                      </template>
+                      <template v-if="!peerStreamScreenshare">
+                        <q-btn push label="Share screen" icon="screen_share"
+                               unelevated flat no-caps dense
+                               class="px4"
+                               @click="callSetDisplayMedia({
                               video: true,
                               audio: false
                             })"/>
-                  </q-btn-group>
+                      </template>
+                      <template v-else>
+                        <q-btn push label="Stop sharing" icon="stop_screen_share"
+                               unelevated flat no-caps dense
+                               class="px4"
+                               @click="stopScreenShare()"/>
+                      </template>
+                    </q-btn-group>
+                  </div>
                 </div>
-              </div>
+              </template>
+              <template v-else>
+                <div class="h-[calc(100dvh-200px)] wfull
+                            flex items-center justify-center">
+                  <div>
+                    <p>The call has ended.</p>
+                  </div>
+                </div>
+                <div class="wfull relative h-[88px] bottom-0
+                          flex items-end justify-center">
+                  <div class="flex justify-center items-center h-[60px]
+                            surface-variant rounded-t-2">
+                    <q-btn-group push class="wfull hfull"
+                                 unelevated flat>
+                      <q-btn push label="Chat" icon="chat"
+                             unelevated flat no-caps dense
+                             class="px4"
+                             @click="toggleChatSidebar"/>
+                      <q-btn push label="Start video call" icon="videocam"
+                             unelevated flat no-caps dense
+                             class="px4"
+                             @click="startCall(undefined, {
+                                video: true,
+                                audio: true
+                              })"/>
+                      <q-btn push label="Start audio call" icon="mic"
+                             unelevated flat no-caps dense
+                             class="px4"
+                             @click="startCall(undefined, {
+                                video: false,
+                                audio: true
+                              })"/>
+                    </q-btn-group>
+                  </div>
+                </div>
+              </template>
             </template>
             <div ref="ref_messages"
                  v-if="channel.type !== 'video'"
@@ -506,6 +559,189 @@
   <g-i-f-viewer :is-open="isViewingGIFs"
                 :override-query="newMessage"
                 @selected="handleGIFSelection"/>
+  <q-dialog v-model="isShowingVideoChatMessages"
+            position="right" full-height seamless>
+    <q-card flat class="fmt_border"
+            style="max-height: calc(100% - 100px) !important;">
+      <div class="wfull hfull
+                  relative max-w-[380px]
+                  background">
+        <div ref="ref_messages"
+             id="ref_messages_video"
+             class="wfull p4 column reverse items-center pb10
+                    scroll relative"
+             v-on:scroll="checkScroll">
+          <div class="wfull max-w-3xl_custom pr2 column reverse no-wrap">
+            <div v-for="msg in messages" :key="msg"
+                 class="relative wfull">
+              <p v-if="msg._separator"
+                 class="headerline text-xs my4">
+                {{ msg._ts }}
+              </p>
+              <template v-if="msg._editable">
+                <q-chat-message
+                  sent
+                  :stamp="msg._ts"
+                  bg-color="primary"
+                  text-color="white"
+                  class="markedView wfull pl10">
+                  <template v-for="txt in msg._msgs" :key="txt">
+                    <chat-message-content :msg="txt"
+                                          :sent="true"
+                                          :reply-src="txt._source"
+                                          class="wfull"
+                                          @reply="handleReplyMessage"
+                                          @edit="handleEditMessage"
+                                          @delete="handleDeleteMessage"
+                                          @copy="handleCopyMessage"
+                                          @react="handleReactMessage"/>
+                  </template>
+                </q-chat-message>
+              </template>
+              <template v-else>
+                <q-chat-message
+                  :name="msg._name"
+                  :stamp="msg._ts"
+                  bg-color="brand-bg"
+                  text-color="brand-p"
+                  class="markedView wfull pr10">
+                  <template v-slot:avatar>
+                    <member-icon :iurl="msg._iurl"
+                                 :iurla="msg._iurla"
+                                 :online="false"
+                                 :hide-status="true"/>
+                  </template>
+                  <template v-for="txt in msg._msgs" :key="txt">
+                    <chat-message-content :msg="txt"
+                                          :sent="false"
+                                          :reply-src="txt._source"
+                                          class="wfull"
+                                          @reply="handleReplyMessage"
+                                          @edit="handleEditMessage"
+                                          @delete="handleDeleteMessage"
+                                          @copy="handleCopyMessage"
+                                          @react="handleReactMessage"/>
+                  </template>
+                </q-chat-message>
+              </template>
+            </div>
+            <div class="wfull flex justify-center mb8">
+              <q-card flat class="px4 py2">
+                <p class="text-sm">
+                  Welcome to {{ channel.t }}, {{ store.user.username }}.
+                </p>
+              </q-card>
+            </div>
+          </div>
+        </div>
+        <div id="ref_editor_container"
+             ref="ref_editor_container"
+             class="p2 flex column wfull absolute bottom-0
+                  background">
+          <template v-if="pickingFile">
+            <div class="flex column reverse items-center
+                      hfull relative surface rounded">
+              <file-picker
+                :uploading="isUploadingImage"
+                :upload-progress="uploadingImageProgress"
+                :file-ref="filePreference"
+                @selected="handleGroupImageSelected"
+                @upload="handleGroupImageUpload"/>
+              <q-slide-transition :duration="pickDuration">
+                <div v-show="selectedImage == null">
+                  <div class="surface p4 rounded-2 w84 min-h-42
+                            flex column mbauto
+                            items-center justify-center mt1">
+                    <q-toolbar-title
+                      class="flex column items-center justify-center
+                                   gap-4">
+                      <q-icon name="interests" size="4rem"/>
+                      <span class="text-subtitle2">
+                                  Select or drop a file to see a preview
+                                </span>
+                    </q-toolbar-title>
+                  </div>
+                </div>
+              </q-slide-transition>
+            </div>
+          </template>
+          <div class="flex row justify-start items-center
+                    wfull max-w-3xl_custom py1 gap-4 h-[2.2rem]">
+            <div v-if="activeMembers.size > 0"
+                 class="flex row justify-start items-center h-[2rem] gap2">
+              <q-spinner-dots color="primary" size="2rem" class=""/>
+              <template v-for="(usr, ix) of activeMembers" :key="usr">
+                <template v-if="ix > 0">
+                  <span>|</span>
+                </template>
+                <p class="text-subtitle2">{{ usr[0] }}</p>
+              </template>
+            </div>
+            <div v-if="idleMembers.size > 0"
+                 class="flex row justify-start items-center h-[2rem] gap2">
+              <q-icon name="visibility" size="1rem" class=""/>
+              <template v-for="(usr, ix) of idleMembers" :key="usr">
+                <template v-if="ix > 0">
+                  <span>|</span>
+                </template>
+                <p class="text-subtitle2">{{ usr[0] }}</p>
+              </template>
+            </div>
+          </div>
+          <div class="flex column items-center wfull max-w-3xl_custom">
+            <template v-if="replyingMessage">
+              <div class="flex wfull px4 py2 mt2
+                        relative surface-variant">
+                <p class="text-body2 fontbold mb2">
+                  Replying to message:
+                </p>
+                <q-chat-message
+                  :name="replyingMessage._name"
+                  :stamp="replyingMessage._ts"
+                  bg-color="primary"
+                  text-color="white"
+                  class="markedView wfull">
+                  <chat-message-content :msg="replyingMessage"
+                                        no-interaction
+                                        :sent="true"
+                                        class="wfull"/>
+                </q-chat-message>
+              </div>
+            </template>
+            <template v-if="editingMessage">
+              <div class="flex wfull px4 py2 mt2
+                        relative surface-variant">
+                <p class="text-body2 fontbold mb2">
+                  Editing message:
+                </p>
+                <q-chat-message
+                  :name="editingMessage._name"
+                  :stamp="editingMessage._ts"
+                  bg-color="primary"
+                  text-color="white"
+                  class="markedView wfull">
+                  <chat-message-content :msg="editingMessage"
+                                        no-interaction
+                                        :sent="true"
+                                        class="wfull"/>
+                </q-chat-message>
+              </div>
+            </template>
+          </div>
+          <div class="wfull max-w-lg relative">
+            <editor ref="ref_editor"
+                    v-model="newMessage"
+                    e-max-height="75dvh"
+                    prevent-enter
+                    hide-menu
+                    @kpress="handleEditorKeyDown"
+                    @fpaste="handleEditorPaste"
+                    @update:model-value="transmitActivity"/>
+          </div>
+        </div>
+      </div>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script>
@@ -613,6 +849,8 @@ export default {
         audio: true
       },
       peerStreamScreenshare: null,
+      peerCallEnded: false,
+      isShowingVideoChatMessages: false,
       msgCache: '',
       chrCache: [],
       internal: new BroadcastChannel('wikiric_internal')
@@ -1746,6 +1984,8 @@ export default {
       await this.addTimestampRead()
       await this.hasUnread(this.channel.id)
       if (this.channel.type === 'video') {
+        this.sidebarLeft = false
+        this.sidebarRight = false
         await this.startCall(undefined, {
           video: true,
           audio: true
@@ -2530,6 +2770,9 @@ export default {
         })
       }
       if (files.length === 0) return
+      if (this.channel.type === 'video' && !this.isShowingVideoChatMessages) {
+        this.isShowingVideoChatMessages = true
+      }
       this.pickingFile = true
       setTimeout(() => {
         this.filePreference = files[0]
@@ -2539,7 +2782,7 @@ export default {
           app: 'editor',
           type: 'focus'
         })
-      }, 200)
+      }, 500)
     },
     initWRTC: function () {
       this.wrtc.initialize(this.$connector, this.store.user.username, true, true)
@@ -2571,10 +2814,18 @@ export default {
           const remoteStream = this.wrtc.getStream(event.data.remoteName)
           let hasVideo = false
           let hasAudio = false
-          remoteStream.getTracks().forEach(track => {
-            if (track.kind === 'audio') hasAudio = true
-            if (track.kind === 'video') hasVideo = true
-          })
+          let rStream = null
+          try {
+            rStream = remoteStream.getTracks()
+          } catch (e) {
+            console.debug(e.message)
+          }
+          if (rStream) {
+            rStream.forEach(track => {
+              if (track.kind === 'audio') hasAudio = true
+              if (track.kind === 'video') hasVideo = true
+            })
+          }
           // Show remote tracks
           if (hasVideo) {
             if (!videoElem.srcObject || videoElem.srcObject !== remoteStream) {
@@ -2604,9 +2855,28 @@ export default {
           //   this.enterCinemaMode()
           // }
         }, 2_000)
+      } else if (event.data.event === 'peer_init') {
+        await this.callSetUserMedia({
+          video: undefined,
+          audio: undefined
+        })
+      } else if (event.data.event === 'connection_change') {
+        if (event.data.status.toLowerCase() === 'connected') {
+          await this.callSetUserMedia({
+            video: undefined,
+            audio: undefined
+          })
+        }
+      } else if (event.data.event === 'peer_dc') {
+        this.peerCons.delete(event.data.remoteName)
+        await this.callSetUserMedia({
+          video: undefined,
+          audio: undefined
+        })
       }
     },
     startCall: async function (userId, constraints = null) {
+      this.peerCallEnded = false
       // Retrieve media stream
       await this.callSetUserMedia(constraints)
       this.peerStreamOutgoingPreferences = constraints
@@ -2635,7 +2905,25 @@ export default {
       }
     },
     callSetDisplayMedia: async function (constraints = null) {
-      await navigator.mediaDevices.getDisplayMedia(constraints)
+      const stream = await navigator.mediaDevices.getDisplayMedia(constraints)
+      this.peerStreamScreenshare = stream
+      this.wrtc.replaceTrack(stream, 'video')
+      // Set local stream
+      const videoElem = document.getElementById('screenshare_video')
+      if (videoElem) {
+        videoElem.srcObject = stream
+      }
+    },
+    stopScreenShare: function () {
+      this.peerStreamScreenshare.getTracks().forEach(function (track) {
+        track.enabled = false
+        track.stop()
+      })
+      this.peerStreamScreenshare = null
+      this.callSetUserMedia({
+        video: undefined,
+        audio: undefined
+      })
     },
     callSetUserMedia: async function (constraints = null) {
       let constraintsT
@@ -2654,15 +2942,11 @@ export default {
         constraintsT = this.peerStreamOutgoingPreferences
       }
       // Turn off mic and/or webcam if preference changed
-      if (!constraintsT.audio) {
-        if (this.peerStreamOutgoingConstraints.audio) {
-          this.stopOutgoingStreamTracks(false, true)
-        }
+      if (!constraintsT.audio && this.peerStreamOutgoingConstraints.audio) {
+        this.stopOutgoingStreamTracks(false, true)
       }
-      if (!constraintsT.video) {
-        if (this.peerStreamOutgoingConstraints.video) {
-          this.stopOutgoingStreamTracks(true, false)
-        }
+      if (!constraintsT.video && this.peerStreamOutgoingConstraints.video) {
+        this.stopOutgoingStreamTracks(true, false)
       }
       let stream
       // Get user media if there is no stream or constraints have changed
@@ -2777,6 +3061,33 @@ export default {
         this.sdk.sendMessage(prefix + payload)
       }
       this.newMessage = ''
+    },
+    hangup: function () {
+      this.callSetUserMedia({
+        video: false,
+        audio: false
+      })
+      this.wrtc.hangup(null)
+      this.peerStreamOutgoing = null
+      this.peerStreamScreenshare = null
+      this.peerCons = new Map()
+      this.peerCallEnded = true
+    },
+    toggleChatSidebar: function () {
+      this.isShowingVideoChatMessages = !this.isShowingVideoChatMessages
+      if (this.isShowingVideoChatMessages) {
+        setTimeout(() => {
+          const elem = document.getElementById('ref_messages_video')
+          if (elem) {
+            elem.scrollTop = 0
+          }
+          this.inputResize()
+          this.internal.postMessage({
+            app: 'editor',
+            type: 'focus'
+          })
+        }, 500)
+      }
     }
   }
 }

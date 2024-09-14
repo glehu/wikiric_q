@@ -383,6 +383,7 @@ const wikiricSDK = {
    */
   sendConnectorMessage: function (msg) {
     if (!this._isSynchronized) return false
+    if (!this._connector) return false
     let txt
     if (typeof msg === 'object') {
       txt = JSON.stringify(msg)

@@ -56,6 +56,17 @@ const WRTC = {
       if (event.data.typ !== 'wRTC') {
         return
       }
+      if (event.data.msg.length >= 10 && event.data.msg.substring(0, 10) === '[c:hangup]') {
+        const usr = event.data.msg.substring(10)
+        this.hangup(usr)
+        const payload = {
+          event: 'peer_dc',
+          selfName: this.selfName,
+          remoteName: usr
+        }
+        this.eventChannel.postMessage(payload)
+        return
+      }
       const payload = JSON.parse(event.data.msg)
       if (payload.remoteName == null) return
       if (payload.description) {
@@ -282,10 +293,13 @@ const WRTC = {
     for (const peerCon of this.peerConnections.values()) {
       if (!remoteName || peerCon.remoteName === remoteName) {
         // Close connection
+        if (!remoteName) {
+          this.worker.forwardMessage('[c:hangup]' + this.selfName, 'wRTC', peerCon.remoteName)
+        }
         try {
           setTimeout(() => {
             peerCon.close()
-          }, 1000)
+          }, 1_000)
         } catch (e) {
           // Connection could not be closed (?)
         }
@@ -376,6 +390,14 @@ const WRTC = {
         console.log('%c--> Triggering ICE Restart', this.logStyle)
       }
       peerConnection.restartIce()
+    } else if (peerConnection.connectionState === 'disconnected') {
+      this.hangup(peerConnection.remoteName)
+      const payload = {
+        event: 'peer_dc',
+        selfName: this.selfName,
+        remoteName: peerConnection.remoteName
+      }
+      this.eventChannel.postMessage(payload)
     }
   },
   async handleIncomingDescription (remoteName, description) {
