@@ -154,8 +154,8 @@
                            @refresh="getMainMembers"
                            @replacekey="generateRSAKeyPair(true)"/>
             </q-menu>
-            <q-item-section v-if="key">
-              <q-item-label class="fontbold text-md">
+            <q-item-section v-if="key" style="width: 200px !important">
+              <q-item-label class="fontbold text-md overflow-hidden whitespace-nowrap text-ellipsis">
                 <member-icon :iurl="member.iurl"
                              :iurla="member.iurla"
                              :online="member.online"
@@ -190,6 +190,9 @@
                     <template v-else-if="channel.type === 'video'">
                       <q-breadcrumbs-el :label="channel.t" icon="videocam"/>
                     </template>
+                    <template v-if="channel.type === 'video' || channel.type === 'audio'">
+                      <q-breadcrumbs-el :label="callDuration" icon="timer"/>
+                    </template>
                   </template>
                 </q-breadcrumbs>
               </q-toolbar-title>
@@ -202,7 +205,7 @@
             </q-toolbar>
           </q-page-sticky>
           <div class="wfull hfull relative">
-            <template v-if="channel.type === 'video'">
+            <template v-if="channel.type === 'video' || channel.type === 'audio'">
               <template v-if="!peerCallEnded">
                 <div class="h-[calc(100dvh-200px)] wfull overflow-hidden
                           grid gap-2 lg:grid-cols-2 relative p1">
@@ -319,8 +322,9 @@
               <template v-else>
                 <div class="h-[calc(100dvh-200px)] wfull
                             flex items-center justify-center">
-                  <div>
-                    <p>The call has ended.</p>
+                  <div class="p2 flex column items-center justify-center gap-4">
+                    <q-icon name="call_end" size="4rem"/>
+                    <p class="fontbold text-sm">The call has ended.</p>
                   </div>
                 </div>
                 <div class="wfull relative h-[88px] bottom-0
@@ -353,7 +357,7 @@
               </template>
             </template>
             <div ref="ref_messages"
-                 v-if="channel.type !== 'video'"
+                 v-if="channel.type !== 'video' && channel.type !== 'audio'"
                  class="wfull p4 column reverse items-center scroll"
                  v-on:scroll="checkScroll">
               <div class="wfull max-w-3xl_custom pr2 column reverse no-wrap">
@@ -420,7 +424,7 @@
               </div>
             </div>
             <q-page-sticky id="ref_editor_container"
-                           v-if="channel.type !== 'video'"
+                           v-if="channel.type !== 'video' && channel.type !== 'audio'"
                            ref="ref_editor_container"
                            position="bottom"
                            expand
@@ -760,7 +764,7 @@ import {
   dbSetTimestamp
 } from '../libs/wikistore'
 import { useStore } from 'stores/wikistate'
-import { DateTime } from 'luxon'
+import { DateTime, Duration } from 'luxon'
 import ChatMessageContent from 'components/chat/ChatMessageContent.vue'
 import MemberIcon from 'components/chat/MemberIcon.vue'
 import NewGroupView from 'components/chat/NewGroup.vue'
@@ -850,6 +854,8 @@ export default {
       },
       peerStreamScreenshare: null,
       peerCallEnded: false,
+      peerCallDuration: 0,
+      peerCallInterval: null,
       isShowingVideoChatMessages: false,
       msgCache: '',
       chrCache: [],
@@ -866,6 +872,12 @@ export default {
     }
     this.manageKeyListeners(true)
     this.manageDocumentListeners(true)
+  },
+  computed: {
+    callDuration () {
+      const dur = Duration.fromObject({ seconds: this.peerCallDuration })
+      return dur.toFormat('mm:ss')
+    }
   },
   methods: {
     /**
@@ -2877,6 +2889,10 @@ export default {
     },
     startCall: async function (userId, constraints = null) {
       this.peerCallEnded = false
+      this.peerCallDuration = 0
+      this.peerCallInterval = setInterval(() => {
+        this.peerCallDuration += 1
+      }, 1_000)
       // Retrieve media stream
       await this.callSetUserMedia(constraints)
       this.peerStreamOutgoingPreferences = constraints
@@ -3063,11 +3079,22 @@ export default {
       this.newMessage = ''
     },
     hangup: function () {
-      this.callSetUserMedia({
-        video: false,
-        audio: false
-      })
-      this.wrtc.hangup(null)
+      if (this.peerCallInterval) {
+        clearInterval(this.peerCallInterval)
+      }
+      try {
+        this.callSetUserMedia({
+          video: false,
+          audio: false
+        })
+      } catch (e) {
+        console.debug(e.message)
+      }
+      try {
+        this.wrtc.hangup(null)
+      } catch (e) {
+        console.debug(e.message)
+      }
       this.peerStreamOutgoing = null
       this.peerStreamScreenshare = null
       this.peerCons = new Map()
@@ -3086,7 +3113,7 @@ export default {
             app: 'editor',
             type: 'focus'
           })
-        }, 500)
+        }, 0)
       }
     }
   }
