@@ -47,7 +47,7 @@ import Wikiricrypt from './wikiricrypt'
  * const wikiric = wikiricSDK
  *
  * // 1. Authorize and Synchronize
- * await wikiric.login('yourUsername', 'yourPassword')
+ * await wikiric.login('yourUsername', window.btoa('yourPassword'))
  * await wikiric.doSync()
  *
  * // 2. Connect to the chat group's channel
@@ -137,7 +137,7 @@ const wikiricSDK = {
    * @returns {Promise<Boolean>}
    */
   doLogin: async function (username, password) {
-    const _u = window.btoa(username + ':' + password)
+    const _u = window.btoa(username + ':' + window.atob(password))
     this._username = username
     return new Promise((resolve, reject) => {
       let response = null

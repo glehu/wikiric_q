@@ -49,7 +49,7 @@ Quick Start Copy&Paste Template:
 const wikiric = wikiricSDK
 
 // 1. Authorize and Synchronize
-await wikiric.login('yourUsername', 'yourPassword')
+await wikiric.login('yourUsername', window.btoa('yourPassword'))
 await wikiric.doSync()
 
 // 2. Connect to the chat group's channel

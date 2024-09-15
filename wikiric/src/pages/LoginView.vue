@@ -172,7 +172,7 @@ export default {
       this.user.displayName = response.data.displayName
       this.user.ownChatId = response.data.chatID
       this.user._u = this.user.email
-      this.user._p = this.user.password
+      this.user._p = window.btoa(this.user.password)
       this.user.password = ''
       this.store.logIn(this.user)
       // Add token as global header for authorization
