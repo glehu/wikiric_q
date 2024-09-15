@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2024.
+ * Module wRTC.js of wikiricQ or wikiric including wikiric and wikiricGo
+ * themselves were, are and remain intellectual property of Luca Goldhausen.
+ * You may use, edit and redistribute any of their parts as long as you give credit
+ * in some visually accessible way.
+ * (where one would expect it without having to be visible on a screen under heavy use by the viewer).
+ */
+
 import adapter from 'webrtc-adapter'
 
 const WRTC = {
@@ -140,8 +149,7 @@ const WRTC = {
     peerConnection.hasStream = false
     // Add tracks if present
     if (stream != null) {
-      // if (peerConnection.hasStream === false) {
-      // peerConnection.hasStream = true
+      peerConnection.hasStream = true
       let sCount = 1
       stream.getTracks().forEach(track => {
         if (this.doLog) {

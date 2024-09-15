@@ -1,3 +1,12 @@
+/*
+ * Copyright (c) 2024.
+ * Module wikiric-sdk.js of wikiricQ or wikiric including wikiric and wikiricGo
+ * themselves were, are and remain intellectual property of Luca Goldhausen.
+ * You may use, edit and redistribute any of their parts as long as you give credit
+ * in some visually accessible way.
+ * (where one would expect it without having to be visible on a screen under heavy use by the viewer).
+ */
+
 import Wikiricrypt from './wikiricrypt'
 
 /**
@@ -7,14 +16,15 @@ import Wikiricrypt from './wikiricrypt'
  *
  * ## Features
  *
- * This SDK provides easy access to the chat functionality.
+ * This SDK provides easy access to the Chat, Encryption and SyncRoom functionality for wikiric.
  *
  * - Easy login
  * - Easy chat session creation
  * - Automatic chat session authorization
  * - Decryption of incoming E2E encrypted messages
- * - Sending of messages
+ * - Encrypting and sending of messages
  * - Receiving and sending of backend messages and commands
+ * - Connecting to arbitrarily named SyncRooms with features as broadcasting messages, setting and getting data etc.
  *
  * ## Dependencies
  *
@@ -47,8 +57,24 @@ import Wikiricrypt from './wikiricrypt'
  * const messages = new BroadcastChannel('wikiric_msg')
  * messages.onmessage = event => { console.log('New Message', event.data) }
  *
- * // 4. Send a message to the chat group
+ * // 4. Send an unencrypted message to the chat group
  * wikiric.sendMessage('Hello World!')
+ *
+ * // 5. Send an encrypted message to the chat group
+ * // First, prepare the pubkey map (you only have to do this once and for any new member)
+ * const pubKeys = new Map()
+ * if (this.members != null && this.members.size > 0) {
+ *   for (const [key, member] of this.members.entries()) {
+ *     if (key && member.pubkey != null) {
+ *       pubKeys.set(member.usr, member.pubkey)
+ *     }
+ *   }
+ * }
+ * this.sdk._wcrypt.setMembers(pubKeys)
+ * // Then, encrypt and send the message
+ * const message = 'Secret Hello World!'
+ * const encryptedMessage = await this.sdk._wcrypt.encryptPayload(message)
+ * wikiric.sendMessage(encryptedMessage)
  *
  * // 5. Listen to backend messages
  * const events = new BroadcastChannel('wikiric_connector')
@@ -62,6 +88,9 @@ import Wikiricrypt from './wikiricrypt'
  * // 7. Listen for SyncRoom messages
  * const eventsSync = new BroadcastChannel('wikiric_sync')
  * eventsSync.onmessage = event => { console.log('SyncRoom', event.data) }
+ *
+ * // 8. Broadcast a SyncRoom message
+ * wikiric.sendSyncRoomMessage('Hello World!')
  * ```
  */
 const wikiricSDK = {
