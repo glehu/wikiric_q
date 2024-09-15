@@ -1,0 +1,6 @@
+<component name="CopyrightManager">
+  <copyright>
+    <option name="notice" value="Copyright (c) &amp;#36;originalComment.match(&quot;Copyright \(c\) (\d+)&quot;, 1, &quot;-&quot;, &quot;&amp;#36;today.year&quot;)&amp;#36;today.year. &#10;Module &amp;#36;file.fileName of &amp;#36;project.name or wikiric including wikiric and wikiricGo&#10;themselves were, are and remain intellectual property of Luca Goldhausen.&#10;You may use, edit and redistribute any of their parts as long as you give credit&#10;in some visually accessible way.&#10;(where one would expect it without having to be visible on a screen under heavy use by the viewer)." />
+    <option name="myName" value="wikiric" />
+  </copyright>
+</component>
