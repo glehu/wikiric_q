@@ -11,10 +11,10 @@
         :width="300"
         show-if-above
         :breakpoint="768"
-        class="surface-variant hfit">
-        <q-scroll-area class="fit">
+        class="surface-variant hfit relative">
+        <div class="sticky top-0 surface-variant wfull z2 pb2">
           <template v-if="chatroom.burl">
-            <div class="p2">
+            <div class="pt2 px2">
               <div class="wfull max-h-[10rem] rounded-2 overflow-hidden">
                 <q-img :src="getImg(chatroom.burl, true)" alt="Banner"
                        fit="cover" class="max-h-[10rem]"/>
@@ -34,6 +34,8 @@
                  @click="$router.push('/groups')">
             <span class="ml4 text-body1">Groups</span>
           </q-btn>
+        </div>
+        <q-scroll-area class="fit relative z1">
           <q-toolbar>
             <q-toolbar-title class="text-lg">
               Group
@@ -95,7 +97,7 @@
             <q-btn flat round dense icon="add"
                    v-on:click="addChannel()"/>
           </q-toolbar>
-          <template v-if="chatroom.subc">
+          <div v-if="chatroom.subc" class="pb10">
             <q-item v-for="chat in chatroom.subc" :key="chat"
                     clickable
                     dense
@@ -105,24 +107,37 @@
               </template>
               <q-item-section class="rounded"
                               :class="{'background': chat.uid === channel.id}">
-                <q-item-label class="fontbold text-lg flex items-center">
-                  <template v-if="chat.type === 'text'">
-                    <q-icon name="tag" size="1.5rem"/>
-                  </template>
-                  <template v-else-if="chat.type === 'audio'">
-                    <q-icon name="mic" size="1.5rem"/>
-                  </template>
-                  <template v-else-if="chat.type === 'video'">
-                    <q-icon name="videocam" size="1.5rem"/>
-                  </template>
-                  <span class="ml4 text-body1"
-                        :class="{'fontbold': chat.uid === channel.id}">
+                <q-item-label>
+                  <div class="fontbold text-lg flex items-center">
+                    <template v-if="chat.type === 'text'">
+                      <q-icon name="tag" size="1.5rem"/>
+                    </template>
+                    <template v-else-if="chat.type === 'audio'">
+                      <q-icon name="mic" size="1.5rem"/>
+                    </template>
+                    <template v-else-if="chat.type === 'video'">
+                      <q-icon name="videocam" size="1.5rem"/>
+                    </template>
+                    <span class="ml4 text-body1"
+                          :class="{'fontbold': chat.uid === channel.id}">
                     {{ chat.t }}
                   </span>
+                  </div>
+                  <template v-if="chat._camsters && chat._camsters.length > 0">
+                    <div class="px2 pt2 ml3 mb2 fmt_border_left">
+                      <div v-for="p in chat._camsters" :key="p"
+                           class="flex gap-1 items-center surface p-0.5 rounded mb1">
+                        <q-icon name="person" size="1rem"/>
+                        <p class="text-xs font-600">
+                          {{ p }}
+                        </p>
+                      </div>
+                    </div>
+                  </template>
                 </q-item-label>
               </q-item-section>
             </q-item>
-          </template>
+          </div>
         </q-scroll-area>
       </q-drawer>
       <q-drawer
@@ -867,6 +882,13 @@ export default {
     this.initFunction()
   },
   beforeUnmount () {
+    // Notify users of having left the channel
+    const msg = {
+      pid: this.channel.id,
+      usr: this.store.user.username
+    }
+    this.broadcastToGroupMembers(msg, 'subchat_leave')
+    this.hangup()
     if (this.sdk) {
       this.sdk.doDisconnect()
     }
@@ -925,6 +947,12 @@ export default {
       // API Calls
       await this.getMainMembers()
       await this.getCustomEmotes()
+      // Notify users of having joined the channel
+      const msg = {
+        pid: this.channel.id,
+        usr: this.store.user.username
+      }
+      this.broadcastToGroupMembers(msg, 'subchat_join')
     },
     /**
      *
@@ -1399,18 +1427,6 @@ export default {
         this.setMemberOnlineStatus([username], false)
         this.clearActivity(username, false, true)
         this.clearActivity(username, true, true)
-        // if ((this.currentSubchat.type === 'webcam' || this.params) && this.wRTC.selfId != null) {
-        //   const remoteId = this.getIdFromUser(username)
-        //   if (remoteId) {
-        //     this.wRTC.hangup(remoteId)
-        //     const videoElem = document.getElementById('screenshare_video_' + remoteId)
-        //     const audioElem = document.getElementById('screenshare_audio_' + remoteId)
-        //     const container = document.getElementById('screenshare_container_' + remoteId)
-        //     if (videoElem) videoElem.srcObject = null
-        //     if (audioElem) audioElem.srcObject = null
-        //     if (container) container.style.display = 'none'
-        //   }
-        // }
       }
     },
     /**
@@ -1995,6 +2011,11 @@ export default {
       await this.getActiveMembers()
       await this.addTimestampRead()
       await this.hasUnread(this.channel.id)
+      const msg = {
+        pid: this.channel.id,
+        usr: this.store.user.username
+      }
+      this.broadcastToGroupMembers(msg, 'subchat_join')
       if (this.channel.type === 'video') {
         this.sidebarLeft = false
         this.sidebarRight = false
@@ -2025,6 +2046,13 @@ export default {
       this.messages = []
       // Prepare to connect
       await this.hasUnread(this.channel.id)
+      // Notify others of having left the channel
+      const msg = {
+        pid: this.channel.id,
+        usr: this.store.user.username
+      }
+      this.broadcastToGroupMembers(msg, 'subchat_leave')
+      // Set new channel data
       this.channel.id = channel.uid
       this.channel.t = channel.t
       this.channel.type = channel.type
@@ -2045,7 +2073,7 @@ export default {
       this.extraSkipCount = 0
       this.activeMembers.clear()
       this.idleMembers.clear()
-      this.stopOutgoingStreamTracks()
+      this.hangup()
     },
     /**
      *
@@ -2584,11 +2612,11 @@ export default {
           this.setMemberOnlineStatus([msg.usr], isOnline)
         }
       } else if (msg.typ === 'subchat_join') {
-        // const payload = JSON.parse(msg.msg)
-        // this.notifyJoinedSubchat(payload.uid, payload.user)
+        const payload = JSON.parse(msg.msg)
+        this.receiveChannelJoin(payload.pid, payload.usr)
       } else if (msg.typ === 'subchat_leave') {
-        // const payload = JSON.parse(msg.msg)
-        // this.notifyJoinedSubchat(payload.uid, payload.user, false, true)
+        const payload = JSON.parse(msg.msg)
+        this.receiveChannelLeave(payload.pid, payload.usr)
       } else if (msg.typ === '[s:chat]') {
         if (msg.act === 'mark') {
           // Check if we're already connected to this channel
@@ -2885,6 +2913,8 @@ export default {
           video: undefined,
           audio: undefined
         })
+      } else if (event.data.event === 'datachannel_message') {
+        console.log('WRTC DataChannel MSG:', event.data.message)
       }
     },
     startCall: async function (userId, constraints = null) {
@@ -3083,15 +3113,15 @@ export default {
         clearInterval(this.peerCallInterval)
       }
       try {
-        this.callSetUserMedia({
-          video: false,
-          audio: false
-        })
+        this.wrtc.hangup(null)
       } catch (e) {
         console.debug(e.message)
       }
       try {
-        this.wrtc.hangup(null)
+        this.callSetUserMedia({
+          video: false,
+          audio: false
+        })
       } catch (e) {
         console.debug(e.message)
       }
@@ -3114,6 +3144,70 @@ export default {
             type: 'focus'
           })
         }, 0)
+      }
+    },
+    /**
+     * Broadcasts a message including type to all members (active/online or not) of this group
+     * @param {Object|String} msg
+     * @param {String} type
+     */
+    broadcastToGroupMembers: function (msg, type) {
+      if (this.members == null || this.members.size < 1) {
+        return
+      }
+      for (const [key, member] of this.members.entries()) {
+        if (key && member.pubkey != null) {
+          try {
+            this.sdk.forwardMessage(msg, type, member.usr)
+          } catch (e) {
+            console.debug(e.message)
+          }
+        }
+      }
+    },
+    receiveChannelJoin: function (pid, usr) {
+      const data = [pid, usr]
+      if (data.length < 2) {
+        return
+      }
+      console.log('User entered video/audio channel:', data)
+      for (let i = 0; i < this.chatroom.subc.length; i++) {
+        if (this.chatroom.subc[i].uid === data[0]) {
+          if (!this.chatroom.subc[i]._camsters || this.chatroom.subc[i]._camsters.length < 1) {
+            this.chatroom.subc[i]._camsters = [data[1]]
+            return
+          }
+          for (let j = 0; j < this.chatroom.subc[i]._camsters.length; j++) {
+            if (this.chatroom.subc[i]._camsters[j] === data[1]) {
+              // User exists already
+              return
+            }
+          }
+          // If we reached this point, the user does not exist yet
+          this.chatroom.subc[i]._camsters.push(data[1])
+          return
+        }
+      }
+    },
+    receiveChannelLeave: function (pid, usr) {
+      const data = [pid, usr]
+      if (data.length < 2) {
+        return
+      }
+      for (let i = 0; i < this.chatroom.subc.length; i++) {
+        if (this.chatroom.subc[i].uid === data[0]) {
+          if (!this.chatroom.subc[i]._camsters || this.chatroom.subc[i]._camsters.length < 1) {
+            return
+          }
+          for (let j = 0; j < this.chatroom.subc[i]._camsters.length; j++) {
+            if (this.chatroom.subc[i]._camsters[j] === data[1]) {
+              // User exists
+              this.chatroom.subc[i]._camsters.splice(j, 1)
+              return
+            }
+          }
+          return
+        }
       }
     }
   }
