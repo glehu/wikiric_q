@@ -948,11 +948,14 @@ export default {
       await this.getMainMembers()
       await this.getCustomEmotes()
       // Notify users of having joined the channel
-      const msg = {
-        pid: this.channel.id,
-        usr: this.store.user.username
+      const skipSend = await this.checkChannelActivityRight()
+      if (!skipSend) {
+        const msg = {
+          pid: this.channel.id,
+          usr: this.store.user.username
+        }
+        this.broadcastToGroupMembers(msg, 'subchat_join')
       }
-      this.broadcastToGroupMembers(msg, 'subchat_join')
     },
     /**
      *
@@ -2011,11 +2014,14 @@ export default {
       await this.getActiveMembers()
       await this.addTimestampRead()
       await this.hasUnread(this.channel.id)
-      const msg = {
-        pid: this.channel.id,
-        usr: this.store.user.username
+      const skipSend = await this.checkChannelActivityRight()
+      if (!skipSend) {
+        const msg = {
+          pid: this.channel.id,
+          usr: this.store.user.username
+        }
+        this.broadcastToGroupMembers(msg, 'subchat_join')
       }
-      this.broadcastToGroupMembers(msg, 'subchat_join')
       if (this.channel.type === 'video') {
         this.sidebarLeft = false
         this.sidebarRight = false
@@ -3209,6 +3215,45 @@ export default {
           return
         }
       }
+    },
+    checkChannelActivityRight: async function () {
+      const set = await dbGetData(`groupset-${this.chatroom.uid}`)
+      if (set == null) {
+        // This feature is active by default as it does not propose
+        // ...any real danger to the users. The channels they join
+        // ...are product of their own decision-making.
+        return false
+      }
+      if (set.showCAct != null && set.showCAct === false) {
+        // User decided to hide channel activity
+        return true
+      }
+      let found = false
+      for (let j = 0; j < set.cSet.length; j++) {
+        if (set.cSet[j].uid === this.channel.id) {
+          found = true
+          if (set.cSet[j].hideCAct) {
+            return true
+          } else {
+            break
+          }
+        }
+      }
+      if (!found) {
+        if (set.hideNewCAct != null && set.hideNewCAct === true) {
+          set.cSet.push({
+            uid: this.channel.id,
+            t: this.channel.t,
+            typ: this.channel.type,
+            hideCAct: true
+          })
+          await dbSetData(`groupset-${this.chatroom.uid}`, set)
+          return true
+        }
+      }
+      // User allowed activity, didn't hide it nor
+      // ...disabled it for a channel... so we confirm
+      return false
     }
   }
 }

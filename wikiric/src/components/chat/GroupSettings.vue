@@ -27,11 +27,73 @@
       <q-expansion-item class="mt4 background">
         <template v-slot:header>
           <p class="text-h6 wfull">
+            Privacy / Visibility
+          </p>
+        </template>
+        <q-card class="background">
+          <q-card-section>
+            <p class="mb4 fmt_border_bottom pb4">
+              Control how your privacy needs to being handled in this group.
+            </p>
+            <div class="flex items-center gap-2 mb4">
+              <q-icon name="visibility" size="2rem"/>
+              <p class="text-h6 fontbold">
+                Channel Activity
+              </p>
+            </div>
+            <div class="p4 text-subtitle2 max-w-[300px]
+                        flex column gap-2">
+              <q-checkbox v-model="settingsDat.showCAct"
+                          label="Display your username under the channel you're connected to."
+                          @update:model-value="updateGroupCAct"/>
+              <q-checkbox v-model="settingsDat.hideNewCAct"
+                          label="Deactivate this feature for new channels."
+                          @update:model-value="updateGroupCAct"/>
+            </div>
+            <template v-if="settingsDat.cSet && settingsDat.cSet.length > 0">
+              <p class="mb2 text-subtitle2">
+                Deactivate this feature for each channel if you want to:
+              </p>
+              <div class="flex column p4 gap-2">
+                <template v-for="cSet in settingsDat.cSet" :key="cSet">
+                  <q-checkbox v-model="cSet.hideCAct"
+                              @update:model-value="updateGroupCAct">
+                    <div class="flex flex-nowrap items-center">
+                      <template v-if="cSet.typ === 'text'">
+                        <q-icon name="tag" size="1.5rem"/>
+                      </template>
+                      <template v-else-if="cSet.typ === 'audio'">
+                        <q-icon name="mic" size="1.5rem"/>
+                      </template>
+                      <template v-else-if="cSet.typ === 'video'">
+                        <q-icon name="videocam" size="1.5rem"/>
+                      </template>
+                      <div class="flex column wfit">
+                        <span class="ml1 fontbold">{{ cSet.t }}</span>
+                        <span class="ml1 text-xs">({{ cSet.uid }})</span>
+                      </div>
+                    </div>
+                  </q-checkbox>
+                </template>
+              </div>
+              <p class="mt2 text-subtitle2">
+                TIP: Revisit this page to see new channels as they appear.
+              </p>
+            </template>
+          </q-card-section>
+        </q-card>
+      </q-expansion-item>
+      <q-expansion-item class="mt2 background">
+        <template v-slot:header>
+          <p class="text-h6 wfull">
             Visuals
           </p>
         </template>
         <q-card class="background">
           <q-card-section>
+            <p class="mb4 fmt_border_bottom pb4">
+              Choose a nice look for your group here.
+            </p>
             <p class="text-h6 fontbold mb4">
               Group Image
             </p>
@@ -171,6 +233,10 @@
           </p>
         </template>
         <div class="px4 mt2 wfull">
+          <p class="mb4 fmt_border_bottom pb4">
+            You can use custom emotes by entering ":" (without the quotes)
+            into any rich-text editor on wikiric. Eureka!
+          </p>
           <q-file
             v-model="bulkEmoteFiles"
             @update:model-value="handleBulkFilesSelect"
@@ -330,13 +396,19 @@ export default {
       bulkFiles: [],
       isBulkUploadingEmotes: false,
       bulkUploadingCurrently: '',
-      bulkUploadLeft: 0
+      bulkUploadLeft: 0,
+      settingsDat: {
+        showCAct: false,
+        hideNewCAct: false,
+        cSet: []
+      }
     }
   },
   methods: {
     handleDialogOpen: function () {
       this.newGroup = this.group
       this.getCustomEmotes()
+      this.setSettingsData()
     },
     updateGroup: function () {
       this.$emit('refresh')
@@ -609,6 +681,45 @@ export default {
           })
         }, 500)
       })
+    },
+    setSettingsData: async function () {
+      const key = `groupset-${this.group.uid}`
+      let set = await dbGetData(key)
+      if (set == null) {
+        set = {
+          showCAct: false,
+          hideNewCAct: false,
+          cSet: []
+        }
+        await dbSetData(key, set)
+      }
+      if (set.cSet == null || set.cSet.length < 1) {
+        if (this.group.subc && this.group.subc.length > 0) {
+          for (let i = 0; i < this.group.subc.length; i++) {
+            set.cSet.push({
+              t: this.group.subc[i].t,
+              uid: this.group.subc[i].uid,
+              typ: this.group.subc[i].type,
+              hideCAct: false
+            })
+          }
+        }
+      } else {
+        if (this.group.subc && this.group.subc.length > 0) {
+          for (let i = 0; i < this.group.subc.length; i++) {
+            for (let j = 0; j < set.cSet.length; j++) {
+              if (set.cSet[j].uid === this.group.subc[i].uid) {
+                set.cSet[j].t = this.group.subc[i].t
+                set.cSet[j].typ = this.group.subc[i].type
+              }
+            }
+          }
+        }
+      }
+      this.settingsDat = set
+    },
+    updateGroupCAct: async function () {
+      await dbSetData(`groupset-${this.group.uid}`, this.settingsDat)
     }
   }
 }
