@@ -694,6 +694,7 @@ import { useStore } from 'stores/wikistate'
 import FFWeapon from 'pages/games/flowfield/FFWeapon'
 import FFPowerUp from 'pages/games/flowfield/FFPowerUp'
 import FFPowerUpEffect from 'pages/games/flowfield/FFPowerUpEffect'
+import WRTC from 'src/libs/wRTC'
 
 export default {
   name: 'FlowFieldDemo',
@@ -889,7 +890,7 @@ export default {
 
       // MULTIPLAYER DATA
 
-      roomId: 'wkrg_sync_ffa',
+      roomId: 'wkrg_sync_ffa_dev',
       currentSRLatency: -1,
       getQueue: new Map(),
       lastPos: null,
@@ -897,7 +898,9 @@ export default {
       dataMap: new Map(),
       playerData: new Map(),
       sessions: new Map(),
-      coPlayers: new Map()
+      coPlayers: new Map(),
+      peerCons: new Map(),
+      wrtc: WRTC
     }
   },
   mounted () {
@@ -1446,7 +1449,7 @@ export default {
         this.goalPosition.y = tmp + 1
         this.offsetVector.y = (y - tmp) * -1
       }
-      this.srNotifyPosition()
+      this.srNotifyPosition(false)
       // Draw goal
       this.renderGoal()
       // Calculate integration field
@@ -1707,16 +1710,24 @@ export default {
       let cacheDiff
       // Step Function to be called repeatedly
       let stepCount = 0
-      let timestamp = performance.now()
+      let lastSecond = performance.now()
+      let lastHalfSecond = performance.now()
       let lastTime = performance.now()
       let timeDelta
       let lastPos
       const step = () => {
         if (this.goalAlive) {
-          // Calculate FPS
+          // Did half a second pass?
           tmp = performance.now()
-          if (((tmp - timestamp) / 1000) >= 1) {
-            timestamp = tmp
+          if ((tmp - lastHalfSecond) / 1000 >= 1) {
+            lastHalfSecond = tmp
+            this.procPerHalfSecondTriggers()
+          }
+          // Calculate FPS
+          // Did a second pass?
+          tmp = performance.now()
+          if ((tmp - lastSecond) / 1000 >= 1) {
+            lastSecond = tmp
             this.timeDelta = stepCount
             stepCount = 0
             this.procPerSecondTriggers()
@@ -1959,27 +1970,35 @@ export default {
       const goalPosition = new THREE.Vector2()
       goalPosition.x = posObj.x
       goalPosition.y = posObj.y
-      goalPosition.x -= posObj.xo
-      goalPosition.y -= posObj.yo
+      const ori = { ...goalPosition }
       let goalMovementVector = new THREE.Vector2()
+      let didMove = false
       // *** ***    X-Axis    *** ***
       if (posObj.left) {
         goalMovementVector.add(this.goalWest)
+        didMove = true
       }
       if (posObj.right) {
         goalMovementVector.add(this.goalEast)
+        didMove = true
       }
       // *** ***    Y-Axis    *** ***
       if (posObj.up) {
         goalMovementVector.add(this.goalNorth)
+        didMove = true
       }
       if (posObj.down) {
         goalMovementVector.add(this.goalSouth)
+        didMove = true
       }
-      goalMovementVector.multiplyScalar(this.goalSpeed)
-      goalMovementVector.multiplyScalar(timeDelta)
-      // Apply movement vectors
-      goalPosition.add(goalMovementVector)
+      if (didMove) {
+        goalMovementVector.multiplyScalar(this.goalSpeed)
+        goalMovementVector.multiplyScalar(timeDelta)
+        // Apply movement vectors
+        goalPosition.add(goalMovementVector)
+      } else {
+        return posObj
+      }
       // Wall Collision
       const goalPosX = goalPosition.x
       const goalX = Math.round(goalPosX)
@@ -2039,6 +2058,10 @@ export default {
       }
       posObj.x = goalPosition.x
       posObj.y = goalPosition.y
+      if (!didMove) {
+        posObj.x = ori.x
+        posObj.y = ori.y
+      }
       return posObj
     },
     applyEnemyMovement: function (image, cacheMap, cacheDiff, qtree, timeDelta) {
@@ -2364,6 +2387,9 @@ export default {
         return
       }
       for (const [key, val] of this.coPlayers.entries()) {
+        if (!val.weapons || val.weapons.length < 1) {
+          continue
+        }
         for (let i = 0; i < val.weapons.length; i++) {
           val.weapons[i].processTick()
         }
@@ -2563,33 +2589,44 @@ export default {
       switch (e.key) {
         case 'w':
           this.goalUp = true
-          this.srNotifyMove(false)
+          this.srNotifyMove(true)
+          this.srNotifyMove(true)
           break
         case 'a':
           this.goalLeft = true
-          this.srNotifyMove(false)
+          this.srNotifyMove(true)
+          this.srNotifyMove(true)
           break
         case 's':
           this.goalDown = true
-          this.srNotifyMove(false)
+          this.srNotifyMove(true)
+          this.srNotifyMove(true)
           break
         case 'd':
           this.goalRight = true
-          this.srNotifyMove(false)
+          this.srNotifyMove(true)
+          this.srNotifyMove(true)
           break
       }
     },
     srNotifyMove: function (force) {
       const v = `${this.goalUp};${this.goalRight};${this.goalDown};${this.goalLeft}`
+      let noSet = false
       if (this.lastPos === v && !force) {
         return
+      } else {
+        noSet = true
       }
+      console.log('MOVEMENT')
       const k = `MOV-${this.store.user.username}`
       // Send message to others
-      this.$connector.sendSyncRoomMessage(
+      this.wrtc.broadcastDataChannelMessage(
         `${k};${v}`)
       this.lastPos = v
       this.dataMap.set(k, v)
+      if (!noSet) {
+        return
+      }
       // Let server process data
       this.$connector.sendSyncRoomMessage(
         this.buildDataCommand('SET', 'DATA', k, v))
@@ -2598,7 +2635,7 @@ export default {
       const k = `MOV-${this.store.user.username}`
       const v = 'false;false;false;false'
       // Send message to others
-      this.$connector.sendSyncRoomMessage(
+      this.wrtc.broadcastDataChannelMessage(
         `${k};${v}`)
       this.lastPos = v
       this.dataMap.set(k, v)
@@ -2622,7 +2659,7 @@ export default {
       this.$connector.sendSyncRoomMessage(
         this.buildDataCommand('SET', 'DATA', k, v))
     },
-    srNotifyPosition: function () {
+    srNotifyPosition: function (sendOnly) {
       const v = JSON.stringify({
         x: this.goalPosition.x,
         y: this.goalPosition.y,
@@ -2631,10 +2668,13 @@ export default {
       })
       const k = `POS-${this.store.user.username}`
       // Notify users
-      this.$connector.sendSyncRoomMessage(
+      this.wrtc.broadcastDataChannelMessage(
         `${k};${v}`)
       this.dataMap.set(k, v)
       // Let server process the data
+      if (sendOnly) {
+        return
+      }
       this.$connector.sendSyncRoomMessage(
         this.buildDataCommand('SET', 'DATA', k, v))
     },
@@ -2666,19 +2706,23 @@ export default {
       switch (e.key) {
         case 'w':
           this.goalUp = false
-          this.srNotifyMove(false)
+          this.srNotifyMove(true)
+          this.srNotifyMove(true)
           break
         case 'a':
           this.goalLeft = false
-          this.srNotifyMove(false)
+          this.srNotifyMove(true)
+          this.srNotifyMove(true)
           break
         case 's':
           this.goalDown = false
-          this.srNotifyMove(false)
+          this.srNotifyMove(true)
+          this.srNotifyMove(true)
           break
         case 'd':
           this.goalRight = false
-          this.srNotifyMove(false)
+          this.srNotifyMove(true)
+          this.srNotifyMove(true)
           break
       }
     },
@@ -2940,10 +2984,18 @@ export default {
       // Populate map
       this.checkAndSpawnEnemies()
       // Retrieve and distribute current sessions
-      if (this.isHost) {
-        this.$connector.sendSyncRoomMessage(
-          this.buildDataCommand('GET', 'SESH', 'DIST'))
-      }
+      this.srNotifyPosition(true)
+      // if (this.isHost) {
+      //   this.$connector.sendSyncRoomMessage(
+      //     this.buildDataCommand('GET', 'SESH', 'DIST'))
+      // }
+    },
+    /**
+     * Actions happening or being checked every half second
+     * ...are placed here.
+     */
+    procPerHalfSecondTriggers: function () {
+      this.srNotifyMove(true)
     },
     /**
      * Spawns enemies around the map
@@ -2986,12 +3038,20 @@ export default {
           } else {
             if (!this.coPlayers.has(sesh.u)) {
               // We did not encounter this co-player yet
+              // Create peer to peer connection to this player
+              // To figure out who's impolite and who's not...
+              // ...the peers need to battle it out!
+              const rnd = Math.random()
+              this.$connector.sendSyncRoomMessage(
+                `PEFI-${sesh.u};${this.store.user.username};${rnd}`)
+              // Set new player
               this.coPlayers.set(sesh.u, {
                 usr: sesh.u,
                 x: -1,
                 y: -1,
                 xo: -1,
-                yo: -1
+                yo: -1,
+                pefi: rnd
               })
               // Request position data
               // ...simple hack: we just re-use the lag function
@@ -3027,21 +3087,13 @@ export default {
           }
         } else if (event.data.t.startsWith('qPOS')) {
           // Some player requested our position
-          this.srNotifyPosition()
-        } else if (event.data.t.startsWith('POS-')) {
-          // Some player sent their position
-          // We can simply use this to counteract de-sync
-          const data = event.data.t.substring(4).split(';')
-          if (data.length < 2 || data[0] === this.store.user.username) {
-            return
-          }
-          this.setCoPlayerPosition(data)
-        } else if (event.data.t.startsWith('MOV-')) {
-          // Some player sent movement data
-          // Format: (Bool)
-          //    UP;RIGHT;DOWN;LEFT
-          const data = event.data.t.substring(4).split(';')
-          this.setCoPlayerMovement(data)
+          this.srNotifyPosition(false)
+        } else if (event.data.t.startsWith('PEFI-')) {
+          // Some player sent a peer fight random number!
+          // Format:
+          //    Username;RemoteName;RndInt
+          const data = event.data.t.substring(5).split(';')
+          this.handlePeerFightRnd(data)
         } else if (event.data.t.startsWith('DOSIM')) {
           const data = event.data.t.split(';')
           if (data[1].toUpperCase() === 'TRUE') {
@@ -3076,6 +3128,8 @@ export default {
         this.$connector.sendSyncRoomMessage(
           this.buildDataCommand('GET', 'SESH', 'DIST'))
       }, 2_000)
+      // Start WRTC setup routine
+      this.initWRTC()
     },
     handleLatencyLag: function (delay) {
       // Retrieve player positions since lag could cause de-sync
@@ -3089,19 +3143,15 @@ export default {
       const player = JSON.parse(data[1])
       if (this.coPlayers.has(data[0])) {
         const pl = this.coPlayers.get(data[0])
-        pl.x = player.x
-        pl.y = player.y
-        pl.xo = player.xo
-        pl.yo = player.yo
+        pl.x = player.x - player.xo
+        pl.y = player.y - player.yo
         this.coPlayers.set(data[0], pl)
         return
       }
       this.coPlayers.set(data[0], {
         usr: data[0],
-        x: player.x,
-        y: player.y,
-        xo: player.xo,
-        yo: player.yo
+        x: player.x - player.xo,
+        y: player.y - player.yo
       })
     },
     setCoPlayerMovement: function (data) {
@@ -3302,6 +3352,90 @@ export default {
       // Send message to others
       this.$connector.sendSyncRoomMessage(
         `WP-${this.store.user.username};${id};${pId};${type};${payload}`)
+    },
+    initWRTC: function () {
+      this.wrtc.initialize(this.$connector, this.store.user.username, true, true)
+      // Create BroadcastChannel to listen to wRTC events!
+      const eventChannel = new BroadcastChannel('wrtcevents')
+      eventChannel.onmessage = event => {
+        this.handleWRTCEvent(event)
+      }
+    },
+    handleWRTCEvent: async function (event) {
+      if (!event || !event.data) return
+      if (event.data.event === 'peer_init') {
+        this.peerCons.set(event.data.remoteName, {
+          connected: false,
+          dataReady: false
+        })
+      } else if (event.data.event === 'connection_change') {
+        if (event.data.status.toLowerCase() === 'connected') {
+          const peer = this.peerCons.get(event.data.remoteName)
+          peer.connected = true
+          this.peerCons.set(event.data.remoteName, peer)
+        }
+      } else if (event.data.event === 'datachannel_message') {
+        // console.log('WRTC MESSAGE:', event.data.message)
+        if (event.data.message.startsWith('POS-')) {
+          // Some player sent their position
+          // We can simply use this to counteract de-sync
+          const data = event.data.message.substring(4).split(';')
+          if (data.length < 2 || data[0] === this.store.user.username) {
+            return
+          }
+          this.setCoPlayerPosition(data)
+        } else if (event.data.message.startsWith('MOV-')) {
+          // Some player sent movement data
+          // Format: (Bool)
+          //    UP;RIGHT;DOWN;LEFT
+          const data = event.data.message.substring(4).split(';')
+          this.setCoPlayerMovement(data)
+        }
+      } else if (event.data.event === 'datachannel_open') {
+        this.wrtc.sendDataChannelMessage(event.data.remoteName, 'N;DR')
+        const peer = this.peerCons.get(event.data.remoteName)
+        peer.dataReady = true
+        this.peerCons.set(event.data.remoteName, peer)
+      }
+    },
+    handlePeerFightRnd: function (data) {
+      // The peers need to battle out who's impolite and who's polite.
+      // If the other peer's random number is the same as ours, we simply send another number.
+      if (data.length < 3 || data[0] !== this.store.user.username) {
+        return
+      }
+      const rnd = parseFloat(data[2])
+      let peer = null
+      if (this.coPlayers.has(data[1])) {
+        peer = this.coPlayers.get(data[1])
+        if (peer.pefi === rnd) {
+          const newRnd = Math.random()
+          this.$connector.sendSyncRoomMessage(
+            `PEFI-${data[1]};${this.store.user.username};${newRnd}`)
+          return
+        }
+        if (peer.pefi > rnd) {
+          // We have won!
+          this.createOutgoingPeerConnections(data[1], false)
+        } else {
+          // The other peer has won!
+          // We simply do nothing and watch as they send us their WRTC offer...
+        }
+      }
+    },
+    createOutgoingPeerConnections: async function (userId, polite) {
+      const calleeList = []
+      if (userId) {
+        calleeList.push(userId)
+      } else {
+        this.coPlayers.forEach((val) => {
+          calleeList.push(val.usr)
+        })
+      }
+      // Create a WebRTC Peer to Peer Connection for each callee
+      for (let i = 0; i < calleeList.length; i++) {
+        this.wrtc.initiatePeerConnection(null, calleeList[i], true, polite)
+      }
     }
   }
 }

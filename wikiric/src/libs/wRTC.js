@@ -93,10 +93,20 @@ const WRTC = {
   /***
    * Initiates a Peer to Peer Connection
    *
+   * We use the Partially Reliable Stream Control Transport Protocol (PR-SCTP)
+   * for our WebRTC DataChannel to ensure:
+   *
+   * 1. Better performance than TCP (no ACK and no resending of frames)
+   * 2. Better reliability than UDP (discarding of delayed frames)
+   *
+   * This protocol is useful for media streaming or streaming data of no chronological importance
+   *
+   * It is advised to periodically send data where a single missed frame could cause problems
+   *
    * @param {(MediaStream|null)} stream - Outgoing media stream
    * @param {string} remoteName - Remote username
    * @param {boolean} [createDataChannel=true] - Specifies if a data channel needs to be created
-   * @param {boolean} [polite=false] - TBD
+   * @param {boolean} [polite=false] - Impolite (false) basically means we are SENDING an offer, not expecting one
    */
   initiatePeerConnection: function (stream, remoteName, createDataChannel = true, polite = false) {
     if (remoteName == null) {
@@ -168,38 +178,56 @@ const WRTC = {
       // }
     }
     // Create data channel if desired
-    if (createDataChannel && !peerConnection.dataChannel) {
+    if (createDataChannel) {
       if (this.doLog) {
         console.debug('%cADD DATA CHANNEL', this.logStyle, 'for', remoteName)
       }
-      peerConnection.dataChannel = peerConnection.createDataChannel('data', {
-        negotiated: true,
-        id: 0
-      })
-      const doLog = this.doLog
-      const logStyle = this.logStyle
-      const eventChannel = this.eventChannel
-      peerConnection.dataChannel.addEventListener('open', _ => {
-        if (doLog) {
-          console.debug('%c(OUT) DATA CHANNEL OPEN', logStyle, 'to', remoteName)
-        }
-        const payload = {
-          event: 'datachannel_open',
-          selfName: peerConnection.selfName,
-          remoteName: peerConnection.remoteName
-        }
-        eventChannel.postMessage(payload)
-        peerConnection.dataChannel.addEventListener('message', e => {
+      if (!peerConnection.dataChannel) {
+        // We use the Partially Reliable Stream Control Transport Protocol (PR-SCTP)
+        // ...for our WebRTC DataChannel to ensure...
+        //      1. Better performance than TCP (no ACK and no resending of frames)
+        //      2. Better reliability than UDP (discarding of delayed frames)
+        // This protocol is useful for media streaming or streaming data of no chronological importance
+        // It is advised to periodically send data where a single missed frame could cause problems
+        peerConnection.dataChannel = peerConnection.createDataChannel('data', {
+          negotiated: true,
+          id: 0,
+          ordered: true,
+          maxRetransmits: 0
+        })
+        const doLog = this.doLog
+        const logStyle = this.logStyle
+        const eventChannel = this.eventChannel
+        peerConnection.dataChannel.addEventListener('open', _ => {
+          if (doLog) {
+            console.debug('%c(OUT) DATA CHANNEL OPEN', logStyle, 'to', remoteName)
+          }
           const payload = {
-            event: 'datachannel_message',
+            event: 'datachannel_open',
             selfName: peerConnection.selfName,
-            remoteName: peerConnection.remoteName,
-            message: e.data
+            remoteName: peerConnection.remoteName
           }
           eventChannel.postMessage(payload)
+          peerConnection.dataChannel.addEventListener('message', e => {
+            const payload = {
+              event: 'datachannel_message',
+              selfName: peerConnection.selfName,
+              remoteName: peerConnection.remoteName,
+              message: e.data
+            }
+            eventChannel.postMessage(payload)
+          })
+          peerConnection.dataChannel.send(`HEY from ${this.selfName}!`)
         })
-        peerConnection.dataChannel.send(`HEY from ${this.selfName}!`)
-      })
+      } else {
+        if (this.doLog) {
+          console.debug('%cDATA CHANNEL', this.logStyle, 'for', remoteName, 'already exists')
+        }
+      }
+    } else {
+      if (this.doLog) {
+        console.debug('%cNO DATA CHANNEL', this.logStyle, 'for', remoteName)
+      }
     }
     // Listen for connection changes
     peerConnection.addEventListener('connectionstatechange', _ => {
@@ -420,6 +448,9 @@ const WRTC = {
         }
         return
       }
+      if (this.doLog) {
+        console.log('%cNEW Peer Connection', this.logStyle, 'to', remoteName)
+      }
       this.initiatePeerConnection(null, remoteName, true, true)
       peerConnection = this.getPeerConnection(remoteName)
     }
@@ -580,6 +611,60 @@ const WRTC = {
         }
       })
     }
+  },
+  /**
+   * Sends a message to a user using the WebRTC DataChannel
+   * @param {String} usr
+   * @param {Object|String} msg
+   * @return boolean
+   */
+  sendDataChannelMessage: function (usr, msg) {
+    if (msg == null || !this.peerConnections.has(usr)) {
+      return false
+    }
+    const peer = this.peerConnections.get(usr)
+    if (!peer.dataChannel || peer.dataChannel.readyState !== 'open') {
+      return false
+    }
+    if (typeof msg === 'object') {
+      msg = JSON.stringify(msg)
+    }
+    try {
+      peer.dataChannel.send(msg)
+      return true
+    } catch (e) {
+      console.debug(e.message)
+      return false
+    }
+  },
+  /**
+   * Sends a message to a user using the WebRTC DataChannel
+   * @param {String} usr
+   * @param {Object|String} msg
+   * @return boolean
+   */
+  broadcastDataChannelMessage: function (msg) {
+    if (msg == null) {
+      return false
+    }
+    let didSend = false
+    this.peerConnections.forEach((peer) => {
+      if (!peer.dataChannel || peer.dataChannel.readyState !== 'open') {
+        return
+      }
+      if (typeof msg === 'object') {
+        msg = JSON.stringify(msg)
+      }
+      try {
+        peer.dataChannel.send(msg)
+        // We cannot guarantee delivery of UDP messages
+        // ...so we call it a success on any delivery made
+        didSend = true
+      } catch (e) {
+        console.debug(e.message)
+      }
+    })
+    return didSend
   }
 }
 export default WRTC
