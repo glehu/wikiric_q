@@ -12,7 +12,7 @@
         show-if-above
         :breakpoint="768"
         class="surface-variant hfit relative">
-        <div class="sticky top-0 surface-variant wfull z2 pb2">
+        <div class="sticky top-0 surface-variant wfull z2 pb2 h-[220px] overflow-hidden">
           <template v-if="chatroom.burl">
             <div class="pt2 px2">
               <div class="wfull max-h-[10rem] rounded-2 overflow-hidden">
@@ -35,7 +35,8 @@
             <span class="ml4 text-body1">Groups</span>
           </q-btn>
         </div>
-        <q-scroll-area class="fit relative z1">
+        <div class="fit relative z1 scroll-auto scroll"
+             style="height: calc(100dvh - 56px - 220px) !important;">
           <q-toolbar>
             <q-toolbar-title class="text-lg">
               Group
@@ -120,25 +121,25 @@
                     </template>
                     <span class="ml4 text-body1"
                           :class="{'fontbold': chat.uid === channel.id}">
-                    {{ chat.t }}
-                  </span>
+                      {{ chat.t }}
+                    </span>
                   </div>
-                  <template v-if="chat._camsters && chat._camsters.length > 0">
-                    <div class="px2 pt2 ml3 mb2 fmt_border_left">
-                      <div v-for="p in chat._camsters" :key="p"
-                           class="flex gap-1 items-center surface p-0.5 rounded mb1">
-                        <q-icon name="person" size="1rem"/>
-                        <p class="text-xs font-600">
-                          {{ p }}
-                        </p>
-                      </div>
-                    </div>
-                  </template>
                 </q-item-label>
+                <template v-if="chat._camsters && chat._camsters.length > 0">
+                  <div class="px2 pt2 ml3 mb2 fmt_border_left pointer-events-none">
+                    <div v-for="p in chat._camsters" :key="p"
+                         class="flex gap-1 items-center surface p-0.5 rounded mb1">
+                      <q-icon name="person" size="1rem"/>
+                      <p class="text-xs font-600">
+                        {{ p }}
+                      </p>
+                    </div>
+                  </div>
+                </template>
               </q-item-section>
             </q-item>
           </div>
-        </q-scroll-area>
+        </div>
       </q-drawer>
       <q-drawer
         side="right"
