@@ -12,7 +12,7 @@
         show-if-above
         :breakpoint="768"
         class="surface-variant hfit relative">
-        <div class="sticky top-0 surface-variant wfull z2 pb2 h-[220px] overflow-hidden">
+        <div class="sticky top-0 surface-variant wfull z2 pb2 hfit max-h-[220px] overflow-hidden">
           <template v-if="chatroom.burl">
             <div class="pt2 px2">
               <div class="wfull max-h-[10rem] rounded-2 overflow-hidden">
@@ -36,7 +36,7 @@
           </q-btn>
         </div>
         <div class="fit relative z1 scroll-auto scroll"
-             style="height: calc(100dvh - 56px - 220px) !important;">
+             style="max-height: calc(100dvh - 56px - 220px) !important;">
           <q-toolbar>
             <q-toolbar-title class="text-lg">
               Group
