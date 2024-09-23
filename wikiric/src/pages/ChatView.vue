@@ -149,7 +149,7 @@
         :breakpoint="1280"
         class="background">
         <q-tab-panels v-model="sidebarRightPanel" animated
-                      class="fit">
+                      class="fit background">
           <q-tab-panel name="members">
             <q-scroll-area class="fit">
               <q-toolbar class="fmt_border_bottom md:hidden">
