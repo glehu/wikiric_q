@@ -144,43 +144,229 @@
       <q-drawer
         side="right"
         v-model="sidebarRight"
-        :width="256"
+        :width="sidebarRightWidth"
         show-if-above
         :breakpoint="1280"
         class="background">
-        <q-scroll-area class="fit">
-          <q-toolbar class="fmt_border_bottom md:hidden">
-            <q-btn flat dense icon="sym_o_right_panel_close"
-                   align="left" class="wfull"
-                   no-caps label="Hide Members"
-                   @click="sidebarRight = !sidebarRight">
-            </q-btn>
-          </q-toolbar>
-          <q-toolbar>
-            <q-toolbar-title class="text-lg">
-              Members - {{ members.size }}
-            </q-toolbar-title>
-            <q-btn flat round dense icon="person_add"
-                   v-on:click="inviteToGroup"/>
-          </q-toolbar>
-          <q-item v-for="[key, member] of members.entries()" :key="member.id"
-                  clickable>
-            <q-menu>
-              <member-card :member="member"
-                           @refresh="getMainMembers"
-                           @replacekey="generateRSAKeyPair(true)"/>
-            </q-menu>
-            <q-item-section v-if="key" style="width: 200px !important">
-              <q-item-label class="fontbold text-md overflow-hidden whitespace-nowrap text-ellipsis">
-                <member-icon :iurl="member.iurl"
-                             :iurla="member.iurla"
-                             :online="member.online"
-                             size="48px"/>
-                <span>{{ member.name }}</span>
-              </q-item-label>
-            </q-item-section>
-          </q-item>
-        </q-scroll-area>
+        <q-tab-panels v-model="sidebarRightPanel" animated
+                      class="fit">
+          <q-tab-panel name="members">
+            <q-scroll-area class="fit">
+              <q-toolbar class="fmt_border_bottom md:hidden">
+                <q-btn flat dense icon="sym_o_right_panel_close"
+                       align="left" class="wfull"
+                       no-caps label="Hide Members"
+                       @click="toggleSidebarRight">
+                </q-btn>
+              </q-toolbar>
+              <q-toolbar>
+                <q-toolbar-title class="text-lg">
+                  Members - {{ members.size }}
+                </q-toolbar-title>
+                <q-btn flat round dense icon="person_add"
+                       v-on:click="inviteToGroup"/>
+              </q-toolbar>
+              <q-item v-for="[key, member] of members.entries()" :key="member.id"
+                      clickable>
+                <q-menu>
+                  <member-card :member="member"
+                               @refresh="getMainMembers"
+                               @replacekey="generateRSAKeyPair(true)"/>
+                </q-menu>
+                <q-item-section v-if="key" style="width: 200px !important">
+                  <q-item-label class="fontbold text-md overflow-hidden whitespace-nowrap text-ellipsis">
+                    <member-icon :iurl="member.iurl"
+                                 :iurla="member.iurla"
+                                 :online="member.online"
+                                 size="48px"/>
+                    <span>{{ member.name }}</span>
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-scroll-area>
+          </q-tab-panel>
+          <q-tab-panel name="chat">
+            <q-card flat class="fmt_border fit">
+              <div class="wfull hfull
+                  relative max-w-[380px]
+                  background">
+                <div ref="ref_messages"
+                     id="ref_messages_video"
+                     class="wfull p4 column reverse items-center
+                        scroll relative"
+                     v-on:scroll="checkScroll">
+                  <div class="wfull max-w-3xl_custom pr2 column reverse no-wrap">
+                    <div v-for="msg in messages" :key="msg"
+                         class="relative wfull">
+                      <p v-if="msg._separator"
+                         class="headerline text-xs my4">
+                        {{ msg._ts }}
+                      </p>
+                      <template v-if="msg._editable">
+                        <q-chat-message
+                          sent
+                          :stamp="msg._ts"
+                          bg-color="primary"
+                          text-color="white"
+                          class="markedView wfull pl10">
+                          <template v-for="txt in msg._msgs" :key="txt">
+                            <chat-message-content :msg="txt"
+                                                  :sent="true"
+                                                  :reply-src="txt._source"
+                                                  class="wfull"
+                                                  @reply="handleReplyMessage"
+                                                  @edit="handleEditMessage"
+                                                  @delete="handleDeleteMessage"
+                                                  @copy="handleCopyMessage"
+                                                  @react="handleReactMessage"/>
+                          </template>
+                        </q-chat-message>
+                      </template>
+                      <template v-else>
+                        <q-chat-message
+                          :name="msg._name"
+                          :stamp="msg._ts"
+                          bg-color="brand-bg"
+                          text-color="brand-p"
+                          class="markedView wfull pr10">
+                          <template v-slot:avatar>
+                            <member-icon :iurl="msg._iurl"
+                                         :iurla="msg._iurla"
+                                         :online="false"
+                                         :hide-status="true"/>
+                          </template>
+                          <template v-for="txt in msg._msgs" :key="txt">
+                            <chat-message-content :msg="txt"
+                                                  :sent="false"
+                                                  :reply-src="txt._source"
+                                                  class="wfull"
+                                                  @reply="handleReplyMessage"
+                                                  @edit="handleEditMessage"
+                                                  @delete="handleDeleteMessage"
+                                                  @copy="handleCopyMessage"
+                                                  @react="handleReactMessage"/>
+                          </template>
+                        </q-chat-message>
+                      </template>
+                    </div>
+                    <div class="wfull flex justify-center mb8">
+                      <q-card flat class="px4 py2">
+                        <p class="text-sm">
+                          Welcome to {{ channel.t }}, {{ store.user.username }}.
+                        </p>
+                      </q-card>
+                    </div>
+                  </div>
+                </div>
+                <div id="ref_editor_container"
+                     ref="ref_editor_container"
+                     class="p2 flex column wfull absolute bottom-0
+                  background">
+                  <template v-if="pickingFile">
+                    <div class="flex column reverse items-center
+                      hfull relative surface rounded">
+                      <file-picker
+                        :uploading="isUploadingImage"
+                        :upload-progress="uploadingImageProgress"
+                        :file-ref="filePreference"
+                        @selected="handleGroupImageSelected"
+                        @upload="handleGroupImageUpload"/>
+                      <q-slide-transition :duration="pickDuration">
+                        <div v-show="selectedImage == null">
+                          <div class="surface p4 rounded-2 w84 min-h-42
+                            flex column mbauto
+                            items-center justify-center mt1">
+                            <q-toolbar-title
+                              class="flex column items-center justify-center
+                                   gap-4">
+                              <q-icon name="interests" size="4rem"/>
+                              <span class="text-subtitle2">
+                                  Select or drop a file to see a preview
+                                </span>
+                            </q-toolbar-title>
+                          </div>
+                        </div>
+                      </q-slide-transition>
+                    </div>
+                  </template>
+                  <div class="flex row justify-start items-center
+                    wfull max-w-3xl_custom py1 gap-4 h-[2.2rem]">
+                    <div v-if="activeMembers.size > 0"
+                         class="flex row justify-start items-center h-[2rem] gap2">
+                      <q-spinner-dots color="primary" size="2rem" class=""/>
+                      <template v-for="(usr, ix) of activeMembers" :key="usr">
+                        <template v-if="ix > 0">
+                          <span>|</span>
+                        </template>
+                        <p class="text-subtitle2">{{ usr[0] }}</p>
+                      </template>
+                    </div>
+                    <div v-if="idleMembers.size > 0"
+                         class="flex row justify-start items-center h-[2rem] gap2">
+                      <q-icon name="visibility" size="1rem" class=""/>
+                      <template v-for="(usr, ix) of idleMembers" :key="usr">
+                        <template v-if="ix > 0">
+                          <span>|</span>
+                        </template>
+                        <p class="text-subtitle2">{{ usr[0] }}</p>
+                      </template>
+                    </div>
+                  </div>
+                  <div class="flex column items-center wfull max-w-3xl_custom">
+                    <template v-if="replyingMessage">
+                      <div class="flex wfull px4 py2 mt2
+                        relative surface-variant">
+                        <p class="text-body2 fontbold mb2">
+                          Replying to message:
+                        </p>
+                        <q-chat-message
+                          :name="replyingMessage._name"
+                          :stamp="replyingMessage._ts"
+                          bg-color="primary"
+                          text-color="white"
+                          class="markedView wfull">
+                          <chat-message-content :msg="replyingMessage"
+                                                no-interaction
+                                                :sent="true"
+                                                class="wfull"/>
+                        </q-chat-message>
+                      </div>
+                    </template>
+                    <template v-if="editingMessage">
+                      <div class="flex wfull px4 py2 mt2
+                        relative surface-variant">
+                        <p class="text-body2 fontbold mb2">
+                          Editing message:
+                        </p>
+                        <q-chat-message
+                          :name="editingMessage._name"
+                          :stamp="editingMessage._ts"
+                          bg-color="primary"
+                          text-color="white"
+                          class="markedView wfull">
+                          <chat-message-content :msg="editingMessage"
+                                                no-interaction
+                                                :sent="true"
+                                                class="wfull"/>
+                        </q-chat-message>
+                      </div>
+                    </template>
+                  </div>
+                  <div class="wfull max-w-lg relative">
+                    <editor ref="ref_editor"
+                            v-model="newMessage"
+                            e-max-height="75dvh"
+                            prevent-enter
+                            hide-menu
+                            @kpress="handleEditorKeyDown"
+                            @fpaste="handleEditorPaste"
+                            @update:model-value="transmitActivity"/>
+                  </div>
+                </div>
+              </div>
+            </q-card>
+          </q-tab-panel>
+        </q-tab-panels>
       </q-drawer>
       <q-page-container>
         <q-page style="padding-top: 60px" class="background"
@@ -213,7 +399,7 @@
                 </q-breadcrumbs>
               </q-toolbar-title>
               <q-btn flat round dense icon="people"
-                     @click="sidebarRight = !sidebarRight">
+                     @click="toggleSidebarRight">
                 <q-tooltip class="text-body2">
                   Toggle&nbsp;Members
                 </q-tooltip>
@@ -579,189 +765,6 @@
   <g-i-f-viewer :is-open="isViewingGIFs"
                 :override-query="newMessage"
                 @selected="handleGIFSelection"/>
-  <q-dialog v-model="isShowingVideoChatMessages"
-            position="right" full-height seamless>
-    <q-card flat class="fmt_border"
-            style="max-height: calc(100% - 100px) !important;">
-      <div class="wfull hfull
-                  relative max-w-[380px]
-                  background">
-        <div ref="ref_messages"
-             id="ref_messages_video"
-             class="wfull p4 column reverse items-center pb10
-                    scroll relative"
-             v-on:scroll="checkScroll">
-          <div class="wfull max-w-3xl_custom pr2 column reverse no-wrap">
-            <div v-for="msg in messages" :key="msg"
-                 class="relative wfull">
-              <p v-if="msg._separator"
-                 class="headerline text-xs my4">
-                {{ msg._ts }}
-              </p>
-              <template v-if="msg._editable">
-                <q-chat-message
-                  sent
-                  :stamp="msg._ts"
-                  bg-color="primary"
-                  text-color="white"
-                  class="markedView wfull pl10">
-                  <template v-for="txt in msg._msgs" :key="txt">
-                    <chat-message-content :msg="txt"
-                                          :sent="true"
-                                          :reply-src="txt._source"
-                                          class="wfull"
-                                          @reply="handleReplyMessage"
-                                          @edit="handleEditMessage"
-                                          @delete="handleDeleteMessage"
-                                          @copy="handleCopyMessage"
-                                          @react="handleReactMessage"/>
-                  </template>
-                </q-chat-message>
-              </template>
-              <template v-else>
-                <q-chat-message
-                  :name="msg._name"
-                  :stamp="msg._ts"
-                  bg-color="brand-bg"
-                  text-color="brand-p"
-                  class="markedView wfull pr10">
-                  <template v-slot:avatar>
-                    <member-icon :iurl="msg._iurl"
-                                 :iurla="msg._iurla"
-                                 :online="false"
-                                 :hide-status="true"/>
-                  </template>
-                  <template v-for="txt in msg._msgs" :key="txt">
-                    <chat-message-content :msg="txt"
-                                          :sent="false"
-                                          :reply-src="txt._source"
-                                          class="wfull"
-                                          @reply="handleReplyMessage"
-                                          @edit="handleEditMessage"
-                                          @delete="handleDeleteMessage"
-                                          @copy="handleCopyMessage"
-                                          @react="handleReactMessage"/>
-                  </template>
-                </q-chat-message>
-              </template>
-            </div>
-            <div class="wfull flex justify-center mb8">
-              <q-card flat class="px4 py2">
-                <p class="text-sm">
-                  Welcome to {{ channel.t }}, {{ store.user.username }}.
-                </p>
-              </q-card>
-            </div>
-          </div>
-        </div>
-        <div id="ref_editor_container"
-             ref="ref_editor_container"
-             class="p2 flex column wfull absolute bottom-0
-                  background">
-          <template v-if="pickingFile">
-            <div class="flex column reverse items-center
-                      hfull relative surface rounded">
-              <file-picker
-                :uploading="isUploadingImage"
-                :upload-progress="uploadingImageProgress"
-                :file-ref="filePreference"
-                @selected="handleGroupImageSelected"
-                @upload="handleGroupImageUpload"/>
-              <q-slide-transition :duration="pickDuration">
-                <div v-show="selectedImage == null">
-                  <div class="surface p4 rounded-2 w84 min-h-42
-                            flex column mbauto
-                            items-center justify-center mt1">
-                    <q-toolbar-title
-                      class="flex column items-center justify-center
-                                   gap-4">
-                      <q-icon name="interests" size="4rem"/>
-                      <span class="text-subtitle2">
-                                  Select or drop a file to see a preview
-                                </span>
-                    </q-toolbar-title>
-                  </div>
-                </div>
-              </q-slide-transition>
-            </div>
-          </template>
-          <div class="flex row justify-start items-center
-                    wfull max-w-3xl_custom py1 gap-4 h-[2.2rem]">
-            <div v-if="activeMembers.size > 0"
-                 class="flex row justify-start items-center h-[2rem] gap2">
-              <q-spinner-dots color="primary" size="2rem" class=""/>
-              <template v-for="(usr, ix) of activeMembers" :key="usr">
-                <template v-if="ix > 0">
-                  <span>|</span>
-                </template>
-                <p class="text-subtitle2">{{ usr[0] }}</p>
-              </template>
-            </div>
-            <div v-if="idleMembers.size > 0"
-                 class="flex row justify-start items-center h-[2rem] gap2">
-              <q-icon name="visibility" size="1rem" class=""/>
-              <template v-for="(usr, ix) of idleMembers" :key="usr">
-                <template v-if="ix > 0">
-                  <span>|</span>
-                </template>
-                <p class="text-subtitle2">{{ usr[0] }}</p>
-              </template>
-            </div>
-          </div>
-          <div class="flex column items-center wfull max-w-3xl_custom">
-            <template v-if="replyingMessage">
-              <div class="flex wfull px4 py2 mt2
-                        relative surface-variant">
-                <p class="text-body2 fontbold mb2">
-                  Replying to message:
-                </p>
-                <q-chat-message
-                  :name="replyingMessage._name"
-                  :stamp="replyingMessage._ts"
-                  bg-color="primary"
-                  text-color="white"
-                  class="markedView wfull">
-                  <chat-message-content :msg="replyingMessage"
-                                        no-interaction
-                                        :sent="true"
-                                        class="wfull"/>
-                </q-chat-message>
-              </div>
-            </template>
-            <template v-if="editingMessage">
-              <div class="flex wfull px4 py2 mt2
-                        relative surface-variant">
-                <p class="text-body2 fontbold mb2">
-                  Editing message:
-                </p>
-                <q-chat-message
-                  :name="editingMessage._name"
-                  :stamp="editingMessage._ts"
-                  bg-color="primary"
-                  text-color="white"
-                  class="markedView wfull">
-                  <chat-message-content :msg="editingMessage"
-                                        no-interaction
-                                        :sent="true"
-                                        class="wfull"/>
-                </q-chat-message>
-              </div>
-            </template>
-          </div>
-          <div class="wfull max-w-lg relative">
-            <editor ref="ref_editor"
-                    v-model="newMessage"
-                    e-max-height="75dvh"
-                    prevent-enter
-                    hide-menu
-                    @kpress="handleEditorKeyDown"
-                    @fpaste="handleEditorPaste"
-                    @update:model-value="transmitActivity"/>
-          </div>
-        </div>
-      </div>
-    </q-card>
-  </q-dialog>
 </template>
 
 <script>
@@ -816,6 +819,8 @@ export default {
       store: useStore(),
       sidebarLeft: false,
       sidebarRight: false,
+      sidebarRightWidth: 256,
+      sidebarRightPanel: 'members',
       chatReference: '',
       chatID: '',
       chatPW: '',
@@ -2026,6 +2031,7 @@ export default {
       if (this.channel.type === 'video') {
         this.sidebarLeft = false
         this.sidebarRight = false
+        this.sidebarRightWidth = 380
         await this.startCall(undefined, {
           video: true,
           audio: true
@@ -2035,6 +2041,9 @@ export default {
           video: false,
           audio: true
         })
+      } else {
+        this.sidebarRightWidth = 256
+        this.sidebarRightPanel = 'members'
       }
       // Finish preparations
       this.manageKeyListeners()
@@ -2819,6 +2828,7 @@ export default {
       if (files.length === 0) return
       if (this.channel.type === 'video' && !this.isShowingVideoChatMessages) {
         this.isShowingVideoChatMessages = true
+        this.sidebarRightPanel = 'chat'
       }
       this.pickingFile = true
       setTimeout(() => {
@@ -3138,8 +3148,8 @@ export default {
       this.peerCallEnded = true
     },
     toggleChatSidebar: function () {
-      this.isShowingVideoChatMessages = !this.isShowingVideoChatMessages
-      if (this.isShowingVideoChatMessages) {
+      if (!this.isShowingVideoChatMessages) {
+        this.sidebarRightPanel = 'chat'
         setTimeout(() => {
           const elem = document.getElementById('ref_messages_video')
           if (elem) {
@@ -3150,8 +3160,19 @@ export default {
             app: 'editor',
             type: 'focus'
           })
-        }, 0)
+        }, 100)
+      } else {
+        this.sidebarRightPanel = 'members'
       }
+      this.isShowingVideoChatMessages = !this.isShowingVideoChatMessages
+      this.sidebarRight = this.isShowingVideoChatMessages
+    },
+    toggleSidebarRight: function () {
+      if (!this.sidebarRight) {
+        this.isShowingVideoChatMessages = false
+        this.sidebarRightPanel = 'members'
+      }
+      this.sidebarRight = !this.sidebarRight
     },
     /**
      * Broadcasts a message including type to all members (active/online or not) of this group
@@ -3345,6 +3366,10 @@ export default {
 
 .max-w-3xl_custom {
   max-width: 52rem;
+}
+
+.q-tab-panel {
+  padding: 0 !important;
 }
 
 </style>

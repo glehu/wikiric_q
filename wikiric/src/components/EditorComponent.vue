@@ -96,7 +96,9 @@ export default {
   },
   beforeUnmount () {
     this.bc = null
-    this.editor.destroy()
+    if (this.editor) {
+      this.editor.destroy()
+    }
   },
   methods: {
     handleMounted: async function () {
