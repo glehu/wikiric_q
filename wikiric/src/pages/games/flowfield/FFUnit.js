@@ -22,12 +22,13 @@ class FFUnit {
    * @param {Number} dmg
    * @param {Number} hp
    * @param {Number} xp
+   * @param {String} visualType
    */
-  constructor (x, y, speed, id, dmg, hp, xp) {
+  constructor (x, y, speed, id, dmg, hp, xp, visualType) {
     this.id = id
     /**
      * This FF Unit's Position
-     * @type {THREE.Vector2}¥
+     * @type {THREE.Vector2}
      */
     this.pos = new THREE.Vector2(x, y)
     /**
@@ -39,12 +40,23 @@ class FFUnit {
      * This FF Unit's Maximum Speed
      * @type {Number}
      */
-    this.maxSpeed = speed
+    this.maxSpeed = speed + Math.random()
     /**
      * This FF Unit's State
      * @type {Number}
      */
     this.state = 0
+    /**
+     * This FF Unit's Animation State
+     * @type {Number}
+     */
+    this.animState = 0
+    /**
+     * This FF Unit's Animation Frame count. Basically determines the
+     * amount of frames left to display the current animation state
+     * @type {Number}
+     */
+    this.animFrames = 0
     /**
      * This FF Unit's Damage per Second
      * @type {Number}
@@ -65,6 +77,7 @@ class FFUnit {
      * @type {Number}
      */
     this.xp = xp
+    this.visualType = visualType
   }
 }
 

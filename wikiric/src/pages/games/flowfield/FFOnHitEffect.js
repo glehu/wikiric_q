@@ -15,23 +15,34 @@ class FFOnHitEffect {
    * @param {String} type
    * @param {any} content
    * @param {Number} ttl
+   * @param {Number} reps
    */
   constructor (x,
                y,
                type,
                content,
-               ttl) {
+               ttl,
+               reps) {
     this.x = x
     this.y = y
     this.type = type
     this.content = content
     this.ttl = ttl
+    this._ttl = ttl
+    this.reps = reps
+    this.count = 0
   }
 
   tick () {
     this.ttl -= 1
     if (this.type === 'text') {
       this.y -= 0.001
+    }
+    // If there are repetitions left, we will reset the ttl
+    if (this.ttl <= 0 && this.reps > 0) {
+      this.ttl = this._ttl
+      this.reps -= 1
+      this.count += 1
     }
     return this.ttl >= 0
   }

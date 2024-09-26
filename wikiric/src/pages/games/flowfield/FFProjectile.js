@@ -21,13 +21,15 @@ class FFProjectile {
    * @param {Number} dmg
    * @param {Number} hitRange
    * @param {Number} radius
+   * @param {String} visualType
    */
   constructor (pos,
                vec,
                hitCount,
                dmg,
                hitRange,
-               radius) {
+               radius,
+               visualType) {
     /**
      * This FF Projectile's Position
      * @type {THREE.Vector2}
@@ -39,17 +41,27 @@ class FFProjectile {
      */
     this.vec = new THREE.Vector2(vec.x, vec.y)
     /**
-     * This FF Projectile's Hit Count
+     * This FF Projectile's Hit Count determines how often
+     * ...this projectile can hit before expiration
      * @type {Number}
      */
     this.hitCount = hitCount
     /**
-     * This FF Projectile's Damage
+     * This FF Projectile's Damage applied on hit
      * @type {Number}
      */
     this.dmg = dmg
     this.hitRange = hitRange
+    /**
+     * This FF Projectile's Radius determines the explosion radius
+     * @type {Number}
+     */
     this.radius = radius
+    /**
+     * This FF Projectile's Visual Type e.g. bullet or fire
+     * @type {String}
+     */
+    this.visualType = visualType
   }
 }
 

@@ -28,6 +28,7 @@ class FFWeapon {
    * @param {Number} hitCountLevelUp
    * @param {Number} hitRange
    * @param {Number} hitRangeLevelUp
+   * @param {String} visualType
    */
   constructor (name,
                range,
@@ -40,7 +41,8 @@ class FFWeapon {
                hitCount,
                hitCountLevelUp,
                hitRange,
-               hitRangeLevelUp) {
+               hitRangeLevelUp,
+               visualType) {
     this.level = 1
     /**
      * This FF Weapon's Name
@@ -97,6 +99,7 @@ class FFWeapon {
      */
     this.hitRange = hitRange
     this.hitRangeLevelUp = hitRangeLevelUp
+    this.visualType = visualType
   }
 
   /**
@@ -255,7 +258,14 @@ class FFWeapon {
     vector.normalize()
     vector.multiplyScalar(speed)
     // Return projectile
-    return new FFProjectile(pos, vector, hits, dmg, hitRange, radius)
+    return new FFProjectile(
+      pos,
+      vector,
+      hits,
+      dmg,
+      hitRange,
+      radius,
+      this.visualType)
   }
 
   /**

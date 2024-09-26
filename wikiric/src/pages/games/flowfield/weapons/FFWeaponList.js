@@ -33,7 +33,7 @@ class FFWeaponList {
     weapon = new FFWeapon(
       'Gun',
       40,
-      5,
+      500,
       1,
       1,
       60,
@@ -42,7 +42,8 @@ class FFWeaponList {
       1,
       0,
       0.2,
-      0)
+      0,
+      'bullet')
     powerUp = new FFPowerUp(
       0,
       1,
@@ -75,7 +76,8 @@ class FFWeaponList {
       5,
       1,
       0.2,
-      0)
+      0,
+      'fire')
     powerUp = new FFPowerUp(
       0,
       1,
@@ -108,7 +110,8 @@ class FFWeaponList {
       1,
       0,
       2,
-      0.1)
+      0.1,
+      'rocket')
     powerUp = new FFPowerUp(
       0,
       1,
@@ -133,7 +136,7 @@ class FFWeaponList {
       'Shotgun',
       40,
       15,
-      1,
+      2,
       2,
       120,
       4,
@@ -141,7 +144,8 @@ class FFWeaponList {
       2,
       0,
       0.2,
-      0)
+      0,
+      'bullet')
     this.categories.starter.push(weapon)
     /**
      * STARTER WEAPON: SNIPER
@@ -151,7 +155,7 @@ class FFWeaponList {
       'Sniper',
       40,
       40,
-      1,
+      5,
       1,
       200,
       10,
@@ -159,7 +163,8 @@ class FFWeaponList {
       3,
       0,
       0.4,
-      0)
+      0,
+      'bullet')
     this.categories.starter.push(weapon)
   }
 }

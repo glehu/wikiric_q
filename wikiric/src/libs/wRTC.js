@@ -99,9 +99,9 @@ const WRTC = {
    * 1. Better performance than TCP (no ACK and no resending of frames)
    * 2. Better reliability than UDP (discarding of delayed frames)
    *
-   * This protocol is useful for media streaming or streaming data of no chronological importance
+   * This protocol is useful for media streaming or streaming data of no chronological importance.
    *
-   * It is advised to periodically send data where a single missed frame could cause problems
+   * It is advised to periodically send data where a single missed frame could cause problems.
    *
    * @param {(MediaStream|null)} stream - Outgoing media stream
    * @param {string} remoteName - Remote username
@@ -185,10 +185,13 @@ const WRTC = {
       if (!peerConnection.dataChannel) {
         // We use the Partially Reliable Stream Control Transport Protocol (PR-SCTP)
         // ...for our WebRTC DataChannel to ensure...
-        //      1. Better performance than TCP (no ACK and no resending of frames)
-        //      2. Better reliability than UDP (discarding of delayed frames)
-        // This protocol is useful for media streaming or streaming data of no chronological importance
-        // It is advised to periodically send data where a single missed frame could cause problems
+        //
+        // 1. Better performance than TCP (no ACK and no resending of frames)
+        // 2. Better reliability than UDP (discarding of delayed frames)
+        //
+        // This protocol is useful for media streaming or streaming data of no chronological importance.
+        //
+        // It is advised to periodically send data where a single missed frame could cause problems.
         peerConnection.dataChannel = peerConnection.createDataChannel('data', {
           negotiated: true,
           id: 0,

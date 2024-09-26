@@ -660,9 +660,126 @@
     </q-layout>
   </q-page>
   <div class="hidden">
+    <!-- Slime Model -->
     <img id="slime"
          src="https://wikiric.xyz/files/public/get/018f866a-4182-7aef-b1a4-1a75a7e7c21f"
          width="24" height="24" alt="img"/>
+    <!-- Slime Jump Animation -->
+    <img id="slime_jump_0"
+         src="https://wikiric.xyz/files/public/get/0192188b-1e6b-713e-83b1-d47237892d54"
+         width="256" height="256" alt="img"/>
+    <img id="slime_jump_1"
+         src="https://wikiric.xyz/files/public/get/0192188c-69fa-713e-af19-957f213ee40e"
+         width="256" height="256" alt="img"/>
+    <img id="slime_jump_2"
+         src="https://wikiric.xyz/files/public/get/0192188c-df01-713e-90f5-682efdb9db70"
+         width="256" height="256" alt="img"/>
+    <img id="slime_jump_3"
+         src="https://wikiric.xyz/files/public/get/0192188d-2ee9-713e-994f-db6a6c9feb98"
+         width="256" height="256" alt="img"/>
+    <img id="slime_jump_4"
+         src="https://wikiric.xyz/files/public/get/0192188d-73eb-713e-8c6f-c9ddd21bcf11"
+         width="256" height="256" alt="img"/>
+    <img id="slime_jump_5"
+         src="https://wikiric.xyz/files/public/get/0192188d-c1f9-713e-84af-fe067815c7aa"
+         width="256" height="256" alt="img"/>
+    <!-- Slime Death Animation -->
+    <img id="slime_death_0"
+         src="https://wikiric.xyz/files/public/get/01921a47-19f5-713e-8782-c1f7bbbd2d96"
+         width="256" height="256" alt="img"/>
+    <img id="slime_death_1"
+         src="https://wikiric.xyz/files/public/get/01921a47-6f20-713e-982a-23ce6f4e1c0d"
+         width="256" height="256" alt="img"/>
+    <img id="slime_death_2"
+         src="https://wikiric.xyz/files/public/get/01921a47-ba74-713e-9ab3-02a5d9aa0027"
+         width="256" height="256" alt="img"/>
+    <img id="slime_death_3"
+         src="https://wikiric.xyz/files/public/get/01921a48-28f1-713e-bb94-bb1b9167b6e9"
+         width="256" height="256" alt="img"/>
+    <img id="slime_death_4"
+         src="https://wikiric.xyz/files/public/get/01921a48-5ed9-713e-8068-209666df5e86"
+         width="256" height="256" alt="img"/>
+    <img id="slime_death_5"
+         src="https://wikiric.xyz/files/public/get/01921a48-89d8-713e-b767-5de07ece95d2"
+         width="256" height="256" alt="img"/>
+    <img id="slime_death_6"
+         src="https://wikiric.xyz/files/public/get/01921a48-b528-713e-8575-bf6437dae6a9"
+         width="256" height="256" alt="img"/>
+    <img id="slime_death_7"
+         src="https://wikiric.xyz/files/public/get/01921a48-e034-713e-bb0c-188584dbfa77"
+         width="256" height="256" alt="img"/>
+    <img id="slime_death_8"
+         src="https://wikiric.xyz/files/public/get/01921a49-0797-713e-a977-6e88f56acd06"
+         width="256" height="256" alt="img"/>
+    <!-- Skeleton Model -->
+    <img id="skeleton_0"
+         src="https://wikiric.xyz/files/public/get/01921b46-63ba-713e-8211-cbdd4b46f529"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_1"
+         src="https://wikiric.xyz/files/public/get/01921b46-f48a-713e-b5e7-37ec8341349b"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_2"
+         src="https://wikiric.xyz/files/public/get/01921b47-35eb-713e-a24b-ba15ac208320"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_3"
+         src="https://wikiric.xyz/files/public/get/01921b47-61ec-713e-902a-eff2141f5bc1"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_4"
+         src="https://wikiric.xyz/files/public/get/01921b47-8f06-713e-b3ee-90de9eec8bbe"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_5"
+         src="https://wikiric.xyz/files/public/get/01921b48-2732-713e-b68b-71fa0c75b5ae"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_6"
+         src="https://wikiric.xyz/files/public/get/01921b48-5257-713e-a70c-c89ffe4d29b8"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_7"
+         src="https://wikiric.xyz/files/public/get/01921b48-8099-713e-8993-0a13e8208324"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_8"
+         src="https://wikiric.xyz/files/public/get/01921b48-abb8-713e-980a-18c991268aa2"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_9"
+         src="https://wikiric.xyz/files/public/get/01921b48-da8f-713e-bbf5-f4298897d924"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_10"
+         src="https://wikiric.xyz/files/public/get/01921b49-088c-713e-9f8e-45fc1a9ef706"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_11"
+         src="https://wikiric.xyz/files/public/get/01921b49-345b-713e-90c4-810b6ea3b7a9"
+         width="256" height="256" alt="img"/>
+    <!-- Skeleton Death Animation -->
+    <img id="skeleton_death_0"
+         src="https://wikiric.xyz/files/public/get/01921b4b-3f6e-713e-90f7-2e6f8b26d777"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_death_1"
+         src="https://wikiric.xyz/files/public/get/01921b4b-dd6a-713e-a7c5-431b27c54095"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_death_2"
+         src="https://wikiric.xyz/files/public/get/01921b4c-0b36-713e-986a-a147f4b1a2b4"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_death_3"
+         src="https://wikiric.xyz/files/public/get/01921b4c-2fb2-713e-b470-ab59d5c6a95d"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_death_4"
+         src="https://wikiric.xyz/files/public/get/01921b4c-5d5d-713e-9bdb-b8dfdb25fe67"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_death_5"
+         src="https://wikiric.xyz/files/public/get/01921b4c-9627-713e-a118-b1c48569ecfd"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_death_6"
+         src="https://wikiric.xyz/files/public/get/01921b4c-c0f0-713e-a131-215fbb55da63"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_death_7"
+         src="https://wikiric.xyz/files/public/get/01921b4d-4ea6-713e-a6eb-a53a23e8d76e"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_death_8"
+         src="https://wikiric.xyz/files/public/get/01921b4d-93f3-713e-8757-eb68d755f509"
+         width="256" height="256" alt="img"/>
+    <img id="skeleton_death_9"
+         src="https://wikiric.xyz/files/public/get/01921b4d-bf68-713e-a0e8-ee9ff9b234e9"
+         width="256" height="256" alt="img"/>
+    <!-- Player Model -->
     <img id="wizzard"
          src="https://wikiric.xyz/files/public/get/018f9cfd-e044-738d-8df8-199c73d55585"
          width="48" height="48" alt="img"/>
@@ -732,8 +849,13 @@ export default {
           icon: 'sym_o_flag'
         },
         {
-          label: 'Enemy',
-          value: 'enemy',
+          label: 'Slime',
+          value: 'enemy_slime',
+          icon: 'sym_o_bug_report'
+        },
+        {
+          label: 'Skeleton',
+          value: 'enemy_skeleton',
           icon: 'sym_o_bug_report'
         },
         {
@@ -900,11 +1022,14 @@ export default {
       sessions: new Map(),
       coPlayers: new Map(),
       peerCons: new Map(),
-      wrtc: WRTC
+      wrtc: WRTC,
+      cWorker: null
     }
   },
   mounted () {
-    this.initFunction()
+    setTimeout(() => {
+      this.initFunction()
+    }, 0)
   },
   beforeUnmount () {
     this.manageKeyListeners(true)
@@ -952,6 +1077,7 @@ export default {
       this.powerUpList.initiateStarterPowerUps()
       this.setUpPlayer()
       this.setUpSyncRoom()
+      this.setUpCalcWorker()
     },
     manageKeyListeners: function (forceRemove = false) {
       document.removeEventListener('keydown', this.handleFFKeyDown, false)
@@ -1303,25 +1429,28 @@ export default {
       // Process input type
       switch (this.brush) {
         case 'wall':
-          this.addWall(position)
+          this.addWall(position, true)
           // Re-calculate flow field
           this.handleCalculation()
           break
         case 'tile':
-          this.addTile(position)
+          this.addTile(position, true)
           break
         case 'goal':
           this.addGoal(position)
           break
-        case 'enemy':
-          this.addEnemy(position)
+        case 'enemy_slime':
+          this.addEnemy(position, 'slime')
+          break
+        case 'enemy_skeleton':
+          this.addEnemy(position, 'skeleton')
           break
         case 'eraser':
           this.removeWall(position)
           break
       }
     },
-    addWall: function (position) {
+    addWall: function (position, notifyOthers) {
       const arrayPos = this.convertXYToArrayPos(position.x, position.y)
       if (arrayPos > this.costField.length) {
         return
@@ -1337,7 +1466,15 @@ export default {
       }
       // Set highest cost value
       this.costField[arrayPos] = 255
-      // Check if there is already the same tile present
+      // Notify FFCalcWorker
+      if (this.cWorker) {
+        this.cWorker.postMessage({
+          msg: '[c:cost]',
+          pos: arrayPos,
+          val: 255
+        })
+      }
+      // Check if there is the same tile present already
       const contents = this.tileTree.getContents(
         position.x - 1,
         position.y - 1,
@@ -1351,10 +1488,16 @@ export default {
         }
       }
       const tile = new FFTile(position.x, position.y, xNew, yNew, this.tile)
+      // Notify co-players
+      if (notifyOthers) {
+        this.wrtc.broadcastDataChannelMessage(
+          `scost;${position.x};${position.y};${xNew};${yNew};${this.tile}`)
+      }
+      // Insert and render tile
       this.tileTree.insert(tile)
       this.renderTiles(this.offsetVector)
     },
-    addTile: function (position) {
+    addTile: function (position, notifyOthers) {
       const arrayPos = this.convertXYToArrayPos(position.x, position.y)
       if (arrayPos > this.costField.length) {
         return
@@ -1382,6 +1525,11 @@ export default {
         }
       }
       const tile = new FFTile(position.x, position.y, xNew, yNew, this.tile)
+      // Notify co-players
+      if (notifyOthers) {
+        this.wrtc.broadcastDataChannelMessage(
+          `stile;${position.x};${position.y};${xNew};${yNew};${this.tile}`)
+      }
       this.tileTree.insert(tile)
       this.renderTiles(this.offsetVector)
     },
@@ -1476,35 +1624,84 @@ export default {
         this.ctxPlayer.fillText(val.usr, xNew, yNew)
       })
     },
-    addEnemy: function (position) {
+    addEnemy: function (position, enemyType) {
       const arrayPos = this.convertXYToArrayPos(position.x, position.y)
       if (arrayPos < 0 || arrayPos > this.costField.length) {
         return
       }
-      // Calculate positions
-      const xNew = position.x * this.gridSize
-      const yNew = position.y * this.gridSize
       // Add enemy to list
       const id = this.getUUID()
       // Scale HP with Level
-      let hp = 20
+      let hp = 1
+      let xp = 1
+      let dmg
+      /**
+       * @type {HTMLImageElement}
+       */
+      let image
+      let dim
+      let xNew
+      let yNew
+      if (enemyType === 'slime') {
+        hp = 20
+        dmg = 10
+        xp = 100
+        image = document.getElementById('slime_jump_0')
+        dim = 32
+        xNew = position.x * this.gridSize + 8
+        yNew = position.y * this.gridSize + 8
+      } else if (enemyType === 'skeleton') {
+        hp = 150
+        dmg = 75
+        xp = 1000
+        image = document.getElementById('skeleton_0')
+        dim = 100
+        xNew = position.x * this.gridSize - 20
+        yNew = position.y * this.gridSize - 20
+      }
       hp += ((this.goalLevel * hp) - (this.goalLevel * 1.5))
       const unit = new FFUnit(
         position.x,
         position.y,
         1,
         id,
-        10,
+        dmg,
         hp,
-        100)
+        xp,
+        enemyType)
       this.enemies.set(id, unit)
-      const image = document.getElementById('slime')
       // Draw enemy
       if (image) {
-        this.ctx3.drawImage(image, xNew, yNew, 32, 32)
+        this.ctx3.drawImage(image, xNew, yNew, dim, dim)
       }
     },
     handleCalculation: async function () {
+      // Do we have to calculate on our own?
+      // If a dedicated worker is available we will utilize
+      // ...the calculation worker to free the UI thread
+      let calcSelf = true
+      if (this.cWorker) {
+        calcSelf = false
+        this.cWorker.postMessage({
+          msg: '[c:setp]',
+          x: this.goalPosition.x,
+          y: this.goalPosition.y
+        })
+        this.cWorker.postMessage({
+          msg: '[c:seto]',
+          x: this.offsetVector.x,
+          y: this.offsetVector.y
+        })
+        this.cWorker.postMessage({
+          msg: '[c:calc]'
+        })
+        if (this.drawHeatmap) {
+          this.drawHeatmapCtx()
+        }
+      }
+      if (!calcSelf) {
+        return
+      }
       // this.ctx.clearRect(0, 0, this.width, this.height)
       // Integration grid always needs to be initialized
       this.initializeIntegrationGrid()
@@ -1700,7 +1897,53 @@ export default {
       }
       // Allocate memory for variables
       let tmp
-      const image = document.getElementById('slime')
+      const images = {
+        walk: [
+          document.getElementById('slime_jump_0'),
+          document.getElementById('slime_jump_1'),
+          document.getElementById('slime_jump_2'),
+          document.getElementById('slime_jump_3'),
+          document.getElementById('slime_jump_4'),
+          document.getElementById('slime_jump_5')
+        ],
+        death: [
+          document.getElementById('slime_death_0'),
+          document.getElementById('slime_death_1'),
+          document.getElementById('slime_death_2'),
+          document.getElementById('slime_death_3'),
+          document.getElementById('slime_death_4'),
+          document.getElementById('slime_death_5'),
+          document.getElementById('slime_death_6'),
+          document.getElementById('slime_death_7'),
+          document.getElementById('slime_death_8')
+        ],
+        skeleton_walk: [
+          document.getElementById('skeleton_0'),
+          document.getElementById('skeleton_1'),
+          document.getElementById('skeleton_2'),
+          document.getElementById('skeleton_3'),
+          document.getElementById('skeleton_4'),
+          document.getElementById('skeleton_5'),
+          document.getElementById('skeleton_6'),
+          document.getElementById('skeleton_7'),
+          document.getElementById('skeleton_8'),
+          document.getElementById('skeleton_9'),
+          document.getElementById('skeleton_10'),
+          document.getElementById('skeleton_11')
+        ],
+        skeleton_death: [
+          document.getElementById('skeleton_death_0'),
+          document.getElementById('skeleton_death_1'),
+          document.getElementById('skeleton_death_2'),
+          document.getElementById('skeleton_death_3'),
+          document.getElementById('skeleton_death_4'),
+          document.getElementById('skeleton_death_5'),
+          document.getElementById('skeleton_death_6'),
+          document.getElementById('skeleton_death_7'),
+          document.getElementById('skeleton_death_8'),
+          document.getElementById('skeleton_death_9')
+        ]
+      }
       /**
        * @type {THREE.Vector2}
        */
@@ -1776,19 +2019,19 @@ export default {
           for (const [id, unit] of this.enemies) {
             if (id) qtree.insert(unit)
           }
-          this.applyEnemyMovement(image, cacheMap, cacheDiff, qtree, timeDelta)
+          this.applyEnemyMovement(images, cacheMap, cacheDiff, qtree, timeDelta)
           // Now check if any enemy has come close to the players
-          this.checkProximityDamage(qtree)
-          this.checkCoPlayersProximityDamage(qtree)
+          this.checkProximityDamage(qtree, images)
+          this.checkCoPlayersProximityDamage(qtree, images)
         }
         // #### WEAPON ACTIONS ####
         // Render projectiles
         if (this.goalWeaponProjectiles.length > 0) {
-          this.handleProjectiles(qtree, timeDelta)
+          this.handleProjectiles(qtree, timeDelta, images)
         }
         // #### ON HIT EFFECTS ####
         if (this.onHitEffects.length > 0) {
-          this.handleOnHitEffects(qtree)
+          this.handleOnHitEffects(qtree, images)
         }
       }
       // Start first simulation step
@@ -1810,9 +2053,7 @@ export default {
               Math.round(this.goalPosition.x - this.offsetVector.x),
               Math.round(this.goalPosition.y - this.offsetVector.y))
             // Calculate new paths
-            setTimeout(() => {
-              this.handleCalculation()
-            }, 0)
+            this.handleCalculation()
           }
         }
       }
@@ -1909,7 +2150,7 @@ export default {
               diff.sub(tVec)
               diff.divideScalar(Math.pow(dist, 2))
               wallVec.add(diff)
-              if (this.drawWallCollision) {
+              if (!this.drawWallCollision) {
                 continue
               }
               this.ctx2.strokeStyle = '#F00'
@@ -1947,6 +2188,19 @@ export default {
         // Apply movement vectors
         this.offsetVector.add(endVector)
         this.goalPosition.add(this.goalMovementVector)
+        // Notify FFCalcWorker
+        if (this.cWorker) {
+          this.cWorker.postMessage({
+            msg: '[c:setp]',
+            x: this.goalPosition.x,
+            y: this.goalPosition.y
+          })
+          this.cWorker.postMessage({
+            msg: '[c:seto]',
+            x: this.offsetVector.x,
+            y: this.offsetVector.y
+          })
+        }
       }
     },
     applyCoPlayersMovement: function (timeDelta) {
@@ -1957,6 +2211,14 @@ export default {
       for (const [key, val] of this.coPlayers.entries()) {
         posObj = val
         posObj = this.applyCoPlayerMovement(timeDelta, posObj)
+        if (this.cWorker) {
+          this.cWorker.postMessage({
+            msg: '[c:copo]',
+            usr: key,
+            x: posObj.x - posObj.xo,
+            y: posObj.y - posObj.yo
+          })
+        }
         this.coPlayers.set(key, posObj)
       }
     },
@@ -2027,7 +2289,7 @@ export default {
               diff.sub(tVec)
               diff.divideScalar(Math.pow(dist, 2))
               wallVec.add(diff)
-              if (this.drawWallCollision) {
+              if (!this.drawWallCollision) {
                 continue
               }
               this.ctx2.strokeStyle = '#F00'
@@ -2178,17 +2440,45 @@ export default {
           endVector.multiplyScalar(timeDelta)
           current.pos.add(endVector)
         }
-        // Write back enemy
-        this.enemies.set(id, current)
         // Draw enemy
         if (image) {
-          xNew = (current.pos.x + this.offsetVector.x) * this.gridSize
-          yNew = (current.pos.y + this.offsetVector.y) * this.gridSize
-          this.ctx3.drawImage(image, xNew, yNew, 32, 32)
+          // What image are we going to use for this enemy?
+          current.animFrames -= 1
+          if (current.animFrames <= 0) {
+            current.animFrames = 10
+            current.animState += 1
+          }
+          if (current.visualType === 'slime') {
+            xNew = (current.pos.x + this.offsetVector.x) * this.gridSize + 8
+            yNew = (current.pos.y + this.offsetVector.y) * this.gridSize + 8
+            if (current.animState >= image.walk.length) {
+              current.animState = 0
+            }
+            this.ctx3.drawImage(
+              image.walk[current.animState],
+              xNew,
+              yNew,
+              32,
+              32)
+          } else if (current.visualType === 'skeleton') {
+            xNew = (current.pos.x + this.offsetVector.x) * this.gridSize - 20
+            yNew = (current.pos.y + this.offsetVector.y) * this.gridSize - 20
+            if (current.animState >= image.skeleton_walk.length) {
+              current.animState = 0
+            }
+            this.ctx3.drawImage(
+              image.skeleton_walk[current.animState],
+              xNew,
+              yNew,
+              100,
+              100)
+          }
         }
+        // Write back enemy
+        this.enemies.set(id, current)
       }
     },
-    checkProximityDamage: function (qtree) {
+    checkProximityDamage: function (qtree, images) {
       const others = qtree.getContents(
         this.goalPosition.x - this.offsetVector.x - (this.goalMaxRange / 2),
         this.goalPosition.y - this.offsetVector.y - (this.goalMaxRange / 2),
@@ -2267,6 +2557,13 @@ export default {
             // Beam - Directly damage enemy
             other.hp -= projectiles[j].dmg
             if (other.hp <= 0) {
+              this.onHitEffects.push(new FFOnHitEffect(
+                other.pos.x,
+                other.pos.y,
+                'death',
+                images.death,
+                10,
+                8))
               this.goalXP += other.xp
               this.checkXP()
               this.enemies.delete(other.id)
@@ -2288,18 +2585,19 @@ export default {
       }
       this.ctx3.stroke()
     },
-    checkCoPlayersProximityDamage: function (qtree) {
+    checkCoPlayersProximityDamage: function (qtree, images) {
       if (!this.coPlayers || this.coPlayers.size < 1) {
         return
       }
       let posObj
       for (const [key, val] of this.coPlayers.entries()) {
         posObj = val
-        posObj = this.checkCoPlayerProximityDamage(qtree, posObj)
+        posObj = this.checkCoPlayerProximityDamage(qtree, posObj, images)
         this.coPlayers.set(key, posObj)
       }
     },
-    checkCoPlayerProximityDamage: function (qtree, coPlayer) {
+    checkCoPlayerProximityDamage: function (qtree, coPlayer, images) {
+      if (!coPlayer.weapons) return coPlayer
       const others = qtree.getContents(
         coPlayer.x - (this.goalMaxRange / 2),
         coPlayer.y - (this.goalMaxRange / 2),
@@ -2363,6 +2661,13 @@ export default {
             // Beam - Directly damage enemy
             other.hp -= projectiles[j].dmg
             if (other.hp <= 0) {
+              this.onHitEffects.push(new FFOnHitEffect(
+                other.pos.x,
+                other.pos.y,
+                'death',
+                images.death,
+                10,
+                8))
               this.enemies.delete(other.id)
             } else {
               this.enemies.set(other.id, other)
@@ -2396,7 +2701,7 @@ export default {
         this.coPlayers.set(key, val)
       }
     },
-    handleProjectiles: function (qtree, timeDelta) {
+    handleProjectiles: function (qtree, timeDelta, images) {
       let dist
       let tmp, tmp2, tmp3
       let projectile
@@ -2415,15 +2720,57 @@ export default {
         }
         // Render projectile
         this.ctx3.beginPath()
-        this.ctx3.fillStyle = '#F00'
-        this.ctx3.lineHeight = 4
-        this.ctx3.lineWidth = 4
-        this.ctx3.rect(
-          ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
-          ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
-          4, 4
-        )
-        this.ctx3.fill()
+        if (projectile.visualType === 'bullet') {
+          this.ctx3.fillStyle = '#fff400'
+          this.ctx3.arc(
+            ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+            ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+            2,
+            0,
+            2 * Math.PI)
+          this.ctx3.fill()
+        } else if (projectile.visualType === 'rocket') {
+          this.ctx3.fillStyle = '#fff400'
+          this.ctx3.arc(
+            ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+            ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+            2,
+            0,
+            2 * Math.PI)
+          this.ctx3.fill()
+        } else if (projectile.visualType === 'fire') {
+          this.ctx3.fillStyle = '#f00'
+          this.ctx3.globalAlpha = 0.3
+          this.ctx3.arc(
+            ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+            ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+            20,
+            0,
+            2 * Math.PI)
+          this.ctx3.fill()
+          this.ctx3.beginPath()
+          this.ctx3.globalAlpha = 0.5
+          this.ctx3.fillStyle = '#fff400'
+          this.ctx3.arc(
+            ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+            ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+            5,
+            0,
+            2 * Math.PI)
+          this.ctx3.fill()
+          this.ctx3.beginPath()
+          this.ctx3.globalAlpha = 0.7
+          this.ctx3.fillStyle = '#fffcb0'
+          this.ctx3.arc(
+            ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+            ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+            2,
+            0,
+            2 * Math.PI)
+          this.ctx3.fill()
+          this.ctx3.beginPath()
+          this.ctx3.globalAlpha = 1
+        }
         // Did the projectile hit something?
         if (this.enemies.size > 0) {
           dist = projectile.hitRange * 2
@@ -2452,6 +2799,7 @@ export default {
                 projectile.hitCount -= 1
                 enemy.hp -= projectile.dmg
                 if (enemy.hp <= 0) {
+                  this.addDeathAnimation(enemy, images)
                   this.goalXP += enemy.xp
                   this.checkXP()
                   this.enemies.delete(enemy.id)
@@ -2473,7 +2821,7 @@ export default {
                     enemy.pos.y,
                     'explosion',
                     projectile,
-                    1)
+                    1, 0)
                   this.onHitEffects.push(tmp2)
                 }
                 // Add floating damage number
@@ -2483,8 +2831,18 @@ export default {
                     enemy.pos.y,
                     'text',
                     `${projectile.dmg}`,
-                    60)
+                    60, 0)
                   this.onHitEffects.push(tmp2)
+                }
+                if (projectile.visualType === 'fire') {
+                  // Add fire!
+                  this.onHitEffects.push(new FFOnHitEffect(
+                    projectile.pos.x,
+                    projectile.pos.y,
+                    'fire',
+                    '',
+                    10,
+                    10))
                 }
               }
             }
@@ -2498,7 +2856,7 @@ export default {
         this.goalWeaponProjectiles[i] = projectile
       }
     },
-    handleOnHitEffects: function (qtree) {
+    handleOnHitEffects: function (qtree, images) {
       /**
        * @type FFOnHitEffect
        */
@@ -2517,62 +2875,124 @@ export default {
               (effect.y + this.offsetVector.y) * this.gridSize
             )
           } else if (effect.type === 'explosion') {
-            if (this.enemies.size > 0) {
-              const projectile = effect.content
-              dist = projectile.radius
-              const enemies = qtree.getContents(
-                projectile.pos.x - dist,
-                projectile.pos.y - dist,
-                projectile.pos.x + dist,
-                projectile.pos.y + dist)
-              if (enemies && enemies.length > 0) {
-                tmp = new THREE.Vector2()
-                tmp.copy(projectile.pos)
-                this.ctx3.beginPath()
-                for (const enemy of enemies) {
-                  if (enemy.hp < 0) {
-                    continue
-                  }
-                  dist = tmp.distanceToSquared(enemy.pos)
-                  if (dist <= projectile.radius) {
-                    this.ctx3.fillStyle = '#fff400'
-                    // Draw weapon effect
-                    this.ctx3.arc(
-                      (effect.x + this.offsetVector.x) * this.gridSize,
-                      (effect.y + this.offsetVector.y) * this.gridSize,
-                      (dist * this.gridSize) / 4,
-                      0,
-                      2 * Math.PI)
-                    // Trigger hit
-                    enemy.hp -= projectile.dmg
-                    if (enemy.hp <= 0) {
-                      this.goalXP += enemy.xp
-                      this.checkXP()
-                      this.enemies.delete(enemy.id)
-                      this.goalKills += 1
-                    } else {
-                      this.enemies.set(enemy.id, enemy)
-                    }
-                    // Add floating damage number
-                    if (this.drawDamageNumbers) {
-                      tmp2 = new FFOnHitEffect(
-                        enemy.pos.x,
-                        enemy.pos.y,
-                        'text',
-                        `${projectile.dmg}`,
-                        60)
-                      this.onHitEffects.push(tmp2)
-                    }
-                  }
-                }
-                this.ctx3.fill()
-              }
-            }
+            this.drawOnHitExplosion(effect, qtree, dist, tmp, tmp2, images)
+          } else if (effect.type === 'death') {
+            // Draws each death animation frame... basically a GIF engine!
+            this.ctx3.drawImage(
+              effect.content[effect.count],
+              ((effect.x + this.offsetVector.x) * this.gridSize) + 8,
+              ((effect.y + this.offsetVector.y) * this.gridSize) + 8,
+              32, 32)
+          } else if (effect.type === 'fire') {
+            this.drawOnHitFire(effect)
           }
         } else {
           this.onHitEffects.splice(i, 1)
         }
       }
+    },
+    drawOnHitExplosion: function (effect, qtree, dist, tmp, tmp2, images) {
+      if (this.enemies.size > 0) {
+        const projectile = effect.content
+        dist = projectile.radius
+        const enemies = qtree.getContents(
+          projectile.pos.x - dist,
+          projectile.pos.y - dist,
+          projectile.pos.x + dist,
+          projectile.pos.y + dist)
+        if (enemies && enemies.length > 0) {
+          tmp = new THREE.Vector2()
+          tmp.copy(projectile.pos)
+          this.ctx3.beginPath()
+          for (const enemy of enemies) {
+            if (enemy.hp < 0) {
+              continue
+            }
+            dist = tmp.distanceToSquared(enemy.pos)
+            if (dist <= projectile.radius) {
+              this.ctx3.fillStyle = '#fff400'
+              // Draw weapon effect
+              this.ctx3.arc(
+                ((effect.x + this.offsetVector.x) * this.gridSize) + 8,
+                ((effect.y + this.offsetVector.y) * this.gridSize) + 8,
+                (dist * this.gridSize) / 4,
+                0,
+                2 * Math.PI)
+              // Trigger hit
+              enemy.hp -= projectile.dmg
+              if (enemy.hp <= 0) {
+                this.onHitEffects.push(new FFOnHitEffect(
+                  enemy.pos.x,
+                  enemy.pos.y,
+                  'death',
+                  images.death,
+                  10,
+                  8))
+                this.goalXP += enemy.xp
+                this.checkXP()
+                this.enemies.delete(enemy.id)
+                this.goalKills += 1
+              } else {
+                this.enemies.set(enemy.id, enemy)
+              }
+              // Add floating damage number
+              if (this.drawDamageNumbers) {
+                tmp2 = new FFOnHitEffect(
+                  enemy.pos.x,
+                  enemy.pos.y,
+                  'text',
+                  `${projectile.dmg}`,
+                  60,
+                  0)
+                this.onHitEffects.push(tmp2)
+              }
+            }
+          }
+          this.ctx3.fill()
+        }
+      }
+    },
+    drawOnHitFire: function (effect) {
+      this.ctx3.fillStyle = '#f00'
+      this.ctx3.globalAlpha = 0.1
+      this.ctx3.beginPath()
+      effect.x += (Math.random() - Math.random()) * 0.1
+      effect.y += (Math.random() - Math.random()) * 0.1
+      this.ctx3.arc(
+        ((effect.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+        ((effect.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+        10,
+        0,
+        2 * Math.PI)
+      this.ctx3.fill()
+      this.ctx3.beginPath()
+      this.ctx3.fillStyle = '#fff400'
+      this.ctx3.globalAlpha = 0.5
+      this.ctx3.beginPath()
+      effect.x += (Math.random() - Math.random()) * 0.1
+      effect.y += (Math.random() - Math.random()) * 0.1
+      this.ctx3.arc(
+        ((effect.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+        ((effect.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+        2,
+        0,
+        2 * Math.PI)
+      this.ctx3.fill()
+      this.ctx3.beginPath()
+      this.ctx3.fillStyle = '#fffbc5'
+      this.ctx3.globalAlpha = 0.7
+      this.ctx3.beginPath()
+      effect.x += (Math.random() - Math.random()) * 0.1
+      effect.y += (Math.random() - Math.random()) * 0.1
+      this.ctx3.arc(
+        ((effect.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+        ((effect.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+        1,
+        0,
+        2 * Math.PI)
+      this.ctx3.fill()
+      this.ctx3.beginPath()
+      this.ctx3.globalAlpha = 1
     },
     cancelSimulation: function () {
       this.srNotifySimulation(false)
@@ -2617,7 +3037,6 @@ export default {
       } else {
         noSet = true
       }
-      console.log('MOVEMENT')
       const k = `MOV-${this.store.user.username}`
       // Send message to others
       this.wrtc.broadcastDataChannelMessage(
@@ -2635,7 +3054,7 @@ export default {
       const k = `MOV-${this.store.user.username}`
       const v = 'false;false;false;false'
       // Send message to others
-      this.wrtc.broadcastDataChannelMessage(
+      this.$connector.sendSyncRoomMessage(
         `${k};${v}`)
       this.lastPos = v
       this.dataMap.set(k, v)
@@ -2660,6 +3079,18 @@ export default {
         this.buildDataCommand('SET', 'DATA', k, v))
     },
     srNotifyPosition: function (sendOnly) {
+      if (this.cWorker) {
+        this.cWorker.postMessage({
+          msg: '[c:setp]',
+          x: this.goalPosition.x,
+          y: this.goalPosition.y
+        })
+        this.cWorker.postMessage({
+          msg: '[c:seto]',
+          x: this.offsetVector.x,
+          y: this.offsetVector.y
+        })
+      }
       const v = JSON.stringify({
         x: this.goalPosition.x,
         y: this.goalPosition.y,
@@ -2949,7 +3380,7 @@ export default {
           50)
         for (let i = 0; i < tiles.length; i++) {
           this.tile = tiles[i].name
-          this.addTile(tiles[i].pos)
+          this.addTile(tiles[i].pos, false)
         }
       }
       /**
@@ -3012,7 +3443,7 @@ export default {
           Math.round(x / this.gridSize),
           Math.round(y / this.gridSize))
         // Spawn regular enemies
-        this.addEnemy(pos)
+        this.addEnemy(pos, 'slime')
       }
     },
     setUpSyncRoom: async function () {
@@ -3068,7 +3499,6 @@ export default {
         } else if (event.data.a.startsWith('[LAT]')) {
           // Latency Result
           this.currentSRLatency = parseFloat(event.data.a.substring(5))
-          console.log(`> ${this.currentSRLatency} ms latency`)
           if (this.currentSRLatency > 100) {
             this.handleLatencyLag(this.currentSRLatency)
           }
@@ -3107,8 +3537,13 @@ export default {
           // Some player sent a weapon part
           // Format:
           //    PlayerName;WeaponName;PowerUpName;Type;JsonPayload
+          console.log(event.data.t)
           const data = event.data.t.substring(3).split(';')
           this.setCoPlayerWeaponPart(data)
+        } else if (event.data.t.startsWith('scost')) {
+          this.handleSetCost(event.data.t)
+        } else if (event.data.t.startsWith('stile')) {
+          this.handleSetTile(event.data.t)
         }
       }
       // Connect to the SyncRoom
@@ -3141,6 +3576,13 @@ export default {
     },
     setCoPlayerPosition: function (data) {
       const player = JSON.parse(data[1])
+      if (this.cWorker) {
+        this.cWorker.postMessage({
+          msg: '[c:copo]',
+          usr: data[0],
+          plr: player
+        })
+      }
       if (this.coPlayers.has(data[0])) {
         const pl = this.coPlayers.get(data[0])
         pl.x = player.x - player.xo
@@ -3319,20 +3761,21 @@ export default {
         return
       }
       let weapon, powers, power, effects, effect
-      for (let i = 0; i < this.goalWeapons.length; i++) {
+      const goalWeapons = [].concat(this.goalWeapons)
+      for (let i = 0; i < goalWeapons.length; i++) {
         // Since we want to keep all messages as small as possible
         // ...we will deconstruct all weapons into their parts
         //    1. Weapon
         //    2. Power-Ups
         //    3. Effects
-        weapon = this.goalWeapons.slice(i, i + 1)[0]
+        weapon = { ...goalWeapons[i] }
         powers = weapon.powerUps
         weapon.powerUps = []
         this.srSendWeaponPart(
           weapon.name, '-', '1', JSON.stringify(weapon))
         if (powers.length > 0) {
           for (let j = 0; j < powers.length; j++) {
-            power = powers.slice(j, j + 1)[0]
+            power = { ...powers[j] }
             effects = power.effects
             power.effects = []
             this.srSendWeaponPart(
@@ -3435,6 +3878,99 @@ export default {
       // Create a WebRTC Peer to Peer Connection for each callee
       for (let i = 0; i < calleeList.length; i++) {
         this.wrtc.initiatePeerConnection(null, calleeList[i], true, polite)
+      }
+    },
+    setUpCalcWorker: function () {
+      this.cWorker = new Worker(
+        new URL('FFCalcWorker.js', import.meta.url),
+        { type: 'module' })
+      this.cWorker.onmessage = e => {
+        this.integrationField = new Uint16Array(e.data)
+      }
+      this.cWorker.postMessage({
+        msg: '[c:init]'
+      })
+    },
+    handleSetCost: function (data) {
+      // scost;${position.x};${position.y};${xNew};${yNew};${this.tile}
+      const dat = data.split(';')
+      const position = {
+        x: Math.round(Number(dat[1])),
+        y: Math.round(Number(dat[2]))
+      }
+      const arrayPos = this.convertXYToArrayPos(position.x, position.y)
+      if (arrayPos > this.costField.length) {
+        return
+      }
+      this.costField[arrayPos] = 255 // TODO: Dynamic
+      const tile = new FFTile(
+        position.x, position.y,
+        Math.round(Number(dat[3])),
+        Math.round(Number(dat[4])),
+        dat[5])
+      // Insert and render tile
+      this.tileTree.insert(tile)
+      this.renderTiles(this.offsetVector)
+    },
+    handleSetTile: function (data) {
+      // stile;${position.x};${position.y};${xNew};${yNew};${this.tile}
+      const dat = data.split(';')
+      const position = {
+        x: Math.round(Number(dat[1])),
+        y: Math.round(Number(dat[2]))
+      }
+      const arrayPos = this.convertXYToArrayPos(position.x, position.y)
+      if (arrayPos > this.costField.length) {
+        return
+      }
+      const tile = new FFTile(
+        position.x, position.y,
+        Math.round(Number(dat[3])),
+        Math.round(Number(dat[4])),
+        dat[5])
+      // Insert and render tile
+      this.tileTree.insert(tile)
+      this.renderTiles(this.offsetVector)
+    },
+    addDeathAnimation: function (enemy, images) {
+      let imgArr
+      switch (enemy.visualType) {
+        case 'slime':
+          imgArr = images.death
+          break
+        case 'skeleton':
+          imgArr = images.skeleton_death
+          break
+        default:
+          imgArr = images.death
+      }
+      this.onHitEffects.push(new FFOnHitEffect(
+        enemy.pos.x,
+        enemy.pos.y,
+        'death',
+        imgArr,
+        10,
+        imgArr.length - 1))
+    },
+    drawHeatmapCtx: function () {
+      if (!this.integrationField) return
+      let pos
+      let value
+      let x, y
+      for (let i = 0; i < this.integrationField.length; i++) {
+        pos = this.convertArrayPosToXY(i)
+        value = this.integrationField[i]
+        x = (pos[0] + this.offsetVector.x) * this.gridSize
+        y = (pos[1] + this.offsetVector.y) * this.gridSize
+        if (value < 32) {
+          this.ctx.fillStyle = this.heatMapColorForValue((value / 32))
+        } else {
+          this.ctx.fillStyle = this.heatMapColorForValue(1)
+        }
+        this.ctx.beginPath()
+        this.ctx.moveTo(x, y)
+        this.ctx.rect(x, y, this.gridSize, this.gridSize)
+        this.ctx.fill()
       }
     }
   }
