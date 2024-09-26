@@ -33,7 +33,7 @@ class FFWeaponList {
     weapon = new FFWeapon(
       'Gun',
       40,
-      500,
+      5,
       1,
       1,
       60,
