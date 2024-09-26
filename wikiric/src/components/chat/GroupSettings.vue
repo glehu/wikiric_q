@@ -398,7 +398,7 @@ export default {
       bulkUploadingCurrently: '',
       bulkUploadLeft: 0,
       settingsDat: {
-        showCAct: false,
+        showCAct: true,
         hideNewCAct: false,
         cSet: []
       }
@@ -687,7 +687,7 @@ export default {
       let set = await dbGetData(key)
       if (set == null) {
         set = {
-          showCAct: false,
+          showCAct: true,
           hideNewCAct: false,
           cSet: []
         }
