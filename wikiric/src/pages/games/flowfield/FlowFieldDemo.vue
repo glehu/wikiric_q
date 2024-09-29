@@ -1441,10 +1441,10 @@ export default {
           this.addGoal(position)
           break
         case 'enemy_slime':
-          this.addEnemy(position, 'slime')
+          this.addEnemy(position, 'slime', false)
           break
         case 'enemy_skeleton':
-          this.addEnemy(position, 'skeleton')
+          this.addEnemy(position, 'skeleton', false)
           break
         case 'eraser':
           this.removeWall(position)
@@ -1625,7 +1625,7 @@ export default {
         this.ctxPlayer.fillText(val.usr, xNew, yNew)
       })
     },
-    addEnemy: function (position, enemyType) {
+    addEnemy: function (position, enemyType, skipSend) {
       const arrayPos = this.convertXYToArrayPos(position.x, position.y)
       if (arrayPos < 0 || arrayPos > this.costField.length) {
         return
@@ -1676,10 +1676,22 @@ export default {
         off,
         off)
       this.enemies.set(id, unit)
+      if (!skipSend) {
+        // Transmit new unit to co-players
+        this.srSendEnemy(unit)
+      }
       // Draw enemy
       if (image) {
         this.ctx3.drawImage(image, xNew, yNew, dim, dim)
       }
+    },
+    /**
+     *
+     * @param {FFUnit} unit
+     */
+    srSendEnemy: function (unit) {
+      const msg = `EY-${unit.pos.x};${unit.pos.y};${unit.maxSpeed};${unit.id};${unit.dps};${unit.maxHp};${unit.xp};${unit.visualType};${unit.dimW};${unit.dimH};${unit.offX};${unit.offY}`
+      this.$connector.sendSyncRoomMessage(msg)
     },
     handleCalculation: async function () {
       // Do we have to calculate on our own?
@@ -3385,7 +3397,9 @@ export default {
      */
     procPerSecondTriggers: function () {
       // Populate map
-      this.checkAndSpawnEnemies()
+      if (this.isHost || !this.coPlayers || this.coPlayers.size < 1) {
+        this.checkAndSpawnEnemies()
+      }
       // Retrieve and distribute current sessions
       this.srNotifyPosition(true)
       // if (this.isHost) {
@@ -3415,7 +3429,7 @@ export default {
           Math.round(x / this.gridSize),
           Math.round(y / this.gridSize))
         // Spawn regular enemies
-        this.addEnemy(pos, 'slime')
+        this.addEnemy(pos, 'slime', false)
       }
     },
     setUpSyncRoom: async function () {
@@ -3515,6 +3529,12 @@ export default {
           this.handleSetCost(event.data.t)
         } else if (event.data.t.startsWith('stile')) {
           this.handleSetTile(event.data.t)
+        } else if (event.data.t.startsWith('EY-')) {
+          // A new enemy!
+          // Format:
+          //    Field1;Field2;Field3;...
+          const data = event.data.t.substring(3).split(';')
+          this.setCoPlayerEnemy(data)
         }
       }
       // Connect to the SyncRoom
@@ -3543,7 +3563,7 @@ export default {
       setTimeout(() => {
         this.$connector.sendSyncRoomMessage(
           this.buildDataCommand('GET', 'UDAT', 'POS'))
-      }, delay * 2)
+      }, delay * 2 + 1)
     },
     setCoPlayerPosition: function (data) {
       const player = JSON.parse(data[1])
@@ -3586,6 +3606,7 @@ export default {
       })
     },
     setCoPlayerWeaponPart: function (data) {
+      let level
       let pl = {
         weapons: []
       }
@@ -3627,21 +3648,23 @@ export default {
       let obj = JSON.parse(data[4])
       if (data[3] === '1') {
         // Weapon
+        level = obj.level
         obj = new FFWeapon(
           obj.name,
-          obj.range,
-          obj.dps,
-          obj.dpsLevelUp,
-          obj.amount,
-          obj.cd,
-          obj.cdLevelUp,
-          obj.pSpeed,
-          obj.hitCount,
-          obj.pHitCount,
-          obj.hitRange,
-          obj.hitRangeLevelUp,
+          Number(obj.range),
+          Number(obj.dps),
+          Number(obj.dpsLevelUp),
+          Number(obj.amount),
+          Number(obj.cd),
+          Number(obj.cdLevelUp),
+          Number(obj.pSpeed),
+          Number(obj.hitCount),
+          Number(obj.pHitCount),
+          Number(obj.hitRange),
+          Number(obj.hitRangeLevelUp),
           obj.visualType
         )
+        obj.level = level
         if (ix !== -1) {
           // Update weapon (but not power-ups)
           const powerUps = pl.weapons[ix].powerUps
@@ -3653,8 +3676,8 @@ export default {
       } else if (data[3] === '2') {
         // Power-Up
         obj = new FFPowerUp(
-          obj.id,
-          obj.level,
+          Number(obj.id),
+          Number(obj.level),
           obj.name,
           obj.desc
         )
@@ -3680,13 +3703,13 @@ export default {
       } else if (data[3] === '3') {
         // Effect
         obj = new FFPowerUpEffect(
-          obj.onHit,
+          Boolean(obj.onHit),
           obj.type,
-          obj.value,
-          obj.valueLevelBonus,
-          obj.hitCount,
-          obj.floorValueOnProc,
-          obj.autoLevelUp
+          Number(obj.value),
+          Number(obj.valueLevelBonus),
+          Number(obj.hitCount),
+          Boolean(obj.floorValueOnProc),
+          Boolean(obj.autoLevelUp)
         )
         if (pId !== -1 && ix !== -1) {
           let eix = -1
@@ -3716,6 +3739,54 @@ export default {
       // Update co-player data
       if (this.coPlayers.has(data[0])) {
         this.coPlayers.set(data[0], pl)
+      }
+    },
+    setCoPlayerEnemy: function (data) {
+      // This is some exceptionally beautiful code.
+      // Never ever have I seen less hardcoded numbers!
+      // Wow! Readability is maxed out here!
+      const unit = new FFUnit(
+        Number(data[0]),
+        Number(data[1]),
+        Number(data[2]),
+        data[3],
+        Number(data[4]),
+        Number(data[5]),
+        Number(data[6]),
+        data[7],
+        Number(data[8]),
+        Number(data[9]),
+        Number(data[10]),
+        Number(data[11]))
+      this.enemies.set(unit.id, unit)
+      let image
+      if (unit.visualType === 'slime') {
+        image = document.getElementById('slime_jump_0')
+      } else if (unit.visualType === 'skeleton') {
+        image = document.getElementById('skeleton_0')
+      }
+      // Draw enemy
+      if (image) {
+        /**
+         * @type {HTMLImageElement}
+         */
+        let image
+        let dim, off
+        let xNew, yNew
+        if (unit.visualType === 'slime') {
+          image = document.getElementById('slime_jump_0')
+          dim = 32
+          off = 8
+          xNew = unit.pos.x * this.gridSize + off
+          yNew = unit.pos.y * this.gridSize + off
+        } else if (unit.visualType === 'skeleton') {
+          image = document.getElementById('skeleton_0')
+          dim = 100
+          off = -20
+          xNew = unit.pos.x * this.gridSize + off
+          yNew = unit.pos.y * this.gridSize + off
+        }
+        this.ctx3.drawImage(image, xNew, yNew, dim, dim)
       }
     },
     buildDataCommand: function (cmd, mod, key, value) {

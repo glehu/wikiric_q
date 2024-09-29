@@ -7,6 +7,15 @@
  * (where one would expect it without having to be visible on a screen under heavy use by the viewer).
  */
 
+/**
+ * @param {Boolean} onHit
+ * @param {String} type
+ * @param {Number} value
+ * @param {Number} valueLevelBonus
+ * @param {Number} hitCount
+ * @param {Boolean} floorValueOnProc
+ * @param {Boolean} autoLevelUp
+ */
 class FFPowerUpEffect {
   /**
    * @param {Boolean} onHit

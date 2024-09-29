@@ -7,6 +7,13 @@
  * (where one would expect it without having to be visible on a screen under heavy use by the viewer).
  */
 
+/**
+ *
+ * @param {Number} id
+ * @param {Number} level
+ * @param {String} name
+ * @param {String} desc
+ */
 class FFPowerUp {
   /**
    *
