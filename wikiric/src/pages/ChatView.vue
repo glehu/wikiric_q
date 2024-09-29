@@ -147,7 +147,7 @@
         :width="sidebarRightWidth"
         show-if-above
         :breakpoint="1280"
-        class="background">
+        class="background tab_no_pad">
         <q-tab-panels v-model="sidebarRightPanel" animated
                       class="fit background">
           <q-tab-panel name="members">
@@ -3368,7 +3368,7 @@ export default {
   max-width: 52rem;
 }
 
-.q-tab-panel {
+.tab_no_pad .q-tab-panel {
   padding: 0 !important;
 }
 
