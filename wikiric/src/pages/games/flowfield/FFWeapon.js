@@ -25,6 +25,7 @@ import FFProjectile from 'pages/games/flowfield/FFProjectile'
  * @param {Number} hitRange
  * @param {Number} hitRangeLevelUp
  * @param {String} visualType
+ * @param {Number} ttl
  */
 class FFWeapon {
   /**
@@ -42,6 +43,7 @@ class FFWeapon {
    * @param {Number} hitRange
    * @param {Number} hitRangeLevelUp
    * @param {String} visualType
+   * @param {Number} ttl
    */
   constructor (name,
                range,
@@ -55,7 +57,8 @@ class FFWeapon {
                hitCountLevelUp,
                hitRange,
                hitRangeLevelUp,
-               visualType) {
+               visualType,
+               ttl) {
     this.level = 1
     /**
      * This FF Weapon's Name
@@ -113,6 +116,7 @@ class FFWeapon {
     this.hitRange = hitRange
     this.hitRangeLevelUp = hitRangeLevelUp
     this.visualType = visualType
+    this.ttl = ttl
   }
 
   /**
@@ -120,14 +124,19 @@ class FFWeapon {
    *
    * Returns `true` if the weapon is ready, `false` if not.
    *
+   * @param {Number} [override]
    * @return {Boolean}
    */
-  processTick () {
+  processTick (override) {
     // Do we need to reduce weapon cooldown?
     if (this._cd > 0) {
-      this._cd -= 1
+      if (!override) {
+        this._cd -= 1
+      } else {
+        this._cd -= override
+      }
       // Reset amount if we are done waiting
-      if (this._cd === 0) {
+      if (this._cd <= 0) {
         this._amount = this.amount
       }
       return false
@@ -278,7 +287,8 @@ class FFWeapon {
       dmg,
       hitRange,
       radius,
-      this.visualType)
+      this.visualType,
+      120)
   }
 
   /**

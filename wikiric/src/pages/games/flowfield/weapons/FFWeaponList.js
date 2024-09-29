@@ -33,7 +33,7 @@ class FFWeaponList {
     weapon = new FFWeapon(
       'Gun',
       40,
-      500,
+      5,
       1,
       1,
       60,
@@ -43,12 +43,13 @@ class FFWeaponList {
       0,
       0.2,
       0,
-      'bullet')
+      'bullet',
+      200)
     powerUp = new FFPowerUp(
       0,
       1,
-      '_Critical Hit',
-      'Deals more damage sometimes.')
+      'Critical Hit (Starter)',
+      '4th shot deals more damage.')
     effect = new FFPowerUpEffect(
       true,
       'dmg',
@@ -69,7 +70,7 @@ class FFWeaponList {
       40,
       1,
       0.5,
-      1,
+      3,
       10,
       0,
       10,
@@ -77,11 +78,12 @@ class FFWeaponList {
       1,
       0.2,
       0,
-      'fire')
+      'fire',
+      200)
     powerUp = new FFPowerUp(
       0,
       1,
-      '_Spam',
+      'Spam (Starter)',
       'More projectiles!')
     effect = new FFPowerUpEffect(
       false,
@@ -111,11 +113,12 @@ class FFWeaponList {
       0,
       2,
       0.1,
-      'rocket')
+      'rocket',
+      200)
     powerUp = new FFPowerUp(
       0,
       1,
-      '_Explosion',
+      'Explosion (Starter)',
       'Projectiles explode when hitting enemies. Radius scales with Area.')
     effect = new FFPowerUpEffect(
       true,
@@ -145,7 +148,8 @@ class FFWeaponList {
       0,
       0.2,
       0,
-      'bullet')
+      'bullet',
+      200)
     this.categories.starter.push(weapon)
     /**
      * STARTER WEAPON: SNIPER
@@ -164,7 +168,8 @@ class FFWeaponList {
       0,
       0.4,
       0,
-      'bullet')
+      'bullet',
+      200)
     this.categories.starter.push(weapon)
   }
 }

@@ -34,7 +34,7 @@
               <template v-if="!isSimulating">
                 <q-btn color="brand-bg"
                        text-color="brand-p"
-                       @click="handleSimulation(false)"
+                       @click="scheduleSimulation"
                        icon="sym_o_network_intelligence_history"
                        label="Simulate"
                        align="left"
@@ -649,7 +649,7 @@
                             label="Calculate"
                             label-position="left"/>
               <q-fab-action color="primary"
-                            @click="handleSimulation(false)"
+                            @click="scheduleSimulation"
                             icon="sym_o_network_intelligence_history"
                             label="Simulate"
                             label-position="left"/>
@@ -813,6 +813,7 @@ import FFPowerUp from 'pages/games/flowfield/FFPowerUp'
 import FFPowerUpEffect from 'pages/games/flowfield/FFPowerUpEffect'
 import WRTC from 'src/libs/wRTC'
 import FFUnitAssets from 'pages/games/flowfield/FFUnitAssets'
+import { DateTime } from 'luxon'
 
 export default {
   name: 'FlowFieldDemo',
@@ -1491,7 +1492,7 @@ export default {
       const tile = new FFTile(position.x, position.y, xNew, yNew, this.tile)
       // Notify co-players
       if (notifyOthers) {
-        this.wrtc.broadcastDataChannelMessage(
+        this.$connector.sendSyncRoomMessage(
           `scost;${position.x};${position.y};${xNew};${yNew};${this.tile}`)
       }
       // Insert and render tile
@@ -1528,7 +1529,7 @@ export default {
       const tile = new FFTile(position.x, position.y, xNew, yNew, this.tile)
       // Notify co-players
       if (notifyOthers) {
-        this.wrtc.broadcastDataChannelMessage(
+        this.$connector.sendSyncRoomMessage(
           `stile;${position.x};${position.y};${xNew};${yNew};${this.tile}`)
       }
       this.tileTree.insert(tile)
@@ -1884,6 +1885,49 @@ export default {
        */
       this.enemies.clear()
     },
+    /**
+     * Schedules the start of the simulation.
+     * We want to provide a desync-free environment
+     * ...to the players, so we have to consider any
+     * ...network lag or unprocessed messages.
+     *
+     * If there is a time provided, it will be used.
+     *
+     * If there is no time, one will be determined
+     * ...and distributed if there are co-players.
+     * @param {Boolean} isRunning
+     * @param [timeWhen=null]
+     */
+    scheduleSimulation: function (isRunning, timeWhen = null) {
+      let delay
+      if (timeWhen) {
+        delay = timeWhen - DateTime.now().toMillis()
+        if (isRunning) {
+          setTimeout(() => {
+            this.handleSimulation(true)
+          }, delay)
+        } else {
+          setTimeout(() => {
+            this.cancelSimulation()
+          }, delay)
+        }
+        return
+      }
+      // 3 seconds delay
+      delay = 3_000 + DateTime.now().toMillis()
+      this.$connector.sendSyncRoomMessage(
+        `SCSIM-${isRunning};${delay}`
+      )
+      if (isRunning) {
+        setTimeout(() => {
+          this.handleSimulation(true)
+        }, 3_000)
+      } else {
+        setTimeout(() => {
+          this.cancelSimulation()
+        }, 3_000)
+      }
+    },
     handleSimulation: function (srSilent) {
       console.log('Starting Simulation...')
       this.isSimulating = true
@@ -1985,7 +2029,7 @@ export default {
         if (this.goalAlive) {
           // Did half a second pass?
           tmp = performance.now()
-          if ((tmp - lastHalfSecond) / 1000 >= 1) {
+          if ((tmp - lastHalfSecond) / 500 >= 1) {
             lastHalfSecond = tmp
             this.procPerHalfSecondTriggers()
           }
@@ -2033,9 +2077,9 @@ export default {
         }
         // Reduce weapon cooldown
         for (let i = 0; i < this.goalWeapons.length; i++) {
-          this.goalWeapons[i].processTick()
+          this.goalWeapons[i].processTick(120 * timeDelta)
         }
-        this.reduceCoPlayerWeaponCooldown()
+        this.reduceCoPlayerWeaponCooldown(timeDelta)
         // #### ENEMY ACTIONS ####
         if (this.enemies && this.enemies.size > 0) {
           // Add all enemies to the quadtree
@@ -2668,7 +2712,11 @@ export default {
       this.ctx3.stroke()
       return coPlayer
     },
-    reduceCoPlayerWeaponCooldown: function () {
+    /**
+     *
+     * @param {Number} timeDelta
+     */
+    reduceCoPlayerWeaponCooldown: function (timeDelta) {
       if (!this.coPlayers || this.coPlayers.size < 1) {
         return
       }
@@ -2677,7 +2725,7 @@ export default {
           continue
         }
         for (let i = 0; i < val.weapons.length; i++) {
-          val.weapons[i].processTick()
+          val.weapons[i].processTick(120 * timeDelta)
         }
         this.coPlayers.set(key, val)
       }
@@ -2689,6 +2737,14 @@ export default {
       let newVec
       for (let i = this.goalWeaponProjectiles.length - 1; i > 0; i--) {
         projectile = this.goalWeaponProjectiles[i]
+        // Does this projectile expire?
+        if (projectile.expires) {
+          projectile.ttl -= 1
+          if (projectile.ttl <= 0) {
+            this.goalWeaponProjectiles.splice(i, 1)
+            continue
+          }
+        }
         // Move projectile
         newVec = new THREE.Vector2(projectile.vec.x, projectile.vec.y)
         newVec.multiplyScalar(timeDelta)
@@ -2721,7 +2777,7 @@ export default {
           this.ctx3.fill()
         } else if (projectile.visualType === 'fire') {
           this.ctx3.fillStyle = '#f00'
-          this.ctx3.globalAlpha = 0.3
+          this.ctx3.globalAlpha = 0.2
           this.ctx3.arc(
             ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
             ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
@@ -2730,12 +2786,22 @@ export default {
             2 * Math.PI)
           this.ctx3.fill()
           this.ctx3.beginPath()
-          this.ctx3.globalAlpha = 0.5
+          this.ctx3.globalAlpha = 0.3
+          this.ctx3.fillStyle = '#ff9100'
+          this.ctx3.arc(
+            ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
+            ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+            14,
+            0,
+            2 * Math.PI)
+          this.ctx3.fill()
+          this.ctx3.beginPath()
+          this.ctx3.globalAlpha = 0.4
           this.ctx3.fillStyle = '#fff400'
           this.ctx3.arc(
             ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
             ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
-            5,
+            10,
             0,
             2 * Math.PI)
           this.ctx3.fill()
@@ -3107,7 +3173,7 @@ export default {
       this.dataMap.set(k, v)
       // Notify users
       this.$connector.sendSyncRoomMessage(
-        `${k};${v}`)
+        `${k}-${v}`)
       // Let server process the data
       this.$connector.sendSyncRoomMessage(
         this.buildDataCommand('SET', 'DATA', k, v))
@@ -3201,7 +3267,7 @@ export default {
       this.distributeGoalWeapons()
       this.isLevelUp = false
       this.modifyingWeapons = false
-      this.handleSimulation(false)
+      this.scheduleSimulation(true)
     },
     /**
      *
@@ -3510,15 +3576,19 @@ export default {
           //    Username;RemoteName;RndInt
           const data = event.data.t.substring(5).split(';')
           this.handlePeerFightRnd(data)
-        } else if (event.data.t.startsWith('DOSIM')) {
-          const data = event.data.t.split(';')
-          if (data[1].toUpperCase() === 'TRUE') {
-            if (this.isSimulating) return
-            this.handleSimulation(true)
+        } else if (event.data.t.startsWith('DOSIM-')) {
+          const data = event.data.t.substring(6)
+          if (data[0].toUpperCase() === 'TRUE') {
+            // if (this.isSimulating) return
+            // this.handleSimulation(true)
           } else {
             if (!this.isSimulating) return
             this.cancelSimulation()
           }
+        } else if (event.data.t.startsWith('SCSIM-')) {
+          // Some player wants to schedule simulation start/cancel
+          const data = event.data.t.substring(6).split(';')
+          this.scheduleSimulation(Boolean(data[0]), Number(data[1]))
         } else if (event.data.t.startsWith('WP-')) {
           // Some player sent a weapon part
           // Format:

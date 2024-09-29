@@ -10,11 +10,19 @@
 import * as THREE from 'threejs-math'
 
 /**
- * An FF Weapon's Projectile
+ * An FF Projectile
+ * @param {THREE.Vector2} pos
+ * @param {THREE.Vector2} vec
+ * @param {Number} hitCount
+ * @param {Number} dmg
+ * @param {Number} hitRange
+ * @param {Number} radius
+ * @param {String} visualType
+ * @param {Number} ttl
  */
 class FFProjectile {
   /**
-   * An FF Projectile's Constructor
+   * An FF Projectile
    * @param {THREE.Vector2} pos
    * @param {THREE.Vector2} vec
    * @param {Number} hitCount
@@ -22,6 +30,7 @@ class FFProjectile {
    * @param {Number} hitRange
    * @param {Number} radius
    * @param {String} visualType
+   * @param {Number} ttl
    */
   constructor (pos,
                vec,
@@ -29,7 +38,8 @@ class FFProjectile {
                dmg,
                hitRange,
                radius,
-               visualType) {
+               visualType,
+               ttl) {
     /**
      * This FF Projectile's Position
      * @type {THREE.Vector2}
@@ -62,6 +72,15 @@ class FFProjectile {
      * @type {String}
      */
     this.visualType = visualType
+    let hasExpiration = true
+    // Set expiration if desired
+    // Prevents projectiles of travelling too far (or too long)
+    if (!ttl) {
+      ttl = -1
+      hasExpiration = false
+    }
+    this.ttl = ttl
+    this.expires = hasExpiration
   }
 }
 
