@@ -812,6 +812,7 @@ import FFWeapon from 'pages/games/flowfield/FFWeapon'
 import FFPowerUp from 'pages/games/flowfield/FFPowerUp'
 import FFPowerUpEffect from 'pages/games/flowfield/FFPowerUpEffect'
 import WRTC from 'src/libs/wRTC'
+import FFUnitAssets from 'pages/games/flowfield/FFUnitAssets'
 
 export default {
   name: 'FlowFieldDemo',
@@ -1639,25 +1640,26 @@ export default {
        * @type {HTMLImageElement}
        */
       let image
-      let dim
-      let xNew
-      let yNew
+      let dim, off
+      let xNew, yNew
       if (enemyType === 'slime') {
         hp = 20
         dmg = 10
         xp = 100
         image = document.getElementById('slime_jump_0')
         dim = 32
-        xNew = position.x * this.gridSize + 8
-        yNew = position.y * this.gridSize + 8
+        off = 8
+        xNew = position.x * this.gridSize + off
+        yNew = position.y * this.gridSize + off
       } else if (enemyType === 'skeleton') {
         hp = 150
         dmg = 75
         xp = 1000
         image = document.getElementById('skeleton_0')
         dim = 100
-        xNew = position.x * this.gridSize - 20
-        yNew = position.y * this.gridSize - 20
+        off = -20
+        xNew = position.x * this.gridSize + off
+        yNew = position.y * this.gridSize + off
       }
       hp += ((this.goalLevel * hp) - (this.goalLevel * 1.5))
       const unit = new FFUnit(
@@ -1668,7 +1670,11 @@ export default {
         dmg,
         hp,
         xp,
-        enemyType)
+        enemyType,
+        dim, // We're using dim and off twice on purpose! Do not worry
+        dim,
+        off,
+        off)
       this.enemies.set(id, unit)
       // Draw enemy
       if (image) {
@@ -1897,8 +1903,10 @@ export default {
       }
       // Allocate memory for variables
       let tmp
-      const images = {
-        walk: [
+      const assets = new FFUnitAssets()
+      assets.addAsset('slime',
+        [],
+        [
           document.getElementById('slime_jump_0'),
           document.getElementById('slime_jump_1'),
           document.getElementById('slime_jump_2'),
@@ -1906,7 +1914,8 @@ export default {
           document.getElementById('slime_jump_4'),
           document.getElementById('slime_jump_5')
         ],
-        death: [
+        [],
+        [
           document.getElementById('slime_death_0'),
           document.getElementById('slime_death_1'),
           document.getElementById('slime_death_2'),
@@ -1916,8 +1925,10 @@ export default {
           document.getElementById('slime_death_6'),
           document.getElementById('slime_death_7'),
           document.getElementById('slime_death_8')
-        ],
-        skeleton_walk: [
+        ])
+      assets.addAsset('skeleton',
+        [],
+        [
           document.getElementById('skeleton_0'),
           document.getElementById('skeleton_1'),
           document.getElementById('skeleton_2'),
@@ -1931,7 +1942,8 @@ export default {
           document.getElementById('skeleton_10'),
           document.getElementById('skeleton_11')
         ],
-        skeleton_death: [
+        [],
+        [
           document.getElementById('skeleton_death_0'),
           document.getElementById('skeleton_death_1'),
           document.getElementById('skeleton_death_2'),
@@ -1942,8 +1954,7 @@ export default {
           document.getElementById('skeleton_death_7'),
           document.getElementById('skeleton_death_8'),
           document.getElementById('skeleton_death_9')
-        ]
-      }
+        ])
       /**
        * @type {THREE.Vector2}
        */
@@ -2019,19 +2030,19 @@ export default {
           for (const [id, unit] of this.enemies) {
             if (id) qtree.insert(unit)
           }
-          this.applyEnemyMovement(images, cacheMap, cacheDiff, qtree, timeDelta)
+          this.applyEnemyMovement(assets, cacheMap, cacheDiff, qtree, timeDelta)
           // Now check if any enemy has come close to the players
-          this.checkProximityDamage(qtree, images)
-          this.checkCoPlayersProximityDamage(qtree, images)
+          this.checkProximityDamage(qtree, assets)
+          this.checkCoPlayersProximityDamage(qtree, assets)
         }
         // #### WEAPON ACTIONS ####
         // Render projectiles
         if (this.goalWeaponProjectiles.length > 0) {
-          this.handleProjectiles(qtree, timeDelta, images)
+          this.handleProjectiles(qtree, timeDelta, assets)
         }
         // #### ON HIT EFFECTS ####
         if (this.onHitEffects.length > 0) {
-          this.handleOnHitEffects(qtree, images)
+          this.handleOnHitEffects(qtree, assets)
         }
       }
       // Start first simulation step
@@ -2326,7 +2337,7 @@ export default {
       }
       return posObj
     },
-    applyEnemyMovement: function (image, cacheMap, cacheDiff, qtree, timeDelta) {
+    applyEnemyMovement: function (assets, cacheMap, cacheDiff, qtree, timeDelta) {
       /**
        * @type {THREE.Vector2[]}
        */
@@ -2339,7 +2350,7 @@ export default {
       let min, minXY
       let arrayPos
       let xy = []
-      let xNew, yNew, tmpX, tmpY
+      let tmpX, tmpY
       let tmp
       // Calculate new position vectors for all enemies
       for (const [id, current] of this.enemies) {
@@ -2441,44 +2452,14 @@ export default {
           current.pos.add(endVector)
         }
         // Draw enemy
-        if (image) {
-          // What image are we going to use for this enemy?
-          current.animFrames -= 1
-          if (current.animFrames <= 0) {
-            current.animFrames = 10
-            current.animState += 1
-          }
-          if (current.visualType === 'slime') {
-            xNew = (current.pos.x + this.offsetVector.x) * this.gridSize + 8
-            yNew = (current.pos.y + this.offsetVector.y) * this.gridSize + 8
-            if (current.animState >= image.walk.length) {
-              current.animState = 0
-            }
-            this.ctx3.drawImage(
-              image.walk[current.animState],
-              xNew,
-              yNew,
-              32,
-              32)
-          } else if (current.visualType === 'skeleton') {
-            xNew = (current.pos.x + this.offsetVector.x) * this.gridSize - 20
-            yNew = (current.pos.y + this.offsetVector.y) * this.gridSize - 20
-            if (current.animState >= image.skeleton_walk.length) {
-              current.animState = 0
-            }
-            this.ctx3.drawImage(
-              image.skeleton_walk[current.animState],
-              xNew,
-              yNew,
-              100,
-              100)
-          }
+        if (assets) {
+          this.renderEnemy(current, assets)
         }
         // Write back enemy
         this.enemies.set(id, current)
       }
     },
-    checkProximityDamage: function (qtree, images) {
+    checkProximityDamage: function (qtree, assets) {
       const others = qtree.getContents(
         this.goalPosition.x - this.offsetVector.x - (this.goalMaxRange / 2),
         this.goalPosition.y - this.offsetVector.y - (this.goalMaxRange / 2),
@@ -2557,13 +2538,7 @@ export default {
             // Beam - Directly damage enemy
             other.hp -= projectiles[j].dmg
             if (other.hp <= 0) {
-              this.onHitEffects.push(new FFOnHitEffect(
-                other.pos.x,
-                other.pos.y,
-                'death',
-                images.death,
-                10,
-                8))
+              this.addDeathAnimation(other, assets)
               this.goalXP += other.xp
               this.checkXP()
               this.enemies.delete(other.id)
@@ -2585,18 +2560,18 @@ export default {
       }
       this.ctx3.stroke()
     },
-    checkCoPlayersProximityDamage: function (qtree, images) {
+    checkCoPlayersProximityDamage: function (qtree, assets) {
       if (!this.coPlayers || this.coPlayers.size < 1) {
         return
       }
       let posObj
       for (const [key, val] of this.coPlayers.entries()) {
         posObj = val
-        posObj = this.checkCoPlayerProximityDamage(qtree, posObj, images)
+        posObj = this.checkCoPlayerProximityDamage(qtree, posObj, assets)
         this.coPlayers.set(key, posObj)
       }
     },
-    checkCoPlayerProximityDamage: function (qtree, coPlayer, images) {
+    checkCoPlayerProximityDamage: function (qtree, coPlayer, assets) {
       if (!coPlayer.weapons) return coPlayer
       const others = qtree.getContents(
         coPlayer.x - (this.goalMaxRange / 2),
@@ -2661,13 +2636,7 @@ export default {
             // Beam - Directly damage enemy
             other.hp -= projectiles[j].dmg
             if (other.hp <= 0) {
-              this.onHitEffects.push(new FFOnHitEffect(
-                other.pos.x,
-                other.pos.y,
-                'death',
-                images.death,
-                10,
-                8))
+              this.addDeathAnimation(other, assets)
               this.enemies.delete(other.id)
             } else {
               this.enemies.set(other.id, other)
@@ -2701,7 +2670,7 @@ export default {
         this.coPlayers.set(key, val)
       }
     },
-    handleProjectiles: function (qtree, timeDelta, images) {
+    handleProjectiles: function (qtree, timeDelta, assets) {
       let dist
       let tmp, tmp2, tmp3
       let projectile
@@ -2799,7 +2768,7 @@ export default {
                 projectile.hitCount -= 1
                 enemy.hp -= projectile.dmg
                 if (enemy.hp <= 0) {
-                  this.addDeathAnimation(enemy, images)
+                  this.addDeathAnimation(enemy, assets)
                   this.goalXP += enemy.xp
                   this.checkXP()
                   this.enemies.delete(enemy.id)
@@ -2861,8 +2830,6 @@ export default {
        * @type FFOnHitEffect
        */
       let effect
-      let tmp, tmp2
-      let dist
       for (let i = this.onHitEffects.length - 1; i >= 0; i--) {
         effect = this.onHitEffects[i]
         if (effect.tick()) {
@@ -2875,14 +2842,17 @@ export default {
               (effect.y + this.offsetVector.y) * this.gridSize
             )
           } else if (effect.type === 'explosion') {
-            this.drawOnHitExplosion(effect, qtree, dist, tmp, tmp2, images)
+            this.drawOnHitExplosion(effect, qtree, images)
           } else if (effect.type === 'death') {
             // Draws each death animation frame... basically a GIF engine!
-            this.ctx3.drawImage(
-              effect.content[effect.count],
-              ((effect.x + this.offsetVector.x) * this.gridSize) + 8,
-              ((effect.y + this.offsetVector.y) * this.gridSize) + 8,
-              32, 32)
+            if (effect.content) {
+              this.ctx3.drawImage(
+                effect.content[effect.count],
+                ((effect.x + this.offsetVector.x) * this.gridSize) + effect.offX,
+                ((effect.y + this.offsetVector.y) * this.gridSize) + effect.offY,
+                effect.dimW,
+                effect.dimH)
+            }
           } else if (effect.type === 'fire') {
             this.drawOnHitFire(effect)
           }
@@ -2891,7 +2861,9 @@ export default {
         }
       }
     },
-    drawOnHitExplosion: function (effect, qtree, dist, tmp, tmp2, images) {
+    drawOnHitExplosion: function (effect, qtree, images) {
+      let dist
+      let tmp, tmp2
       if (this.enemies.size > 0) {
         const projectile = effect.content
         dist = projectile.radius
@@ -3537,7 +3509,6 @@ export default {
           // Some player sent a weapon part
           // Format:
           //    PlayerName;WeaponName;PowerUpName;Type;JsonPayload
-          console.log(event.data.t)
           const data = event.data.t.substring(3).split(';')
           this.setCoPlayerWeaponPart(data)
         } else if (event.data.t.startsWith('scost')) {
@@ -3668,7 +3639,8 @@ export default {
           obj.hitCount,
           obj.pHitCount,
           obj.hitRange,
-          obj.hitRangeLevelUp
+          obj.hitRangeLevelUp,
+          obj.visualType
         )
         if (ix !== -1) {
           // Update weapon (but not power-ups)
@@ -3888,7 +3860,10 @@ export default {
         this.integrationField = new Uint16Array(e.data)
       }
       this.cWorker.postMessage({
-        msg: '[c:init]'
+        msg: '[c:init]',
+        w: this.width,
+        h: this.height,
+        g: this.gridSize
       })
     },
     handleSetCost: function (data) {
@@ -3932,25 +3907,26 @@ export default {
       this.tileTree.insert(tile)
       this.renderTiles(this.offsetVector)
     },
-    addDeathAnimation: function (enemy, images) {
-      let imgArr
-      switch (enemy.visualType) {
-        case 'slime':
-          imgArr = images.death
-          break
-        case 'skeleton':
-          imgArr = images.skeleton_death
-          break
-        default:
-          imgArr = images.death
-      }
+    /**
+     *
+     * @param {FFUnit} enemy
+     * @param {FFUnitAssets} assets
+     */
+    addDeathAnimation: function (enemy, assets) {
+      const asset = assets.getAsset(enemy.visualType)
+      if (!asset) return
+      // Add death animation as an effect with expiration
       this.onHitEffects.push(new FFOnHitEffect(
         enemy.pos.x,
         enemy.pos.y,
         'death',
-        imgArr,
+        asset.death,
         10,
-        imgArr.length - 1))
+        asset.death.length - 1,
+        enemy.dimW,
+        enemy.dimH,
+        enemy.offX,
+        enemy.offY))
     },
     drawHeatmapCtx: function () {
       if (!this.integrationField) return
@@ -3972,6 +3948,31 @@ export default {
         this.ctx.rect(x, y, this.gridSize, this.gridSize)
         this.ctx.fill()
       }
+    },
+    /**
+     *
+     * @param {FFUnit} current
+     * @param {FFUnitAssets} assets
+     */
+    renderEnemy: function (current, assets) {
+      // What image are we going to use for this enemy?
+      const asset = assets.getAsset(current.visualType)
+      if (!asset) return
+      current.animFrames -= 1
+      if (current.animFrames <= 0) {
+        // After 10 frames we move to the next frame
+        current.animFrames = 10
+        current.animState += 1
+      }
+      if (current.animState >= asset.walk.length) {
+        current.animState = 0
+      }
+      this.ctx3.drawImage(
+        asset.walk[current.animState],
+        (current.pos.x + this.offsetVector.x) * this.gridSize + current.offX,
+        (current.pos.y + this.offsetVector.y) * this.gridSize + current.offY,
+        current.dimW,
+        current.dimH)
     }
   }
 }

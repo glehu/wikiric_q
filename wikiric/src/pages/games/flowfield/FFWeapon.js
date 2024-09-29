@@ -12,6 +12,19 @@ import FFProjectile from 'pages/games/flowfield/FFProjectile'
 
 /**
  * An FF Weapon
+ * @param {String} name
+ * @param {Number} range
+ * @param {Number} dps
+ * @param {Number} dpsLevelUp
+ * @param {Number} amount
+ * @param {Number} cooldown
+ * @param {Number} cooldownLevelUp
+ * @param {Number} projectileSpeed
+ * @param {Number} hitCount
+ * @param {Number} hitCountLevelUp
+ * @param {Number} hitRange
+ * @param {Number} hitRangeLevelUp
+ * @param {String} visualType
  */
 class FFWeapon {
   /**

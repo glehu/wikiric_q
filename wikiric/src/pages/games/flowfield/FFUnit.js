@@ -10,21 +10,50 @@
 import * as THREE from 'threejs-math'
 
 /**
- * An FF Unit
+ * An FF Unit'
+ * @param {Number} x The x position
+ * @param {Number} y The y position
+ * @param {Number} speed Determines the speed the unit moves with
+ * @param id The unit's unique id
+ * @param {Number} dmg The dmg per second for proxy damage
+ * @param {Number} hp The unit's health points
+ * @param {Number} xp The amount of XP this unit gives on death
+ * @param {String} visualType E.G. slime or skeleton
+ * @param {Number} dimW The width dimension for this unit
+ * @param {Number} dimH The height dimension for this unit
+ * @param {Number} offX The x offset for rendering
+ * @param {Number} offY The y offset for rendering
  */
 class FFUnit {
   /**
-   * An FF Unit's Constructor
-   * @param {Number} x
-   * @param {Number} y
-   * @param {Number} speed
-   * @param id
-   * @param {Number} dmg
-   * @param {Number} hp
-   * @param {Number} xp
-   * @param {String} visualType
+   * An FF Unit'
+   * @param {Number} x The x position
+   * @param {Number} y The y position
+   * @param {Number} speed Determines the speed the unit moves with
+   * @param id The unit's unique id
+   * @param {Number} dmg The dmg per second for proxy damage
+   * @param {Number} hp The unit's health points
+   * @param {Number} xp The amount of XP this unit gives on death
+   * @param {String} visualType E.G. slime or skeleton
+   * @param {Number} dimW The width dimension for this unit
+   * @param {Number} dimH The height dimension for this unit
+   * @param {Number} offX The x offset for rendering
+   * @param {Number} offY The y offset for rendering
    */
-  constructor (x, y, speed, id, dmg, hp, xp, visualType) {
+  constructor (
+    x,
+    y,
+    speed,
+    id,
+    dmg,
+    hp,
+    xp,
+    visualType,
+    dimW,
+    dimH,
+    offX,
+    offY
+  ) {
     this.id = id
     /**
      * This FF Unit's Position
@@ -78,6 +107,10 @@ class FFUnit {
      */
     this.xp = xp
     this.visualType = visualType
+    this.dimW = dimW
+    this.dimH = dimH
+    this.offX = offX
+    this.offY = offY
   }
 }
 

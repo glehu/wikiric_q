@@ -10,9 +10,11 @@
 import * as THREE from 'threejs-math'
 
 {
+  // Can be set externally
   let gridSize = 50
   let width = 1500 // 1550
   let height = 1500 // 900
+  // Internal
   let totalCells = 0
   let xCells = 0
   let yCells = 0
@@ -34,6 +36,9 @@ import * as THREE from 'threejs-math'
     if (!e.data.msg) return
     switch (e.data.msg) {
       case '[c:init]':
+        width = e.data.w
+        height = e.data.h
+        gridSize = e.data.g
         initializeGridValues()
         break
       case '[c:calc]':
@@ -64,6 +69,10 @@ import * as THREE from 'threejs-math'
     }
   }
 
+  /**
+   * Initializes the integration and cost grid with the provided
+   * ... values for width, height and grid size
+   */
   function initializeGridValues () {
     // Calculate amount of cells
     xCells = Math.ceil((width / gridSize) * 2)
