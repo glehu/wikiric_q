@@ -34,7 +34,7 @@
               <template v-if="!isSimulating">
                 <q-btn color="brand-bg"
                        text-color="brand-p"
-                       @click="scheduleSimulation"
+                       @click="scheduleSimulation(true, true)"
                        icon="sym_o_network_intelligence_history"
                        label="Simulate"
                        align="left"
@@ -477,12 +477,9 @@
                             -translate-y-2">
                   <div class="text-right">
                     <p class="text-sm cursor-default">
-                      {{ goalKills }} Kills
+                      {{ goalKills }} Kills | {{ roomId }}
                     </p>
-                    <div class="flex column gap-1 text-right">
-                      <p class="text-sm cursor-default">
-                        {{ roomId }}
-                      </p>
+                    <div class="flex column gap-1 text-right mt1">
                       <template v-for="[key, val] of sessions.entries()" :key="key.u">
                         <div class="flex items-center gap-1 text-right justify-end
                                     cursor-default">
@@ -649,7 +646,7 @@
                             label="Calculate"
                             label-position="left"/>
               <q-fab-action color="primary"
-                            @click="scheduleSimulation"
+                            @click="scheduleSimulation(true, true)"
                             icon="sym_o_network_intelligence_history"
                             label="Simulate"
                             label-position="left"/>
@@ -940,6 +937,9 @@ export default {
       yCells: 0,
       costField: undefined,
       integrationField: undefined,
+      /**
+       * @type {Map<String, FFUnit>}
+       */
       enemies: new Map(),
       /**
        * @type FFTilesQuadTree
@@ -1025,7 +1025,12 @@ export default {
       coPlayers: new Map(),
       peerCons: new Map(),
       wrtc: WRTC,
-      cWorker: null
+      cWorker: null,
+      isSyncing: false,
+      syncCount: 0,
+      syncMaxCount: 999999,
+      syncRound: -1,
+      syncCache: new Map()
     }
   },
   mounted () {
@@ -1666,7 +1671,7 @@ export default {
       const unit = new FFUnit(
         position.x,
         position.y,
-        1,
+        1 + Math.random(),
         id,
         dmg,
         hp,
@@ -1689,9 +1694,10 @@ export default {
     /**
      *
      * @param {FFUnit} unit
+     * @param {String} [prefix='E0-']
      */
-    srSendEnemy: function (unit) {
-      const msg = `EY-${unit.pos.x};${unit.pos.y};${unit.maxSpeed};${unit.id};${unit.dps};${unit.maxHp};${unit.xp};${unit.visualType};${unit.dimW};${unit.dimH};${unit.offX};${unit.offY}`
+    srSendEnemy: function (unit, prefix = 'E0-') {
+      const msg = `${prefix}${unit.pos.x};${unit.pos.y};${unit.maxSpeed};${unit.id};${unit.dps};${unit.maxHp};${unit.xp};${unit.visualType};${unit.dimW};${unit.dimH};${unit.offX};${unit.offY}`
       this.$connector.sendSyncRoomMessage(msg)
     },
     handleCalculation: async function () {
@@ -1896,9 +1902,10 @@ export default {
      * If there is no time, one will be determined
      * ...and distributed if there are co-players.
      * @param {Boolean} isRunning
+     * @param {Boolean} doSync
      * @param [timeWhen=null]
      */
-    scheduleSimulation: function (isRunning, timeWhen = null) {
+    scheduleSimulation: function (isRunning, doSync, timeWhen = null) {
       let delay
       if (timeWhen) {
         delay = timeWhen - DateTime.now().toMillis()
@@ -1912,6 +1919,13 @@ export default {
           }, delay)
         }
         return
+      }
+      // We are scheduling it for others, too.
+      if (doSync) {
+        this.synchronizeEnemies()
+        if (this.isSyncing) {
+          return
+        }
       }
       // 3 seconds delay
       delay = 3_000 + DateTime.now().toMillis()
@@ -1929,6 +1943,7 @@ export default {
       }
     },
     handleSimulation: function (srSilent) {
+      if (this.isSimulating) return
       console.log('Starting Simulation...')
       this.isSimulating = true
       this.goalAlive = true
@@ -3267,7 +3282,7 @@ export default {
       this.distributeGoalWeapons()
       this.isLevelUp = false
       this.modifyingWeapons = false
-      this.scheduleSimulation(true)
+      this.scheduleSimulation(true, true)
     },
     /**
      *
@@ -3506,6 +3521,7 @@ export default {
         if (!event.data || (!event.data.a && !event.data.t)) {
           return
         }
+        console.log('SYNCROOM')
         event.data.a = event.data.a.trim()
         event.data.t = event.data.t.trim()
         if (event.data.a.startsWith('[s:ANS]')) {
@@ -3588,7 +3604,7 @@ export default {
         } else if (event.data.t.startsWith('SCSIM-')) {
           // Some player wants to schedule simulation start/cancel
           const data = event.data.t.substring(6).split(';')
-          this.scheduleSimulation(Boolean(data[0]), Number(data[1]))
+          this.scheduleSimulation(Boolean(data[0]), false, Number(data[1]))
         } else if (event.data.t.startsWith('WP-')) {
           // Some player sent a weapon part
           // Format:
@@ -3596,15 +3612,93 @@ export default {
           const data = event.data.t.substring(3).split(';')
           this.setCoPlayerWeaponPart(data)
         } else if (event.data.t.startsWith('scost')) {
+          // A wall (tile with collision-detection) was placed
           this.handleSetCost(event.data.t)
         } else if (event.data.t.startsWith('stile')) {
+          // A collision-less tile was placed
           this.handleSetTile(event.data.t)
-        } else if (event.data.t.startsWith('EY-')) {
+        } else if (event.data.t.startsWith('E0-')) {
           // A new enemy!
           // Format:
           //    Field1;Field2;Field3;...
           const data = event.data.t.substring(3).split(';')
-          this.setCoPlayerEnemy(data)
+          this.setCoPlayerEnemy(data, false)
+        } else if (event.data.t.startsWith('E1-')) {
+          // We're about to receive enemies in synchronization mode
+          // Since we do not want to mix different requests
+          // ...we will remember the sync-round number
+          // Format:
+          //    E1-SyncRound
+          if (!this.isSyncing) {
+            // Initialize sync values if we weren't already syncing
+            this.enemies = new Map()
+            this.isSyncing = true
+            this.syncCount = 0
+          }
+          this.syncRound = Number(event.data.t.substring(3))
+        } else if (event.data.t.startsWith('E2-')) {
+          // An enemy! We are synchronizing all enemies
+          // ...possibly due to the start of a new round
+          // Format:
+          //    SyncRound;Field1;Field2;Field3;...
+          const data = event.data.t.substring(3).split(';')
+          const sr = Number(data[0])
+          if (sr > this.syncRound) {
+            // We haven't encountered this sync round, yet
+            // Proactively we will accept it and prepare
+            this.enemies = new Map()
+            this.isSyncing = true
+            this.syncRound = sr
+            this.syncCount = 1
+            this.syncMaxCount = 999999
+            this.setCoPlayerEnemy(data, true)
+          } else if (sr === this.syncRound) {
+            this.syncCount += 1
+            if (this.isSyncing && this.syncCount === this.syncMaxCount) {
+              // We're done collecting!
+              this.isSyncing = false
+              // We will report back to the host
+              this.$connector.sendSyncRoomMessage(
+                `SYOK-${this.store.user.username}`
+              )
+            }
+            this.setCoPlayerEnemy(data, true)
+          }
+        } else if (event.data.t.startsWith('E3-')) {
+          // We're done collecting enemies as soon as we reached
+          // ...the count that was just being sent to us
+          // Format:
+          //    E3-Count
+          const data = event.data.t.substring(3)
+          this.syncMaxCount = Number(data)
+          if (this.isSyncing && this.syncCount >= this.syncMaxCount) {
+            // We're done collecting!
+            this.isSyncing = false
+            // We will report back to the host
+            this.$connector.sendSyncRoomMessage(
+              `SYOK-${this.store.user.username}`
+            )
+          }
+        } else if (event.data.t.startsWith('qSYEN')) {
+          if (!this.isHost || this.isSyncing) return
+          // We (the host) were asked to synchronize enemies
+          // ...possibly due to the start of a new round
+          this.synchronizeEnemies()
+        } else if (event.data.t.startsWith('SYOK-')) {
+          if (!this.isHost || !this.isSyncing) return
+          // Some co-player has reported back he's done collecting
+          const data = event.data.t.substring(5)
+          // We will check if we have reached the expected amount of reports
+          if (this.syncCache.has(data)) {
+            return
+          }
+          this.syncCache.set(data, true)
+          this.syncCount += 1
+          if (this.syncCount >= this.syncMaxCount) {
+            // All players reported back!
+            this.isSyncing = false
+            this.scheduleSimulation(true, false)
+          }
         }
       }
       // Connect to the SyncRoom
@@ -3637,25 +3731,36 @@ export default {
     },
     setCoPlayerPosition: function (data) {
       const player = JSON.parse(data[1])
+      let pl
+      if (this.coPlayers.has(data[0])) {
+        pl = this.coPlayers.get(data[0])
+        pl.x = player.x - player.xo
+        pl.y = player.y - player.yo
+        this.coPlayers.set(data[0], pl)
+        if (this.cWorker) {
+          this.cWorker.postMessage({
+            msg: '[c:copo]',
+            usr: data[0],
+            x: pl.x,
+            y: pl.y
+          })
+        }
+        return
+      }
+      pl = {
+        usr: data[0],
+        x: player.x - player.xo,
+        y: player.y - player.yo
+      }
+      this.coPlayers.set(data[0], pl)
       if (this.cWorker) {
         this.cWorker.postMessage({
           msg: '[c:copo]',
           usr: data[0],
-          plr: player
+          x: pl.x,
+          y: pl.y
         })
       }
-      if (this.coPlayers.has(data[0])) {
-        const pl = this.coPlayers.get(data[0])
-        pl.x = player.x - player.xo
-        pl.y = player.y - player.yo
-        this.coPlayers.set(data[0], pl)
-        return
-      }
-      this.coPlayers.set(data[0], {
-        usr: data[0],
-        x: player.x - player.xo,
-        y: player.y - player.yo
-      })
     },
     setCoPlayerMovement: function (data) {
       if (this.coPlayers.has(data[0])) {
@@ -3811,7 +3916,16 @@ export default {
         this.coPlayers.set(data[0], pl)
       }
     },
-    setCoPlayerEnemy: function (data) {
+    /**
+     *
+     * @param {Array<String>} data
+     * @param {Boolean} syncMode
+     */
+    setCoPlayerEnemy: function (data, syncMode) {
+      if (syncMode) {
+        // Splice away the SyncRound at the beginning
+        data.splice(0, 1)
+      }
       // This is some exceptionally beautiful code.
       // Never ever have I seen less hardcoded numbers!
       // Wow! Readability is maxed out here!
@@ -3829,6 +3943,9 @@ export default {
         Number(data[10]),
         Number(data[11]))
       this.enemies.set(unit.id, unit)
+      if (syncMode) {
+        console.log(unit.id, unit.maxSpeed)
+      }
       let image
       if (unit.visualType === 'slime') {
         image = document.getElementById('slime_jump_0')
@@ -4114,6 +4231,48 @@ export default {
         (current.pos.y + this.offsetVector.y) * this.gridSize + current.offY,
         current.dimW,
         current.dimH)
+    },
+    /**
+     * When new rounds start, there is danger of enemies being
+     * ...out of sync. We synchronize all enemies by sending
+     * ...every enemy to all co-players if we are the host.
+     * If we are not the host, a request will be sent.
+     */
+    synchronizeEnemies: function () {
+      // Only the host should really synchronize the enemies
+      // If we're not the host, we simply ask him to do it
+      if (!this.isHost) {
+        this.$connector.sendSyncRoomMessage(
+          'qSYEN'
+        )
+        return
+      }
+      // Tell the co-players we're about to send some enemies
+      // ...in synchronization mode
+      this.isSyncing = true
+      this.syncRound = Math.floor(this.syncRound + 1)
+      this.syncCount = 0
+      this.syncMaxCount = this.coPlayers.size
+      if (this.syncMaxCount < 1) {
+        // If there are no co-players we will return
+        this.isSyncing = false
+        return
+      }
+      this.syncCache = new Map()
+      this.$connector.sendSyncRoomMessage(
+        `E1-${this.syncRound}`
+      )
+      let count = 0
+      for (const [id, unit] of this.enemies) {
+        if (!id) continue
+        this.srSendEnemy(unit, `E2-${this.syncRound};`)
+        console.log(unit.id, unit.maxSpeed)
+        count += 1
+      }
+      // Tell the co-players when they're done collecting
+      this.$connector.sendSyncRoomMessage(
+        `E3-${count}`
+      )
     }
   }
 }

@@ -10,7 +10,7 @@
 import * as THREE from 'threejs-math'
 
 /**
- * An FF Unit'
+ * An FF Unit
  * @param {Number} x The x position
  * @param {Number} y The y position
  * @param {Number} speed Determines the speed the unit moves with
@@ -26,7 +26,7 @@ import * as THREE from 'threejs-math'
  */
 class FFUnit {
   /**
-   * An FF Unit'
+   * An FF Unit
    * @param {Number} x The x position
    * @param {Number} y The y position
    * @param {Number} speed Determines the speed the unit moves with
@@ -69,7 +69,7 @@ class FFUnit {
      * This FF Unit's Maximum Speed
      * @type {Number}
      */
-    this.maxSpeed = speed + Math.random()
+    this.maxSpeed = speed
     /**
      * This FF Unit's State
      * @type {Number}

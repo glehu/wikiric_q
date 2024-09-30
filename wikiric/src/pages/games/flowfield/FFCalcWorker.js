@@ -122,7 +122,7 @@ import * as THREE from 'threejs-math'
     // Also add co-players
     if (coPlayers && coPlayers.size > 0) {
       coPlayers.forEach((val) => {
-        vec = new THREE.Vector2(Math.round(val.x), Math.round(val.y))
+        vec = new THREE.Vector2(Math.round(val.x) - 1, Math.round(val.y) - 1)
         // Set integration value of goal's position to zero
         goalArrayPos = convertXYToArrayPos(vec.x, vec.y)
         integrationField[goalArrayPos] = 0
