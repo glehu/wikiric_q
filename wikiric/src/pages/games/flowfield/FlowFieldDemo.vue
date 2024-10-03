@@ -477,7 +477,7 @@
                             -translate-y-2">
                   <div class="text-right">
                     <p class="text-sm cursor-default">
-                      {{ goalKills }} Kills | {{ roomId }}
+                      {{ timePassed }} | {{ goalKills }} Kills | {{ roomId }}
                     </p>
                     <div class="flex column gap-1 text-right mt1">
                       <template v-for="[key, val] of sessions.entries()" :key="key.u">
@@ -1017,6 +1017,8 @@ export default {
       isSimulating: false,
       timeDelta: 0,
       theta: 0,
+      secondInterval: null,
+      secondsPassed: 0,
 
       // DEBUG DATA
 
@@ -1059,6 +1061,9 @@ export default {
         return ''
       }
       return this.currentSRLatency.toFixed(1)
+    },
+    timePassed () {
+      return `${this.secondsPassed} s`
     }
   },
   methods: {
@@ -1956,7 +1961,11 @@ export default {
     },
     handleSimulation: function (srSilent) {
       if (this.isSimulating) return
+      this.secondsPassed = 0
       console.log('Starting Simulation...')
+      this.secondInterval = setInterval(() => {
+        this.secondsPassed += 1
+      }, 1_000)
       this.isSimulating = true
       this.goalAlive = true
       this.goalHP = 1000
@@ -2803,44 +2812,53 @@ export default {
             2 * Math.PI)
           this.ctx3.fill()
         } else if (projectile.visualType === 'fire') {
+          let xx = ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2
+          let yy = ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
+          const twoPi = 2 * Math.PI
           this.ctx3.fillStyle = '#f00'
           this.ctx3.globalAlpha = 0.2
           this.ctx3.arc(
-            ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
-            ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+            xx,
+            yy,
             20,
             0,
-            2 * Math.PI)
+            twoPi)
           this.ctx3.fill()
           this.ctx3.beginPath()
           this.ctx3.globalAlpha = 0.3
           this.ctx3.fillStyle = '#ff9100'
+          xx += (Math.random() - Math.random()) * 10
+          yy += (Math.random() - Math.random()) * 10
           this.ctx3.arc(
-            ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
-            ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+            xx,
+            yy,
             14,
             0,
-            2 * Math.PI)
+            twoPi)
           this.ctx3.fill()
           this.ctx3.beginPath()
           this.ctx3.globalAlpha = 0.4
           this.ctx3.fillStyle = '#fff400'
+          xx += (Math.random() - Math.random()) * 7
+          yy += (Math.random() - Math.random()) * 7
           this.ctx3.arc(
-            ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
-            ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+            xx,
+            yy,
             10,
             0,
-            2 * Math.PI)
+            twoPi)
           this.ctx3.fill()
           this.ctx3.beginPath()
           this.ctx3.globalAlpha = 0.7
           this.ctx3.fillStyle = '#fffcb0'
+          xx += (Math.random() - Math.random()) * 5
+          yy += (Math.random() - Math.random()) * 5
           this.ctx3.arc(
-            ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
-            ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+            xx,
+            yy,
             2,
             0,
-            2 * Math.PI)
+            twoPi)
           this.ctx3.fill()
           this.ctx3.beginPath()
           this.ctx3.globalAlpha = 1
@@ -2915,7 +2933,7 @@ export default {
                     projectile.pos.y,
                     'fire',
                     '',
-                    10,
+                    5,
                     10))
                 }
               }
@@ -3030,17 +3048,20 @@ export default {
       }
     },
     drawOnHitFire: function (effect) {
+      const x = ((effect.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2
+      const y = ((effect.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
+      const twoPi = 2 * Math.PI
       this.ctx3.fillStyle = '#f00'
       this.ctx3.globalAlpha = 0.1
       this.ctx3.beginPath()
       effect.x += (Math.random() - Math.random()) * 0.1
       effect.y += (Math.random() - Math.random()) * 0.1
       this.ctx3.arc(
-        ((effect.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
-        ((effect.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+        x,
+        y,
         10,
         0,
-        2 * Math.PI)
+        twoPi)
       this.ctx3.fill()
       this.ctx3.beginPath()
       this.ctx3.fillStyle = '#fff400'
@@ -3049,11 +3070,11 @@ export default {
       effect.x += (Math.random() - Math.random()) * 0.1
       effect.y += (Math.random() - Math.random()) * 0.1
       this.ctx3.arc(
-        ((effect.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
-        ((effect.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+        x,
+        y,
         2,
         0,
-        2 * Math.PI)
+        twoPi)
       this.ctx3.fill()
       this.ctx3.beginPath()
       this.ctx3.fillStyle = '#fffbc5'
@@ -3062,11 +3083,11 @@ export default {
       effect.x += (Math.random() - Math.random()) * 0.1
       effect.y += (Math.random() - Math.random()) * 0.1
       this.ctx3.arc(
-        ((effect.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2,
-        ((effect.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2,
+        x,
+        y,
         1,
         0,
-        2 * Math.PI)
+        twoPi)
       this.ctx3.fill()
       this.ctx3.beginPath()
       this.ctx3.globalAlpha = 1
