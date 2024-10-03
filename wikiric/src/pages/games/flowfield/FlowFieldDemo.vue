@@ -631,26 +631,37 @@
               </div>
             </div>
           </q-page-sticky>
-          <q-page-sticky position="bottom-right" :offset="[10, 80]"
-                         class="">
-            <q-fab
-              v-model="fab"
-              label=""
-              vertical-actions-align="right"
-              color="primary"
-              icon="menu"
-              direction="up">
-              <q-fab-action color="primary"
-                            @click="handleCalculation"
-                            icon="sym_o_manufacturing"
-                            label="Calculate"
-                            label-position="left"/>
-              <q-fab-action color="primary"
-                            @click="scheduleSimulation(true, true)"
-                            icon="sym_o_network_intelligence_history"
-                            label="Simulate"
-                            label-position="left"/>
-            </q-fab>
+          <q-page-sticky position="bottom-right" :offset="[10, 80]">
+            <div class="flex gap-2 items-center justify-center">
+              <template v-if="goalLevelUps > 0">
+                <q-btn icon="sym_o_military_tech" size="1.2rem" round glossy
+                       @click="useLevelUp">
+                  <q-tooltip>
+                    <p class="text-sm fontbold">
+                      Level Up!
+                    </p>
+                  </q-tooltip>
+                </q-btn>
+              </template>
+              <q-fab
+                v-model="fab"
+                label=""
+                vertical-actions-align="right"
+                color="primary"
+                icon="menu"
+                direction="up">
+                <q-fab-action color="primary"
+                              @click="handleCalculation"
+                              icon="sym_o_manufacturing"
+                              label="Calculate"
+                              label-position="left"/>
+                <q-fab-action color="primary"
+                              @click="scheduleSimulation(true, true)"
+                              icon="sym_o_network_intelligence_history"
+                              label="Simulate"
+                              label-position="left"/>
+              </q-fab>
+            </div>
           </q-page-sticky>
         </q-page>
       </q-page-container>
@@ -793,23 +804,23 @@
 
 <script>
 import * as THREE from 'threejs-math'
-import FFUnit from 'pages/games/flowfield/FFUnit'
-import FFQuadTree from 'pages/games/flowfield/FFQuadTree'
-import FFTilesQuadTree from 'pages/games/flowfield/FFTilesQuadTree'
-import FFTile from 'pages/games/flowfield/FFTile'
-import FFOnHitEffect from 'pages/games/flowfield/FFOnHitEffect'
-import FFWeaponComp from 'pages/games/flowfield/FFWeapon.vue'
+import FFUnit from 'pages/games/flowfield/units/FFUnit'
+import FFQuadTree from 'pages/games/flowfield/structure/FFQuadTree'
+import FFTilesQuadTree from 'pages/games/flowfield/structure/FFTilesQuadTree'
+import FFTile from 'pages/games/flowfield/structure/FFTile'
+import FFOnHitEffect from 'pages/games/flowfield/powerups/FFOnHitEffect'
+import FFWeaponComp from 'pages/games/flowfield/weapons/FFWeapon.vue'
 import FFWeaponList from 'pages/games/flowfield/weapons/FFWeaponList'
 import FFPowerUpList from 'pages/games/flowfield/powerups/FFPowerUpList'
-import FFWeaponDisplay from 'pages/games/flowfield/FFWeaponDisplay.vue'
-import FFPowerUpDisplay from 'pages/games/flowfield/FFPowerUpDisplay.vue'
+import FFWeaponDisplay from 'pages/games/flowfield/weapons/FFWeaponDisplay.vue'
+import FFPowerUpDisplay from 'pages/games/flowfield/powerups/FFPowerUpDisplay.vue'
 import FilePicker from 'components/FilePicker.vue'
 import { useStore } from 'stores/wikistate'
-import FFWeapon from 'pages/games/flowfield/FFWeapon'
-import FFPowerUp from 'pages/games/flowfield/FFPowerUp'
-import FFPowerUpEffect from 'pages/games/flowfield/FFPowerUpEffect'
+import FFWeapon from 'pages/games/flowfield/weapons/FFWeapon'
+import FFPowerUp from 'pages/games/flowfield/powerups/FFPowerUp'
+import FFPowerUpEffect from 'pages/games/flowfield/powerups/FFPowerUpEffect'
 import WRTC from 'src/libs/wRTC'
-import FFUnitAssets from 'pages/games/flowfield/FFUnitAssets'
+import FFUnitAssets from 'pages/games/flowfield/units/FFUnitAssets'
 import { DateTime } from 'luxon'
 
 export default {
@@ -974,6 +985,7 @@ export default {
       goalXP: 0,
       goalMaxXP: 500,
       goalLevel: 1,
+      goalLevelUps: 0,
       goalInvincibilityFrames: 0,
       goalAlive: true,
       goalKills: 0,
@@ -1014,7 +1026,7 @@ export default {
 
       // MULTIPLAYER DATA
 
-      roomId: 'wkrg_sync_ffa_dev',
+      roomId: 'wkrg_ffa_dev',
       currentSRLatency: -1,
       getQueue: new Map(),
       lastPos: null,
@@ -3060,6 +3072,13 @@ export default {
       this.ctx3.globalAlpha = 1
     },
     cancelSimulation: function () {
+      // Cancel movement
+      this.goalUp = false
+      this.goalLeft = false
+      this.goalDown = false
+      this.goalRight = false
+      this.srNotifyMove(true)
+      // Pause simulation
       this.srNotifySimulation(false)
       this.goalAlive = false
     },
@@ -3244,21 +3263,6 @@ export default {
     checkXP: function () {
       if (this.goalXP >= this.goalMaxXP) {
         this.handleLevelUp()
-        const offers = this.showLevelUpOffers()
-        if (offers) {
-          // Show level up screen
-          this.isLevelUp = true
-          // This actually just pauses the simulation
-          this.cancelSimulation()
-          // Cancel movement
-          // (sometimes it can get stuck upon level up,
-          // as keyboard inputs are stopped)
-          this.goalUp = false
-          this.goalLeft = false
-          this.goalDown = false
-          this.goalRight = false
-          this.srNotifyMove(true)
-        }
       }
     },
     /**
@@ -3267,7 +3271,9 @@ export default {
     handleLevelUp: function () {
       this.goalXP = 0
       this.goalLevel += 1
-      this.goalMaxXP = Math.ceil(this.goalMaxXP * 2.5)
+      // The player can use level-ups to get upgrades
+      this.goalLevelUps += 1
+      this.goalMaxXP += 1000
       if (this.goalWeapons.length < 1) {
         return
       }
@@ -3302,10 +3308,23 @@ export default {
       this.weaponList.categories.starter.splice(0, 1)
       return weapon
     },
+    useLevelUp: function () {
+      if (this.goalLevelUps < 1) {
+        return
+      }
+      const offers = this.showLevelUpOffers(2, 3)
+      if (offers) {
+        this.goalLevelUps -= 1
+        // Show level up screen
+        this.isLevelUp = true
+      }
+    },
     /**
-     *
+     * Shows the level up screen
+     * @param {Number} [amountWeapons=3]
+     * @param {Number} [amountPowerUps=3]
      */
-    showLevelUpOffers: function () {
+    showLevelUpOffers: function (amountWeapons = 3, amountPowerUps = 3) {
       let offers
       let hasOffer = false
       // Get unowned weapons as offers
@@ -3316,7 +3335,7 @@ export default {
         for (const entry of this.weaponList.categories.starter) {
           offers.push(entry)
         }
-        this.weaponOffers = this.selectRandomFromArray(3, offers)
+        this.weaponOffers = this.selectRandomFromArray(amountWeapons, offers)
       }
       // Get unowned power ups as offers
       this.powerUpOffers = []
@@ -3328,7 +3347,7 @@ export default {
         for (const entry of this.powerUpList.categories.starter) {
           offers.push(entry)
         }
-        this.powerUpOffers = this.selectRandomFromArray(3, offers)
+        this.powerUpOffers = this.selectRandomFromArray(amountPowerUps, offers)
         hasOffer = this.powerUpOffers.length > 0
       }
       // Did we get offers?

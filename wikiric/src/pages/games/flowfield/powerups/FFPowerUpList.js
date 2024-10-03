@@ -7,8 +7,8 @@
  * (where one would expect it without having to be visible on a screen under heavy use by the viewer).
  */
 
-import FFPowerUp from 'pages/games/flowfield/FFPowerUp'
-import FFPowerUpEffect from 'pages/games/flowfield/FFPowerUpEffect'
+import FFPowerUp from 'pages/games/flowfield/powerups/FFPowerUp'
+import FFPowerUpEffect from 'pages/games/flowfield/powerups/FFPowerUpEffect'
 
 class FFPowerUpList {
   constructor () {
@@ -133,6 +133,62 @@ class FFPowerUpList {
       'radius',
       1,
       0.5,
+      0,
+      false,
+      true)
+    powerUp.effects.push(effect)
+    this.categories.starter.push(powerUp)
+    /**
+     * STARTER POWERUP: Damage
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      1,
+      'Damage',
+      'Raw damage boost for anything that damages.')
+    effect = new FFPowerUpEffect(
+      true,
+      'dmg',
+      5,
+      5,
+      0,
+      false,
+      true)
+    powerUp.effects.push(effect)
+    this.categories.starter.push(powerUp)
+    /**
+     * STARTER POWERUP: Berserk Tonic
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      1,
+      'Berserk Tonic',
+      'More power for the wild!')
+    effect = new FFPowerUpEffect(
+      true,
+      'dmg',
+      10,
+      5,
+      2,
+      false,
+      true)
+    powerUp.effects.push(effect)
+    effect = new FFPowerUpEffect(
+      false,
+      'hitCount',
+      1,
+      1,
+      0,
+      false,
+      true)
+    powerUp.effects.push(effect)
+    effect = new FFPowerUpEffect(
+      false,
+      'speed',
+      1,
+      0.2,
       0,
       false,
       true)

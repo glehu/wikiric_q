@@ -68,7 +68,7 @@ class FFProjectile {
      */
     this.radius = radius
     /**
-     * This FF Projectile's Visual Type e.g. bullet or fire
+     * This FF Projectile's Visual Type e.g. bullet/fire/melee
      * @type {String}
      */
     this.visualType = visualType

@@ -8,7 +8,7 @@
  */
 
 import * as THREE from 'threejs-math'
-import FFProjectile from 'pages/games/flowfield/FFProjectile'
+import FFProjectile from 'pages/games/flowfield/weapons/FFProjectile'
 
 /**
  * An FF Weapon
@@ -31,6 +31,7 @@ class FFWeapon {
   /**
    * An FF Weapon's Constructor
    * @param {String} name
+   * @param {String} desc
    * @param {Number} range
    * @param {Number} dps
    * @param {Number} dpsLevelUp
@@ -46,6 +47,7 @@ class FFWeapon {
    * @param {Number} ttl
    */
   constructor (name,
+               desc,
                range,
                dps,
                dpsLevelUp,
@@ -65,6 +67,11 @@ class FFWeapon {
      * @type {String}
      */
     this.name = name
+    /**
+     * This FF Weapon's Description
+     * @type {String}
+     */
+    this.desc = desc
     /**
      * This FF Weapon's Range
      * @type {Number}
@@ -261,22 +268,24 @@ class FFWeapon {
                      radius) {
     // Calculate projectile vector
     const vector = new THREE.Vector2(vec.x, vec.y)
-    if (vector.lengthSq() === 0) {
-      vector.x = Math.random() - 0.5
-      vector.y = Math.random() - 0.5
+    if (speed > 0) {
+      if (vector.lengthSq() === 0) {
+        vector.x = Math.random() - 0.5
+        vector.y = Math.random() - 0.5
+      }
+      // Add random vector to simulate some spray effect
+      const spray = new THREE.Vector2()
+      spray.x = Math.random() - 0.5
+      spray.y = Math.random() - 0.5
+      spray.normalize()
+      if (iteration > 1) {
+        const limit = Math.sin(iteration)
+        spray.multiplyScalar(limit)
+      } else {
+        spray.multiplyScalar(0.2)
+      }
+      vector.add(spray)
     }
-    // Add random vector to simulate some spray effect
-    const spray = new THREE.Vector2()
-    spray.x = Math.random() - 0.5
-    spray.y = Math.random() - 0.5
-    spray.normalize()
-    if (iteration > 1) {
-      const limit = Math.sin(iteration)
-      spray.multiplyScalar(limit)
-    } else {
-      spray.multiplyScalar(0.2)
-    }
-    vector.add(spray)
     vector.normalize()
     vector.multiplyScalar(speed)
     // Return projectile

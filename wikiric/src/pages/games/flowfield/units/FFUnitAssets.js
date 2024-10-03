@@ -7,7 +7,7 @@
  * (where one would expect it without having to be visible on a screen under heavy use by the viewer).
  */
 
-import FFAssets from 'pages/games/flowfield/FFAssets'
+import FFAssets from 'pages/games/flowfield/units/FFAssets'
 
 class FFUnitAssets {
   constructor () {
