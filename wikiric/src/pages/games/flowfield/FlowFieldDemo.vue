@@ -3258,7 +3258,7 @@ export default {
       this.tile = tile
     },
     /**
-     *
+     * Levels up the player if he reached the XP threshold
      */
     checkXP: function () {
       if (this.goalXP >= this.goalMaxXP) {
@@ -3266,7 +3266,7 @@ export default {
       }
     },
     /**
-     *
+     * Resets player XP whilst rising XP threshold
      */
     handleLevelUp: function () {
       this.goalXP = 0
