@@ -30,6 +30,7 @@ class FFItemEffect {
                hitCount,
                floorValueOnProc,
                autoLevelUp) {
+    this.onHit = hitCount > 0
     this.type = type
     this.value = value
     this.valueLevelBonus = valueLevelBonus
@@ -37,6 +38,10 @@ class FFItemEffect {
     this.floorValueOnProc = floorValueOnProc
     this.autoLevelUp = autoLevelUp
     this._hitCount = hitCount
+  }
+
+  proc () {
+    return true
   }
 
   levelUp () {

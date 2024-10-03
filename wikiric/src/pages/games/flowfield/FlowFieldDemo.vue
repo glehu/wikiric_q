@@ -517,10 +517,10 @@
                 </q-card-section>
                 <div class="flex gap-2 pb16">
                   <q-card-section class="flex-grow">
-                    <p class="text-body1 fontbold mb2">
-                      Choose a Weapon:
-                    </p>
                     <template v-if="weaponOffers">
+                      <p class="text-body1 fontbold mb2">
+                        Choose a Weapon:
+                      </p>
                       <div class="flex gap-2 wfull hfull">
                         <template v-for="offer in weaponOffers" :key="offer">
                           <q-btn unelevated dense no-caps flat
@@ -532,11 +532,11 @@
                       </div>
                     </template>
                   </q-card-section>
-                  <q-card-section>
-                    <p class="text-body1 fontbold mb2">
-                      Choose a Power-Up:
-                    </p>
+                  <q-card-section class="flex-grow">
                     <template v-if="powerUpOffers">
+                      <p class="text-body1 fontbold mb2">
+                        Choose a Power-Up:
+                      </p>
                       <div class="flex gap-2 wfull hfull">
                         <template v-for="offer in powerUpOffers" :key="offer">
                           <q-btn unelevated dense no-caps flat
@@ -545,6 +545,25 @@
                             <div class="fmt_border rounded p2
                                         wfull hfull surface">
                               <FFPowerUpDisplay :power-ups="[offer]" class="flex-grow"/>
+                            </div>
+                          </q-btn>
+                        </template>
+                      </div>
+                    </template>
+                  </q-card-section>
+                  <q-card-section class="flex-grow">
+                    <template v-if="itemOffers">
+                      <p class="text-body1 fontbold mb2">
+                        Choose an Item:
+                      </p>
+                      <div class="flex gap-2 wfull hfull">
+                        <template v-for="offer in itemOffers" :key="offer">
+                          <q-btn unelevated dense no-caps flat
+                                 @click="handleItemOffer(offer)"
+                                 class="flex-grow">
+                            <div class="fmt_border rounded p2
+                                        wfull hfull surface">
+                              <FFItemDisplay :items="[offer]" class="flex-grow"/>
                             </div>
                           </q-btn>
                         </template>
@@ -822,10 +841,13 @@ import FFPowerUpEffect from 'pages/games/flowfield/powerups/FFPowerUpEffect'
 import WRTC from 'src/libs/wRTC'
 import FFUnitAssets from 'pages/games/flowfield/units/FFUnitAssets'
 import { DateTime } from 'luxon'
+import FFItemList from 'pages/games/flowfield/items/FFItemList'
+import FFItemDisplay from 'pages/games/flowfield/items/FFItemDisplay.vue'
 
 export default {
   name: 'FlowFieldDemo',
   components: {
+    FFItemDisplay,
     FilePicker,
     FFPowerUpDisplay,
     FFWeaponDisplay,
@@ -969,6 +991,11 @@ export default {
        * @type FFPowerUp[]
        */
       powerUpOffers: [],
+      itemList: new FFItemList(),
+      /**
+       * @type FFItem[]
+       */
+      itemOffers: [],
       modifyingWeapons: false,
       /**
        * @type FFPowerUp
@@ -993,6 +1020,10 @@ export default {
        * @type {FFWeapon[]}
        */
       goalWeapons: [],
+      /**
+       * @type {FFItem[]}
+       */
+      goalItems: [],
       /**
        * @type {FFProjectile[]}
        */
@@ -1099,6 +1130,8 @@ export default {
       this.weaponList.initiateStarterWeapons()
       this.powerUpList = new FFPowerUpList()
       this.powerUpList.initiateStarterPowerUps()
+      this.itemList = new FFItemList()
+      this.itemList.initiateStarterItems()
       this.setUpPlayer()
       this.setUpSyncRoom()
       this.setUpCalcWorker()
@@ -3333,7 +3366,7 @@ export default {
       if (this.goalLevelUps < 1) {
         return
       }
-      const offers = this.showLevelUpOffers(2, 3)
+      const offers = this.showLevelUpOffers(2, 3, 2)
       if (offers) {
         this.goalLevelUps -= 1
         // Show level up screen
@@ -3344,8 +3377,9 @@ export default {
      * Shows the level up screen
      * @param {Number} [amountWeapons=3]
      * @param {Number} [amountPowerUps=3]
+     * @param {Number} [amountItems=3]
      */
-    showLevelUpOffers: function (amountWeapons = 3, amountPowerUps = 3) {
+    showLevelUpOffers: function (amountWeapons = 3, amountPowerUps = 3, amountItems = 3) {
       let offers
       let hasOffer = false
       // Get unowned weapons as offers
@@ -3358,7 +3392,7 @@ export default {
         }
         this.weaponOffers = this.selectRandomFromArray(amountWeapons, offers)
       }
-      // Get unowned power ups as offers
+      // Get unowned power-ups as offers
       this.powerUpOffers = []
       if (this.goalWeapons.length > 0 &&
         this.powerUpList.categories.starter.length > 0
@@ -3370,6 +3404,17 @@ export default {
         }
         this.powerUpOffers = this.selectRandomFromArray(amountPowerUps, offers)
         hasOffer = this.powerUpOffers.length > 0
+      }
+      // Get unowned items as offers
+      this.itemOffers = []
+      if (this.itemList.categories.starter.length > 0) {
+        hasOffer = true
+        offers = []
+        for (const entry of this.itemList.categories.starter) {
+          offers.push(entry)
+        }
+        this.itemOffers = this.selectRandomFromArray(amountItems, offers)
+        hasOffer = this.itemOffers.length > 0
       }
       // Did we get offers?
       return hasOffer
@@ -3425,6 +3470,10 @@ export default {
     handlePowerUpOffer: function (offer) {
       this.chosenPowerup = offer
       this.modifyingWeapons = true
+    },
+    handleItemOffer: function (offer) {
+      this.goalItems.push(offer)
+      this.dismissLevelUp()
     },
     /**
      *

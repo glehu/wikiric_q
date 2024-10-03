@@ -8,7 +8,7 @@
   -->
 
 <template>
-  <q-card class="text-subtitle2 fmt_border
+  <q-card class="text-sm fmt_border
                  flex items-center surface"
           style="box-shadow: none !important">
     <div class="lg:flex">

@@ -29,21 +29,21 @@ class FFItem {
     this.desc = desc
     /**
      *
-     * @type {FFPowerUpEffect[]}
+     * @type {FFItemEffect[]}
      */
     this.effects = []
   }
 
   /**
    * Procs (activates) all available effects and returns them
-   * @return {FFPowerUpEffect[]}
+   * @return {FFItemEffect[]}
    */
   proc () {
     if (this.effects.length < 1) {
       return []
     }
     /**
-     * @type {FFPowerUpEffect[]}
+     * @type {FFItemEffect[]}
      */
     const procs = []
     let copy
@@ -78,4 +78,4 @@ class FFItem {
   }
 }
 
-export default FFPowerUp
+export default FFItem

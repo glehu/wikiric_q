@@ -91,9 +91,9 @@ class FFWeaponList {
       false,
       'amt',
       2,
-      1,
+      0.5,
       0,
-      false,
+      true,
       true)
     powerUp.effects.push(effect)
     weapon.powerUps.push(powerUp)
