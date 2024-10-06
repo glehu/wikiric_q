@@ -432,6 +432,7 @@ const wikiricSDK = {
    */
   sendSyncRoomMessage: function (msg) {
     if (!this._isSRoomSynchronized) return false
+    if (!this._syncRoom) return false
     let txt
     if (typeof msg === 'object') {
       txt = JSON.stringify(msg)
