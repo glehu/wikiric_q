@@ -1,7 +1,7 @@
 <template>
   <template v-for="pup in powerUps" :key="pup">
-    <p class="break-words text-start mb1">
-      <span class="fontbold text-body2">
+    <p class="break-words text-start mb1 text-sm">
+      <span class="fontbold">
         {{ pup.name }}
       </span>
       <span class="px1">
@@ -13,7 +13,8 @@
     </p>
     <template v-if="!small">
       <template v-for="eff in pup.effects" :key="eff">
-        <div class="flex items-center gap-2 mb2 fmt_border rounded p1">
+        <div class="flex items-center gap-x-2 gap-y-1
+                    mb2 fmt_border rounded p1">
           <div class="primary px1 py0.5 rounded text-xs w-fit
                       font-bold">
             <template v-if="eff.onHit">
@@ -29,7 +30,7 @@
               <p>Auto Level-Up</p>
             </div>
           </template>
-          <p>
+          <p class="text-sm break-all wfull">
             {{ eff.value.toLocaleString() }} {{ capitalizeFirstLetter(eff.type) }}
             <span class="italic">( +{{ eff.valueLevelBonus }} per Lv. )</span>
             <template v-if="eff.onHit">

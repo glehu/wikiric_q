@@ -286,7 +286,7 @@
               </div>
               <template v-if="isBulkUploadingEmotes">
                 <div class="wfull flex justify-end gap-2 mt4">
-                  <q-spinner-radio color="brand_p"/>
+                  <q-spinner-radio color="brand-p"/>
                   <span>Uploading {{ bulkUploadingCurrently }}... {{ bulkUploadLeft }} left</span>
                 </div>
               </template>

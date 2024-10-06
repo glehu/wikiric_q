@@ -7,13 +7,15 @@
  * (where one would expect it without having to be visible on a screen under heavy use by the viewer).
  */
 
+'use strict'
+
 import * as THREE from 'threejs-math'
 
 {
   // Can be set externally
   let gridSize = 50
-  let width = 1500 // 1550
-  let height = 1500 // 900
+  let width = 1000 // 1550
+  let height = 1000 // 900
   // Internal
   let totalCells = 0
   let xCells = 0
@@ -40,6 +42,10 @@ import * as THREE from 'threejs-math'
         height = e.data.h
         gridSize = e.data.g
         initializeGridValues()
+        break
+      case '[c:cell]':
+        xCells = e.data.x
+        yCells = e.data.y
         break
       case '[c:calc]':
         handleCalculation()
@@ -75,12 +81,10 @@ import * as THREE from 'threejs-math'
    */
   function initializeGridValues () {
     // Calculate amount of cells
-    xCells = Math.ceil((width / gridSize) * 2)
-    yCells = Math.ceil((height / gridSize) * 2)
     totalCells = xCells * yCells
     // Initialize grid arrays
     let init = false
-    if (!costField) {
+    if (!costField || costField.length < 1) {
       costField = new Uint16Array(totalCells)
       init = true
     }

@@ -437,7 +437,7 @@
                   Toggle&nbsp;Sidebar
                 </q-tooltip>
               </q-btn>
-              <q-toolbar-title class="text-subtitle1">
+              <q-toolbar-title class="text-subtitle1 hidden">
                 <q-breadcrumbs active-color="brand-p">
                   <q-breadcrumbs-el label="Flow Field Demo"/>
                 </q-breadcrumbs>
@@ -477,7 +477,7 @@
                             -translate-y-2">
                   <div class="text-right">
                     <p class="text-sm cursor-default">
-                      {{ timePassed }} | {{ goalKills }} Kills | {{ roomId }}
+                      Round {{ currentRound }} | {{ timePassed }} | {{ goalKills }} Kills | {{ roomId }}
                     </p>
                     <div class="flex column gap-1 text-right mt1">
                       <template v-for="[key, val] of sessions.entries()" :key="key.u">
@@ -503,77 +503,17 @@
               </div>
             </div>
           </q-page-sticky>
-          <template v-if="isLevelUp">
-            <div class="flex gap-2 justify-center items-center
-                        wfull max-w-[100dvw] top-0
-                        backdrop-blur-lg
-                        z-99 fixed hfull pt_nav overflow-y-scroll">
-              <q-card flat style="background: transparent"
-                      class="wfull hfull">
-                <q-card-section>
-                  <p class="fontbold text-3xl text-center pt2">
-                    Level Up Offers
-                  </p>
-                </q-card-section>
-                <div class="flex gap-2 pb16">
-                  <q-card-section class="flex-grow">
-                    <template v-if="weaponOffers">
-                      <p class="text-body1 fontbold mb2">
-                        Choose a Weapon:
-                      </p>
-                      <div class="flex gap-2 wfull hfull">
-                        <template v-for="offer in weaponOffers" :key="offer">
-                          <q-btn unelevated dense no-caps flat
-                                 @click="handleWeaponOffer(offer)"
-                                 class="flex-grow">
-                            <FFWeaponDisplay :weapon="offer" class="flex-grow"/>
-                          </q-btn>
-                        </template>
-                      </div>
-                    </template>
-                  </q-card-section>
-                  <q-card-section class="flex-grow">
-                    <template v-if="powerUpOffers">
-                      <p class="text-body1 fontbold mb2">
-                        Choose a Power-Up:
-                      </p>
-                      <div class="flex gap-2 wfull hfull">
-                        <template v-for="offer in powerUpOffers" :key="offer">
-                          <q-btn unelevated dense no-caps flat
-                                 @click="handlePowerUpOffer(offer)"
-                                 class="flex-grow">
-                            <div class="fmt_border rounded p2
-                                        wfull hfull surface">
-                              <FFPowerUpDisplay :power-ups="[offer]" class="flex-grow"/>
-                            </div>
-                          </q-btn>
-                        </template>
-                      </div>
-                    </template>
-                  </q-card-section>
-                  <q-card-section class="flex-grow">
-                    <template v-if="itemOffers">
-                      <p class="text-body1 fontbold mb2">
-                        Choose an Item:
-                      </p>
-                      <div class="flex gap-2 wfull hfull">
-                        <template v-for="offer in itemOffers" :key="offer">
-                          <q-btn unelevated dense no-caps flat
-                                 @click="handleItemOffer(offer)"
-                                 class="flex-grow">
-                            <div class="fmt_border rounded p2
-                                        wfull hfull surface">
-                              <FFItemDisplay :items="[offer]" class="flex-grow"/>
-                            </div>
-                          </q-btn>
-                        </template>
-                      </div>
-                    </template>
-                  </q-card-section>
-                </div>
-              </q-card>
-            </div>
-          </template>
+          <FFShop :is-open="isLevelUp"
+                  :current-round="currentRound"
+                  :level-ups="goalLevelUpsOpen"
+                  :weapon-offers="weaponOffers"
+                  :power-up-offers="powerUpOffers"
+                  :item-offers="itemOffers"
+                  :tab-pref="shopTab"
+                  @close="isLevelUp = false"
+                  @wpn="handleShopWeaponOffer"
+                  @itm="handleShopItemOffer"
+                  @pup="handleShopPowerUpOffer"/>
           <template v-if="modifyingWeapons">
             <div class="flex gap-2 justify-center items-center
                         wfull max-w-[100dvw] top-0
@@ -652,34 +592,34 @@
           </q-page-sticky>
           <q-page-sticky position="bottom-right" :offset="[10, 80]">
             <div class="flex gap-2 items-center justify-center">
-              <template v-if="goalLevelUps > 0">
-                <q-btn icon="sym_o_military_tech" size="1.2rem" round glossy
-                       @click="useLevelUp">
-                  <q-tooltip>
-                    <p class="text-sm fontbold">
-                      Level Up!
-                    </p>
-                  </q-tooltip>
-                </q-btn>
+              <q-btn icon="sym_o_military_tech" size="1.2rem" round glossy
+                     @click="useLevelUp">
+                <q-badge floating rounded
+                         color="primary">
+                  {{ goalLevelUpsOpen }}
+                </q-badge>
+                <q-tooltip>
+                  <p class="text-sm fontbold">
+                    Level Up!
+                  </p>
+                </q-tooltip>
+              </q-btn>
+              <template v-if="isScheduling">
+                <div class="flex items-center gap-2 rounded-full p4 primary">
+                  <q-spinner-gears size="2rem" color="brand-p"/>
+                  <p class="text-lg fontbold">
+                    Starting...
+                  </p>
+                </div>
               </template>
-              <q-fab
-                v-model="fab"
-                label=""
-                vertical-actions-align="right"
-                color="primary"
-                icon="menu"
-                direction="up">
-                <q-fab-action color="primary"
-                              @click="handleCalculation"
-                              icon="sym_o_manufacturing"
-                              label="Calculate"
-                              label-position="left"/>
-                <q-fab-action color="primary"
-                              @click="scheduleSimulation(true, true)"
-                              icon="sym_o_network_intelligence_history"
-                              label="Simulate"
-                              label-position="left"/>
-              </q-fab>
+              <template v-else>
+                <template v-if="!isSimulating">
+                  <q-btn color="primary" no-caps rounded size="1.5rem"
+                         @click="scheduleSimulation(true, true)"
+                         icon="sym_o_network_intelligence_history"
+                         label="Start Round"/>
+                </template>
+              </template>
             </div>
           </q-page-sticky>
         </q-page>
@@ -842,12 +782,12 @@ import WRTC from 'src/libs/wRTC'
 import FFUnitAssets from 'pages/games/flowfield/units/FFUnitAssets'
 import { DateTime } from 'luxon'
 import FFItemList from 'pages/games/flowfield/items/FFItemList'
-import FFItemDisplay from 'pages/games/flowfield/items/FFItemDisplay.vue'
+import FFShop from 'pages/games/flowfield/FFShop.vue'
 
 export default {
   name: 'FlowFieldDemo',
   components: {
-    FFItemDisplay,
+    FFShop,
     FilePicker,
     FFPowerUpDisplay,
     FFWeaponDisplay,
@@ -961,8 +901,8 @@ export default {
        */
       ctx3: null,
       gridSize: 50,
-      width: 1500, // 1550,
-      height: 1500, // 900,
+      width: 1000, // 1550,
+      height: 1000, // 900,
       sWidth: 0,
       sHeight: 0,
       totalCells: 0,
@@ -981,6 +921,7 @@ export default {
       offsetVector: new THREE.Vector2(0, 0),
       onHitEffects: [],
       isLevelUp: false,
+      shopTab: 'shop',
       weaponList: new FFWeaponList(),
       /**
        * @type FFWeapon[]
@@ -1013,6 +954,7 @@ export default {
       goalMaxXP: 500,
       goalLevel: 1,
       goalLevelUps: 0,
+      goalLevelUpsOpen: 0,
       goalInvincibilityFrames: 0,
       goalAlive: true,
       goalKills: 0,
@@ -1046,10 +988,13 @@ export default {
 
       isCalculating: false,
       isSimulating: false,
+      isScheduling: false,
       timeDelta: 0,
       theta: 0,
       secondInterval: null,
       secondsPassed: 0,
+      secondsMax: 30,
+      currentRound: 0,
 
       // DEBUG DATA
 
@@ -1112,6 +1057,7 @@ export default {
       this.offsetVector = new THREE.Vector2()
       this.goalWeapons = []
       this.goalWeaponProjectiles = []
+      this.setUpCalcWorker()
       this.initializeGridValues()
       this.initializeEnemies()
       this.initializeCanvas()
@@ -1134,7 +1080,10 @@ export default {
       this.itemList.initiateStarterItems()
       this.setUpPlayer()
       this.setUpSyncRoom()
-      this.setUpCalcWorker()
+      // QoL
+      this.addGoal(new THREE.Vector2(3, 3))
+      this.goalLevelUps = 1
+      this.goalLevelUpsOpen = 1
     },
     manageKeyListeners: function (forceRemove = false) {
       document.removeEventListener('keydown', this.handleFFKeyDown, false)
@@ -1411,8 +1360,16 @@ export default {
         this.ctx2.clearRect(0, 0, this.width, this.height)
       }
       // Calculate amount of cells
-      const xCells = Math.ceil((this.width / this.gridSize) * 2)
-      const yCells = Math.ceil((this.height / this.gridSize) * 2)
+      const xCells = Math.ceil((this.width / this.gridSize))
+      const yCells = Math.ceil((this.height / this.gridSize))
+      // Notify FFCalcWorker
+      if (this.cWorker) {
+        this.cWorker.postMessage({
+          msg: '[c:cell]',
+          x: xCells,
+          y: yCells
+        })
+      }
       const totalCells = xCells * yCells
       this.xCells = xCells
       this.yCells = yCells
@@ -1960,6 +1917,7 @@ export default {
       if (timeWhen) {
         delay = timeWhen - DateTime.now().toMillis()
         if (isRunning) {
+          this.isScheduling = true
           setTimeout(() => {
             this.handleSimulation(true)
           }, delay)
@@ -1983,6 +1941,7 @@ export default {
         `SCSIM-${isRunning};${delay}`
       )
       if (isRunning) {
+        this.isScheduling = true
         setTimeout(() => {
           this.handleSimulation(true)
         }, 3_000)
@@ -1995,11 +1954,19 @@ export default {
     handleSimulation: function (srSilent) {
       if (this.isSimulating) return
       this.secondsPassed = 0
+      this.currentRound += 1
       console.log('Starting Simulation...')
       this.secondInterval = setInterval(() => {
         this.secondsPassed += 1
+        if (this.isHost && this.secondsPassed >= this.secondsMax) {
+          // Round has ended!
+          this.secondsPassed = 0
+          this.handleEndOfRound()
+          clearInterval(this.secondInterval)
+        }
       }, 1_000)
       this.isSimulating = true
+      this.isScheduling = false
       this.goalAlive = true
       this.goalHP = 1000
       this.canMove = false
@@ -2089,52 +2056,57 @@ export default {
       let cacheDiff
       // Step Function to be called repeatedly
       let stepCount = 0
+      let lastFiveSecond = performance.now()
       let lastSecond = performance.now()
       let lastHalfSecond = performance.now()
       let lastTime = performance.now()
       let timeDelta
       let lastPos
       const step = () => {
-        if (this.goalAlive) {
-          // Did half a second pass?
-          tmp = performance.now()
-          if ((tmp - lastHalfSecond) / 500 >= 1) {
-            lastHalfSecond = tmp
-            this.procPerHalfSecondTriggers()
-          }
-          // Calculate FPS
-          // Did a second pass?
-          tmp = performance.now()
-          if ((tmp - lastSecond) / 1000 >= 1) {
-            lastSecond = tmp
-            this.timeDelta = stepCount
-            stepCount = 0
-            this.procPerSecondTriggers()
-          }
-          // How many seconds passed?
-          tmp = performance.now()
-          timeDelta = (tmp - lastTime) / 1000
-          lastTime = tmp
-          // Schedule next step
-          // MDN Docs say it's best practice to put this here
-          // ...so I guess we will just do it.
-          requestAnimationFrame(step)
-          // Move the players!
-          this.applyGoalMovement(endVector, timeDelta)
-          this.applyCoPlayersMovement(timeDelta)
-          // Draw environment
-          this.drawGrid(false)
-          lastPos = this.applyGoalCalculation(lastPos)
-          // Display players
-          this.renderGoal()
-          this.renderCoPlayers()
-          // Display walls/tiles etc.
-          this.renderTiles(this.offsetVector)
-        } else {
+        if (!this.goalAlive) {
           this.srNotifySimulation(false)
           this.isSimulating = false
           console.log('Simulation has ended!')
+          return
         }
+        // Did half a second pass?
+        tmp = performance.now()
+        if ((tmp - lastHalfSecond) / 500 >= 1) {
+          lastHalfSecond = tmp
+          this.procPerHalfSecondTriggers()
+        }
+        // Calculate FPS
+        // Did a second pass?
+        if ((tmp - lastSecond) / 1000 >= 1) {
+          lastSecond = tmp
+          this.timeDelta = stepCount
+          stepCount = 0
+          this.procPerSecondTriggers()
+        }
+        // Did five seconds pass?
+        if ((tmp - lastFiveSecond) / 5000 >= 1) {
+          lastFiveSecond = tmp
+          this.procPerFiveSecondTriggers()
+        }
+        // How many seconds passed?
+        timeDelta = (tmp - lastTime) / 1000
+        lastTime = tmp
+        // Schedule next step
+        // MDN Docs say it's best practice to put this here
+        // ...so I guess we will just do it.
+        requestAnimationFrame(step)
+        // Move the players!
+        this.applyGoalMovement(endVector, timeDelta)
+        this.applyCoPlayersMovement(timeDelta)
+        // Draw environment
+        this.drawGrid(false)
+        lastPos = this.applyGoalCalculation(lastPos)
+        // Display players
+        this.renderGoal()
+        this.renderCoPlayers()
+        // Display walls/tiles etc.
+        this.renderTiles(this.offsetVector)
+
         // Frame-Resets
         qtree = new FFQuadTree(this.xCells / 2, this.yCells / 2, this.xCells / 2, this.yCells / 2, 4)
         cacheMap.clear()
@@ -2173,6 +2145,9 @@ export default {
       // Start first simulation step
       requestAnimationFrame(step)
     },
+    handleEndOfRound: function () {
+      this.scheduleSimulation(false, true)
+    },
     applyGoalCalculation: function (lastPos) {
       if (this.drawHeatmap) {
         this.handleCalculation()
@@ -2203,7 +2178,7 @@ export default {
      */
     applyGoalMovement: function (endVector, timeDelta) {
       const offsetX = this.goalPosition.x * this.gridSize >= (this.sWidth / 2)
-      const offsetY = this.goalPosition.y * this.gridSize >= (this.sHeight / 2)
+      const offsetY = this.goalPosition.y * this.gridSize >= ((this.sHeight / 2) - 100)
       // If the player moved half the screen's distance
       // ...in any direction, we will translate the movement
       // ...that would further exceed this to the environment.
@@ -3135,6 +3110,15 @@ export default {
       // Pause simulation
       this.srNotifySimulation(false)
       this.goalAlive = false
+      const offers = this.showLevelUpOffers(
+        3,
+        0,
+        3)
+      if (offers) {
+        // Show level up screen
+        this.shopTab = 'shop'
+        this.isLevelUp = true
+      }
     },
     clearAll: function () {
       // Cancel game loop
@@ -3327,6 +3311,7 @@ export default {
       this.goalLevel += 1
       // The player can use level-ups to get upgrades
       this.goalLevelUps += 1
+      this.goalLevelUpsOpen += 1
       this.goalMaxXP += 1000
       if (this.goalWeapons.length < 1) {
         return
@@ -3342,7 +3327,6 @@ export default {
       this.distributeGoalWeapons()
       this.isLevelUp = false
       this.modifyingWeapons = false
-      this.scheduleSimulation(true, true)
     },
     /**
      *
@@ -3364,12 +3348,24 @@ export default {
     },
     useLevelUp: function () {
       if (this.goalLevelUps < 1) {
+        // Show level up screen
+        if (this.goalLevelUpsOpen < 1) {
+          this.weaponOffers = []
+          this.itemOffers = []
+          this.powerUpOffers = []
+        }
+        this.shopTab = 'skills'
+        this.isLevelUp = true
         return
       }
-      const offers = this.showLevelUpOffers(2, 3, 2)
+      const offers = this.showLevelUpOffers(
+        0,
+        3,
+        0)
       if (offers) {
         this.goalLevelUps -= 1
         // Show level up screen
+        this.shopTab = 'skills'
         this.isLevelUp = true
       }
     },
@@ -3383,38 +3379,44 @@ export default {
       let offers
       let hasOffer = false
       // Get unowned weapons as offers
-      this.weaponOffers = []
-      if (this.weaponList.categories.starter.length > 0) {
-        hasOffer = true
-        offers = []
-        for (const entry of this.weaponList.categories.starter) {
-          offers.push(entry)
+      if (amountWeapons > 0) {
+        this.weaponOffers = []
+        if (this.weaponList.categories.starter.length > 0) {
+          hasOffer = true
+          offers = []
+          for (const entry of this.weaponList.categories.starter) {
+            offers.push(entry)
+          }
+          this.weaponOffers = this.selectRandomFromArray(amountWeapons, offers)
         }
-        this.weaponOffers = this.selectRandomFromArray(amountWeapons, offers)
       }
       // Get unowned power-ups as offers
-      this.powerUpOffers = []
-      if (this.goalWeapons.length > 0 &&
-        this.powerUpList.categories.starter.length > 0
-      ) {
-        hasOffer = true
-        offers = []
-        for (const entry of this.powerUpList.categories.starter) {
-          offers.push(entry)
+      if (amountPowerUps > 0) {
+        this.powerUpOffers = []
+        if (this.goalWeapons.length > 0 &&
+          this.powerUpList.categories.starter.length > 0
+        ) {
+          hasOffer = true
+          offers = []
+          for (const entry of this.powerUpList.categories.starter) {
+            offers.push(entry)
+          }
+          this.powerUpOffers = this.selectRandomFromArray(amountPowerUps, offers)
+          hasOffer = this.powerUpOffers.length > 0
         }
-        this.powerUpOffers = this.selectRandomFromArray(amountPowerUps, offers)
-        hasOffer = this.powerUpOffers.length > 0
       }
       // Get unowned items as offers
-      this.itemOffers = []
-      if (this.itemList.categories.starter.length > 0) {
-        hasOffer = true
-        offers = []
-        for (const entry of this.itemList.categories.starter) {
-          offers.push(entry)
+      if (amountItems > 0) {
+        this.itemOffers = []
+        if (this.itemList.categories.starter.length > 0) {
+          hasOffer = true
+          offers = []
+          for (const entry of this.itemList.categories.starter) {
+            offers.push(entry)
+          }
+          this.itemOffers = this.selectRandomFromArray(amountItems, offers)
+          hasOffer = this.itemOffers.length > 0
         }
-        this.itemOffers = this.selectRandomFromArray(amountItems, offers)
-        hasOffer = this.itemOffers.length > 0
       }
       // Did we get offers?
       return hasOffer
@@ -3451,6 +3453,19 @@ export default {
         cache.push(ix)
       }
       return randomResults
+    },
+    handleShopWeaponOffer: function (offer) {
+      this.handleWeaponOffer(offer)
+      this.weaponOffers = []
+    },
+    handleShopItemOffer: function (offer) {
+      this.handleItemOffer(offer)
+      this.itemOffers = []
+    },
+    handleShopPowerUpOffer: function (offer) {
+      this.handlePowerUpOffer(offer)
+      this.powerUpOffers = []
+      this.goalLevelUpsOpen -= 1
     },
     /**
      *
@@ -3568,14 +3583,19 @@ export default {
     procPerSecondTriggers: function () {
       // Populate map
       if (this.isHost || !this.coPlayers || this.coPlayers.size < 1) {
-        this.checkAndSpawnEnemies()
+        this.checkAndSpawnEnemies('slime', this.getEnemyAmount())
       }
-      // Retrieve and distribute current sessions
       this.srNotifyPosition(true)
-      // if (this.isHost) {
-      //   this.$connector.sendSyncRoomMessage(
-      //     this.buildDataCommand('GET', 'SESH', 'DIST'))
-      // }
+    },
+    /**
+     * Actions happening or being checked every five seconds
+     * ...are placed here.
+     */
+    procPerFiveSecondTriggers: function () {
+      // Populate map
+      if (this.isHost || !this.coPlayers || this.coPlayers.size < 1) {
+        this.checkAndSpawnEnemies('skeleton', this.getEnemySkeletonAmount())
+      }
     },
     /**
      * Actions happening or being checked every half second
@@ -3585,21 +3605,42 @@ export default {
       this.srNotifyMove(true)
     },
     /**
-     * Spawns enemies around the map
+     *
+     * @return {Number}
      */
-    checkAndSpawnEnemies: function () {
+    getEnemyAmount: function () {
+      return 1 + this.currentRound
+    },
+    getEnemySkeletonAmount: function () {
+      if (this.currentRound >= 3) {
+        return 1 + this.currentRound + Math.floor(this.currentRound / 3)
+      } else {
+        return 0
+      }
+    },
+    /**
+     * Spawns enemies around the map
+     * @param {String} [type='slime']
+     * @param {Number} [amount=1]
+     */
+    checkAndSpawnEnemies: function (type = 'slime', amount = 2) {
+      if (amount < 1) {
+        return
+      }
       // Circle-Spawner rotating around the screen
-      for (let i = 0; i < 2; i++) {
-        const x = (this.width * Math.cos(this.theta)) +
-          this.width / 2 - (this.offsetVector.x * this.gridSize)
-        const y = (this.height * Math.sin(this.theta)) +
-          this.height / 2 - (this.offsetVector.y * this.gridSize)
-        this.theta += 0.1
+      const w = (this.width / 2) - 50
+      const h = (this.height / 2) - 50
+      const offX = this.offsetVector.x * this.gridSize
+      const offY = this.offsetVector.y * this.gridSize
+      for (let i = 0; i < amount; i++) {
+        const x = (w * Math.cos(this.theta)) + w - offX
+        const y = (h * Math.sin(this.theta)) + h - offY
+        this.theta += 0.2
         const pos = new THREE.Vector2(
           Math.round(x / this.gridSize),
           Math.round(y / this.gridSize))
         // Spawn regular enemies
-        this.addEnemy(pos, 'slime', false)
+        this.addEnemy(pos, type, false)
       }
     },
     setUpSyncRoom: async function () {
@@ -3610,7 +3651,6 @@ export default {
         if (!event.data || (!event.data.a && !event.data.t)) {
           return
         }
-        console.log('SYNCROOM')
         event.data.a = event.data.a.trim()
         event.data.t = event.data.t.trim()
         if (event.data.a.startsWith('[s:ANS]')) {
@@ -4032,9 +4072,6 @@ export default {
         Number(data[10]),
         Number(data[11]))
       this.enemies.set(unit.id, unit)
-      if (syncMode) {
-        console.log(unit.id, unit.maxSpeed)
-      }
       let image
       if (unit.visualType === 'slime') {
         image = document.getElementById('slime_jump_0')
@@ -4276,7 +4313,9 @@ export default {
         enemy.offY))
     },
     drawHeatmapCtx: function () {
-      if (!this.integrationField) return
+      if (!this.integrationField) {
+        return
+      }
       let pos
       let value
       let x, y
@@ -4355,7 +4394,6 @@ export default {
       for (const [id, unit] of this.enemies) {
         if (!id) continue
         this.srSendEnemy(unit, `E2-${this.syncRound};`)
-        console.log(unit.id, unit.maxSpeed)
         count += 1
       }
       // Tell the co-players when they're done collecting

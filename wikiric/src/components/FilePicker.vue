@@ -26,7 +26,7 @@
             class="h4 rounded fmt_border"
             :value="uploadProgress"
             color="primary"
-            track-color="brand_bg"
+            track-color="brand-bg"
           />
         </div>
       </template>
@@ -45,7 +45,7 @@
                flat
                @click.stop.prevent="clearFile"/>
         <template v-if="uploading">
-          <q-spinner-radio color="brand_p"/>
+          <q-spinner-radio color="brand-p"/>
         </template>
         <template v-else>
           <q-btn :icon="confirmIcon"
