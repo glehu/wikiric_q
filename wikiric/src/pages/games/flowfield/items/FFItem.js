@@ -35,31 +35,40 @@ class FFItem {
   }
 
   /**
-   * Procs (activates) all available effects and returns them
-   * @return {FFItemEffect[]}
+   * Procs (activates) all available item effects and adds their effect to the stats map
+   * @param {Map} playerStats
    */
-  proc () {
+  proc (playerStats) {
     if (this.effects.length < 1) {
-      return []
+      return playerStats
     }
-    /**
-     * @type {FFItemEffect[]}
-     */
-    const procs = []
     let copy
+    let tmp
     for (const effect of this.effects) {
       if (effect.proc()) {
         if (effect.floorValueOnProc) {
           // Shallow copy and floor value
           copy = { ...effect }
           copy.value = Math.floor(copy.value)
-          procs.push(copy)
+          if (playerStats.has(copy.type)) {
+            tmp = playerStats.get(copy.type)
+            tmp += copy.value
+            playerStats.set(copy.type, tmp)
+          } else {
+            playerStats.set(copy.type, copy.value)
+          }
         } else {
-          procs.push(effect)
+          if (playerStats.has(effect.type)) {
+            tmp = playerStats.get(effect.type)
+            tmp += effect.value
+            playerStats.set(effect.type, tmp)
+          } else {
+            playerStats.set(effect.type, effect.value)
+          }
         }
       }
     }
-    return procs
+    return playerStats
   }
 
   /**

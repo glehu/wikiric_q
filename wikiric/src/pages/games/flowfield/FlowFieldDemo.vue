@@ -541,7 +541,7 @@
                         <q-btn unelevated dense no-caps flat
                                @click="handleWeaponModification(weapon)"
                                class="wfull hfull">
-                          <FFWeaponDisplay :weapon="weapon" class="flex-grow"/>
+                          <FFWeaponDisplay :weapon="weapon" class="flex-grow" small/>
                         </q-btn>
                       </template>
                     </div>
@@ -783,6 +783,8 @@ import FFUnitAssets from 'pages/games/flowfield/units/FFUnitAssets'
 import { DateTime } from 'luxon'
 import FFItemList from 'pages/games/flowfield/items/FFItemList'
 import FFShop from 'pages/games/flowfield/FFShop.vue'
+import FFItem from 'pages/games/flowfield/items/FFItem'
+import FFItemEffect from 'pages/games/flowfield/items/FFItemEffect'
 
 export default {
   name: 'FlowFieldDemo',
@@ -948,8 +950,9 @@ export default {
 
       canMove: false,
       goalPosition: new THREE.Vector2(-1, -1),
-      goalHP: 1000,
-      goalMaxHP: 1000,
+      goalHP: 100,
+      goalMaxHP: 0,
+      goalMaxHPOriginal: 100,
       goalXP: 0,
       goalMaxXP: 500,
       goalLevel: 1,
@@ -966,6 +969,7 @@ export default {
        * @type {FFItem[]}
        */
       goalItems: [],
+      goalStats: new Map(),
       /**
        * @type {FFProjectile[]}
        */
@@ -973,6 +977,7 @@ export default {
       goalMaxRange: 0,
       goalMovementVector: new THREE.Vector2(0, 0),
       goalSpeed: 2,
+      goalSpeedOriginal: 2,
 
       goalNorth: new THREE.Vector2(0, -1),
       goalWest: new THREE.Vector2(-1, 0),
@@ -1657,7 +1662,7 @@ export default {
       let xNew, yNew
       if (enemyType === 'slime') {
         hp = 20
-        dmg = 10
+        dmg = 5
         xp = 100
         image = document.getElementById('slime_jump_0')
         dim = 32
@@ -1666,7 +1671,7 @@ export default {
         yNew = position.y * this.gridSize + off
       } else if (enemyType === 'skeleton') {
         hp = 150
-        dmg = 75
+        dmg = 30
         xp = 1000
         image = document.getElementById('skeleton_0')
         dim = 100
@@ -1967,12 +1972,14 @@ export default {
       }, 1_000)
       this.isSimulating = true
       this.isScheduling = false
-      this.goalAlive = true
-      this.goalHP = 1000
+      this.applyGoalItems(true)
       this.canMove = false
       this.theta = 0
+      this.weaponOffers = []
+      this.itemOffers = []
       // Transmit weapon data
       this.distributeGoalWeapons()
+      this.distributeGoalItems()
       // Notify simulation start
       if (!srSilent) {
         this.srNotifySimulation(true)
@@ -2568,6 +2575,10 @@ export default {
       if (!others || others.length < 1) {
         return
       }
+      let armor = 0
+      if (this.goalStats.has('armor')) {
+        armor += Number(this.goalStats.get('armor'))
+      }
       const goalVec = new THREE.Vector2()
       goalVec.copy(this.goalPosition)
       goalVec.sub(this.offsetVector)
@@ -2595,7 +2606,7 @@ export default {
         // Respect invincibility frames before damage
         if (this.goalInvincibilityFrames === 0) {
           if (dist <= 0.5) {
-            this.goalHP -= other.dps
+            this.goalHP -= (other.dps - armor)
             this.goalInvincibilityFrames = 20
             if (this.goalHP <= 0) {
               this.goalHP = 0
@@ -3319,12 +3330,19 @@ export default {
       for (const weapon of this.goalWeapons) {
         weapon.levelUp()
       }
+      if (this.goalItems && this.goalItems.length > 0) {
+        for (const item of this.goalItems) {
+          item.autoLevelUp()
+        }
+        this.applyGoalItems(false)
+      }
     },
     /**
      *
      */
     dismissLevelUp: function () {
       this.distributeGoalWeapons()
+      this.distributeGoalItems()
       this.isLevelUp = false
       this.modifyingWeapons = false
     },
@@ -3486,7 +3504,11 @@ export default {
       this.chosenPowerup = offer
       this.modifyingWeapons = true
     },
+    /**
+     * @param {FFItem} offer
+     */
     handleItemOffer: function (offer) {
+      this.goalStats = offer.proc(this.goalStats)
       this.goalItems.push(offer)
       this.dismissLevelUp()
     },
@@ -3740,6 +3762,12 @@ export default {
           //    PlayerName;WeaponName;PowerUpName;Type;JsonPayload
           const data = event.data.t.substring(3).split(';')
           this.setCoPlayerWeaponPart(data)
+        } else if (event.data.t.startsWith('IP-')) {
+          // Some player sent an item part
+          // Format:
+          //    PlayerName;ItemName;Type;JsonPayload
+          const data = event.data.t.substring(3).split(';')
+          this.setCoPlayerItemPart(data)
         } else if (event.data.t.startsWith('scost')) {
           // A wall (tile with collision-detection) was placed
           this.handleSetCost(event.data.t)
@@ -4045,6 +4073,88 @@ export default {
         this.coPlayers.set(data[0], pl)
       }
     },
+    setCoPlayerItemPart: function (data) {
+      let level
+      let pl = {
+        items: []
+      }
+      if (this.coPlayers.has(data[0])) {
+        pl = this.coPlayers.get(data[0])
+        if (!pl.items) {
+          pl.items = []
+        }
+      }
+      // Data Format:
+      //    0          1        2    3
+      //    PlayerName;ItemName;Type;JsonPayload
+      // Find item
+      let ix = -1
+      if (pl.items.length > 0) {
+        for (let i = 0; i < pl.items.length; i++) {
+          if (pl.items[i].name === data[1]) {
+            ix = i
+            break
+          }
+        }
+      }
+      let obj = JSON.parse(data[3])
+      if (data[2] === '1') {
+        // Item
+        level = obj.level
+        obj = new FFItem(
+          Number(obj.id),
+          Number(obj.level),
+          obj.name,
+          obj.desc
+        )
+        obj.level = level
+        if (ix !== -1) {
+          // Update weapon (but not power-ups)
+          const effTmp = pl.items[ix].effects
+          pl.items[ix] = obj
+          pl.items[ix].effects = effTmp
+        } else {
+          pl.items.push(obj)
+        }
+      } else if (data[2] === '2') {
+        // Effect
+        obj = new FFItemEffect(
+          obj.type,
+          Number(obj.value),
+          Number(obj.valueLevelBonus),
+          Number(obj.hitCount),
+          Boolean(obj.floorValueOnProc),
+          Boolean(obj.autoLevelUp)
+        )
+        if (ix !== -1) {
+          let eix = -1
+          for (let i = 0; i < pl.items[ix].effects.length; i++) {
+            if (pl.items[ix].effects[i].type === obj.type) {
+              eix = i
+              break
+            }
+          }
+          if (eix !== -1) {
+            pl.items[ix].effects[eix] = obj
+          } else {
+            pl.items[ix].effects.push(obj)
+          }
+        } else {
+          if (!pl._queue) {
+            pl._queue = []
+          }
+          pl._queue.push({
+            typ: 2,
+            itm: data[1],
+            eff: obj
+          })
+        }
+      }
+      // Update co-player data
+      if (this.coPlayers.has(data[0])) {
+        this.coPlayers.set(data[0], pl)
+      }
+    },
     /**
      *
      * @param {Array<String>} data
@@ -4151,6 +4261,32 @@ export default {
       // Send message to others
       this.$connector.sendSyncRoomMessage(
         `WP-${this.store.user.username};${id};${pId};${type};${payload}`)
+    },
+    distributeGoalItems: function () {
+      if (!this.goalItems || this.goalItems.length < 1) {
+        return
+      }
+      let item, effects, effect
+      const goalItems = [].concat(this.goalItems)
+      for (let j = 0; j < goalItems.length; j++) {
+        item = { ...goalItems[j] }
+        effects = item.effects
+        item.effects = []
+        this.srSendItemPart(
+          item.name, '1', JSON.stringify(item))
+        if (effects.length > 0) {
+          for (let k = 0; k < effects.length; k++) {
+            effect = effects[k]
+            this.srSendItemPart(
+              item.name, '2', JSON.stringify(effect))
+          }
+        }
+      }
+    },
+    srSendItemPart: function (pId, type, payload) {
+      // Send message to others
+      this.$connector.sendSyncRoomMessage(
+        `IP-${this.store.user.username};${pId};${type};${payload}`)
     },
     initWRTC: function () {
       this.wrtc.initialize(this.$connector, this.store.user.username, true, true)
@@ -4400,6 +4536,34 @@ export default {
       this.$connector.sendSyncRoomMessage(
         `E3-${count}`
       )
+    },
+    /**
+     *
+     * @param {Boolean} start
+     */
+    applyGoalItems: function (start) {
+      this.goalAlive = true
+      this.goalMaxHP = this.goalMaxHPOriginal
+      this.goalStats = new Map()
+      // Apply item effects
+      if (this.goalItems && this.goalItems.length > 0) {
+        for (let i = 0; i < this.goalItems.length; i++) {
+          this.goalItems[i].proc(this.goalStats)
+        }
+        if (this.goalStats.has('hp')) {
+          this.goalMaxHP += Number(this.goalStats.get('hp'))
+        }
+      }
+      if (!start) {
+        return
+      }
+      this.goalHP = this.goalMaxHP
+      this.goalSpeed = this.goalSpeedOriginal
+      if (this.goalStats.has('speed')) {
+        this.goalSpeed += Number(this.goalStats.get('speed'))
+      }
+    },
+    applyCoPlayerItems: function () {
     }
   }
 }

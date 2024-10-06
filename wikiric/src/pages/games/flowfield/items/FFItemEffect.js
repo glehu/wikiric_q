@@ -41,7 +41,17 @@ class FFItemEffect {
   }
 
   proc () {
-    return true
+    // Return true if effect doesn't need hits
+    if (!this.onHit || this.hitCount === 0) {
+      return true
+    }
+    this._hitCount += 1
+    // Did we reach the hit count yet?
+    if (this._hitCount >= this.hitCount) {
+      this._hitCount = 0
+      return true
+    }
+    return false
   }
 
   levelUp () {

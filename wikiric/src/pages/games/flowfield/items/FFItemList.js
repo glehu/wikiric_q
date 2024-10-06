@@ -35,7 +35,7 @@ class FFItemList {
       'Increases the player\'s health.')
     effect = new FFItemEffect(
       'hp',
-      200,
+      50,
       50,
       0,
       false,
@@ -53,8 +53,8 @@ class FFItemList {
       'Increases the player\'s movement speed.')
     effect = new FFItemEffect(
       'speed',
-      1,
-      1,
+      0.2,
+      0.2,
       0,
       false,
       true)
