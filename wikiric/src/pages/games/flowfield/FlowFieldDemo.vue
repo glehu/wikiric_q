@@ -3603,6 +3603,10 @@ export default {
     handleItemOffer: function (offer) {
       this.goalStats = offer.proc(this.goalStats)
       this.goalItems.push(offer)
+      const ix = this.itemList.categories.starter.indexOf(offer)
+      if (ix >= 0) {
+        this.itemList.categories.starter.splice(ix, 1)
+      }
       this.dismissLevelUp()
     },
     /**
