@@ -13,6 +13,7 @@ import FFProjectile from 'pages/games/flowfield/weapons/FFProjectile'
 /**
  * An FF Weapon
  * @param {String} name
+ * @param {String} desc
  * @param {Number} range
  * @param {Number} dps
  * @param {Number} dpsLevelUp

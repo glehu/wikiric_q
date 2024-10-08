@@ -6,13 +6,14 @@
       style="height: calc(100dvh - 52px)"
       class="overflow-hidden no-scroll">
       <q-drawer
+        v-if="!isSimulating"
         side="left"
         v-model="sidebarLeft"
         behavior="desktop"
         :width="300"
         :breakpoint="768"
         class="surface-variant hfit">
-        <q-scroll-area class="fit">
+        <div class="fit scroll">
           <q-toolbar class="fmt_border_bottom md:hidden">
             <q-btn flat dense icon="sym_o_left_panel_close"
                    align="left" class="wfull"
@@ -34,7 +35,7 @@
               <template v-if="!isSimulating">
                 <q-btn color="brand-bg"
                        text-color="brand-p"
-                       @click="scheduleSimulation(true, true)"
+                       @click="scheduleSimulation(true, true, false)"
                        icon="sym_o_network_intelligence_history"
                        label="Simulate"
                        align="left"
@@ -150,202 +151,202 @@
               </div>
               <div class="grid grid-cols-5">
                 <q-btn @click="setBrush('wall_inner')">
-                  <img id="wall_inner"
-                       src="https://wikiric.xyz/files/public/get/018f9d2f-e5b6-738d-bf08-62f0e4fc3804"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9d2f-e5b6-738d-bf08-62f0e4fc3804"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('floor_alt_1')">
-                  <img id="floor_alt_1"
-                       src="https://wikiric.xyz/files/public/get/018f9cd4-27c6-738d-a085-ad40d23e4898"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9cd4-27c6-738d-a085-ad40d23e4898"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('floor_alt_2')">
-                  <img id="floor_alt_2"
-                       src="https://wikiric.xyz/files/public/get/018f9cd4-1f37-738d-b736-60ff4775b7a8"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9cd4-1f37-738d-b736-60ff4775b7a8"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('floor_bloody')">
-                  <img id="floor_bloody"
-                       src="https://wikiric.xyz/files/public/get/018f9cd4-3b5f-738d-a45d-f14cb45cee5a"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9cd4-3b5f-738d-a45d-f14cb45cee5a"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('wall')">
-                  <img id="wall"
-                       src="https://wikiric.xyz/files/public/get/018f9609-53c7-7af1-b199-8bb89b9a1a95"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9609-53c7-7af1-b199-8bb89b9a1a95"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('wall_top_left')">
-                  <img id="wall_top_left"
-                       src="https://wikiric.xyz/files/public/get/018f9cd4-727d-738d-8372-7b061a335c5b"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9cd4-727d-738d-8372-7b061a335c5b"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('wall_top_middle')">
-                  <img id="wall_top_middle"
-                       src="https://wikiric.xyz/files/public/get/018f9cd4-79dd-738d-bcd9-b6f6253f98fe"
-                       width="50" height="50" alt="img"/></q-btn>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9cd4-79dd-738d-bcd9-b6f6253f98fe"
+                    width="50" height="50" alt="img"/></q-btn>
                 <q-btn @click="setBrush('wall_top_right')">
-                  <img id="wall_top_right"
-                       src="https://wikiric.xyz/files/public/get/018f9cd4-814e-738d-a22a-288999cac241"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9cd4-814e-738d-a22a-288999cac241"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('wall_left_middle')">
-                  <img id="wall_left_middle"
-                       src="https://wikiric.xyz/files/public/get/018f9cd8-7aa5-738d-b17d-877c475c266d"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9cd8-7aa5-738d-b17d-877c475c266d"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('wall_right_middle')">
-                  <img id="wall_right_middle"
-                       src="https://wikiric.xyz/files/public/get/018f9cd8-8274-738d-bbde-3004d1b69105"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9cd8-8274-738d-bbde-3004d1b69105"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('wall_bottom_left')">
-                  <img id="wall_bottom_left"
-                       src="https://wikiric.xyz/files/public/get/018f9cd4-60b5-738d-9f79-cfea517dd2cf"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9cd4-60b5-738d-9f79-cfea517dd2cf"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('wall_bottom_middle')">
-                  <img id="wall_bottom_middle"
-                       src="https://wikiric.xyz/files/public/get/018f9cd4-6b4a-738d-8a06-c66fc7e7f795"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9cd4-6b4a-738d-8a06-c66fc7e7f795"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('wall_bottom_right')">
-                  <img id="wall_bottom_right"
-                       src="https://wikiric.xyz/files/public/get/018f9cd8-738d-738d-b480-33e50482adce"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9cd8-738d-738d-b480-33e50482adce"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('wall_inner_top_left')">
-                  <img id="wall_inner_top_left"
-                       src="https://wikiric.xyz/files/public/get/018f9d30-0ece-738d-89d0-59b65270c4e5"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9d30-0ece-738d-89d0-59b65270c4e5"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('wall_inner_top_right')">
-                  <img id="wall_inner_top_right"
-                       src="https://wikiric.xyz/files/public/get/018f9d30-15dd-738d-a8bb-0d3bc66a2e2a"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9d30-15dd-738d-a8bb-0d3bc66a2e2a"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('wall_base_left')">
-                  <img id="wall_base_left"
-                       src="https://wikiric.xyz/files/public/get/018f9cd4-92b3-738d-afd2-1479727a4698"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9cd4-92b3-738d-afd2-1479727a4698"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('wall_base_middle')">
-                  <img id="wall_base_middle"
-                       src="https://wikiric.xyz/files/public/get/018f9cd4-8ab8-738d-a7f7-940fa063c34c"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9cd4-8ab8-738d-a7f7-940fa063c34c"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('wall_base_right')">
-                  <img id="wall_base_right"
-                       src="https://wikiric.xyz/files/public/get/018f9cd4-ad47-738d-8918-211e3a416ca9"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9cd4-ad47-738d-8918-211e3a416ca9"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('wall_inner_bottom_left')">
-                  <img id="wall_inner_bottom_left"
-                       src="https://wikiric.xyz/files/public/get/018f9d2f-f7e4-738d-874b-d1ff530bbb7f"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9d2f-f7e4-738d-874b-d1ff530bbb7f"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('wall_inner_bottom_right')">
-                  <img id="wall_inner_bottom_right"
-                       src="https://wikiric.xyz/files/public/get/018f9d30-0121-738d-9e2f-69ef1577ee75"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9d30-0121-738d-9e2f-69ef1577ee75"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('tile_floor_top_left')">
-                  <img id="tile_floor_top_left"
-                       src="https://wikiric.xyz/files/public/get/018ff89b-2be3-726d-8f5b-3fd169bef028"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89b-2be3-726d-8f5b-3fd169bef028"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('tile_floor_top')">
-                  <img id="tile_floor_top"
-                       src="https://wikiric.xyz/files/public/get/018ff89b-3a8d-726d-8599-f136d6cf4f9f"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89b-3a8d-726d-8599-f136d6cf4f9f"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('tile_floor_top_right')">
-                  <img id="tile_floor_top_right"
-                       src="https://wikiric.xyz/files/public/get/018ff89b-334f-726d-8682-5e0349842350"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89b-334f-726d-8682-5e0349842350"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('tile_wall_col_top')">
-                  <img id="tile_wall_col_top"
-                       src="https://wikiric.xyz/files/public/get/018ff89a-ee17-726d-8b70-d8a4bb5fb0b0"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89a-ee17-726d-8b70-d8a4bb5fb0b0"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <div></div>
                 <q-btn @click="setBrush('tile_floor_left')">
-                  <img id="tile_floor_left"
-                       src="https://wikiric.xyz/files/public/get/018ff89b-2365-726d-b1fd-e73cd5b94db5"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89b-2365-726d-b1fd-e73cd5b94db5"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('floor')">
-                  <img id="floor"
-                       src="https://wikiric.xyz/files/public/get/018f9ca3-73c2-738d-8a28-03610cb178e5"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018f9ca3-73c2-738d-8a28-03610cb178e5"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('tile_floor_right')">
-                  <img id="tile_floor_right"
-                       src="https://wikiric.xyz/files/public/get/018ff89b-1b17-726d-8cba-20fc99a2eb07"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89b-1b17-726d-8cba-20fc99a2eb07"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('tile_wall_col_middle')">
-                  <img id="tile_wall_col_middle"
-                       src="https://wikiric.xyz/files/public/get/018ff89a-e3a5-726d-b8b0-86fca58347a7"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89a-e3a5-726d-b8b0-86fca58347a7"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <div></div>
                 <q-btn @click="setBrush('tile_floor_bottom_left')">
-                  <img id="tile_floor_bottom_left"
-                       src="https://wikiric.xyz/files/public/get/018ff89a-fe4f-726d-8cbe-c24a0bdbf554"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89a-fe4f-726d-8cbe-c24a0bdbf554"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('tile_floor_bottom')">
-                  <img id="tile_floor_bottom"
-                       src="https://wikiric.xyz/files/public/get/018ff89b-05da-726d-b59f-ca5d553eb816"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89b-05da-726d-b59f-ca5d553eb816"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('tile_floor_bottom_right')">
-                  <img id="tile_floor_bottom_right"
-                       src="https://wikiric.xyz/files/public/get/018ff89b-0c99-726d-9f39-d19440513f8d"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89b-0c99-726d-9f39-d19440513f8d"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('tile_wall_col_bottom')">
-                  <img id="tile_wall_col_bottom"
-                       src="https://wikiric.xyz/files/public/get/018ff89a-dc3c-726d-8ad4-0952740cde0f"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89a-dc3c-726d-8ad4-0952740cde0f"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <div></div>
                 <q-btn @click="setBrush('tile_wall_left')">
-                  <img id="tile_wall_left"
-                       src="https://wikiric.xyz/files/public/get/018ff89a-b89e-726d-859f-12c7e353b742"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89a-b89e-726d-859f-12c7e353b742"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('tile_wall_middle')">
-                  <img id="tile_wall_middle"
-                       src="https://wikiric.xyz/files/public/get/018ff89a-c267-726d-8ed7-4ef504382a55"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89a-c267-726d-8ed7-4ef504382a55"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('tile_wall_right')">
-                  <img id="tile_wall_right"
-                       src="https://wikiric.xyz/files/public/get/018ff89a-cdd6-726d-9f0a-386d6490eb86"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89a-cdd6-726d-9f0a-386d6490eb86"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('tile_wall_col_base')">
-                  <img id="tile_wall_col_base"
-                       src="https://wikiric.xyz/files/public/get/018ff89a-d566-726d-8e82-17b39c29ede5"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89a-d566-726d-8e82-17b39c29ede5"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <div></div>
                 <q-btn @click="setBrush('tile_wall_base_left_2')">
-                  <img id="tile_wall_base_left_2"
-                       src="https://wikiric.xyz/files/public/get/018ff89a-982c-726d-9405-f555e6c1247a"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89a-982c-726d-9405-f555e6c1247a"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('tile_wall_base_middle_2')">
-                  <img id="tile_wall_base_middle_2"
-                       src="https://wikiric.xyz/files/public/get/018ff89a-a452-726d-aac1-46b39f8ef66a"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89a-a452-726d-aac1-46b39f8ef66a"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
                 <q-btn @click="setBrush('tile_wall_base_right_2')">
-                  <img id="tile_wall_base_right_2"
-                       src="https://wikiric.xyz/files/public/get/018ff89a-b1b4-726d-9610-9d1c8d19defb"
-                       width="50" height="50" alt="img"/>
+                  <img
+                    src="https://wikiric.xyz/files/public/get/018ff89a-b1b4-726d-9610-9d1c8d19defb"
+                    width="50" height="50" alt="img"/>
                 </q-btn>
               </div>
             </div>
@@ -371,60 +372,9 @@
               <q-checkbox label="Damage Numbers" v-model="drawDamageNumbers"/>
               <q-checkbox label="Heatmap" v-model="drawHeatmap"/>
               <q-checkbox label="Wall Collisions" v-model="drawWallCollision"/>
-              <p class="text-body1 my2">
-                Position Data
-              </p>
-              <template v-if="goalPosition">
-                <div class="flex items-center justify-between
-                            gap-2 px2 text-sm">
-                  <div>
-                    <p>X: {{ goalPosition.x.toFixed(2) }}</p>
-                    <p>Y: {{ goalPosition.y.toFixed(2) }}</p>
-                  </div>
-                  <template v-if="offsetVector">
-                    <div>
-                      <p>Offset: {{ offsetVector.x.toFixed(2) }}</p>
-                      <p>Offset: {{ offsetVector.y.toFixed(2) }}</p>
-                    </div>
-                  </template>
-                </div>
-                <hr>
-              </template>
-              <template v-if="coPlayers && coPlayers.size > 0">
-                <template v-for="[key, val] of coPlayers.entries()" :key="key">
-                  <div class="flex items-center justify-between
-                              gap-2 px2">
-                    <div class="text-sm">
-                      <p>{{ key }}</p>
-                      <p>X: {{ val.x.toFixed(2) }}</p>
-                      <p>Y: {{ val.y.toFixed(2) }}</p>
-                      <p>U: {{ val.up }}</p>
-                      <p>R: {{ val.right }}</p>
-                      <p>D: {{ val.down }}</p>
-                      <p>L: {{ val.left }}</p>
-                      <template v-if="val.weapons">
-                        <div v-for="wpn in val.weapons" :key="wpn"
-                             class="background p2 rounded mt2
-                                    text-sm">
-                          <p>
-                            <span class="font-bold pr2">{{ wpn.name }}</span>
-                            Lv. {{ wpn.level }}
-                          </p>
-                          <template v-if="wpn.powerUps">
-                            <div v-for="pup in wpn.powerUps" :key="pup">
-                              <p>{{ pup.name }}</p>
-                            </div>
-                          </template>
-                        </div>
-                      </template>
-                    </div>
-                  </div>
-                  <hr>
-                </template>
-              </template>
             </div>
           </div>
-        </q-scroll-area>
+        </div>
       </q-drawer>
       <q-page-container>
         <q-page style="padding-top: 60px" class="background pb20">
@@ -608,14 +558,14 @@
                 <div class="flex items-center gap-2 rounded-full p4 primary">
                   <q-spinner-gears size="2rem" color="brand-p"/>
                   <p class="text-lg fontbold">
-                    Starting...
+                    Syncing...
                   </p>
                 </div>
               </template>
               <template v-else>
                 <template v-if="!isSimulating">
                   <q-btn color="primary" no-caps rounded size="1.5rem"
-                         @click="scheduleSimulation(true, true)"
+                         @click="scheduleSimulation(true, true, false)"
                          icon="sym_o_network_intelligence_history"
                          label="Start Round"/>
                 </template>
@@ -750,6 +700,124 @@
     <img id="wizzard"
          src="https://wikiric.xyz/files/public/get/018f9cfd-e044-738d-8df8-199c73d55585"
          width="48" height="48" alt="img"/>
+    <!-- Tile Models -->
+    <img id="wall_inner"
+         src="https://wikiric.xyz/files/public/get/018f9d2f-e5b6-738d-bf08-62f0e4fc3804"
+         width="50" height="50" alt="img"/>
+    <img id="floor_alt_1"
+         src="https://wikiric.xyz/files/public/get/018f9cd4-27c6-738d-a085-ad40d23e4898"
+         width="50" height="50" alt="img"/>
+    <img id="floor_alt_2"
+         src="https://wikiric.xyz/files/public/get/018f9cd4-1f37-738d-b736-60ff4775b7a8"
+         width="50" height="50" alt="img"/>
+    <img id="floor_bloody"
+         src="https://wikiric.xyz/files/public/get/018f9cd4-3b5f-738d-a45d-f14cb45cee5a"
+         width="50" height="50" alt="img"/>
+    <img id="wall"
+         src="https://wikiric.xyz/files/public/get/018f9609-53c7-7af1-b199-8bb89b9a1a95"
+         width="50" height="50" alt="img"/>
+    <img id="wall_top_left"
+         src="https://wikiric.xyz/files/public/get/018f9cd4-727d-738d-8372-7b061a335c5b"
+         width="50" height="50" alt="img"/>
+    <img id="wall_top_middle"
+         src="https://wikiric.xyz/files/public/get/018f9cd4-79dd-738d-bcd9-b6f6253f98fe"
+         width="50" height="50" alt="img"/>
+    <img id="wall_top_right"
+         src="https://wikiric.xyz/files/public/get/018f9cd4-814e-738d-a22a-288999cac241"
+         width="50" height="50" alt="img"/>
+    <img id="wall_left_middle"
+         src="https://wikiric.xyz/files/public/get/018f9cd8-7aa5-738d-b17d-877c475c266d"
+         width="50" height="50" alt="img"/>
+    <img id="wall_right_middle"
+         src="https://wikiric.xyz/files/public/get/018f9cd8-8274-738d-bbde-3004d1b69105"
+         width="50" height="50" alt="img"/>
+    <img id="wall_bottom_left"
+         src="https://wikiric.xyz/files/public/get/018f9cd4-60b5-738d-9f79-cfea517dd2cf"
+         width="50" height="50" alt="img"/>
+    <img id="wall_bottom_middle"
+         src="https://wikiric.xyz/files/public/get/018f9cd4-6b4a-738d-8a06-c66fc7e7f795"
+         width="50" height="50" alt="img"/>
+    <img id="wall_bottom_right"
+         src="https://wikiric.xyz/files/public/get/018f9cd8-738d-738d-b480-33e50482adce"
+         width="50" height="50" alt="img"/>
+    <img id="wall_inner_top_left"
+         src="https://wikiric.xyz/files/public/get/018f9d30-0ece-738d-89d0-59b65270c4e5"
+         width="50" height="50" alt="img"/>
+    <img id="wall_inner_top_right"
+         src="https://wikiric.xyz/files/public/get/018f9d30-15dd-738d-a8bb-0d3bc66a2e2a"
+         width="50" height="50" alt="img"/>
+    <img id="wall_base_left"
+         src="https://wikiric.xyz/files/public/get/018f9cd4-92b3-738d-afd2-1479727a4698"
+         width="50" height="50" alt="img"/>
+    <img id="wall_base_middle"
+         src="https://wikiric.xyz/files/public/get/018f9cd4-8ab8-738d-a7f7-940fa063c34c"
+         width="50" height="50" alt="img"/>
+    <img id="wall_base_right"
+         src="https://wikiric.xyz/files/public/get/018f9cd4-ad47-738d-8918-211e3a416ca9"
+         width="50" height="50" alt="img"/>
+    <img id="wall_inner_bottom_left"
+         src="https://wikiric.xyz/files/public/get/018f9d2f-f7e4-738d-874b-d1ff530bbb7f"
+         width="50" height="50" alt="img"/>
+    <img id="wall_inner_bottom_right"
+         src="https://wikiric.xyz/files/public/get/018f9d30-0121-738d-9e2f-69ef1577ee75"
+         width="50" height="50" alt="img"/>
+    <img id="tile_floor_top_left"
+         src="https://wikiric.xyz/files/public/get/018ff89b-2be3-726d-8f5b-3fd169bef028"
+         width="50" height="50" alt="img"/>
+    <img id="tile_floor_top"
+         src="https://wikiric.xyz/files/public/get/018ff89b-3a8d-726d-8599-f136d6cf4f9f"
+         width="50" height="50" alt="img"/>
+    <img id="tile_floor_top_right"
+         src="https://wikiric.xyz/files/public/get/018ff89b-334f-726d-8682-5e0349842350"
+         width="50" height="50" alt="img"/>
+    <img id="tile_wall_col_top"
+         src="https://wikiric.xyz/files/public/get/018ff89a-ee17-726d-8b70-d8a4bb5fb0b0"
+         width="50" height="50" alt="img"/>
+    <img id="tile_floor_left"
+         src="https://wikiric.xyz/files/public/get/018ff89b-2365-726d-b1fd-e73cd5b94db5"
+         width="50" height="50" alt="img"/>
+    <img id="floor"
+         src="https://wikiric.xyz/files/public/get/018f9ca3-73c2-738d-8a28-03610cb178e5"
+         width="50" height="50" alt="img"/>
+    <img id="tile_floor_right"
+         src="https://wikiric.xyz/files/public/get/018ff89b-1b17-726d-8cba-20fc99a2eb07"
+         width="50" height="50" alt="img"/>
+    <img id="tile_wall_col_middle"
+         src="https://wikiric.xyz/files/public/get/018ff89a-e3a5-726d-b8b0-86fca58347a7"
+         width="50" height="50" alt="img"/>
+    <img id="tile_floor_bottom_left"
+         src="https://wikiric.xyz/files/public/get/018ff89a-fe4f-726d-8cbe-c24a0bdbf554"
+         width="50" height="50" alt="img"/>
+    <img id="tile_floor_bottom"
+         src="https://wikiric.xyz/files/public/get/018ff89b-05da-726d-b59f-ca5d553eb816"
+         width="50" height="50" alt="img"/>
+    <img id="tile_floor_bottom_right"
+         src="https://wikiric.xyz/files/public/get/018ff89b-0c99-726d-9f39-d19440513f8d"
+         width="50" height="50" alt="img"/>
+    <img id="tile_wall_col_bottom"
+         src="https://wikiric.xyz/files/public/get/018ff89a-dc3c-726d-8ad4-0952740cde0f"
+         width="50" height="50" alt="img"/>
+    <img id="tile_wall_left"
+         src="https://wikiric.xyz/files/public/get/018ff89a-b89e-726d-859f-12c7e353b742"
+         width="50" height="50" alt="img"/>
+    <img id="tile_wall_middle"
+         src="https://wikiric.xyz/files/public/get/018ff89a-c267-726d-8ed7-4ef504382a55"
+         width="50" height="50" alt="img"/>
+    <img id="tile_wall_right"
+         src="https://wikiric.xyz/files/public/get/018ff89a-cdd6-726d-9f0a-386d6490eb86"
+         width="50" height="50" alt="img"/>
+    <img id="tile_wall_col_base"
+         src="https://wikiric.xyz/files/public/get/018ff89a-d566-726d-8e82-17b39c29ede5"
+         width="50" height="50" alt="img"/>
+    <img id="tile_wall_base_left_2"
+         src="https://wikiric.xyz/files/public/get/018ff89a-982c-726d-9405-f555e6c1247a"
+         width="50" height="50" alt="img"/>
+    <img id="tile_wall_base_middle_2"
+         src="https://wikiric.xyz/files/public/get/018ff89a-a452-726d-aac1-46b39f8ef66a"
+         width="50" height="50" alt="img"/>
+    <img id="tile_wall_base_right_2"
+         src="https://wikiric.xyz/files/public/get/018ff89a-b1b4-726d-9610-9d1c8d19defb"
+         width="50" height="50" alt="img"/>
   </div>
   <q-slide-transition>
     <q-card v-show="isPickingMap" flat
@@ -1009,7 +1077,7 @@ export default {
 
       // MULTIPLAYER DATA
 
-      roomId: 'wkrg_ffa_dev',
+      roomId: 'wkrg_ffa_dev2',
       currentSRLatency: -1,
       getQueue: new Map(),
       lastPos: null,
@@ -1400,7 +1468,11 @@ export default {
      * @param {Boolean} initial
      */
     drawGrid: function (initial) {
+      /**
+       * @type {HTMLImageElement}
+       */
       const floor = document.getElementById('floor')
+      if (floor == null) return
       // Only draw the area around the player to avoid having
       // ...to render unnecessarily
       const vDist = 30
@@ -1913,22 +1985,29 @@ export default {
      *
      * If there is no time, one will be determined
      * ...and distributed if there are co-players.
+     *
+     * To show the shop (e.g. at the end of the round)
+     * ...simply provide doShowOffers=true
+     *
      * @param {Boolean} isRunning
      * @param {Boolean} doSync
+     * @param {Boolean} doShowOffers
      * @param [timeWhen=null]
      */
-    scheduleSimulation: function (isRunning, doSync, timeWhen = null) {
+    scheduleSimulation: function (isRunning, doSync, doShowOffers, timeWhen = null) {
       let delay
       if (timeWhen) {
         delay = timeWhen - DateTime.now().toMillis()
         if (isRunning) {
+          console.log('(REMOTE) Scheduling start...')
           this.isScheduling = true
           setTimeout(() => {
             this.handleSimulation(true)
           }, delay)
         } else {
+          console.log('(REMOTE) Scheduling stop...')
           setTimeout(() => {
-            this.cancelSimulation()
+            this.cancelSimulation(doShowOffers)
           }, delay)
         }
         return
@@ -1943,17 +2022,19 @@ export default {
       // 3 seconds delay
       delay = 3_000 + DateTime.now().toMillis()
       this.$connector.sendSyncRoomMessage(
-        `SCSIM-${isRunning};${delay}`
+        `SCSIM-${isRunning};${delay};${doShowOffers}`
       )
       if (isRunning) {
+        console.log('(LOCAL) Scheduling start...')
         this.isScheduling = true
         setTimeout(() => {
           this.handleSimulation(true)
-        }, 3_000)
+        }, 3_020) // Assuming 20 ms delay
       } else {
+        console.log('(LOCAL) Scheduling stop...')
         setTimeout(() => {
-          this.cancelSimulation()
-        }, 3_000)
+          this.cancelSimulation(doShowOffers)
+        }, 3_020) // Assuming 20 ms delay
       }
     },
     handleSimulation: function (srSilent) {
@@ -1961,6 +2042,13 @@ export default {
       this.secondsPassed = 0
       this.currentRound += 1
       console.log('Starting Simulation...')
+      this.isSimulating = true
+      this.isScheduling = false
+      this.canMove = false
+      this.theta = 0
+      this.weaponOffers = []
+      this.itemOffers = []
+      // Count the time passed (rounds!)
       this.secondInterval = setInterval(() => {
         this.secondsPassed += 1
         if (this.isHost && this.secondsPassed >= this.secondsMax) {
@@ -1970,13 +2058,8 @@ export default {
           clearInterval(this.secondInterval)
         }
       }, 1_000)
-      this.isSimulating = true
-      this.isScheduling = false
+      this.handleCalculation()
       this.applyGoalItems(true)
-      this.canMove = false
-      this.theta = 0
-      this.weaponOffers = []
-      this.itemOffers = []
       // Transmit weapon data
       this.distributeGoalWeapons()
       this.distributeGoalItems()
@@ -2153,27 +2236,27 @@ export default {
       requestAnimationFrame(step)
     },
     handleEndOfRound: function () {
-      this.scheduleSimulation(false, true)
+      this.scheduleSimulation(false, false, true)
     },
     applyGoalCalculation: function (lastPos) {
       if (this.drawHeatmap) {
         this.handleCalculation()
-      } else {
-        if (!lastPos) {
-          lastPos = new THREE.Vector2(
-            Math.round(this.goalPosition.x - this.offsetVector.x),
-            Math.round(this.goalPosition.y - this.offsetVector.y))
-          this.handleCalculation()
-        } else {
-          if (Math.round(this.goalPosition.x - this.offsetVector.x) !== lastPos.x ||
-            Math.round(this.goalPosition.y - this.offsetVector.y) !== lastPos.y) {
-            lastPos = new THREE.Vector2(
-              Math.round(this.goalPosition.x - this.offsetVector.x),
-              Math.round(this.goalPosition.y - this.offsetVector.y))
-            // Calculate new paths
-            this.handleCalculation()
-          }
-        }
+        return lastPos
+      }
+      if (!lastPos) {
+        lastPos = new THREE.Vector2(
+          Math.round(this.goalPosition.x - this.offsetVector.x),
+          Math.round(this.goalPosition.y - this.offsetVector.y))
+        this.handleCalculation()
+        return lastPos
+      }
+      if (Math.round(this.goalPosition.x - this.offsetVector.x) !== lastPos.x ||
+        Math.round(this.goalPosition.y - this.offsetVector.y) !== lastPos.y) {
+        lastPos = new THREE.Vector2(
+          Math.round(this.goalPosition.x - this.offsetVector.x),
+          Math.round(this.goalPosition.y - this.offsetVector.y))
+        // Calculate new paths
+        this.handleCalculation()
       }
       return lastPos
     },
@@ -3111,7 +3194,11 @@ export default {
       this.ctx3.beginPath()
       this.ctx3.globalAlpha = 1
     },
-    cancelSimulation: function () {
+    /**
+     *
+     * @param {Boolean} [showOffers=false]
+     */
+    cancelSimulation: function (showOffers = false) {
       // Cancel movement
       this.goalUp = false
       this.goalLeft = false
@@ -3121,14 +3208,20 @@ export default {
       // Pause simulation
       this.srNotifySimulation(false)
       this.goalAlive = false
-      const offers = this.showLevelUpOffers(
-        3,
-        0,
-        3)
-      if (offers) {
-        // Show level up screen
-        this.shopTab = 'shop'
-        this.isLevelUp = true
+      if (showOffers) {
+        const offers = this.showLevelUpOffers(
+          3,
+          0,
+          3)
+        if (offers) {
+          // Show level up screen
+          this.shopTab = 'shop'
+          this.isLevelUp = true
+        }
+      }
+      if (this.secondInterval) {
+        clearInterval(this.secondInterval)
+        this.secondsPassed = 0
       }
     },
     clearAll: function () {
@@ -3755,7 +3848,9 @@ export default {
         } else if (event.data.t.startsWith('SCSIM-')) {
           // Some player wants to schedule simulation start/cancel
           const data = event.data.t.substring(6).split(';')
-          this.scheduleSimulation(Boolean(data[0]), false, Number(data[1]))
+          const doStart = data[0] === 'true'
+          const showOffers = data[2] === 'true'
+          this.scheduleSimulation(doStart, false, showOffers, Number(data[1]))
         } else if (event.data.t.startsWith('WP-')) {
           // Some player sent a weapon part
           // Format:
@@ -3854,7 +3949,7 @@ export default {
           if (this.syncCount >= this.syncMaxCount) {
             // All players reported back!
             this.isSyncing = false
-            this.scheduleSimulation(true, false)
+            this.scheduleSimulation(true, false, false)
           }
         }
       }
@@ -3983,6 +4078,7 @@ export default {
         level = obj.level
         obj = new FFWeapon(
           obj.name,
+          obj.desc,
           Number(obj.range),
           Number(obj.dps),
           Number(obj.dpsLevelUp),
@@ -3994,7 +4090,8 @@ export default {
           Number(obj.pHitCount),
           Number(obj.hitRange),
           Number(obj.hitRangeLevelUp),
-          obj.visualType
+          obj.visualType,
+          Number(obj.ttl)
         )
         obj.level = level
         if (ix !== -1) {
@@ -4069,9 +4166,7 @@ export default {
         }
       }
       // Update co-player data
-      if (this.coPlayers.has(data[0])) {
-        this.coPlayers.set(data[0], pl)
-      }
+      this.coPlayers.set(data[0], pl)
     },
     setCoPlayerItemPart: function (data) {
       let level
@@ -4151,9 +4246,7 @@ export default {
         }
       }
       // Update co-player data
-      if (this.coPlayers.has(data[0])) {
-        this.coPlayers.set(data[0], pl)
-      }
+      this.coPlayers.set(data[0], pl)
     },
     /**
      *

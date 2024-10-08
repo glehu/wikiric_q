@@ -29,16 +29,30 @@
       </q-circular-progress>
     </template>
     <template v-else>
-      <q-circular-progress
-        instant-feedback
-        :value="weapon.cd - weapon._cd"
-        :max="weapon.cd"
-        size="28px"
-        :thickness="1"
-        color="negative"
-        track-color="grey-3"
-        class="fontbold">
-      </q-circular-progress>
+      <template v-if="weapon.cd > 10">
+        <q-circular-progress
+          instant-feedback
+          :value="weapon.cd - weapon._cd"
+          :max="weapon.cd"
+          size="28px"
+          :thickness="1"
+          color="negative"
+          track-color="grey-3"
+          class="fontbold">
+        </q-circular-progress>
+      </template>
+      <template v-else>
+        <q-circular-progress
+          instant-feedback
+          :value="1"
+          :max="1"
+          size="28px"
+          :thickness="1"
+          color="negative"
+          track-color="grey-3"
+          class="fontbold">
+        </q-circular-progress>
+      </template>
     </template>
   </div>
 </template>
