@@ -9,6 +9,34 @@
 
 import adapter from 'webrtc-adapter'
 
+/**
+ * wRTC.js handles wikiric's WebRTC P2P + DataChannel needs in cooperation with the wikiric.xyz Connector.
+ *
+ * WebRTC allows us to communicate with other clients in near real time, making Audio/Video chat, screensharing
+ * and even multiplayer games possible.
+ *
+ * wRTC.js uses the Partially Reliable Stream Control Transport Protocol (PR-SCTP)
+ * for our WebRTC DataChannel to ensure:
+ *
+ * 1. Better performance than TCP (no ACK and no resending of frames)
+ * 2. Better reliability than UDP (discarding of delayed frames)
+ *
+ * This protocol is useful for media streaming or streaming data of no chronological importance.
+ *
+ * @type {{getPeerConnection: ((function(*): (RTCPeerConnection|null))|*), sendIceMessage: WRTC.sendIceMessage,
+ *   doPause: WRTC.doPause, addIncomingStoredICE: ((function(*, *=): Promise<void>)|*), handleConnectionStateChange:
+ *   WRTC.handleConnectionStateChange, handleIncomingDescription(*, *): Promise<void>, doLog: boolean, doLogVerbose:
+ *   boolean, hangup: WRTC.hangup, logStyle: string, initiatePeerConnection: WRTC.initiatePeerConnection,
+ *   peerConnections: Map<any, any>, getStream: ((function(*): (MediaStream|null))|*), worker: null,
+ *   sendDataChannelMessage: ((function(String, (Object|String)): boolean)|*), broadcastDataChannelMessage:
+ *   ((function((Object|String)): boolean)|*), sendNegotiationMessage: ((function(*): Promise<void>)|*),
+ *   handleIncomingIce(*, *): Promise<void>, setVideo: WRTC.setVideo, eventChannel:
+ *   module:worker_threads.BroadcastChannel, replaceTrack: WRTC.replaceTrack, createOffer: ((function(*):
+ *   Promise<Object>)|*), setAudio: WRTC.setAudio, pause: boolean, doUnpause: WRTC.doUnpause, addStreamTracks:
+ *   WRTC.addStreamTracks, iceConfig: {iceCandidatePoolSize: number, iceServers: [{urls: string[]},{urls: string,
+ *   credential: string, username: string}]}, connector: module:worker_threads.BroadcastChannel, handleIncomingTrack:
+ *   WRTC.handleIncomingTrack, initialize: WRTC.initialize, selfName: null, dummyStream: null}}
+ */
 const WRTC = {
   pause: false,
   worker: null,
@@ -93,7 +121,7 @@ const WRTC = {
   /***
    * Initiates a Peer to Peer Connection
    *
-   * We use the Partially Reliable Stream Control Transport Protocol (PR-SCTP)
+   * wRTC.js uses the Partially Reliable Stream Control Transport Protocol (PR-SCTP)
    * for our WebRTC DataChannel to ensure:
    *
    * 1. Better performance than TCP (no ACK and no resending of frames)
