@@ -37,11 +37,11 @@ class FFPowerUpList {
     effect = new FFPowerUpEffect(
       true,
       'dmg',
-      5,
-      1,
+      10,
+      0,
       4,
       false,
-      true)
+      false)
     powerUp.effects.push(effect)
     this.categories.starter.push(powerUp)
     /**
@@ -58,10 +58,10 @@ class FFPowerUpList {
       false,
       'amt',
       1,
-      0.1,
+      0,
       0,
       true,
-      true)
+      false)
     powerUp.effects.push(effect)
     this.categories.starter.push(powerUp)
     /**
@@ -78,10 +78,10 @@ class FFPowerUpList {
       false,
       'hitCount',
       1,
-      1,
+      0,
       0,
       false,
-      true)
+      false)
     powerUp.effects.push(effect)
     this.categories.starter.push(powerUp)
     /**
@@ -98,10 +98,10 @@ class FFPowerUpList {
       false,
       'hitRange',
       0.5,
-      0.1,
+      0,
       0,
       false,
-      true)
+      false)
     powerUp.effects.push(effect)
     this.categories.starter.push(powerUp)
     /**
@@ -118,10 +118,10 @@ class FFPowerUpList {
       false,
       'speed',
       1,
-      0.2,
+      0,
       0,
       false,
-      true)
+      false)
     powerUp.effects.push(effect)
     this.categories.starter.push(powerUp)
     /**
@@ -138,10 +138,10 @@ class FFPowerUpList {
       true,
       'radius',
       1,
-      0.5,
+      0,
       0,
       false,
-      true)
+      false)
     powerUp.effects.push(effect)
     this.categories.starter.push(powerUp)
     /**
@@ -158,10 +158,10 @@ class FFPowerUpList {
       true,
       'dmg',
       5,
-      5,
+      0,
       0,
       false,
-      true)
+      false)
     powerUp.effects.push(effect)
     this.categories.starter.push(powerUp)
     /**
@@ -178,28 +178,28 @@ class FFPowerUpList {
       true,
       'dmg',
       10,
-      5,
+      0,
       2,
       false,
-      true)
+      false)
     powerUp.effects.push(effect)
     effect = new FFPowerUpEffect(
       false,
       'hitCount',
       1,
-      1,
+      0,
       0,
       false,
-      true)
+      false)
     powerUp.effects.push(effect)
     effect = new FFPowerUpEffect(
       false,
       'speed',
       1,
-      0.2,
+      0,
       0,
       false,
-      true)
+      false)
     powerUp.effects.push(effect)
     this.categories.starter.push(powerUp)
     /**
@@ -216,19 +216,19 @@ class FFPowerUpList {
       true,
       'dmg',
       50,
-      5,
+      0,
       0,
       false,
-      true)
+      false)
     powerUp.effects.push(effect)
     effect = new FFPowerUpEffect(
       false,
       'cd',
       100,
-      2,
+      0,
       0,
       false,
-      true)
+      false)
     powerUp.effects.push(effect)
     effect = new FFPowerUpEffect(
       false,

@@ -1104,7 +1104,7 @@ export default {
 
       // MULTIPLAYER DATA
 
-      roomId: 'wkrg_ffa_dev2',
+      roomId: 'wkrg_ffa_dev',
       currentSRLatency: -1,
       getQueue: new Map(),
       lastPos: null,
@@ -1766,8 +1766,9 @@ export default {
       })
     },
     addEnemy: function (position, enemyType, skipSend) {
-      const arrayPos = this.convertXYToArrayPos(position.x, position.y)
-      if (arrayPos < 0 || arrayPos > this.costField.length) {
+      const ix = this.convertXYToArrayPos(position.x, position.y)
+      // Prevent out of bounds or adding on top of a wall
+      if (ix < 0 || ix > this.costField.length || this.costField[ix] === 255) {
         return
       }
       // Add enemy to list
@@ -1839,7 +1840,7 @@ export default {
      * @param {String} [prefix='E0-']
      */
     srSendEnemy: function (unit, prefix = 'E0-') {
-      const msg = `${prefix}${unit.pos.x};${unit.pos.y};${unit.maxSpeed};${unit.id};${unit.dps};${unit.maxHp};${unit.xp};${unit.visualType};${unit.dimW};${unit.dimH};${unit.offX};${unit.offY}`
+      const msg = `${prefix}${unit.pos.x};${unit.pos.y};${unit.maxSpeed};${unit.id};${unit.dps};${unit.maxHp};${unit.xp};${unit.visualType};${unit.dimW};${unit.dimH};${unit.offX};${unit.offY};${unit.armor};${unit.money}`
       this.$connector.sendSyncRoomMessage(msg)
     },
     handleCalculation: async function () {

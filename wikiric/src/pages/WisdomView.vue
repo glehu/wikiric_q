@@ -997,9 +997,6 @@ export default {
                 }
               } else if (level === lastLevel) {
                 // Same level -> remember
-                // if (tmp && tmp.label) {
-                //   tree[0].children.push(tmp)
-                // }
                 obj = {
                   label: content,
                   children: [],

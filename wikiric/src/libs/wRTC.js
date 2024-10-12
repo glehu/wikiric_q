@@ -670,7 +670,6 @@ const WRTC = {
   },
   /**
    * Sends a message to a user using the WebRTC DataChannel
-   * @param {String} usr
    * @param {Object|String} msg
    * @return boolean
    */
