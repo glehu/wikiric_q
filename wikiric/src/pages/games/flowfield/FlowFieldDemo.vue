@@ -3293,10 +3293,13 @@ export default {
         }
       }
       // Add Weapon and Item offers
-      const offers = this.showLevelUpOffers(
-        3,
-        0,
-        3)
+      let offers = null
+      if (this.weaponOffers.length < 1 || this.itemOffers.length < 1) {
+        offers = this.showLevelUpOffers(
+          3,
+          0,
+          3)
+      }
       if (offers) {
         this.shopTab = 'shop'
       } else if (this.powerUpOffers.length > 0) {
@@ -3551,7 +3554,7 @@ export default {
       this.distributeGoalWeapons()
       this.distributeGoalItems()
       this.modifyingWeapons = false
-      if (this.goalLevelUps > 0) {
+      if (this.goalLevelUps > 0 && this.powerUpOffers.length < 1) {
         const offers = this.showLevelUpOffers(
           0,
           3,
@@ -3636,15 +3639,28 @@ export default {
     showLevelUpOffers: function (amountWeapons = 3, amountPowerUps = 3, amountItems = 3) {
       let offers
       let hasOffer = false
+      let hasEnough = false
+      let tmp
       // Get unowned weapons as offers
       if (amountWeapons > 0) {
         this.weaponOffers = []
         if (this.weaponList.categories.starter.length > 0) {
           hasOffer = true
+          hasEnough = false
           offers = []
-          for (const entry of this.weaponList.categories.starter) {
-            if (entry.canOffer()) {
-              offers.push(entry)
+          tmp = 0
+          while (!hasEnough) {
+            for (const entry of this.weaponList.categories.starter) {
+              if (entry.canOffer()) {
+                offers.push(entry)
+                tmp += 1
+                if (tmp >= amountWeapons) {
+                  hasEnough = true
+                }
+              }
+            }
+            if (tmp < amountWeapons && this.weaponList.categories.starter.length < amountWeapons) {
+              hasEnough = true
             }
           }
           this.weaponOffers = this.selectRandomFromArray(amountWeapons, offers)
@@ -3657,9 +3673,22 @@ export default {
           this.powerUpList.categories.starter.length > 0
         ) {
           hasOffer = true
+          hasEnough = false
           offers = []
-          for (const entry of this.powerUpList.categories.starter) {
-            offers.push(entry)
+          tmp = 0
+          while (!hasEnough) {
+            for (const entry of this.powerUpList.categories.starter) {
+              if (entry.canOffer()) {
+                offers.push(entry)
+                tmp += 1
+                if (tmp >= amountPowerUps) {
+                  hasEnough = true
+                }
+              }
+            }
+            if (tmp < amountPowerUps && this.powerUpList.categories.starter.length < amountPowerUps) {
+              hasEnough = true
+            }
           }
           this.powerUpOffers = this.selectRandomFromArray(amountPowerUps, offers)
           hasOffer = this.powerUpOffers.length > 0
@@ -3670,10 +3699,21 @@ export default {
         this.itemOffers = []
         if (this.itemList.categories.starter.length > 0) {
           hasOffer = true
+          hasEnough = false
           offers = []
-          for (const entry of this.itemList.categories.starter) {
-            if (entry.canOffer()) {
-              offers.push(entry)
+          tmp = 0
+          while (!hasEnough) {
+            for (const entry of this.itemList.categories.starter) {
+              if (entry.canOffer()) {
+                offers.push(entry)
+                tmp += 1
+                if (tmp >= amountItems) {
+                  hasEnough = true
+                }
+              }
+            }
+            if (tmp < amountItems && this.itemList.categories.starter.length < amountItems) {
+              hasEnough = true
             }
           }
           this.itemOffers = this.selectRandomFromArray(amountItems, offers)

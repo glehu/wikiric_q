@@ -112,6 +112,34 @@ class FFItemList {
       true)
     item.effects.push(effect)
     this.categories.starter.push(item)
+    /**
+     * STARTER ITEM: GLASS CANNON
+     * @type {FFItem}
+     */
+    item = new FFItem(
+      0,
+      1,
+      'Glass-Cannon',
+      'Boosts your damage, but lowers armor.',
+      200,
+      30)
+    effect = new FFItemEffect(
+      'dmg',
+      20,
+      2,
+      0,
+      false,
+      true)
+    item.effects.push(effect)
+    effect = new FFItemEffect(
+      'armor',
+      -5,
+      -1,
+      0,
+      false,
+      true)
+    item.effects.push(effect)
+    this.categories.starter.push(item)
   }
 }
 
