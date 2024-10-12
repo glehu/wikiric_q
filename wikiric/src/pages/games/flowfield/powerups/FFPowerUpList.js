@@ -32,7 +32,8 @@ class FFPowerUpList {
       0,
       1,
       'Critical Hit',
-      'Deals more damage sometimes.')
+      'Deals more damage sometimes.',
+      100)
     effect = new FFPowerUpEffect(
       true,
       'dmg',
@@ -51,7 +52,8 @@ class FFPowerUpList {
       0,
       1,
       'Spam',
-      'More projectiles!')
+      'More projectiles!',
+      30)
     effect = new FFPowerUpEffect(
       false,
       'amt',
@@ -70,7 +72,8 @@ class FFPowerUpList {
       0,
       1,
       'Multi-Hit',
-      'Can hit more enemies.')
+      'Can hit more enemies.',
+      90)
     effect = new FFPowerUpEffect(
       false,
       'hitCount',
@@ -89,7 +92,8 @@ class FFPowerUpList {
       0,
       1,
       'Area',
-      'Hits enemies further away.')
+      'Hits enemies further away.',
+      100)
     effect = new FFPowerUpEffect(
       false,
       'hitRange',
@@ -108,7 +112,8 @@ class FFPowerUpList {
       0,
       1,
       'Speed',
-      'Projectiles are faster.')
+      'Projectiles are faster.',
+      100)
     effect = new FFPowerUpEffect(
       false,
       'speed',
@@ -127,7 +132,8 @@ class FFPowerUpList {
       0,
       1,
       'Explosion',
-      'Projectiles explode when hitting enemies. Radius scales with Area.')
+      'Projectiles explode. Radius scales with Area.',
+      70)
     effect = new FFPowerUpEffect(
       true,
       'radius',
@@ -146,7 +152,8 @@ class FFPowerUpList {
       0,
       1,
       'Damage',
-      'Raw damage boost for anything that damages.')
+      'Raw damage boost for anything that damages.',
+      80)
     effect = new FFPowerUpEffect(
       true,
       'dmg',
@@ -165,7 +172,8 @@ class FFPowerUpList {
       0,
       1,
       'Berserk Tonic',
-      'More power for the wild!')
+      'More power for the wild!',
+      40)
     effect = new FFPowerUpEffect(
       true,
       'dmg',
@@ -192,6 +200,44 @@ class FFPowerUpList {
       0,
       false,
       true)
+    powerUp.effects.push(effect)
+    this.categories.starter.push(powerUp)
+    /**
+     * STARTER POWERUP: Last Resort
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      1,
+      'Last Resort',
+      'Highly increased damage with slower firing rate.',
+      30)
+    effect = new FFPowerUpEffect(
+      true,
+      'dmg',
+      50,
+      5,
+      0,
+      false,
+      true)
+    powerUp.effects.push(effect)
+    effect = new FFPowerUpEffect(
+      false,
+      'cd',
+      100,
+      2,
+      0,
+      false,
+      true)
+    powerUp.effects.push(effect)
+    effect = new FFPowerUpEffect(
+      false,
+      'hitCount',
+      1,
+      0,
+      0,
+      false,
+      false)
     powerUp.effects.push(effect)
     this.categories.starter.push(powerUp)
   }

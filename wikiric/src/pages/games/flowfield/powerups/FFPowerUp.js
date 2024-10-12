@@ -13,6 +13,7 @@
  * @param {Number} level
  * @param {String} name
  * @param {String} desc
+ * @param {Number} chance
  */
 class FFPowerUp {
   /**
@@ -21,8 +22,9 @@ class FFPowerUp {
    * @param {Number} level
    * @param {String} name
    * @param {String} desc
+   * @param {Number} chance
    */
-  constructor (id, level, name, desc) {
+  constructor (id, level, name, desc, chance) {
     this.id = id
     this.level = level
     this.name = name
@@ -32,6 +34,7 @@ class FFPowerUp {
      * @type {FFPowerUpEffect[]}
      */
     this.effects = []
+    this.chance = chance
   }
 
   /**
@@ -75,6 +78,14 @@ class FFPowerUp {
         effect.levelUp()
       }
     }
+  }
+
+  canOffer () {
+    if (this.chance >= 99) {
+      return true
+    }
+    const rand = Math.random() * 100 + 1
+    return (rand <= this.chance)
   }
 }
 

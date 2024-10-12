@@ -34,7 +34,7 @@ class FFWeaponList {
       'Gun',
       'Shoots projectiles. That\'s what guns do!',
       40,
-      5,
+      10,
       1,
       1,
       60,
@@ -45,7 +45,9 @@ class FFWeaponList {
       0.2,
       0,
       'bullet',
-      200)
+      200,
+      0,
+      100)
     powerUp = new FFPowerUp(
       0,
       1,
@@ -54,7 +56,7 @@ class FFWeaponList {
     effect = new FFPowerUpEffect(
       true,
       'dmg',
-      5,
+      10,
       1,
       4,
       false,
@@ -81,7 +83,9 @@ class FFWeaponList {
       0.2,
       0,
       'fire',
-      200)
+      200,
+      200,
+      80)
     powerUp = new FFPowerUp(
       0,
       1,
@@ -106,7 +110,7 @@ class FFWeaponList {
       'Rocket Launcher',
       'Explosive rockets dealing AoE damage.',
       40,
-      10,
+      30,
       5,
       1,
       120,
@@ -114,15 +118,17 @@ class FFWeaponList {
       20,
       1,
       0,
-      2,
+      3,
       0.1,
       'rocket',
-      200)
+      200,
+      170,
+      50)
     powerUp = new FFPowerUp(
       0,
       1,
       'Explosion (Starter)',
-      'Projectiles explode when hitting enemies. Radius scales with Area.')
+      'Projectiles explode. Radius scales with Area.')
     effect = new FFPowerUpEffect(
       true,
       'radius',
@@ -142,10 +148,10 @@ class FFWeaponList {
       'Shotgun',
       'Double barrel action! Can\'t get cooler than that! At least for now.',
       40,
-      15,
+      20,
+      5,
       2,
-      2,
-      120,
+      140,
       4,
       10,
       2,
@@ -153,7 +159,9 @@ class FFWeaponList {
       0.2,
       0,
       'bullet',
-      200)
+      200,
+      120,
+      100)
     this.categories.starter.push(weapon)
     /**
      * STARTER WEAPON: SNIPER
@@ -163,7 +171,7 @@ class FFWeaponList {
       'Sniper',
       'Lots of damage with high reload times.',
       40,
-      40,
+      60,
       5,
       1,
       200,
@@ -174,7 +182,9 @@ class FFWeaponList {
       0.4,
       0,
       'bullet',
-      200)
+      200,
+      160,
+      80)
     this.categories.starter.push(weapon)
     /**
      * STARTER WEAPON: SNIPER
@@ -185,7 +195,7 @@ class FFWeaponList {
       'Hurts enemies that are too close. Needs to recharge after some time.',
       5,
       1,
-      10,
+      2,
       100,
       300,
       10,
@@ -195,7 +205,9 @@ class FFWeaponList {
       0.4,
       0,
       'melee',
-      0)
+      0,
+      200,
+      30)
     this.categories.starter.push(weapon)
     /**
      * STARTER WEAPON: ASSAULT RIFLE
@@ -205,7 +217,7 @@ class FFWeaponList {
       'Assault Rifle',
       'Shoots faster than a regular gun.',
       40,
-      8,
+      15,
       4,
       1,
       30,
@@ -216,7 +228,9 @@ class FFWeaponList {
       0.3,
       0,
       'bullet',
-      200)
+      200,
+      150,
+      90)
     powerUp = new FFPowerUp(
       0,
       1,
@@ -225,7 +239,7 @@ class FFWeaponList {
     effect = new FFPowerUpEffect(
       true,
       'dmg',
-      5,
+      10,
       1,
       4,
       false,
@@ -242,7 +256,7 @@ class FFWeaponList {
       'NEED MORE AMMO!',
       40,
       6,
-      2,
+      1,
       2,
       10,
       0,
@@ -252,7 +266,9 @@ class FFWeaponList {
       0.3,
       0,
       'bullet',
-      200)
+      200,
+      300,
+      40)
     this.categories.starter.push(weapon)
   }
 }

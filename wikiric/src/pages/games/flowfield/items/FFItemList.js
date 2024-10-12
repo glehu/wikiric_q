@@ -32,7 +32,9 @@ class FFItemList {
       0,
       1,
       'Health',
-      'Increases the player\'s health.')
+      'Increases the player\'s health.',
+      150,
+      100)
     effect = new FFItemEffect(
       'hp',
       50,
@@ -50,7 +52,9 @@ class FFItemList {
       0,
       1,
       'Speed',
-      'Increases the player\'s movement speed.')
+      'Increases the player\'s movement speed.',
+      100,
+      100)
     effect = new FFItemEffect(
       'speed',
       0.2,
@@ -68,11 +72,41 @@ class FFItemList {
       0,
       1,
       'Armor',
-      'Increases the player\'s resistance to damage.')
+      'Increases the player\'s resistance to damage.',
+      180,
+      100)
     effect = new FFItemEffect(
       'armor',
       2,
       2,
+      0,
+      false,
+      true)
+    item.effects.push(effect)
+    this.categories.starter.push(item)
+    /**
+     * STARTER ITEM: STIM-PACK
+     * @type {FFItem}
+     */
+    item = new FFItem(
+      0,
+      1,
+      'STIM-PACK',
+      'Regenerates a bit of health.',
+      200,
+      50)
+    effect = new FFItemEffect(
+      'hp+',
+      1,
+      1,
+      0,
+      false,
+      true)
+    item.effects.push(effect)
+    effect = new FFItemEffect(
+      'speed',
+      0.2,
+      0.2,
       0,
       false,
       true)

@@ -27,6 +27,8 @@ import FFProjectile from 'pages/games/flowfield/weapons/FFProjectile'
  * @param {Number} hitRangeLevelUp
  * @param {String} visualType
  * @param {Number} ttl
+ * @param {Number} cost
+ * @param {Number} chance
  */
 class FFWeapon {
   /**
@@ -46,6 +48,8 @@ class FFWeapon {
    * @param {Number} hitRangeLevelUp
    * @param {String} visualType
    * @param {Number} ttl
+   * @param {Number} cost
+   * @param {Number} chance
    */
   constructor (name,
                desc,
@@ -61,7 +65,9 @@ class FFWeapon {
                hitRange,
                hitRangeLevelUp,
                visualType,
-               ttl) {
+               ttl,
+               cost,
+               chance) {
     this.level = 1
     /**
      * This FF Weapon's Name
@@ -125,6 +131,31 @@ class FFWeapon {
     this.hitRangeLevelUp = hitRangeLevelUp
     this.visualType = visualType
     this.ttl = ttl
+    this.cost = cost
+    /**
+     * The chance of this weapon appearing in offers.
+     *
+     * A chance of 50 would mean that 50% of the offers will
+     * ...include the weapon.
+     * A chance of 20 would mean that 20% of offers will
+     * ...include the weapon.
+     *
+     * Calculation Examples:
+     *
+     * (1)
+     *    * rand   = Math.rand()  * 100 +  1 = 23
+     *    * chance = 50
+     *    * offer  = rnd > chance =  23 <= 50 = true
+     *
+     * (2)
+     *    * rand   = Math.rand()  * 100 +  1 = 47
+     *    * chance = 20
+     *    * offer  = rnd > chance =  47 <= 20 = false
+     *
+     * Lowest chance is 1 as the lowest number generated will be 1.
+     * @type {Number}
+     */
+    this.chance = chance
   }
 
   /**
@@ -225,6 +256,9 @@ class FFWeapon {
           case 'radius':
             radius += effect.value
             break
+          case 'cd':
+            this._cd += effect.value
+            break
         }
       }
     }
@@ -316,6 +350,14 @@ class FFWeapon {
       effects = effects.concat(power.proc())
     }
     return effects
+  }
+
+  canOffer () {
+    if (this.chance >= 99) {
+      return true
+    }
+    const rand = Math.random() * 100 + 1
+    return (rand <= this.chance)
   }
 }
 

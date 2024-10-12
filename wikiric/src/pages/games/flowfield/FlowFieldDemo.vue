@@ -427,7 +427,7 @@
                             -translate-y-2">
                   <div class="text-right">
                     <p class="text-sm cursor-default">
-                      Round {{ currentRound }} | {{ timePassed }} | {{ goalKills }} Kills | {{ roomId }}
+                      {{ gameMetaText }}
                     </p>
                     <div class="flex column gap-1 text-right mt1">
                       <template v-for="[key, val] of sessions.entries()" :key="key.u">
@@ -460,10 +460,16 @@
                   :power-up-offers="powerUpOffers"
                   :item-offers="itemOffers"
                   :tab-pref="shopTab"
+                  :player-stats="goalStats"
+                  :player-items="goalItems"
+                  :player-weapons="goalWeapons"
+                  :trophies="trophyList"
+                  :money="goalMoney"
                   @close="isLevelUp = false"
                   @wpn="handleShopWeaponOffer"
                   @itm="handleShopItemOffer"
-                  @pup="handleShopPowerUpOffer"/>
+                  @pup="handleShopPowerUpOffer"
+                  @rewpn="refreshOffers"/>
           <template v-if="modifyingWeapons">
             <div class="flex gap-2 justify-center items-center
                         wfull max-w-[100dvw] top-0
@@ -542,7 +548,9 @@
           </q-page-sticky>
           <q-page-sticky position="bottom-right" :offset="[10, 80]">
             <div class="flex gap-2 items-center justify-center">
-              <q-btn icon="sym_o_military_tech" size="1.2rem" round glossy
+              <q-btn v-if="!isSimulating"
+                     icon="sym_o_military_tech"
+                     size="1.2rem" round glossy
                      @click="useLevelUp">
                 <q-badge floating rounded
                          color="primary">
@@ -550,7 +558,12 @@
                 </q-badge>
                 <q-tooltip>
                   <p class="text-sm fontbold">
-                    Level Up!
+                    <template v-if="goalLevelUpsOpen > 0">
+                      Level Up!
+                    </template>
+                    <template v-else>
+                      Shop
+                    </template>
                   </p>
                 </q-tooltip>
               </q-btn>
@@ -563,11 +576,20 @@
                 </div>
               </template>
               <template v-else>
-                <template v-if="!isSimulating">
-                  <q-btn color="primary" no-caps rounded size="1.5rem"
-                         @click="scheduleSimulation(true, true, false)"
-                         icon="sym_o_network_intelligence_history"
-                         label="Start Round"/>
+                <template v-if="isHost">
+                  <template v-if="!isSimulating">
+                    <q-btn color="primary" no-caps rounded size="1.5rem"
+                           @click="scheduleSimulation(true, true, false)"
+                           icon="sym_o_network_intelligence_history"
+                           :label="`Start Round ${currentRound + 1}`"/>
+                  </template>
+                </template>
+                <template v-else>
+                  <div class="px2">
+                    <p class="fontbold">
+                      Waiting for Host...
+                    </p>
+                  </div>
                 </template>
               </template>
             </div>
@@ -576,7 +598,7 @@
       </q-page-container>
     </q-layout>
   </q-page>
-  <div class="hidden">
+  <div id="assets_container" class="hidden">
     <!-- Slime Model -->
     <img id="slime"
          src="https://wikiric.xyz/files/public/get/018f866a-4182-7aef-b1a4-1a75a7e7c21f"
@@ -819,7 +841,7 @@
          src="https://wikiric.xyz/files/public/get/018ff89a-b1b4-726d-9610-9d1c8d19defb"
          width="50" height="50" alt="img"/>
   </div>
-  <q-slide-transition>
+  <q-slide-transition v-if="!isSimulating">
     <q-card v-show="isPickingMap" flat
             class="fixed bottom-0 wfull fmt_border_top">
       <q-card-section>
@@ -853,6 +875,7 @@ import FFItemList from 'pages/games/flowfield/items/FFItemList'
 import FFShop from 'pages/games/flowfield/FFShop.vue'
 import FFItem from 'pages/games/flowfield/items/FFItem'
 import FFItemEffect from 'pages/games/flowfield/items/FFItemEffect'
+import FFTrophyList from 'pages/games/flowfield/trophies/FFTrophyList'
 
 export default {
   name: 'FlowFieldDemo',
@@ -971,8 +994,8 @@ export default {
        */
       ctx3: null,
       gridSize: 50,
-      width: 1000, // 1550,
-      height: 1000, // 900,
+      width: 1500, // 1550,
+      height: 1500, // 900,
       sWidth: 0,
       sHeight: 0,
       totalCells: 0,
@@ -992,6 +1015,9 @@ export default {
       onHitEffects: [],
       isLevelUp: false,
       shopTab: 'shop',
+
+      // TOYS
+
       weaponList: new FFWeaponList(),
       /**
        * @type FFWeapon[]
@@ -1007,6 +1033,7 @@ export default {
        * @type FFItem[]
        */
       itemOffers: [],
+      trophyList: new FFTrophyList(),
       modifyingWeapons: false,
       /**
        * @type FFPowerUp
@@ -1022,6 +1049,7 @@ export default {
       goalMaxHP: 0,
       goalMaxHPOriginal: 100,
       goalXP: 0,
+      goalMoney: 0,
       goalMaxXP: 500,
       goalLevel: 1,
       goalLevelUps: 0,
@@ -1046,16 +1074,15 @@ export default {
       goalMovementVector: new THREE.Vector2(0, 0),
       goalSpeed: 2,
       goalSpeedOriginal: 2,
-
       goalNorth: new THREE.Vector2(0, -1),
       goalWest: new THREE.Vector2(-1, 0),
       goalSouth: new THREE.Vector2(0, 1),
       goalEast: new THREE.Vector2(1, 0),
-
       goalUp: false,
       goalLeft: false,
       goalDown: false,
       goalRight: false,
+      goalDamaged: false,
 
       // SIMULATION DATA
 
@@ -1099,6 +1126,7 @@ export default {
   mounted () {
     setTimeout(() => {
       this.initFunction()
+      this.showEndOfRoundShop()
     }, 0)
   },
   beforeUnmount () {
@@ -1112,7 +1140,28 @@ export default {
       return this.currentSRLatency.toFixed(1)
     },
     timePassed () {
-      return `${this.secondsPassed} s`
+      if (this.secondsPassed < 10) {
+        return `00:0${this.secondsPassed}`
+      } else {
+        let seconds = (this.secondsPassed % 60).toString()
+        if (seconds.length < 2) {
+          seconds = '0' + seconds
+        }
+        let minutes = Math.floor(this.secondsPassed / 60).toString()
+        if (minutes.length < 2) {
+          minutes = '0' + minutes
+        }
+        return `${minutes}:${seconds}`
+      }
+    },
+    gameMetaText () {
+      let round
+      if (this.currentRound < 1) {
+        round = 'Preparation'
+      } else {
+        round = `Round ${this.currentRound}`
+      }
+      return `${round} | ${this.timePassed} | ${this.goalKills} Kills | ${this.roomId}`
     }
   },
   methods: {
@@ -1151,6 +1200,8 @@ export default {
       this.powerUpList.initiateStarterPowerUps()
       this.itemList = new FFItemList()
       this.itemList.initiateStarterItems()
+      this.trophyList = new FFTrophyList()
+      this.trophyList.initiateStarterTrophies()
       this.setUpPlayer()
       this.setUpSyncRoom()
       // QoL
@@ -1725,6 +1776,8 @@ export default {
       // Scale HP with Level
       let hp = 1
       let xp = 1
+      let armor = 0
+      let money = 5
       let dmg
       /**
        * @type {HTMLImageElement}
@@ -1736,6 +1789,8 @@ export default {
         hp = 20
         dmg = 5
         xp = 100
+        armor = 0
+        money = 5
         image = document.getElementById('slime_jump_0')
         dim = 32
         off = 8
@@ -1745,6 +1800,8 @@ export default {
         hp = 150
         dmg = 30
         xp = 1000
+        armor = 5
+        money = 10
         image = document.getElementById('skeleton_0')
         dim = 100
         off = -20
@@ -1764,7 +1821,9 @@ export default {
         dim, // We're using dim and off twice on purpose! Do not worry
         dim,
         off,
-        off)
+        off,
+        armor,
+        money)
       this.enemies.set(id, unit)
       if (!skipSend) {
         // Transmit new unit to co-players
@@ -2039,27 +2098,32 @@ export default {
     },
     handleSimulation: function (srSilent) {
       if (this.isSimulating) return
+      console.log('Starting Simulation...')
+      // Wall of Init
       this.secondsPassed = 0
       this.currentRound += 1
-      console.log('Starting Simulation...')
+      this.trophyList.addProgress('round', 1)
       this.isSimulating = true
       this.isScheduling = false
       this.canMove = false
       this.theta = 0
       this.weaponOffers = []
       this.itemOffers = []
+      this.goalDamaged = false
       // Count the time passed (rounds!)
       this.secondInterval = setInterval(() => {
         this.secondsPassed += 1
         if (this.isHost && this.secondsPassed >= this.secondsMax) {
           // Round has ended!
-          this.secondsPassed = 0
           this.handleEndOfRound()
           clearInterval(this.secondInterval)
         }
       }, 1_000)
+      // Calculate integration grid (Flow Field)
       this.handleCalculation()
+      // Proc item effects like HP and Speed
       this.applyGoalItems(true)
+      this.applyCoPlayersItems(true)
       // Transmit weapon data
       this.distributeGoalWeapons()
       this.distributeGoalItems()
@@ -2074,6 +2138,7 @@ export default {
         this.buildDataCommand('GET', 'SESH', 'DIST'))
       this.$connector.sendSyncRoomMessage(
         this.buildDataCommand('GET', 'UDAT'))
+      // Enable player movement
       if (this.currentSRLatency < 0) {
         setTimeout(() => {
           this.canMove = true
@@ -2083,7 +2148,7 @@ export default {
           this.canMove = true
         }, this.currentSRLatency * 2)
       }
-      // Allocate memory for variables
+      // Add unit media
       let tmp
       const assets = new FFUnitAssets()
       assets.addAsset('slime',
@@ -2662,6 +2727,10 @@ export default {
       if (this.goalStats.has('armor')) {
         armor += Number(this.goalStats.get('armor'))
       }
+      let extraDmg = 0
+      if (this.goalStats.has('dmg')) {
+        extraDmg += Number(this.goalStats.get('dmg'))
+      }
       const goalVec = new THREE.Vector2()
       goalVec.copy(this.goalPosition)
       goalVec.sub(this.offsetVector)
@@ -2690,7 +2759,9 @@ export default {
         if (this.goalInvincibilityFrames === 0) {
           if (dist <= 0.5) {
             this.goalHP -= (other.dps - armor)
+            this.trophyList.addProgress('self_damage', (other.dps - armor))
             this.goalInvincibilityFrames = 20
+            this.goalDamaged = true
             if (this.goalHP <= 0) {
               this.goalHP = 0
               this.goalAlive = false
@@ -2726,17 +2797,15 @@ export default {
           for (let j = 0; j < projectiles.length; j++) {
             if (projectiles[j].vec.lengthSq() > 0) {
               // Projectile - Add to projectiles
+              projectiles[j].dmg += extraDmg
               this.goalWeaponProjectiles.push(projectiles[j])
               continue
             }
             // Beam - Directly damage enemy
-            other.hp -= projectiles[j].dmg
+            other.hp -= (projectiles[j].dmg + extraDmg)
+            this.trophyList.addProgress('dmg', (projectiles[j].dmg + extraDmg))
             if (other.hp <= 0) {
-              this.addDeathAnimation(other, assets)
-              this.goalXP += other.xp
-              this.checkXP()
-              this.enemies.delete(other.id)
-              this.goalKills += 1
+              this.handleEnemyDeath(other, assets)
             } else {
               this.enemies.set(other.id, other)
             }
@@ -2992,12 +3061,9 @@ export default {
                 // Trigger hit
                 projectile.hitCount -= 1
                 enemy.hp -= projectile.dmg
+                this.trophyList.addProgress('dmg', projectile.dmg)
                 if (enemy.hp <= 0) {
-                  this.addDeathAnimation(enemy, assets)
-                  this.goalXP += enemy.xp
-                  this.checkXP()
-                  this.enemies.delete(enemy.id)
-                  this.goalKills += 1
+                  this.handleEnemyDeath(enemy, assets)
                 } else {
                   this.enemies.set(enemy.id, enemy)
                 }
@@ -3117,18 +3183,9 @@ export default {
                 2 * Math.PI)
               // Trigger hit
               enemy.hp -= projectile.dmg
+              this.trophyList.addProgress('dmg', projectile.dmg)
               if (enemy.hp <= 0) {
-                this.onHitEffects.push(new FFOnHitEffect(
-                  enemy.pos.x,
-                  enemy.pos.y,
-                  'death',
-                  images.death,
-                  10,
-                  8))
-                this.goalXP += enemy.xp
-                this.checkXP()
-                this.enemies.delete(enemy.id)
-                this.goalKills += 1
+                this.handleEnemyDeath(enemy, images)
               } else {
                 this.enemies.set(enemy.id, enemy)
               }
@@ -3208,20 +3265,67 @@ export default {
       // Pause simulation
       this.srNotifySimulation(false)
       this.goalAlive = false
-      if (showOffers) {
-        const offers = this.showLevelUpOffers(
-          3,
-          0,
-          3)
-        if (offers) {
-          // Show level up screen
-          this.shopTab = 'shop'
-          this.isLevelUp = true
-        }
+      // Did we survive this round without getting damaged?
+      if (!this.goalDamaged) {
+        this.trophyList.addProgress('flawless_round', 1)
       }
+      // Show the shop if desired
+      if (showOffers) {
+        this.showEndOfRoundShop()
+      }
+      this.collectTrophies()
       if (this.secondInterval) {
         clearInterval(this.secondInterval)
         this.secondsPassed = 0
+      }
+    },
+    showEndOfRoundShop: function () {
+      // If there are no Power-Ups ready, but we have a level up
+      // ...we can conveniently add offers, too
+      if (this.powerUpOffers.length < 1 && this.goalLevelUps > 0) {
+        const pup = this.showLevelUpOffers(
+          0,
+          3,
+          0)
+        if (pup) {
+          this.goalLevelUps -= 1
+        }
+      }
+      // Add Weapon and Item offers
+      const offers = this.showLevelUpOffers(
+        3,
+        0,
+        3)
+      if (offers) {
+        this.shopTab = 'shop'
+      } else if (this.powerUpOffers.length > 0) {
+        this.shopTab = 'skills'
+      } else {
+        this.shopTab = 'gear'
+      }
+      // Show level up screen
+      this.isLevelUp = true
+    },
+    collectTrophies: function () {
+      if (!this.trophyList || !this.trophyList.categories || !this.trophyList.categories.starter) {
+        return
+      }
+      let boost
+      for (let i = 0; i < this.trophyList.categories.starter.length; i++) {
+        boost = this.trophyList.categories.starter[i].collect()
+        if (boost.size < 1) {
+          continue
+        }
+        let tmp
+        for (const [key, value] of boost.entries()) {
+          if (!this.goalStats.has(key)) {
+            this.goalStats.set(key, value)
+          } else {
+            tmp = Number(this.goalStats.get(key))
+            tmp += Number(value)
+            this.goalStats.set(key, tmp)
+          }
+        }
       }
     },
     clearAll: function () {
@@ -3413,6 +3517,7 @@ export default {
     handleLevelUp: function () {
       this.goalXP = 0
       this.goalLevel += 1
+      this.trophyList.addProgress('level', 1)
       // The player can use level-ups to get upgrades
       this.goalLevelUps += 1
       this.goalLevelUpsOpen += 1
@@ -3436,8 +3541,30 @@ export default {
     dismissLevelUp: function () {
       this.distributeGoalWeapons()
       this.distributeGoalItems()
-      this.isLevelUp = false
       this.modifyingWeapons = false
+      if (this.goalLevelUps > 0) {
+        const offers = this.showLevelUpOffers(
+          0,
+          3,
+          0)
+        if (offers) {
+          this.goalLevelUps -= 1
+          this.shopTab = 'skills'
+          this.isLevelUp = true
+          return
+        }
+      }
+      if (this.goalLevelUpsOpen > 0 && this.powerUpOffers.length > 0) {
+        this.shopTab = 'skills'
+        this.isLevelUp = true
+        return
+      }
+      if (this.weaponOffers.length > 0 || this.itemOffers.length > 0) {
+        this.shopTab = 'shop'
+        this.isLevelUp = true
+        return
+      }
+      this.isLevelUp = false
     },
     /**
      *
@@ -3458,27 +3585,31 @@ export default {
       return weapon
     },
     useLevelUp: function () {
+      // Looks weird but works
+      this.isLevelUp = false
+      this.isLevelUp = true
       if (this.goalLevelUps < 1) {
         // Show level up screen
-        if (this.goalLevelUpsOpen < 1) {
-          this.weaponOffers = []
-          this.itemOffers = []
-          this.powerUpOffers = []
-        }
         this.shopTab = 'skills'
-        this.isLevelUp = true
+        if (this.goalLevelUpsOpen < 1) {
+          // this.weaponOffers = []
+          // this.itemOffers = []
+          this.powerUpOffers = []
+          this.shopTab = 'gear'
+        }
         return
       }
-      const offers = this.showLevelUpOffers(
-        0,
-        3,
-        0)
-      if (offers) {
-        this.goalLevelUps -= 1
-        // Show level up screen
-        this.shopTab = 'skills'
-        this.isLevelUp = true
+      if (this.powerUpOffers.length < 1) {
+        const offers = this.showLevelUpOffers(
+          0,
+          3,
+          0)
+        if (offers) {
+          this.goalLevelUps -= 1
+        }
       }
+      // Show level up screen
+      this.shopTab = 'skills'
     },
     /**
      * Shows the level up screen
@@ -3496,7 +3627,9 @@ export default {
           hasOffer = true
           offers = []
           for (const entry of this.weaponList.categories.starter) {
-            offers.push(entry)
+            if (entry.canOffer()) {
+              offers.push(entry)
+            }
           }
           this.weaponOffers = this.selectRandomFromArray(amountWeapons, offers)
         }
@@ -3523,7 +3656,9 @@ export default {
           hasOffer = true
           offers = []
           for (const entry of this.itemList.categories.starter) {
-            offers.push(entry)
+            if (entry.canOffer()) {
+              offers.push(entry)
+            }
           }
           this.itemOffers = this.selectRandomFromArray(amountItems, offers)
           hasOffer = this.itemOffers.length > 0
@@ -3556,6 +3691,7 @@ export default {
       const cache = []
       for (let i = 0; i < n; i++) {
         ix = Math.floor(Math.random() * offers.length)
+        // Did we select this already?
         if (cache.length > 0 && cache.includes(ix)) {
           i -= 1
           continue
@@ -3566,17 +3702,22 @@ export default {
       return randomResults
     },
     handleShopWeaponOffer: function (offer) {
-      this.handleWeaponOffer(offer)
       this.weaponOffers = []
+      this.itemOffers = []
+      this.goalMoney -= offer.cost
+      this.handleWeaponOffer(offer)
     },
     handleShopItemOffer: function (offer) {
-      this.handleItemOffer(offer)
+      this.weaponOffers = []
       this.itemOffers = []
+      this.goalMoney -= offer.cost
+      this.handleItemOffer(offer)
     },
     handleShopPowerUpOffer: function (offer) {
-      this.handlePowerUpOffer(offer)
       this.powerUpOffers = []
       this.goalLevelUpsOpen -= 1
+      this.goalMoney -= offer.cost
+      this.handlePowerUpOffer(offer)
     },
     /**
      *
@@ -3628,7 +3769,12 @@ export default {
       if (ix >= 0) {
         this.powerUpList.categories.starter.splice(ix, 1)
       }
+      this.powerUpOffers = []
       this.dismissLevelUp()
+    },
+    refreshOffers: function (cost) {
+      this.goalMoney -= Number(cost)
+      this.showEndOfRoundShop()
     },
     /**
      *
@@ -3700,6 +3846,13 @@ export default {
      * ...are placed here.
      */
     procPerSecondTriggers: function () {
+      // Apply HP+
+      if (this.goalStats && this.goalStats.has('hp+')) {
+        this.goalHP += Number(this.goalStats.get('hp+'))
+        if (this.goalHP > this.goalMaxHP) {
+          this.goalHP = this.goalMaxHP
+        }
+      }
       // Populate map
       if (this.isHost || !this.coPlayers || this.coPlayers.size < 1) {
         this.checkAndSpawnEnemies('slime', this.getEnemyAmount())
@@ -4095,8 +4248,9 @@ export default {
           Number(obj.hitRange),
           Number(obj.hitRangeLevelUp),
           obj.visualType,
-          Number(obj.ttl)
-        )
+          Number(obj.ttl),
+          Number(obj.cost),
+          Number(obj.chance))
         obj.level = level
         if (ix !== -1) {
           // Update weapon (but not power-ups)
@@ -4204,7 +4358,9 @@ export default {
           Number(obj.id),
           Number(obj.level),
           obj.name,
-          obj.desc
+          obj.desc,
+          obj.cost,
+          obj.chance
         )
         obj.level = level
         if (ix !== -1) {
@@ -4277,7 +4433,9 @@ export default {
         Number(data[8]),
         Number(data[9]),
         Number(data[10]),
-        Number(data[11]))
+        Number(data[11]),
+        Number(data[12]),
+        Number(data[13]))
       this.enemies.set(unit.id, unit)
       let image
       if (unit.visualType === 'slime') {
@@ -4660,7 +4818,60 @@ export default {
         this.goalSpeed += Number(this.goalStats.get('speed'))
       }
     },
-    applyCoPlayerItems: function () {
+    /**
+     *
+     * @param {Boolean} start
+     */
+    applyCoPlayersItems: function (start) {
+      if (!this.coPlayers || this.coPlayers.size < 1) {
+        return
+      }
+      let player
+      for (const [key, val] of this.coPlayers.entries()) {
+        player = val
+        player = this.applyCoPlayerItems(player, start)
+        this.coPlayers.set(key, player)
+      }
+    },
+    /**
+     *
+     * @param {Object} player
+     * @param {Boolean} start
+     * @return {Object}
+     */
+    applyCoPlayerItems: function (player, start) {
+      player.stats = new Map()
+      // Apply item effects
+      if (player.items && player.items.length > 0) {
+        for (let i = 0; i < player.items.length; i++) {
+          player.items[i].proc(player.stats)
+        }
+      }
+      if (!start) {
+        return player
+      }
+      player.speed = this.goalSpeedOriginal
+      if (player.stats.has('speed')) {
+        player.speed += Number(player.stats.get('speed'))
+      }
+      return player
+    },
+    /**
+     *
+     * @param {FFUnit} other
+     * @param {FFUnitAssets} assets
+     */
+    handleEnemyDeath: function (other, assets) {
+      // Retrieve resources from enemy
+      this.goalMoney += other.money
+      this.goalXP += other.xp
+      this.checkXP()
+      // Replace enemy with death animation
+      this.enemies.delete(other.id)
+      this.goalKills += 1
+      this.addDeathAnimation(other, assets)
+      // Track trophy progress
+      this.trophyList.addProgress('kill', 1)
     }
   }
 }

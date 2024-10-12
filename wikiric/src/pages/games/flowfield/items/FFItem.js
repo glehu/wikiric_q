@@ -13,6 +13,8 @@
  * @param {Number} level
  * @param {String} name
  * @param {String} desc
+ * @param {Number} cost
+ * @param {Number} chance
  */
 class FFItem {
   /**
@@ -21,8 +23,10 @@ class FFItem {
    * @param {Number} level
    * @param {String} name
    * @param {String} desc
+   * @param {Number} cost
+   * @param {Number} chance
    */
-  constructor (id, level, name, desc) {
+  constructor (id, level, name, desc, cost, chance) {
     this.id = id
     this.level = level
     this.name = name
@@ -32,6 +36,8 @@ class FFItem {
      * @type {FFItemEffect[]}
      */
     this.effects = []
+    this.cost = cost
+    this.chance = chance
   }
 
   /**
@@ -84,6 +90,14 @@ class FFItem {
         effect.levelUp()
       }
     }
+  }
+
+  canOffer () {
+    if (this.chance >= 99) {
+      return true
+    }
+    const rand = Math.random() * 100 + 1
+    return (rand <= this.chance)
   }
 }
 

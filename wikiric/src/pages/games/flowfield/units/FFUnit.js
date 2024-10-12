@@ -23,6 +23,8 @@ import * as THREE from 'threejs-math'
  * @param {Number} dimH The height dimension for this unit
  * @param {Number} offX The x offset for rendering
  * @param {Number} offY The y offset for rendering
+ * @param {Number} armor The armor of this unit
+ * @param {Number} money The amount of money this unit gives on death
  */
 class FFUnit {
   /**
@@ -39,6 +41,8 @@ class FFUnit {
    * @param {Number} dimH The height dimension for this unit
    * @param {Number} offX The x offset for rendering
    * @param {Number} offY The y offset for rendering
+   * @param {Number} armor The armor of this unit
+   * @param {Number} money The amount of money this unit gives on death
    */
   constructor (
     x,
@@ -52,7 +56,9 @@ class FFUnit {
     dimW,
     dimH,
     offX,
-    offY
+    offY,
+    armor,
+    money
   ) {
     this.id = id
     /**
@@ -111,6 +117,8 @@ class FFUnit {
     this.dimH = dimH
     this.offX = offX
     this.offY = offY
+    this.armor = armor
+    this.money = money
   }
 }
 
