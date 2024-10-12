@@ -71,10 +71,7 @@
                             <q-icon name="sym_o_payments" size="1rem"/>
                             <p>{{ offer.cost }}</p>
                           </div>
-                          <template v-if="money >= offer.cost">
-                            <q-icon name="sym_o_shopping_cart" size="1rem"/>
-                          </template>
-                          <template v-else>
+                          <template v-if="money < offer.cost">
                             <q-icon name="sym_o_lock" size="1rem"/>
                           </template>
                         </div>
@@ -141,10 +138,7 @@
                             <q-icon name="sym_o_payments" size="1rem"/>
                             <p>{{ offer.cost }}</p>
                           </div>
-                          <template v-if="money >= offer.cost">
-                            <q-icon name="sym_o_shopping_cart" size="1rem"/>
-                          </template>
-                          <template v-else>
+                          <template v-if="money < offer.cost">
                             <q-icon name="sym_o_lock" size="1rem"/>
                           </template>
                         </div>
