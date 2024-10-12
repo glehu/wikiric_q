@@ -93,6 +93,13 @@ class FFTrophy {
     this.collected = true
     return this.statBoosts
   }
+
+  getCollected () {
+    if (!this.collected) {
+      return new Map()
+    }
+    return this.statBoosts
+  }
 }
 
 export default FFTrophy

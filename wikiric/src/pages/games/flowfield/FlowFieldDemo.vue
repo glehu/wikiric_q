@@ -3272,7 +3272,7 @@ export default {
       if (showOffers) {
         this.showEndOfRoundShop()
       }
-      this.collectTrophies()
+      this.collectTrophies(true)
       if (this.secondInterval) {
         clearInterval(this.secondInterval)
         this.secondsPassed = 0
@@ -3305,13 +3305,21 @@ export default {
       // Show level up screen
       this.isLevelUp = true
     },
-    collectTrophies: function () {
+    /**
+     *
+     * @param {Boolean} [newOnly=true]
+     */
+    collectTrophies: function (newOnly) {
       if (!this.trophyList || !this.trophyList.categories || !this.trophyList.categories.starter) {
         return
       }
       let boost
       for (let i = 0; i < this.trophyList.categories.starter.length; i++) {
-        boost = this.trophyList.categories.starter[i].collect()
+        if (newOnly) {
+          boost = this.trophyList.categories.starter[i].collect()
+        } else {
+          boost = this.trophyList.categories.starter[i].getCollected()
+        }
         if (boost.size < 1) {
           continue
         }
@@ -3703,19 +3711,18 @@ export default {
     handleShopWeaponOffer: function (offer) {
       this.weaponOffers = []
       this.itemOffers = []
-      this.goalMoney -= offer.cost
+      this.goalMoney -= Number(offer.cost)
       this.handleWeaponOffer(offer)
     },
     handleShopItemOffer: function (offer) {
       this.weaponOffers = []
       this.itemOffers = []
-      this.goalMoney -= offer.cost
+      this.goalMoney -= Number(offer.cost)
       this.handleItemOffer(offer)
     },
     handleShopPowerUpOffer: function (offer) {
       this.powerUpOffers = []
       this.goalLevelUpsOpen -= 1
-      this.goalMoney -= offer.cost
       this.handlePowerUpOffer(offer)
     },
     /**
@@ -4799,6 +4806,8 @@ export default {
       this.goalAlive = true
       this.goalMaxHP = this.goalMaxHPOriginal
       this.goalStats = new Map()
+      // Apply trophy effects
+      this.collectTrophies(false)
       // Apply item effects
       if (this.goalItems && this.goalItems.length > 0) {
         for (let i = 0; i < this.goalItems.length; i++) {
@@ -4862,8 +4871,8 @@ export default {
      */
     handleEnemyDeath: function (other, assets) {
       // Retrieve resources from enemy
-      this.goalMoney += other.money
-      this.goalXP += other.xp
+      this.goalMoney += Number(other.money)
+      this.goalXP += Number(other.xp)
       this.checkXP()
       // Replace enemy with death animation
       this.enemies.delete(other.id)
