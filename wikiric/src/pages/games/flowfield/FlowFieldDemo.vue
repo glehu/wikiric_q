@@ -1126,7 +1126,6 @@ export default {
   mounted () {
     setTimeout(() => {
       this.initFunction()
-      this.showEndOfRoundShop()
     }, 0)
   },
   beforeUnmount () {

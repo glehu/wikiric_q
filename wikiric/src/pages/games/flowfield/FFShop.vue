@@ -303,7 +303,7 @@
                     <p class="text-body1 mb2 ml1">
                       Bonus Stats
                     </p>
-                    <template v-if="playerStats">
+                    <template v-if="playerStats && playerStats.size > 0">
                       <table>
                         <tr v-for="[type, value] in playerStats" :key="type">
                           <td>{{ capitalizeFirstLetter(type) }}:</td>
@@ -312,9 +312,9 @@
                       </table>
                     </template>
                     <template v-else>
-                      <p class="ml1 text-subtitle2">(No Stat Boosts)</p>
+                      <p class="ml4 text-subtitle2">(No Stat Boosts)</p>
                     </template>
-                    <p class="text-body1 mb2 ml1">
+                    <p class="text-body1 my2 ml1">
                       Equipment
                     </p>
                     <template v-if="playerWeapons && playerWeapons.length > 0">
@@ -367,7 +367,7 @@
                       </div>
                     </template>
                     <template v-else>
-                      <p class="ml1 text-subtitle2">(No Equipment)</p>
+                      <p class="ml4 text-subtitle2">(No Equipment)</p>
                     </template>
                   </div>
                 </q-tab-panel>
