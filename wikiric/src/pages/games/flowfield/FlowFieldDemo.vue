@@ -3255,6 +3255,8 @@ export default {
      * @param {Boolean} [showOffers=false]
      */
     cancelSimulation: function (showOffers = false) {
+      // Remove enemies
+      this.enemies = new Map()
       // Cancel movement
       this.goalUp = false
       this.goalLeft = false
@@ -3603,6 +3605,13 @@ export default {
           // this.itemOffers = []
           this.powerUpOffers = []
           this.shopTab = 'gear'
+        } else {
+          if (this.powerUpOffers.length < 1) {
+            this.showLevelUpOffers(
+              0,
+              3,
+              0)
+          }
         }
         return
       }
@@ -3887,13 +3896,33 @@ export default {
      * @return {Number}
      */
     getEnemyAmount: function () {
-      return 1 + this.currentRound
+      switch (this.currentRound) {
+        case 5:
+          // Spam Round #1
+          return 10
+        case 10:
+          // Spam Round #2
+          return 20
+        default:
+          return 1 + this.currentRound
+      }
     },
     getEnemySkeletonAmount: function () {
-      if (this.currentRound >= 3) {
-        return 1 + this.currentRound + Math.floor(this.currentRound / 3)
-      } else {
+      if (this.currentRound < 3) {
         return 0
+      }
+      switch (this.currentRound) {
+        case 4:
+          // Cooldown Round #1
+          return 1
+        case 5:
+          // Spam Round #1
+          return 10
+        case 10:
+          // Spam Round #2
+          return 20
+        default:
+          return 1 + this.currentRound + Math.floor(this.currentRound / 3)
       }
     },
     /**

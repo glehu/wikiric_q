@@ -58,7 +58,7 @@ class FFItemList {
     effect = new FFItemEffect(
       'speed',
       0.2,
-      0.2,
+      0.05,
       0,
       false,
       true)
@@ -106,7 +106,7 @@ class FFItemList {
     effect = new FFItemEffect(
       'speed',
       0.2,
-      0.2,
+      0.05,
       0,
       false,
       true)

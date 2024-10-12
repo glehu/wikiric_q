@@ -304,10 +304,10 @@
                       Bonus Stats
                     </p>
                     <template v-if="playerStats && playerStats.size > 0">
-                      <table>
+                      <table class="ml3 surface p1 rounded-lg">
                         <tr v-for="[type, value] in playerStats" :key="type">
-                          <td>{{ capitalizeFirstLetter(type) }}:</td>
-                          <td>{{ value }}</td>
+                          <td class="px1">{{ capitalizeFirstLetter(type) }}:</td>
+                          <td class="px1">{{ (value).toFixed(1) }}</td>
                         </tr>
                       </table>
                     </template>
