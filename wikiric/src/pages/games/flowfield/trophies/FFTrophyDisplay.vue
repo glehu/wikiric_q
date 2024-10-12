@@ -4,8 +4,8 @@
           :class="{ 'trophyDone': trophy.done }"
           style="box-shadow: none !important; border-width: 4px">
     <q-card-section class="wfull">
-      <div class="flex gap-2 wfull justify-between">
-        <div class="wfit flex gap-2 text-2xl
+      <div class="flex gap-2 wfull justify-between no-wrap">
+        <div class="wfit flex gap-2 text-2xl no-wrap hfit
                     fontbold items-center <sm:wfull
                     background px2 py1 rounded fmt_border">
           <p>{{ trophy.goalProgress.toLocaleString() }}</p>
@@ -18,12 +18,12 @@
             <q-icon name="sym_o_check" size="2rem" color="green"/>
           </template>
         </div>
-        <div class="wfit">
-          <div class="flex column md:items-end mb1">
+        <div class="wfit sm:flex-grow">
+          <div class="flex column sm:items-end wfull">
             <p class="text-body1 fontbold wfit">
               {{ trophy.name }}
             </p>
-            <p class="text-sm wfit">
+            <p class="text-sm wfit sm:text-end">
               {{ trophy.desc }}
             </p>
           </div>
