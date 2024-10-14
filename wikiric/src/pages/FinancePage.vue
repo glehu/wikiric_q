@@ -332,6 +332,16 @@
               </div>
             </template>
           </div>
+          <div class="flex gap-2 mt4 pb2 wfull">
+            <q-btn label="Add Payment"
+                   icon="sym_o_contract"
+                   no-caps flat class="fmt_border flex-grow"
+                   @click="addPaymentToColl(viewingCollection)"/>
+            <q-btn label="Add Income"
+                   icon="sym_o_account_balance"
+                   no-caps flat class="fmt_border flex-grow"
+                   @click="addIncomeToColl(viewingCollection)"/>
+          </div>
           <div class="flex gap-4 mt3 wfull">
             <template v-if="summary && summary.compensation?.length > 0">
               <div class="flex-grow background p2 rounded">
@@ -435,10 +445,10 @@
               <p class="mb2 fontbold text-body1 <sm:pl1 wfull">
                 Transactions - {{ summary.transactions.length }}
               </p>
-              <div class="flex gap-4 wfull">
+              <div class="flex gap-4 wfull <lg:flex-col">
                 <div id="summary_chart_container"
                      class="chart-container fmt_border
-                            max-w-[700px] <lg:max-w-[min(400px,100%)]
+                            lg:max-w-[500px] <lg:wfull
                             rounded mb2 min-h-[320px] flex-grow"
                      style="position: relative;">
                   <canvas id="summary_chart"></canvas>
@@ -706,10 +716,10 @@ export default {
         data: collection
       }).then((response) => {
         // Remember collection
-        collection.uid = response.data
-        const key = `finance_coll_${response.data}`
+        collection.uid = response.data.trim()
+        const key = `finance_coll_${collection.uid}`
         dbSetData(key, collection)
-        this.getCollections()
+        this.getCollections(collection.uid)
         this.isViewingCollection = false
       }).catch((e) => {
         console.debug(e.message)
@@ -746,7 +756,12 @@ export default {
       this.trxTo = this.store.user.username
       this.isViewingTransaction = true
     },
-    getCollections: async function () {
+    /**
+     *
+     * @param {String} [showID=null]
+     * @return {Promise<void>}
+     */
+    getCollections: async function (showID = null) {
       this.lastCollection = {}
       const keys = await dbGetAllDataKeys()
       if (!keys || keys.length < 1) {
@@ -760,6 +775,7 @@ export default {
         this.collections[i] = null
       }
       let coll
+      let showColl
       for (let i = 0; i < keys.length; i++) {
         if (!keys[i].startsWith('finance_coll_')) {
           continue
@@ -776,6 +792,12 @@ export default {
         if (!this.lastCollection) {
           this.lastCollection = coll
         }
+        if (showID && coll.uid === showID) {
+          showColl = coll
+        }
+      }
+      if (showColl) {
+        this.showCollection(showColl)
       }
     },
     showCollectionID: function (coll) {
@@ -976,6 +998,9 @@ export default {
         data: trx
       }).then(() => {
         this.isViewingTransaction = false
+        if (this.viewingCollection) {
+          this.showCollection(this.viewingCollection)
+        }
       }).catch((e) => {
         console.error(e)
       })
@@ -1002,6 +1027,12 @@ export default {
       const copy = { ...this.summary }
       const json = JSON.stringify(copy)
       collection._summary = JSON.parse(json)
+      if (!collection._summary._ownIncome) {
+        collection._summary._ownIncome = 0
+      }
+      if (!collection._summary._ownPayment) {
+        collection._summary._ownPayment = 0
+      }
       return collection
     },
     /**
