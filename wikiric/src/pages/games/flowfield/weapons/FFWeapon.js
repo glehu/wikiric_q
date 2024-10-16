@@ -216,9 +216,10 @@ class FFWeapon {
    * @param {THREE.Vector2} pos
    * @param {THREE.Vector2} vec
    * @param {Number} dist
+   * @param {Number} [extraDmg=0]
    * @return {FFProjectile[] || null}
    */
-  shoot (pos, vec, dist) {
+  shoot (pos, vec, dist, extraDmg = 0) {
     if (this._cd > 0) {
       return null
     }
@@ -269,6 +270,9 @@ class FFWeapon {
             break
         }
       }
+    }
+    if (extraDmg && extraDmg > 0) {
+      dmg += extraDmg
     }
     // Apply scaling
     dmg = dmg * ratio

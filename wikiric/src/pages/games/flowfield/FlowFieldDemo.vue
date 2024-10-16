@@ -2791,7 +2791,8 @@ export default {
           projectiles = this.goalWeapons[k].shoot(
             position,
             direction,
-            dist
+            dist,
+            extraDmg
           )
           if (!projectiles) {
             continue
@@ -2799,13 +2800,12 @@ export default {
           for (let j = 0; j < projectiles.length; j++) {
             if (projectiles[j].vec.lengthSq() > 0) {
               // Projectile - Add to projectiles
-              projectiles[j].dmg += extraDmg
               this.goalWeaponProjectiles.push(projectiles[j])
               continue
             }
             // Beam - Directly damage enemy
-            other.hp -= (projectiles[j].dmg + extraDmg)
-            this.trophyList.addProgress('dmg', (projectiles[j].dmg + extraDmg))
+            other.hp -= projectiles[j].dmg
+            this.trophyList.addProgress('dmg', projectiles[j].dmg)
             if (other.hp <= 0) {
               this.handleEnemyDeath(other, assets)
             } else {
@@ -2845,6 +2845,10 @@ export default {
         coPlayer.y + (this.goalMaxRange / 2))
       if (!others || others.length < 1) {
         return coPlayer
+      }
+      let extraDmg = 0
+      if (this.goalStats.has('dmg')) {
+        extraDmg += Number(this.goalStats.get('dmg'))
       }
       const goalVec = new THREE.Vector2()
       goalVec.x = coPlayer.x
@@ -2887,7 +2891,8 @@ export default {
           projectiles = coPlayer.weapons[k].shoot(
             position,
             direction,
-            dist
+            dist,
+            extraDmg
           )
           if (!projectiles) {
             continue

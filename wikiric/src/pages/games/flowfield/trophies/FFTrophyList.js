@@ -80,23 +80,44 @@ class FFTrophyList {
      * @type FFTrophy
      */
     let trophy
-    trophy = new FFTrophy(0, 'Hello World', 'Does absolutely nothing. Just like a hello world program.', 'round', 1)
+    trophy = new FFTrophy(0, 'Hello World',
+      'Does absolutely nothing. Just like a hello world program.',
+      'round',
+      1)
     this.categories.starter.push(trophy)
-    trophy = new FFTrophy(0, 'IT\'S OVER 9... uh...LEVELS!?', 'Reach level 10.', 'level', 10)
+    trophy = new FFTrophy(0,
+      'IT\'S OVER 9... uh...LEVELS!?',
+      'Reach level 10.',
+      'level',
+      10)
     trophy.addBoost('hp', 200)
     trophy.addBoost('dmg', 10)
     this.categories.starter.push(trophy)
-    trophy = new FFTrophy(0, 'Rampage!', 'Eliminate 100 enemies.', 'kill', 100)
+    trophy = new FFTrophy(0,
+      'Rampage!',
+      'Eliminate 100 enemies.',
+      'kill',
+      100)
     trophy.addBoost('dmg', 10)
     this.categories.starter.push(trophy)
-    trophy = new FFTrophy(0, 'Masochistic Traits', 'Receive 1000 damage.', 'self_damage', 1000)
+    trophy = new FFTrophy(0,
+      'Masochistic Traits',
+      'Receive 1000 damage.',
+      'self_damage',
+      1000)
     trophy.addBoost('hp', 100)
     trophy.addBoost('hp+', 5)
     this.categories.starter.push(trophy)
-    trophy = new FFTrophy(0, 'Master Dodger', 'Survive 2 rounds without being hurt.', 'flawless_round', 2)
+    trophy = new FFTrophy(0,
+      'Master Dodger',
+      'Survive 2 rounds without being hurt.',
+      'flawless_round',
+      2)
     trophy.addBoost('dmg', 10)
     this.categories.starter.push(trophy)
-    trophy = new FFTrophy(0, 'That\'s a lot of damage!', 'Deal 10k damage.', 'dmg', 10_000)
+    trophy = new FFTrophy(0, 'That\'s a lot of damage!',
+      'Deal 10k damage.',
+      'dmg', 10_000)
     trophy.addBoost('dmg', 30)
     this.categories.starter.push(trophy)
   }
