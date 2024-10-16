@@ -357,9 +357,50 @@ class FFWeapon {
      */
     let effects = []
     for (const power of this.powerUps) {
-      effects = effects.concat(power.proc())
+      effects = effects.concat(power.proc(false))
     }
     return effects
+  }
+
+  getCalculatedDamage () {
+    if (this.powerUps.length < 1) {
+      return this.dps
+    }
+    /**
+     * @type {FFPowerUpEffect[]}
+     */
+    let effects = []
+    for (const power of this.powerUps) {
+      effects = effects.concat(power.proc(true))
+    }
+    if (effects.length < 1) {
+      return this.dps
+    }
+    let dmg = this.dps
+    let amt = 1
+    let ratio = this.ratio
+    let tmp = 0
+    for (const effect of effects) {
+      if (effect.onHit && effect.hitCount > 1) {
+        tmp = effect.value / effect.hitCount
+      } else {
+        tmp = effect.value
+      }
+      switch (effect.type) {
+        case 'dmg':
+          dmg += tmp
+          break
+        case 'amt':
+          amt += tmp
+          break
+        case 'ratio':
+          ratio += tmp
+          break
+      }
+    }
+    // Apply scaling
+    dmg = (dmg * ratio) * amt
+    return dmg
   }
 
   /**

@@ -38,10 +38,13 @@ class FFPowerUp {
   }
 
   /**
-   * Procs (activates) all available effects and returns them
+   * Procs (activates) all available effects and returns them.
+   * Optionally, effects can be proc'd ignoring cooldown etc.
+   * when providing force=true
+   * @param {Boolean} [force=false]
    * @return {FFPowerUpEffect[]}
    */
-  proc () {
+  proc (force = false) {
     if (this.effects.length < 1) {
       return []
     }
@@ -51,7 +54,7 @@ class FFPowerUp {
     const procs = []
     let copy
     for (const effect of this.effects) {
-      if (effect.proc()) {
+      if (force || effect.proc()) {
         if (effect.floorValueOnProc) {
           // Shallow copy and floor value
           copy = { ...effect }

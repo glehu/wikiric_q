@@ -21,13 +21,15 @@
           </div>
           <q-tabs
             v-model="tabs"
-            inline-label
+            inline-label no-caps
+            active-bg-color="primary"
             class="wfit">
-            <q-tab name="shop" icon="sym_o_shopping_cart" label="Shop"/>
-            <q-tab name="skills" icon="sym_o_flare" label="Skills"/>
-            <q-tab name="gear" icon="sym_o_person_play" label="Gear"/>
+            <q-tab name="shop" icon="sym_o_shopping_cart" label="Shop" class="rounded-t-2"/>
+            <q-tab name="skills" icon="sym_o_flare" label="Skills" class="rounded-t-2"/>
+            <q-tab name="gear" icon="sym_o_person_play" label="Gear" class="rounded-t-2"/>
           </q-tabs>
           <q-btn label="Exit&nbsp;Shop" icon="close" flat dense
+                 class="<md:ml-auto <md:mt-2"
                  @click="$emit('close')"/>
         </q-toolbar>
         <q-tab-panels v-model="tabs" animated
@@ -94,22 +96,25 @@
                                     fmt_border_bottom pb2
                                     text-sm font-500 mt2 mb2">
                           <p>
-                            Damage: {{ offer.dps.toLocaleString() }}
-                            <span class="italic">( +{{ offer.dpsLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
+                            Damage: {{ offer.getCalculatedDamage().toLocaleString() }}
+                            <span class="italic">( +{{ offer.dpsLevelUp }} <q-icon name="sym_o_military_tech"
+                                                                                   size="1rem"/>)</span>
                           </p>
                           <p>
                             Scaling: {{ offer.ratio * 100 }}%
                           </p>
                           <p>
                             Cooldown: {{ offer.cd.toLocaleString() }} ms
-                            <span class="italic">( -{{ offer.cdLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
+                            <span class="italic">( -{{ offer.cdLevelUp }} <q-icon name="sym_o_military_tech"
+                                                                                  size="1rem"/>)</span>
                           </p>
                           <p>
                             Amount: {{ offer.amount }}
                           </p>
                           <p>
                             Hits: {{ offer.pHitCount }}
-                            <span class="italic">( +{{ offer.pHitCountLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
+                            <span class="italic">( +{{ offer.pHitCountLevelUp }} <q-icon name="sym_o_military_tech"
+                                                                                         size="1rem"/>)</span>
                           </p>
                         </div>
                         <FFPowerUpDisplay :power-ups="offer.powerUps" hide-desc/>
@@ -187,7 +192,8 @@
                             <p class="text-sm font-500">
                               {{ eff.value.toLocaleString() }} {{ capitalizeFirstLetter(eff.type) }}
                               <template v-if="eff.autoLevelUp && eff.valueLevelBonus !== 0">
-                                <span class="italic">( +{{ eff.valueLevelBonus }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
+                                <span class="italic">( +{{ eff.valueLevelBonus }} <q-icon name="sym_o_military_tech"
+                                                                                          size="1rem"/>)</span>
                               </template>
                               <template v-if="eff.onHit">
                                 every {{ eff.hitCount }} hits
@@ -288,13 +294,26 @@
             </div>
           </q-tab-panel>
           <q-tab-panel name="gear">
-            <div class="wfull hfull px2 flex no-wrap">
+            <div class="wfull hfull flex no-wrap">
               <q-tabs
                 v-model="tabs2"
-                inline-label vertical
+                inline-label vertical dense
+                active-bg-color="primary"
                 class="wfit">
-                <q-tab name="weapons" icon="sym_o_swords" label="Weapons"/>
-                <q-tab name="trophies" icon="sym_o_trophy" label="Trophies"/>
+                <q-tab name="weapons" icon="sym_o_swords" class="mb2 rounded-l-2">
+                  <q-tooltip>
+                    <p class="text-xs fontbold">
+                      Weapons
+                    </p>
+                  </q-tooltip>
+                </q-tab>
+                <q-tab name="trophies" icon="sym_o_trophy" class="rounded-l-2">
+                  <q-tooltip>
+                    <p class="text-xs fontbold">
+                      Trophies
+                    </p>
+                  </q-tooltip>
+                </q-tab>
               </q-tabs>
               <q-tab-panels v-model="tabs2"
                             vertical animated
@@ -302,7 +321,7 @@
                 <q-tab-panel name="weapons">
                   <div class="background fmt_border rounded p2
                               hfull overflow-y-scroll
-                              max-h-[calc(100dvh-176px)]">
+                              max-h-[calc(100dvh-160px)]">
                     <p class="text-body1 mb2 ml1">
                       Bonus Stats
                     </p>
@@ -335,7 +354,7 @@
                 <q-tab-panel name="trophies">
                   <div class="background fmt_border rounded p2
                               hfull overflow-y-scroll
-                              max-h-[calc(100dvh-176px)]">
+                              max-h-[calc(100dvh-160px)]">
                     <div class="text-center mb4">
                       <p class="text-sm pointer-events-none">
                         Trophies empower you on top of your items and skills.

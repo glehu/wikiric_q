@@ -4,7 +4,7 @@
           :class="{ 'trophyDone': trophy.done }"
           style="box-shadow: none !important; border-width: 4px">
     <q-card-section class="wfull">
-      <div class="flex gap-2 wfull justify-between no-wrap">
+      <div class="flex <sm:flex-col gap-2 wfull sm:justify-between sm:no-wrap">
         <div class="wfit flex gap-2 text-2xl no-wrap hfit
                     fontbold items-center <sm:wfull
                     background px2 py1 rounded fmt_border">

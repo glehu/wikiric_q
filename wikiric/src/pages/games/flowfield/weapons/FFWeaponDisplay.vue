@@ -14,7 +14,7 @@
         </div>
         <div v-if="!small" class="flex column text-start">
           <p>
-            Damage: {{ weapon.dps.toLocaleString() }}
+            Damage: {{ weapon.getCalculatedDamage().toLocaleString() }}
             <span class="italic">( +{{ weapon.dpsLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
           </p>
           <p>
