@@ -14,19 +14,22 @@
         </div>
         <div v-if="!small" class="flex column text-start">
           <p>
-            {{ weapon.dps.toLocaleString() }} Base Dmg
-            <span class="italic">( +{{ weapon.dpsLevelUp }} / Lv.)</span>
+            Damage: {{ weapon.dps.toLocaleString() }}
+            <span class="italic">( +{{ weapon.dpsLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
           </p>
           <p>
-            {{ weapon.cd.toLocaleString() }} ms Cooldown
-            <span class="italic">( -{{ weapon.cdLevelUp }} / Lv.)</span>
+            Scaling: {{ weapon.ratio * 100 }}%
           </p>
           <p>
-            {{ weapon.amount }} Amount
+            Cooldown: {{ weapon.cd.toLocaleString() }} ms
+            <span class="italic">( -{{ weapon.cdLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
           </p>
           <p>
-            {{ weapon.pHitCount }} Hits
-            <span class="italic">( +{{ weapon.pHitCountLevelUp }} / Lv.)</span>
+            Amount: {{ weapon.amount }}
+          </p>
+          <p>
+            Hits: {{ weapon.pHitCount }}
+            <span class="italic">( +{{ weapon.pHitCountLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
           </p>
         </div>
       </q-card-section>

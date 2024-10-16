@@ -91,22 +91,25 @@
                           </p>
                         </div>
                         <div class="flex column text-start
-                                  fmt_border_bottom pb2
-                                  text-xs font-600 mt2 mb2">
+                                    fmt_border_bottom pb2
+                                    text-sm font-500 mt2 mb2">
                           <p>
-                            {{ offer.dps.toLocaleString() }} Base Dmg
-                            <span class="italic">( +{{ offer.dpsLevelUp }} per Lv. )</span>
+                            Damage: {{ offer.dps.toLocaleString() }}
+                            <span class="italic">( +{{ offer.dpsLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
                           </p>
                           <p>
-                            {{ offer.cd.toLocaleString() }} ms Cooldown
-                            <span class="italic">( -{{ offer.cdLevelUp }} per Lv. )</span>
+                            Scaling: {{ offer.ratio * 100 }}%
                           </p>
                           <p>
-                            {{ offer.amount }} Amount
+                            Cooldown: {{ offer.cd.toLocaleString() }} ms
+                            <span class="italic">( -{{ offer.cdLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
                           </p>
                           <p>
-                            {{ offer.pHitCount }} Hits
-                            <span class="italic">( +{{ offer.pHitCountLevelUp }} per Lv. )</span>
+                            Amount: {{ offer.amount }}
+                          </p>
+                          <p>
+                            Hits: {{ offer.pHitCount }}
+                            <span class="italic">( +{{ offer.pHitCountLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
                           </p>
                         </div>
                         <FFPowerUpDisplay :power-ups="offer.powerUps" hide-desc/>
@@ -159,10 +162,10 @@
                         </div>
                         <template v-for="eff in offer.effects" :key="eff">
                           <div class="flex items-center gap-x-2 gap-y-1
-                                    mb1 fmt_border rounded p1 text-start">
+                                      mb1 fmt_border rounded p1 text-start">
                             <div v-if="eff.onHit"
                                  class="primary px1 py0.5 rounded text-xs w-fit
-                                      font-bold">
+                                        font-bold">
                               <q-icon name="sym_o_explosion" size="1rem"/>
                               <q-tooltip>
                                 <p class="text-xs fontbold">
@@ -181,10 +184,10 @@
                                 </q-tooltip>
                               </div>
                             </template>
-                            <p class="text-xs font-600">
+                            <p class="text-sm font-500">
                               {{ eff.value.toLocaleString() }} {{ capitalizeFirstLetter(eff.type) }}
                               <template v-if="eff.autoLevelUp && eff.valueLevelBonus !== 0">
-                                <span class="italic">( +{{ eff.valueLevelBonus }} / Lv.)</span>
+                                <span class="italic">( +{{ eff.valueLevelBonus }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
                               </template>
                               <template v-if="eff.onHit">
                                 every {{ eff.hitCount }} hits
@@ -266,7 +269,7 @@
                                 </q-tooltip>
                               </div>
                             </template>
-                            <p class="text-xs font-600">
+                            <p class="text-sm font-500">
                               {{ eff.value.toLocaleString() }} {{ capitalizeFirstLetter(eff.type) }}
                               <template v-if="eff.autoLevelUp && eff.valueLevelBonus !== 0">
                                 <span class="italic">( +{{ eff.valueLevelBonus }} / Lv.)</span>
@@ -317,55 +320,13 @@
                     <p class="text-body1 my2 ml1">
                       Equipment
                     </p>
-                    <template v-if="playerWeapons && playerWeapons.length > 0">
+                    <div v-if="playerWeapons && playerWeapons.length > 0"
+                         class="masonry">
                       <div v-for="wpn in playerWeapons" :key="wpn"
-                           class="mb2">
-                        <div :style="{ borderColor: getRarityColor(wpn.chance),
-                                   backgroundColor: getRarityColor(wpn.chance)}"
-                             class="wfull fmt_border
-                                    surface border-[4px] rounded-xl
-                                    overflow-hidden">
-                          <div class="overflow-x-hidden wfull p2
-                                      backdrop-brightness-25 rounded-lg">
-                            <div class="flex items-start gap-x-2 pb1 no-wrap">
-                              <div class="min-w-10 min-h-10 background rounded fmt_border"></div>
-                              <p class="text-start line-height-tight">
-                                <span class="fontbold pr2">
-                                  {{ wpn.name }}
-                                </span>
-                                <span>
-                                  Lv.&nbsp;{{ wpn.level }}
-                                </span>
-                                <br>
-                                <span class="text-xs font-600">
-                                  {{ wpn.desc }}
-                                </span>
-                              </p>
-                            </div>
-                            <div class="flex column text-start
-                                        fmt_border_bottom pb2
-                                        text-xs font-600 mt2 mb2">
-                              <p>
-                                {{ wpn.dps.toLocaleString() }} Base Dmg
-                                <span class="italic">( +{{ wpn.dpsLevelUp }} per Lv. )</span>
-                              </p>
-                              <p>
-                                {{ wpn.cd.toLocaleString() }} ms Cooldown
-                                <span class="italic">( -{{ wpn.cdLevelUp }} per Lv. )</span>
-                              </p>
-                              <p>
-                                {{ wpn.amount }} Amount
-                              </p>
-                              <p>
-                                {{ wpn.pHitCount }} Hits
-                                <span class="italic">( +{{ wpn.pHitCountLevelUp }} per Lv. )</span>
-                              </p>
-                            </div>
-                            <FFPowerUpDisplay :power-ups="wpn.powerUps" hide-desc/>
-                          </div>
-                        </div>
+                           class="mb-[10px] masonry_item">
+                        <FFWeaponDisplayShiny :weapon="wpn"/>
                       </div>
-                    </template>
+                    </div>
                     <template v-else>
                       <p class="ml4 text-subtitle2">(No Equipment)</p>
                     </template>
@@ -407,9 +368,11 @@
 import FFPowerUpDisplay from 'pages/games/flowfield/powerups/FFPowerUpDisplay.vue'
 import FFTrophyList from 'pages/games/flowfield/trophies/FFTrophyList'
 import FFTrophyDisplay from 'pages/games/flowfield/trophies/FFTrophyDisplay.vue'
+import FFWeaponDisplayShiny from 'pages/games/flowfield/weapons/FFWeaponDisplayShiny.vue'
 
 export default {
   components: {
+    FFWeaponDisplayShiny,
     FFTrophyDisplay,
     FFPowerUpDisplay
   },
@@ -487,7 +450,7 @@ export default {
   },
   computed: {
     refreshCost () {
-      return 100 + (this.refreshAmount * 10)
+      return 10 + (this.refreshAmount * 5)
     }
   },
   methods: {
@@ -556,6 +519,12 @@ export default {
 
 .tab_no_pad .q-tab-panel {
   padding: 0 !important;
+}
+
+.masonry {
+  columns: 3;
+  column-width: 300px;
+  column-gap: 10px;
 }
 
 </style>

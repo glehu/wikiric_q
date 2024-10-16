@@ -1222,6 +1222,9 @@ export default {
       }
     },
     handleChapterQuery: function () {
+      if (!this.wisdom || !this.wisdom.chapters) {
+        return
+      }
       if (this.chapterQuery === '') {
         for (let i = 0; i < this.wisdom.chapters.length; i++) {
           this.wisdom.chapters[i]._hidden = false
@@ -1232,8 +1235,7 @@ export default {
             this.wisdom.chapters[i]._hidden = false
           } else {
             this.wisdom.chapters[i]._hidden =
-              !this.wisdom.chapters[i].keys
-              .toLowerCase().includes(this.chapterQuery)
+              !this.wisdom.chapters[i].keys.toLowerCase().includes(this.chapterQuery)
           }
         }
       }

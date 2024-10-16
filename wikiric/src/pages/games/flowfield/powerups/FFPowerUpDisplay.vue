@@ -37,10 +37,10 @@
               </q-tooltip>
             </div>
           </template>
-          <p class="text-xs font-600">
+          <p class="text-sm font-500">
             {{ eff.value.toLocaleString() }} {{ capitalizeFirstLetter(eff.type) }}
             <template v-if="eff.autoLevelUp && eff.valueLevelBonus !== 0">
-              <span class="italic">( +{{ eff.valueLevelBonus }} / Lv.)</span>
+              <span class="italic">( +{{ eff.valueLevelBonus }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
             </template>
             <template v-if="eff.onHit">
               every {{ eff.hitCount }} hits

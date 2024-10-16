@@ -17,6 +17,7 @@ import FFProjectile from 'pages/games/flowfield/weapons/FFProjectile'
  * @param {Number} range
  * @param {Number} dps
  * @param {Number} dpsLevelUp
+ * @param {Number} ratio
  * @param {Number} amount
  * @param {Number} cooldown
  * @param {Number} cooldownLevelUp
@@ -38,6 +39,7 @@ class FFWeapon {
    * @param {Number} range
    * @param {Number} dps
    * @param {Number} dpsLevelUp
+   * @param {Number} ratio
    * @param {Number} amount
    * @param {Number} cooldown
    * @param {Number} cooldownLevelUp
@@ -56,6 +58,7 @@ class FFWeapon {
                range,
                dps,
                dpsLevelUp,
+               ratio,
                amount,
                cooldown,
                cooldownLevelUp,
@@ -156,6 +159,7 @@ class FFWeapon {
      * @type {Number}
      */
     this.chance = chance
+    this.ratio = ratio
   }
 
   /**
@@ -233,6 +237,7 @@ class FFWeapon {
     let hits = this.pHitCount
     let hitRange = this.hitRange
     let radius = 0
+    let ratio = this.ratio
     // Trigger weapon effects
     const effects = this.procEffects()
     if (effects.length > 0) {
@@ -259,9 +264,14 @@ class FFWeapon {
           case 'cd':
             this._cd += effect.value
             break
+          case 'ratio':
+            ratio += effect.value
+            break
         }
       }
     }
+    // Apply scaling
+    dmg = dmg * ratio
     // Create projectiles
     /**
      * @type {FFProjectile[]}
@@ -352,12 +362,33 @@ class FFWeapon {
     return effects
   }
 
+  /**
+   * Checks if this weapon can be offered (using its chance)
+   * @return {boolean}
+   */
   canOffer () {
     if (this.chance >= 99) {
       return true
     }
     const rand = Math.random() * 100 + 1
     return (rand <= this.chance)
+  }
+
+  /**
+   * Checks if the weapon supports the provided FFPowerUp
+   * @param {FFPowerUp} powerUp
+   */
+  canReceivePowerUp (powerUp) {
+    if (this.pSpeed <= 0) {
+      // We cannot accept speed upgrades if the weapon has no projectile speed
+      // ...e.g. melee or fixed range beam type weapons
+      for (let i = 0; i < powerUp.effects.length; i++) {
+        if (powerUp.effects[i].type === 'speed') {
+          return false
+        }
+      }
+    }
+    return true
   }
 }
 

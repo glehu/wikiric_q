@@ -17,13 +17,13 @@ class FFPowerUpList {
       /**
        * @type FFPowerUp[]
        */
-      starter: []
+      starter: [],
+      expansion: []
     }
   }
 
   initiateStarterPowerUps () {
     let powerUp
-    let effect
     /**
      * STARTER POWERUP: Critical Hit
      * @type {FFPowerUp}
@@ -34,15 +34,14 @@ class FFPowerUpList {
       'Critical Hit',
       'Deals more damage sometimes.',
       100)
-    effect = new FFPowerUpEffect(
+    powerUp.effects.push(new FFPowerUpEffect(
       true,
       'dmg',
       10,
       0,
       4,
       false,
-      false)
-    powerUp.effects.push(effect)
+      false))
     this.categories.starter.push(powerUp)
     /**
      * STARTER POWERUP: Spam
@@ -54,15 +53,14 @@ class FFPowerUpList {
       'Spam',
       'More projectiles!',
       30)
-    effect = new FFPowerUpEffect(
+    powerUp.effects.push(new FFPowerUpEffect(
       false,
       'amt',
       1,
       0,
       0,
       true,
-      false)
-    powerUp.effects.push(effect)
+      false))
     this.categories.starter.push(powerUp)
     /**
      * STARTER POWERUP: Multi-Hit
@@ -74,15 +72,14 @@ class FFPowerUpList {
       'Multi-Hit',
       'Can hit more enemies.',
       90)
-    effect = new FFPowerUpEffect(
+    powerUp.effects.push(new FFPowerUpEffect(
       false,
       'hitCount',
       1,
       0,
       0,
       false,
-      false)
-    powerUp.effects.push(effect)
+      false))
     this.categories.starter.push(powerUp)
     /**
      * STARTER POWERUP: Area
@@ -94,15 +91,14 @@ class FFPowerUpList {
       'Area',
       'Hits enemies further away.',
       100)
-    effect = new FFPowerUpEffect(
+    powerUp.effects.push(new FFPowerUpEffect(
       false,
       'hitRange',
       0.5,
       0,
       0,
       false,
-      false)
-    powerUp.effects.push(effect)
+      false))
     this.categories.starter.push(powerUp)
     /**
      * STARTER POWERUP: Speed
@@ -114,15 +110,14 @@ class FFPowerUpList {
       'Speed',
       'Projectiles are faster.',
       100)
-    effect = new FFPowerUpEffect(
+    powerUp.effects.push(new FFPowerUpEffect(
       false,
       'speed',
       1,
       0,
       0,
       false,
-      false)
-    powerUp.effects.push(effect)
+      false))
     this.categories.starter.push(powerUp)
     /**
      * STARTER POWERUP: Explosion
@@ -134,15 +129,14 @@ class FFPowerUpList {
       'Explosion',
       'Projectiles explode. Radius scales with Area.',
       70)
-    effect = new FFPowerUpEffect(
+    powerUp.effects.push(new FFPowerUpEffect(
       true,
       'radius',
       1,
       0,
       0,
       false,
-      false)
-    powerUp.effects.push(effect)
+      false))
     this.categories.starter.push(powerUp)
     /**
      * STARTER POWERUP: Damage
@@ -154,15 +148,14 @@ class FFPowerUpList {
       'Damage',
       'Raw damage boost for anything that damages.',
       80)
-    effect = new FFPowerUpEffect(
+    powerUp.effects.push(new FFPowerUpEffect(
       true,
       'dmg',
       5,
       0,
       0,
       false,
-      false)
-    powerUp.effects.push(effect)
+      false))
     this.categories.starter.push(powerUp)
     /**
      * STARTER POWERUP: Berserk Tonic
@@ -174,33 +167,30 @@ class FFPowerUpList {
       'Berserk Tonic',
       'More power for the wild!',
       40)
-    effect = new FFPowerUpEffect(
+    powerUp.effects.push(new FFPowerUpEffect(
       true,
       'dmg',
       10,
       0,
       2,
       false,
-      false)
-    powerUp.effects.push(effect)
-    effect = new FFPowerUpEffect(
+      false))
+    powerUp.effects.push(new FFPowerUpEffect(
       false,
       'hitCount',
       1,
       0,
       0,
       false,
-      false)
-    powerUp.effects.push(effect)
-    effect = new FFPowerUpEffect(
+      false))
+    powerUp.effects.push(new FFPowerUpEffect(
       false,
       'speed',
       1,
       0,
       0,
       false,
-      false)
-    powerUp.effects.push(effect)
+      false))
     this.categories.starter.push(powerUp)
     /**
      * STARTER POWERUP: Last Resort
@@ -212,34 +202,73 @@ class FFPowerUpList {
       'Last Resort',
       'Highly increased damage with slower firing rate.',
       30)
-    effect = new FFPowerUpEffect(
+    powerUp.effects.push(new FFPowerUpEffect(
       true,
       'dmg',
       50,
       0,
       0,
       false,
-      false)
-    powerUp.effects.push(effect)
-    effect = new FFPowerUpEffect(
+      false))
+    powerUp.effects.push(new FFPowerUpEffect(
       false,
       'cd',
       100,
       0,
       0,
       false,
-      false)
-    powerUp.effects.push(effect)
-    effect = new FFPowerUpEffect(
+      false))
+    powerUp.effects.push(new FFPowerUpEffect(
       false,
       'hitCount',
       1,
       0,
       0,
       false,
-      false)
-    powerUp.effects.push(effect)
+      false))
     this.categories.starter.push(powerUp)
+  }
+
+  initiateExpansionPowerUps () {
+    let powerUp
+    /**
+     * EXPANSION POWERUP: Damage 2
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      2,
+      'Damage 2',
+      'More damage.',
+      50)
+    powerUp.effects.push(new FFPowerUpEffect(
+      true,
+      'dmg',
+      10,
+      0,
+      0,
+      false,
+      false))
+    this.categories.expansion.push(powerUp)
+    /**
+     * EXPANSION POWERUP: Damage 2
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      2,
+      'Scaling Damage',
+      'More damage every level-up!',
+      50)
+    powerUp.effects.push(new FFPowerUpEffect(
+      true,
+      'dmg',
+      5,
+      1,
+      0,
+      false,
+      true))
+    this.categories.expansion.push(powerUp)
   }
 }
 

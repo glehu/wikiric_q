@@ -494,7 +494,8 @@
                   <template v-if="goalWeapons">
                     <div class="flex gap-2 wfull h-full">
                       <template v-for="weapon in goalWeapons" :key="weapon">
-                        <q-btn unelevated dense no-caps flat
+                        <q-btn v-if="weapon.canReceivePowerUp(chosenPowerup)"
+                               unelevated dense no-caps flat
                                @click="handleWeaponModification(weapon)"
                                class="wfull hfull">
                           <FFWeaponDisplay :weapon="weapon" class="flex-grow" small/>
@@ -1126,6 +1127,7 @@ export default {
   mounted () {
     setTimeout(() => {
       this.initFunction()
+      this.useLevelUp()
     }, 0)
   },
   beforeUnmount () {
@@ -3830,6 +3832,8 @@ export default {
     },
     refreshOffers: function (cost) {
       this.goalMoney -= Number(cost)
+      this.weaponOffers = []
+      this.itemOffers = []
       this.showEndOfRoundShop()
     },
     /**
@@ -4315,6 +4319,7 @@ export default {
           Number(obj.range),
           Number(obj.dps),
           Number(obj.dpsLevelUp),
+          Number(obj.ratio),
           Number(obj.amount),
           Number(obj.cd),
           Number(obj.cdLevelUp),
