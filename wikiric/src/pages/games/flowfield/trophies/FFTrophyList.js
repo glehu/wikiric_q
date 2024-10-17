@@ -86,6 +86,13 @@ class FFTrophyList {
       1)
     this.categories.starter.push(trophy)
     trophy = new FFTrophy(0,
+      'Master Dodger',
+      'Survive 2 rounds without being hurt.',
+      'flawless_round',
+      2)
+    trophy.addBoost('dmg', 10)
+    this.categories.starter.push(trophy)
+    trophy = new FFTrophy(0,
       'IT\'S OVER 9... uh...LEVELS!?',
       'Reach level 10.',
       'level',
@@ -107,13 +114,6 @@ class FFTrophyList {
       1000)
     trophy.addBoost('hp', 100)
     trophy.addBoost('hp+', 5)
-    this.categories.starter.push(trophy)
-    trophy = new FFTrophy(0,
-      'Master Dodger',
-      'Survive 2 rounds without being hurt.',
-      'flawless_round',
-      2)
-    trophy.addBoost('dmg', 10)
     this.categories.starter.push(trophy)
     trophy = new FFTrophy(0, 'That\'s a lot of damage!',
       'Deal 10k damage.',

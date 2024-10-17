@@ -93,28 +93,25 @@
                           </p>
                         </div>
                         <div class="flex column text-start
-                                    fmt_border_bottom pb2
-                                    text-sm font-500 mt2 mb2">
+                  fmt_border_bottom pb2
+                  text-sm font-500 mt2 mb2">
                           <p>
                             Damage: {{ offer.getCalculatedDamage().toLocaleString() }}
-                            <span class="italic">( +{{ offer.dpsLevelUp }} <q-icon name="sym_o_military_tech"
-                                                                                   size="1rem"/>)</span>
+                            <span class="italic">( +{{ offer.dpsLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
                           </p>
                           <p>
-                            Scaling: {{ offer.ratio * 100 }}%
+                            Scaling: {{ offer.getCalculatedStat(offer.ratio, 'ratio') * 100 }}%
                           </p>
                           <p>
-                            Cooldown: {{ offer.cd.toLocaleString() }} ms
-                            <span class="italic">( -{{ offer.cdLevelUp }} <q-icon name="sym_o_military_tech"
-                                                                                  size="1rem"/>)</span>
+                            Cooldown: {{ offer.getCalculatedStat(offer.cd, 'cd').toLocaleString() }} ms
+                            <span class="italic">( -{{ offer.cdLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
                           </p>
                           <p>
-                            Amount: {{ offer.amount }}
+                            Amount: {{ offer.getCalculatedStat(offer.amount, 'amount') }}
                           </p>
                           <p>
-                            Hits: {{ offer.pHitCount }}
-                            <span class="italic">( +{{ offer.pHitCountLevelUp }} <q-icon name="sym_o_military_tech"
-                                                                                         size="1rem"/>)</span>
+                            Hits: {{ offer.getCalculatedStat(offer.pHitCount, 'hitCount') }}
+                            <span class="italic">( +{{ offer.pHitCountLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
                           </p>
                         </div>
                         <FFPowerUpDisplay :power-ups="offer.powerUps" hide-desc/>
@@ -355,7 +352,7 @@
                   <div class="background fmt_border rounded p2
                               hfull overflow-y-scroll
                               max-h-[calc(100dvh-160px)]">
-                    <div class="text-center mb4">
+                    <div class="text-center mt1 mb4 font-500">
                       <p class="text-sm pointer-events-none">
                         Trophies empower you on top of your items and skills.
                       </p>

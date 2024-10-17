@@ -104,6 +104,7 @@ class FFWeapon {
      * @type {Number}
      */
     this.cd = cooldown
+    this._cdOri = cooldown
     this.cdLevelUp = cooldownLevelUp
     this._cd = 0
     /**
@@ -173,10 +174,10 @@ class FFWeapon {
   processTick (override) {
     // Do we need to reduce weapon cooldown?
     if (this._cd > 0) {
-      if (!override) {
-        this._cd -= 1
-      } else {
+      if (override) {
         this._cd -= override
+      } else {
+        this._cd -= 1
       }
       // Reset amount if we are done waiting
       if (this._cd <= 0) {
@@ -226,11 +227,6 @@ class FFWeapon {
     if (dist > this.range) {
       return null
     }
-    this._amount -= 1
-    if (this._amount === 0) {
-      // Set weapon on cooldown if amount has reached zero
-      this._cd = this.cd
-    }
     // Initialize projectile values
     let dmg = this.dps
     let amt = 1
@@ -239,6 +235,12 @@ class FFWeapon {
     let hitRange = this.hitRange
     let radius = 0
     let ratio = this.ratio
+    let cd = this.cd
+    // We have to remember if the weapon originally had projectile speed
+    // ...since we might reduce it to 0 or less.
+    // When sanitizing, we have to avoid setting the minimum speed to
+    // ...weapons that originally did not have a projectile speed.
+    const hadSpeed = (speed > 0)
     // Trigger weapon effects
     const effects = this.procEffects()
     if (effects.length > 0) {
@@ -263,7 +265,11 @@ class FFWeapon {
             radius += effect.value
             break
           case 'cd':
-            this._cd += effect.value
+            if (effect.onHit) {
+              this._cd += effect.value
+            } else {
+              cd += effect.value
+            }
             break
           case 'ratio':
             ratio += effect.value
@@ -271,12 +277,44 @@ class FFWeapon {
         }
       }
     }
-    if (extraDmg && extraDmg > 0) {
+    if (extraDmg && extraDmg !== 0) {
       dmg += extraDmg
+    }
+    // Sanitize
+    if (dmg < 1) {
+      dmg = 1
+    }
+    if (speed <= 0) {
+      if (hadSpeed) {
+        speed = 1
+      } else {
+        speed = 0
+      }
+    }
+    if (hits < 1) {
+      hits = 1
+    }
+    if (hitRange < 0.2) {
+      hitRange = 0.2
+    }
+    if (radius < 0) {
+      radius = 0
+    }
+    if (ratio < 0.1) {
+      ratio = 0.1
+    }
+    this._cdOri = cd
+    if (this._cdOri < 10) {
+      this._cdOri = 10
     }
     // Apply scaling
     dmg = dmg * ratio
     // Create projectiles
+    this._amount -= 1
+    if (this._amount === 0) {
+      // Set weapon on cooldown if amount has reached zero
+      this._cd = this._cdOri
+    }
     /**
      * @type {FFProjectile[]}
      */
@@ -366,6 +404,10 @@ class FFWeapon {
     return effects
   }
 
+  /**
+   * Calculates the theoretical damage of this weapon.
+   * @return {Number}
+   */
   getCalculatedDamage () {
     if (this.powerUps.length < 1) {
       return this.dps
@@ -405,6 +447,42 @@ class FFWeapon {
     // Apply scaling
     dmg = (dmg * ratio) * amt
     return dmg
+  }
+
+  /**
+   *
+   * @param {Number} baseStat
+   * @param {String} statType
+   * @return {Number}
+   */
+  getCalculatedStat (baseStat, statType) {
+    if (this.powerUps.length < 1) {
+      return baseStat
+    }
+    /**
+     * @type {FFPowerUpEffect[]}
+     */
+    let effects = []
+    for (const power of this.powerUps) {
+      effects = effects.concat(power.proc(true))
+    }
+    if (effects.length < 1) {
+      return baseStat
+    }
+    let calculated = baseStat
+    let tmp = 0
+    for (const effect of effects) {
+      if (effect.type !== statType) {
+        continue
+      }
+      if (effect.onHit && effect.hitCount > 1) {
+        tmp = effect.value / effect.hitCount
+      } else {
+        tmp = effect.value
+      }
+      calculated += tmp
+    }
+    return calculated
   }
 
   /**

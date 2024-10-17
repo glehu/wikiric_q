@@ -1198,7 +1198,7 @@ export default {
       this.weaponList = new FFWeaponList()
       this.weaponList.initiateStarterWeapons()
       this.powerUpList = new FFPowerUpList()
-      this.powerUpList.initiateStarterPowerUps()
+      this.powerUpList.initiatePowerUps()
       this.itemList = new FFItemList()
       this.itemList.initiateStarterItems()
       this.trophyList = new FFTrophyList()

@@ -17,9 +17,13 @@ class FFPowerUpList {
       /**
        * @type FFPowerUp[]
        */
-      starter: [],
-      expansion: []
+      starter: []
     }
+  }
+
+  initiatePowerUps () {
+    this.initiateStarterPowerUps()
+    this.initiateExpansionPowerUps()
   }
 
   initiateStarterPowerUps () {
@@ -249,9 +253,9 @@ class FFPowerUpList {
       0,
       false,
       false))
-    this.categories.expansion.push(powerUp)
+    this.categories.starter.push(powerUp)
     /**
-     * EXPANSION POWERUP: Damage 2
+     * EXPANSION POWERUP: Scaling Damage
      * @type {FFPowerUp}
      */
     powerUp = new FFPowerUp(
@@ -259,16 +263,105 @@ class FFPowerUpList {
       2,
       'Scaling Damage',
       'More damage every level-up!',
-      50)
+      30)
     powerUp.effects.push(new FFPowerUpEffect(
-      true,
+      false,
       'dmg',
       5,
       1,
       0,
       false,
       true))
-    this.categories.expansion.push(powerUp)
+    this.categories.starter.push(powerUp)
+    /**
+     * EXPANSION POWERUP: Ratio Plus
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      2,
+      'Ratio Plus',
+      'Increases the weapon\'s damage scaling.',
+      30)
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'ratio',
+      0.2,
+      0,
+      0,
+      false,
+      false))
+    this.categories.starter.push(powerUp)
+    /**
+     * EXPANSION POWERUP: HE Rounds
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      2,
+      'HE Rounds',
+      'Slower shooting explosive rounds with high damage.',
+      30)
+    powerUp.effects.push(new FFPowerUpEffect(
+      true,
+      'radius',
+      2,
+      0,
+      0,
+      false,
+      false))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'ratio',
+      0.5,
+      0,
+      0,
+      false,
+      false))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'hitCount',
+      -999,
+      0,
+      0,
+      false,
+      false))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'speed',
+      -5,
+      0,
+      0,
+      false,
+      false))
+    this.categories.starter.push(powerUp)
+    /**
+     * EXPANSION POWERUP: Overdrive
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      2,
+      'Overdrive',
+      'Heavily decreases weapon cooldown.',
+      20)
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'cd',
+      -30,
+      0,
+      0,
+      false,
+      false))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'ratio',
+      -0.5,
+      0,
+      0,
+      false,
+      false))
+    this.categories.starter.push(powerUp)
   }
 }
 

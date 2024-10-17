@@ -20,11 +20,11 @@
       </q-circular-progress>
     </template>
     <template v-else>
-      <template v-if="weapon.cd > 10">
+      <template v-if="cooldown > 10">
         <q-circular-progress
           instant-feedback
-          :value="weapon.cd - weapon._cd"
-          :max="weapon.cd"
+          :value="cooldown - weapon._cd"
+          :max="cooldown"
           size="28px"
           :thickness="1"
           color="negative"
@@ -64,7 +64,15 @@ export default {
       default: false
     }
   },
-  name: 'FFWeapon'
+  name: 'FFWeapon',
+  computed: {
+    cooldown () {
+      if (this.weapon._cdOri) {
+        return this.weapon._cdOri
+      }
+      return this.weapon.getCalculatedStat(this.weapon.cd, 'cd')
+    }
+  }
 }
 </script>
 
