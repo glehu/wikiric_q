@@ -1,5 +1,5 @@
 <template>
-  <q-page class="full-height full-width flex">
+  <q-page class="full-height full-width flex" id="planner_page">
     <q-layout
       view="lhh LpR lff"
       container
@@ -106,10 +106,10 @@
                       <draggable
                         :list="boxEntry.tasks"
                         v-bind="dragOptions"
-                        @start="drag=true"
                         @end="endDrag"
                         @change="handleDragChange"
                         @move="handleDragMove"
+                        @start="handleDragStart"
                         ghostClass="ghost"
                         tag="transition-group"
                         filter=".notagger"
@@ -122,7 +122,7 @@
                         name: !drag ? 'flip-list' : null
                       }"
                         item-key="order">
-                        <template v-if="drag && boxEntry.tasks.length < 1" #header>
+                        <template v-if="!boxEntry.box._noEdit && drag && boxEntry.tasks.length < 1" #header>
                           <div class="m-2 p-2 rounded-md primary-container text-center">
                             <span>Drag Here!</span>
                           </div>
@@ -192,11 +192,14 @@
   <new-wisdom-event :is-open="isCreatingEvent"
                     :is-edit="isEditingEvent"
                     :new-event="newEvent"
+                    :chatroom="chatroom"
+                    :knowledge="knowledge"
                     title="Task"
                     @create="createNewEvent"
                     @delete="deleteEvent"
                     @update="updateEvent"
-                    @finish="finishEvent"/>
+                    @finish="finishEvent"
+                    @close="isCreatingEvent = false"/>
 </template>
 
 <script>
@@ -268,6 +271,11 @@ export default {
       await this.getChatroom()
       await this.getKnowledge(this.groupID, true)
       await this.getBoxes()
+      // Listen for backend messages
+      const connector = new BroadcastChannel('wikiric_connector')
+      connector.onmessage = event => {
+        this.handleIncomingConnectorMessages(event.data)
+      }
     },
     getChatroom: function () {
       if (!this.groupID) {
@@ -427,7 +435,13 @@ export default {
       })
     },
     endDrag: function () {
-      setTimeout(() => (this.drag = false), 100)
+      setTimeout(() => {
+        this.drag = false
+        const elem = document.getElementById('planner_page')
+        if (elem) {
+          elem.classList.remove('select-none')
+        }
+      }, 100)
     },
     handleDragChange: function (e) {
       const prefix = 'box_tasks_guid_'
@@ -448,6 +462,13 @@ export default {
     },
     handleDragMove: function (e) {
       this.lastDragMove = e
+    },
+    handleDragStart: function () {
+      this.drag = true
+      const elem = document.getElementById('planner_page')
+      if (elem) {
+        elem.classList.add('select-none')
+      }
     },
     moveTask: function (taskGUID, newRowIndex, boxGUID) {
       for (const i in this.boxes) {
@@ -514,7 +535,7 @@ export default {
       if (!date) return
       this.newEvent = date
       this.isEditingEvent = true
-      this.isCreatingEvent = !this.isCreatingEvent
+      this.isCreatingEvent = true
     },
     writeTask: function (boxID) {
       this.newEvent = {
@@ -524,7 +545,7 @@ export default {
         duet: ''
       }
       this.isEditingEvent = false
-      this.isCreatingEvent = !this.isCreatingEvent
+      this.isCreatingEvent = true
       this.currentBoxID = boxID
     },
     createNewEvent: function (date) {
@@ -721,6 +742,15 @@ export default {
     gotoProjectManagement: function () {
       if (!this.groupID) return
       this.$router.push(`/projects?id=${this.groupID}`)
+    },
+    /**
+     *
+     * @param msg
+     */
+    handleIncomingConnectorMessages: function (msg) {
+      if (msg.typ === '[s:CHANGE>TASK]' && msg.act === 'reload') {
+        this.getBoxes()
+      }
     }
   },
   computed: {
@@ -743,6 +773,7 @@ export default {
   background-color: var(--md-sys-color-primary);
   border: 2px solid var(--md-sys-color-outline-variant);
   border-radius: 0.25rem; /* 4.0px */
+  opacity: 0.5;
 }
 
 .ghost * {
@@ -752,6 +783,7 @@ export default {
 .chosen {
   opacity: 1;
   rotate: -3deg;
+  z-index: 999999;
 }
 
 .p_task {

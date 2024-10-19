@@ -71,6 +71,10 @@ export default {
     preventEdit: {
       type: Boolean,
       default: false
+    },
+    placeholder: {
+      type: String,
+      default: 'Write something…'
     }
   },
   emits: ['update:modelValue', 'kpress', 'fpaste', 'autosave'],
@@ -213,7 +217,7 @@ export default {
             types: ['heading']
           }),
           Placeholder.configure({
-            placeholder: 'Write something …'
+            placeholder: this.placeholder
           }),
           shiftEnterExtension
         ],

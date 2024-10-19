@@ -526,6 +526,7 @@
           <wisdom-edit :is-open="isEditingWisdom"
                        :knowledge-id="knowledge.uid"
                        :wisdom-prop="wisdom"
+                       :chat-id="knowledge.pid"
                        @update="handleWisdomUpdate"/>
         </q-page>
       </q-page-container>
@@ -1149,9 +1150,9 @@ export default {
       let dur = luxt.diff(lux).as('minutes')
       if (dur >= 120) {
         dur = dur / 60
-        date._duration = dur.toString() + ' hour'
+        date._duration = dur.toFixed(2) + ' hour'
       } else {
-        date._duration = dur.toString() + ' minute'
+        date._duration = dur.toFixed(2) + ' minute'
       }
       if (dur > 1) date._duration += 's'
       return date

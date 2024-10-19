@@ -36,17 +36,24 @@
               <q-icon name="info"/>
             </template>
           </q-input>
-          <q-input
-            for="wisdom_keys"
-            label="Keywords"
-            color="brand-p"
+          <q-select
+            v-if="wisdom._keys"
+            for="event_keys"
+            label="Keywords (Enter to add)"
+            v-model="wisdom._keys"
+            :options="[]"
             label-color="brand-p"
-            v-model="wisdom.keys"
-            class="text-xl flex-grow <lg:w-full">
+            borderless
+            use-input
+            use-chips
+            multiple
+            input-debounce="50"
+            new-value-mode="add-unique"
+            class="wfull">
             <template v-slot:prepend>
-              <q-icon name="sym_o_tag"/>
+              <q-icon name="sym_o_label"/>
             </template>
-          </q-input>
+          </q-select>
         </div>
         <template v-if="wisdomType === 'task'">
           <div class="flex row gap-6 wfull px4 py2
@@ -127,20 +134,31 @@
         </template>
         <template v-if="wisdomType !== 'post'">
           <q-select
-            label="Collaborators (Enter to add)"
-            color="brand-p"
-            bg-color="brand-bg"
-            filled
+            label="Collaborators"
             v-model="wisdom.coll"
             :options="filterOptions"
             @filter="filterCollaboratorOptions"
+            label-color="brand-p"
             use-input
+            borderless
             use-chips
-            multiple
+            multiple dense
             input-debounce="50"
-            new-value-mode="add-unique"
-            class="wfull"
-          />
+            class="wfull">
+            <template v-slot:prepend>
+              <q-icon name="engineering"/>
+            </template>
+            <template v-slot:option="{ itemProps, opt, selected, toggleOption }">
+              <q-item v-bind="itemProps">
+                <q-item-section>
+                  <p class="fontbold text-sm">{{ opt }}</p>
+                </q-item-section>
+                <q-item-section side>
+                  <q-toggle :model-value="selected" @update:model-value="toggleOption(opt)"/>
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
         </template>
       </div>
       <p class="text-h6 fontbold mt4 ml4">
@@ -217,6 +235,10 @@ export default {
     },
     wisdomProp: {
       type: Object
+    },
+    chatId: {
+      type: String,
+      default: null
     }
   },
   name: 'WisdomEdit',
@@ -229,6 +251,11 @@ export default {
           this.wisdomType = this.wisdom.type
         }
         this.wisdom = this.jsDateToQDate(this.wisdom)
+        if (this.wisdom.keys && this.wisdom.keys.length > 0) {
+          this.wisdom._keys = this.wisdom.keys.split(',')
+        } else {
+          this.wisdom._keys = []
+        }
       }
       if (!this.wisdomProp ||
         this.wisdom.uid !== this.wisdomProp.uid) {
@@ -236,7 +263,8 @@ export default {
           uid: '',
           t: '',
           desc: '',
-          keys: ''
+          keys: '',
+          _keys: []
         }
       }
       this.show = true
@@ -248,6 +276,11 @@ export default {
         this.wisdomType = this.wisdom.type
       }
       this.wisdom = this.jsDateToQDate(this.wisdom)
+      if (this.wisdom.keys && this.wisdom.keys.length > 0) {
+        this.wisdom._keys = this.wisdom.keys.split(',')
+      } else {
+        this.wisdom._keys = []
+      }
     }
   },
   data () {
@@ -274,6 +307,7 @@ export default {
       filePreference: null,
       wisdomType: ref('lesson'),
       internal: new BroadcastChannel('wikiric_internal'),
+      members: new Map(),
       wisTypes: [
         {
           label: 'Lesson',
@@ -329,6 +363,7 @@ export default {
         if (elem) {
           elem.focus()
         }
+        this.getMainMembers()
       }, 0)
     },
     handleSaveWisdom: function () {
@@ -377,41 +412,55 @@ export default {
       this.wisdom.desc = this.wisdom.desc.trim()
     },
     jsDateToQDate: function (date) {
-      if (!date.due) return date
-      const lux = DateTime.fromISO(date.due)
-      date._dueDate = lux.toISODate().replaceAll('-', '/')
-      date._dueTime = lux.toISOTime()
-      date._dueTimeFmt = lux.toLocaleString(DateTime.TIME_24_SIMPLE)
-      if (!date.duet) return date
-      const luxt = DateTime.fromISO(date.duet)
-      date._dueDateUntil = luxt.toISODate().replaceAll('-', '/')
-      date._dueTimeUntil = luxt.toISOTime()
-      date._dueTimeUntilFmt = luxt.toLocaleString(DateTime.TIME_24_SIMPLE)
-      let dur = luxt.diff(lux).as('minutes')
-      if (dur >= 120) {
-        dur = dur / 60
-        date._duration = dur.toString() + ' hour'
-      } else {
-        date._duration = dur.toString() + ' minute'
+      let lux
+      let luxt
+      if (date.due) {
+        lux = DateTime.fromISO(date.due)
+        date._dueDate = lux.toISODate().replaceAll('-', '/')
+        date._dueTime = lux.toISOTime()
+        date._dueTimeFmt = lux.toLocaleString(DateTime.TIME_24_SIMPLE)
       }
-      if (dur > 1) date._duration += 's'
+      if (date.duet) {
+        luxt = DateTime.fromISO(date.duet)
+        date._dueDateUntil = luxt.toISODate().replaceAll('-', '/')
+        date._dueTimeUntil = luxt.toISOTime()
+        date._dueTimeUntilFmt = luxt.toLocaleString(DateTime.TIME_24_SIMPLE)
+        let dur = luxt.diff(lux).as('minutes')
+        if (dur >= 120) {
+          dur = dur / 60
+          date._duration = dur.toFixed(2) + ' hour'
+        } else {
+          date._duration = dur.toFixed(2) + ' minute'
+        }
+        if (dur > 1) date._duration += 's'
+      }
       return date
     },
     qDateToJSDate: function (date) {
+      let dateTmp
+      let timeTmp
+      if (date._dueTime && !date._dueDate) {
+        const now = DateTime.now()
+        date._dueDate = `${now.year}-${now.month}-${now.day}`
+      }
       if (date._dueDate) {
-        const dateTmp = date._dueDate.replaceAll('/', '-')
-        let timeTmp = date._dueTime
-        if (!timeTmp || timeTmp === '') {
-          timeTmp = '00:00'
+        dateTmp = date._dueDate.replaceAll('/', '-')
+        if (!date._dueTime) {
+          date._dueTime = '00:00'
         }
+        timeTmp = date._dueTime
         date.due = DateTime.fromISO(`${dateTmp}T${timeTmp}`)
       }
+      if (date._dueTimeUntil && !date._dueDateUntil) {
+        const now = DateTime.now()
+        date._dueDateUntil = `${now.year}-${now.month}-${now.day}`
+      }
       if (date._dueDateUntil) {
-        const dateTmp = date._dueDateUntil.replaceAll('/', '-')
-        let timeTmp = date._dueTimeUntil
-        if (!timeTmp || timeTmp === '') {
-          timeTmp = '00:00'
+        dateTmp = date._dueDateUntil.replaceAll('/', '-')
+        if (!date._dueTimeUntil) {
+          date._dueTimeUntil = '23:59'
         }
+        timeTmp = date._dueTimeUntil
         date.duet = DateTime.fromISO(`${dateTmp}T${timeTmp}`)
       }
       return date
@@ -584,6 +633,36 @@ export default {
           reader.readAsDataURL(blob)
         }
       }
+    },
+    /**
+     *
+     * @returns {Promise<void>}
+     */
+    getMainMembers: async function () {
+      api({
+        url: 'chat/private/users/members/' + this.chatId
+      })
+      .then((response) => {
+        this.members = new Map()
+        this.contributorOptions = []
+        if (response.data.members && response.data.members.length > 0) {
+          // Parse JSON serialized users for performance
+          let member
+          for (let i = 0; i < response.data.members.length; i++) {
+            // Main Members
+            member = response.data.members[i]
+            // Set keys for easy searching
+            member._keys = member.usr + ' ' + member.name
+            member._hint = member.name
+            this.members.set(member.usr, member)
+            this.contributorOptions.push(member.usr)
+          }
+        }
+      })
+      .catch(() => {
+        this.members = new Map()
+        this.contributorOptions = []
+      })
     }
   }
 }
