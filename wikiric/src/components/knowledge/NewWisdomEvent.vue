@@ -457,7 +457,9 @@ export default {
           coll: this.date.coll
         })
       } else {
-        this.date.keys = this.date._keys.join(',')
+        if (this.date._keys) {
+          this.date.keys = this.date._keys.join(',')
+        }
         delete this.date._dueTime
         delete this.date._dueDate
         delete this.date._dueTimeUntil

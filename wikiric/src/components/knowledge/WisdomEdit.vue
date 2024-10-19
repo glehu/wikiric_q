@@ -388,6 +388,10 @@ export default {
         return
       }
       // Emit event
+      if (this.wisdom._keys) {
+        this.wisdom.keys = this.wisdom._keys.join(',')
+        delete this.wisdom._keys
+      }
       if (this.wisdom.uid) {
         this.$emit('update', this.wisdom)
       } else {
