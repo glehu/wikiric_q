@@ -457,6 +457,7 @@
   </q-page>
   <wisdom-edit :is-open="isEditingWisdom"
                :knowledge-id="knowledge.uid"
+               :chat-id="knowledge.pid"
                :type-preference="typePref"
                @update="handleWisdomUpdate"
                @create="handleWisdomCreate"/>

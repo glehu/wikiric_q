@@ -200,6 +200,61 @@
                     placeholder="Describe this Task…"/>
           </div>
         </div>
+        <div v-if="related && related.tasks && related.tasks.length > 0"
+             class="mx1 pb1 mt2">
+          <p class="px4 text-sm fontbold">
+            {{ taskProgress }} / {{ related.tasks.length }} Tasks completed
+          </p>
+          <q-slider v-model="taskProgress" :min="0" :max="related.tasks.length"
+                    readonly
+                    color="primary"
+                    track-size="16px" thumb-size="0px"
+                    class="w-full px4"/>
+          <div class="wfull flex column gap-2 pl2">
+            <div v-for="task in related.tasks" :key="task.uid"
+                 class="wfull fmt_border_top fmt_border_left"
+                 style="border-left-color: var(--md-sys-color-primary);
+                        border-left-width: 6px">
+              <div class="flex gap-2 items-center wfull">
+                <q-checkbox :model-value="task.done"
+                            @update:model-value="handleFinishWisdom(task.uid)"/>
+                <div>
+                  <div class="flex gap-2 items-center wfull">
+                    <q-btn no-caps dense flat unelevated>
+                      <q-icon name="edit" size="1rem"/>
+                      <p class="text-xs font-500 pl2">
+                        Edit
+                      </p>
+                      <q-popup-edit v-model="task.t" buttons v-slot="scope"
+                                    @show="editingTask = task"
+                                    @save="handleTaskEdit"
+                                    color="brand-p"
+                                    class="z-top">
+                        <q-input v-model="scope.value"
+                                 dense autofocus counter
+                                 @keyup.enter="scope.set"/>
+                      </q-popup-edit>
+                    </q-btn>
+                    <p class="text-xs font-600">
+                      Added {{ getHumanReadableDateText(task.ts) }}
+                    </p>
+                    <template v-if="task.done">
+                      <q-icon name="check"/>
+                      <p class="text-xs font-500">
+                        Completed {{ getHumanReadableDateText(task.tsd) }}
+                      </p>
+                    </template>
+                  </div>
+                  <div class="flex gap-2 items-center wfull">
+                    <p class="text-sm fontbold">
+                      {{ task.t }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div v-if="related && related.replies && related.replies.length > 0"
              class="mx1 pb1">
           <p class="mt4 mb2 mx2 text-subtitle2">
@@ -250,7 +305,7 @@
           </template>
         </div>
       </div>
-      <div class="wfit <lg:flex-grow max-w-[700px]">
+      <div class="wfit <lg:flex-grow max-w-[700px] flex column gap-2">
         <div class="background rounded fmt_border p2">
           <table style="margin: 0 !important;">
             <tr>
@@ -283,6 +338,13 @@
               </td>
             </tr>
           </table>
+        </div>
+        <div class="background rounded fmt_border p2">
+          <q-btn label="Add Task"
+                 icon="sym_o_add"
+                 class="wfull transparent"
+                 no-caps unelevated flat
+                 @click="handleAddTask"/>
         </div>
       </div>
     </div>
@@ -347,6 +409,20 @@ export default {
       })
     }
   },
+  computed: {
+    taskProgress () {
+      if (!this.related || !this.related.tasks || this.related.tasks.length < 1) {
+        return 0
+      }
+      let done = 0
+      for (let i = 0; i < this.related.tasks.length; i++) {
+        if (this.related.tasks[i].done) {
+          done += 1
+        }
+      }
+      return done
+    }
+  },
   data () {
     return {
       show: false,
@@ -367,7 +443,8 @@ export default {
       members: new Map(),
       related: null,
       comment: '',
-      noAutoSave: true
+      noAutoSave: true,
+      editingTask: null
     }
   },
   methods: {
@@ -729,6 +806,131 @@ export default {
     handleDiscard: function () {
       this.noAutoSave = true
       this.$emit('close')
+    },
+    handleAddTask: function () {
+      const payload = {
+        t: 'New Task',
+        desc: '',
+        keys: '',
+        pid: this.knowledge.uid,
+        copy: '',
+        cats: [],
+        type: 'task',
+        row: 0,
+        ref: this.date.uid
+      }
+      return new Promise((resolve) => {
+        api({
+          method: 'post',
+          url: 'wisdom/private/create',
+          data: payload
+        }).then(() => {
+          this.getBoxes()
+        }).catch((err) => {
+          console.debug(err.message)
+        }).finally(() => {
+          this.getRelated()
+          resolve()
+        })
+      })
+    },
+    handleFinishWisdom: function (uid) {
+      if (uid == null || uid === '') return
+      return new Promise((resolve) => {
+        api({
+          url: 'wisdom/private/finish/' + uid
+        }).then(() => {
+          this.$q.notify({
+            color: 'primary',
+            position: 'top-right',
+            message: 'Task Finished!',
+            caption: '',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          this.getRelated()
+        }).catch((err) => {
+          this.$q.notify({
+            color: 'negative',
+            position: 'top-right',
+            message: 'Error!',
+            caption: 'Maybe you aren\'t the owner or collaborator of this task.',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          console.debug(err.message)
+        }).finally(() => {
+          resolve()
+        })
+      })
+    },
+    handleTaskEdit: function () {
+      if (!this.editingTask) {
+        return
+      }
+      setTimeout(() => {
+        this.handleWisdomUpdate(this.editingTask)
+        this.editingTask = null
+      }, 100)
+    },
+    handleWisdomUpdate: function (wisdom) {
+      return new Promise((resolve) => {
+        api({
+          method: 'post',
+          url: 'wisdom/private/edit/' + wisdom.uid,
+          data: wisdom
+        }).then(() => {
+          this.$q.notify({
+            color: 'primary',
+            position: 'top-right',
+            message: 'Wisdom Updated!',
+            caption: '',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+        }).catch((err) => {
+          this.$q.notify({
+            color: 'negative',
+            position: 'top-right',
+            message: 'Error!',
+            caption: 'Maybe you aren\'t the owner of the Wisdom.',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          console.debug(err.message)
+        }).finally(() => {
+          this.getRelated()
+          resolve()
+        })
+      })
     }
   }
 }

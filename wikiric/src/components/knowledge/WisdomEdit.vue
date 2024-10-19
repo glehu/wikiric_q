@@ -149,7 +149,7 @@
               <q-icon name="engineering"/>
             </template>
             <template v-slot:option="{ itemProps, opt, selected, toggleOption }">
-              <q-item v-bind="itemProps">
+              <q-item v-bind="itemProps" class="surface">
                 <q-item-section>
                   <p class="fontbold text-sm">{{ opt }}</p>
                 </q-item-section>

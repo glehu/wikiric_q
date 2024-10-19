@@ -26,6 +26,12 @@
                  @click="clickedBack">
             <span class="ml4 text-body1">Back</span>
           </q-btn>
+          <q-btn flat icon="sym_o_add"
+                 align="left" class="wfull pl4 mt2"
+                 no-caps
+                 @click="handleAddTask">
+            <span class="ml4 text-body1">Add Task</span>
+          </q-btn>
           <template v-if="wisdom.coll && wisdom.coll.length > 0">
             <div class="hfull px4 py2">
               <p class="text-subtitle2 fontbold mt3">
@@ -439,6 +445,81 @@
                 <div v-html="wisdom.desc" class="markedView"></div>
               </div>
               <div v-if="related" class="m4">
+                <div v-if="related && related.tasks && related.tasks.length > 0"
+                     class="mx1 pb1 mt2">
+                  <p class="px4 text-sm fontbold">
+                    {{ taskProgress }} / {{ related.tasks.length }} Tasks completed
+                  </p>
+                  <div class="md:hidden wfull flex justify-end">
+                    <q-btn flat icon="sym_o_add"
+                           align="left"
+                           no-caps dense
+                           @click="handleAddTask">
+                      <span class="ml4 text-body1">Add Task</span>
+                    </q-btn>
+                  </div>
+                  <q-slider v-model="taskProgress" :min="0" :max="related.tasks.length"
+                            readonly
+                            color="primary"
+                            track-size="16px" thumb-size="0px"
+                            class="w-full px4"/>
+                  <div class="wfull flex column gap-2 pl2">
+                    <div v-for="task in related.tasks" :key="task.uid"
+                         class="wfull fmt_border_top fmt_border_left"
+                         style="border-left-color: var(--md-sys-color-primary);
+                        border-left-width: 6px">
+                      <div class="flex gap-2 items-center wfull">
+                        <q-checkbox :model-value="task.done"
+                                    @update:model-value="handleFinishTask(task.uid)"/>
+                        <div class="flex-grow">
+                          <div class="flex gap-2 items-center wfull">
+                            <p class="text-xs font-600 pt1 pl1 italic">
+                              Added {{ getHumanReadableDateText(task.ts) }}
+                            </p>
+                            <div v-if="task.done"
+                                 class="mlauto flex gap-2 items-center">
+                              <q-icon name="check"/>
+                              <p class="text-xs font-600">
+                                Completed {{ getHumanReadableDateText(task.tsd) }}
+                              </p>
+                            </div>
+                            <q-btn icon="sym_o_delete" label="Delete"
+                                   size="0.7rem"
+                                   class="font-600 mlauto"
+                                   dense flat unelevated no-caps
+                                   @click="handleDeleteWisdom(task.uid)"/>
+                          </div>
+                          <div class="flex gap-2 items-center wfull">
+                            <q-btn class="text-sm fontbold cursor-text"
+                                   unelevated flat dense no-caps>
+                              {{ task.t }}
+                              <q-popup-edit v-model="task.t" buttons v-slot="scope"
+                                            @show="editingTask = task"
+                                            @save="handleTaskEdit"
+                                            color="brand-p"
+                                            class="z-top">
+                                <q-input v-model="scope.value"
+                                         class="wfull min-w-[50dvw] <md:w-screen"
+                                         dense autofocus counter
+                                         @keyup.enter="scope.set"/>
+                              </q-popup-edit>
+                            </q-btn>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div v-else>
+                  <div class="md:hidden wfull flex justify-end">
+                    <q-btn flat icon="sym_o_add"
+                           align="left"
+                           no-caps dense
+                           @click="handleAddTask">
+                      <span class="ml4 text-body1">Add Task</span>
+                    </q-btn>
+                  </div>
+                </div>
                 <template v-if="related.answers && related.answers.length > 0">
                   <p id="answer"
                      class="text-body1 mb2">
@@ -458,6 +539,16 @@
                          class="markedView"></div>
                   </div>
                 </template>
+              </div>
+              <div v-else>
+                <div class="md:hidden wfull flex justify-end">
+                  <q-btn flat icon="sym_o_add"
+                         align="left"
+                         no-caps dense
+                         @click="handleAddTask">
+                    <span class="ml4 text-body1">Add Task</span>
+                  </q-btn>
+                </div>
               </div>
               <div class="mx4 mt4">
                 <editor v-model="comment" ref="ref_editor"/>
@@ -594,6 +685,20 @@ export default {
     this.checkCarouselResize = debounce(this.checkCarouselResize, 50)
     this.getWisdom()
   },
+  computed: {
+    taskProgress () {
+      if (!this.related || !this.related.tasks || this.related.tasks.length < 1) {
+        return 0
+      }
+      let done = 0
+      for (let i = 0; i < this.related.tasks.length; i++) {
+        if (this.related.tasks[i].done) {
+          done += 1
+        }
+      }
+      return done
+    }
+  },
   data () {
     return {
       store: useStore(),
@@ -621,7 +726,8 @@ export default {
       slideArrows: true,
       treeNodeSelected: '',
       chapterQuery: '',
-      isLoading: false
+      isLoading: false,
+      editingTask: null
     }
   },
   methods: {
@@ -803,14 +909,22 @@ export default {
     handleEditWisdom: function () {
       this.isEditingWisdom = !this.isEditingWisdom
     },
-    handleDeleteWisdom: function () {
-      if (this.wisdomId == null || this.wisdomId === '') return
+    handleDeleteWisdom: function (uid) {
+      if (this.wisdomId == null || this.wisdomId === '' || !uid || uid === '') {
+        return
+      }
+      let wisUID = this.wisdomId
+      if (uid) {
+        wisUID = uid
+      }
       return new Promise((resolve) => {
         api({
-          url: 'wisdom/private/delete/' + this.wisdomId
+          url: 'wisdom/private/delete/' + wisUID
         })
         .then(() => {
-          this.$router.back()
+          if (!uid) {
+            this.$router.back()
+          }
         })
         .then(() => {
           this.$q.notify({
@@ -828,7 +942,6 @@ export default {
               }
             ]
           })
-          resolve()
         })
         .catch((err) => {
           this.$q.notify({
@@ -847,6 +960,9 @@ export default {
             ]
           })
           console.debug(err.message)
+        }).finally(() => {
+          this.getRelated()
+          resolve()
         })
       })
     },
@@ -1268,6 +1384,131 @@ export default {
           console.debug(err.message)
         })
         .finally(() => {
+          resolve()
+        })
+      })
+    },
+    handleTaskEdit: function () {
+      if (!this.editingTask) {
+        return
+      }
+      setTimeout(() => {
+        this.handleTaskUpdate(this.editingTask)
+        this.editingTask = null
+      }, 100)
+    },
+    handleTaskUpdate: function (wisdom) {
+      return new Promise((resolve) => {
+        api({
+          method: 'post',
+          url: 'wisdom/private/edit/' + wisdom.uid,
+          data: wisdom
+        }).then(() => {
+          this.$q.notify({
+            color: 'primary',
+            position: 'top-right',
+            message: 'Wisdom Updated!',
+            caption: '',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+        }).catch((err) => {
+          this.$q.notify({
+            color: 'negative',
+            position: 'top-right',
+            message: 'Error!',
+            caption: 'Maybe you aren\'t the owner of the Wisdom.',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          console.debug(err.message)
+        }).finally(() => {
+          this.getRelated()
+          resolve()
+        })
+      })
+    },
+    handleFinishTask: function (uid) {
+      if (uid == null || uid === '') return
+      return new Promise((resolve) => {
+        api({
+          url: 'wisdom/private/finish/' + uid
+        }).then(() => {
+          this.$q.notify({
+            color: 'primary',
+            position: 'top-right',
+            message: 'Task Finished!',
+            caption: '',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          this.getRelated()
+        }).catch((err) => {
+          this.$q.notify({
+            color: 'negative',
+            position: 'top-right',
+            message: 'Error!',
+            caption: 'Maybe you aren\'t the owner or collaborator of this task.',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          console.debug(err.message)
+        }).finally(() => {
+          resolve()
+        })
+      })
+    },
+    handleAddTask: function () {
+      const payload = {
+        t: 'New Task',
+        desc: '',
+        keys: '',
+        pid: this.knowledge.uid,
+        copy: '',
+        cats: [],
+        type: 'task',
+        row: 0,
+        ref: this.wisdom.uid
+      }
+      return new Promise((resolve) => {
+        api({
+          method: 'post',
+          url: 'wisdom/private/create',
+          data: payload
+        }).then(() => {
+          this.getBoxes()
+        }).catch((err) => {
+          console.debug(err.message)
+        }).finally(() => {
+          this.getRelated()
           resolve()
         })
       })
