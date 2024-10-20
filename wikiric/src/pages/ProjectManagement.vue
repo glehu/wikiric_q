@@ -192,7 +192,7 @@ export default {
     const dateClicker = this.dateClicked
     this.calendarOptions = {
       plugins: [timeGridPlugin, listPlugin, multiMonthPlugin, interactionPlugin],
-      initialView: 'timeGridWeek',
+      initialView: 'multiMonthYear',
       multiMonthMaxColumns: 1,
       nowIndicator: true,
       editable: true,
