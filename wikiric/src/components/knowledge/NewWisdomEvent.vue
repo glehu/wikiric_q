@@ -555,14 +555,14 @@ export default {
         if (this.date.due) {
           dueString = this.date.due.toJSDate().toISOString()
         }
-        let keys = ''
+        let keysT = ''
         if (this.date._keys) {
-          keys = this.date._keys.join(',')
+          keysT = this.date._keys.join(',')
         }
         this.$emit('create', {
           t: this.date.t,
           desc: this.date.desc,
-          keys: keys,
+          keys: keysT,
           due: dueString,
           duet: this.date.duet,
           coll: this.date.coll
