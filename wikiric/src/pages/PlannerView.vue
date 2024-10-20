@@ -265,7 +265,7 @@ export default {
   },
   methods: {
     clickedBack: function () {
-      this.$router.back()
+      this.$router.push(`/chat?id=${this.groupID}`)
     },
     initFunction: async function () {
       await this.getChatroom()

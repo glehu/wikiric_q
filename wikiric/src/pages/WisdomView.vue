@@ -450,7 +450,7 @@
                   <p class="px4 text-sm fontbold">
                     {{ taskProgress }} / {{ related.tasks.length }} Tasks completed
                   </p>
-                  <div class="md:hidden wfull flex justify-end">
+                  <div class="wfull flex justify-end">
                     <q-btn flat icon="sym_o_add"
                            align="left"
                            no-caps dense
@@ -477,7 +477,7 @@
                               Added {{ getHumanReadableDateText(task.ts) }}
                             </p>
                             <div v-if="task.done"
-                                 class="mlauto flex gap-2 items-center">
+                                 class="flex gap-2 items-center">
                               <q-icon name="check"/>
                               <p class="text-xs font-600">
                                 Completed {{ getHumanReadableDateText(task.tsd) }}
@@ -511,7 +511,7 @@
                   </div>
                 </div>
                 <div v-else>
-                  <div class="md:hidden wfull flex justify-end">
+                  <div class="wfull flex justify-end">
                     <q-btn flat icon="sym_o_add"
                            align="left"
                            no-caps dense
@@ -541,7 +541,7 @@
                 </template>
               </div>
               <div v-else>
-                <div class="md:hidden wfull flex justify-end">
+                <div class="wfull flex justify-end">
                   <q-btn flat icon="sym_o_add"
                          align="left"
                          no-caps dense
@@ -585,7 +585,7 @@
                       <div class="surface px3 pt2 pb4 rounded">
                         <div class="mb2 flex justify-between items-start gap-3">
                           <p class="">
-                            {{ reply.name }}
+                            <span class="fontbold">{{ reply.name }}</span>
                           </p>
                           <span class="text-subtitle2">
                           {{ reply._ts }}
@@ -854,6 +854,15 @@ export default {
       })
     },
     clickedBack: function () {
+      let backrefUrl = this.$route.query.backrefurl
+      if (backrefUrl) {
+        if (!backrefUrl.startsWith('/')) {
+          backrefUrl = '/' + backrefUrl
+        }
+        const url = `/redir?redirect=${backrefUrl}`
+        this.$router.push(url)
+        return
+      }
       const backrefQuery = this.$route.query.backref
       if (backrefQuery && backrefQuery !== this.wisdom.uid) {
         const url = `/redir?redirect=/wisdom?id=${backrefQuery}`

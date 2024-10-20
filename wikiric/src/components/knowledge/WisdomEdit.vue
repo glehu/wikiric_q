@@ -142,9 +142,9 @@
             use-input
             borderless
             use-chips
-            multiple dense
+            multiple
             input-debounce="50"
-            class="wfull">
+            class="wfull pl2">
             <template v-slot:prepend>
               <q-icon name="engineering"/>
             </template>
@@ -161,9 +161,6 @@
           </q-select>
         </template>
       </div>
-      <p class="text-h6 fontbold mt4 ml4">
-        Content
-      </p>
       <div class="wfull relative p4">
         <editor id="wisdom_desc"
                 ref="wisdom_desc"

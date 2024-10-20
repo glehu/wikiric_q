@@ -113,6 +113,9 @@
     <new-wisdom-event :is-open="isCreatingEvent"
                       :is-edit="isEditingEvent"
                       :new-event="newEvent"
+                      :chatroom="chatroom"
+                      :knowledge="knowledge"
+                      :back-ref-url="`/projects?id=${this.groupID}`"
                       @create="createNewEvent"
                       @delete="deleteEvent"
                       @update="updateEvent"
@@ -236,7 +239,7 @@ export default {
   },
   methods: {
     clickedBack: function () {
-      this.$router.back()
+      this.$router.push(`/chat?id=${this.groupID}`)
     },
     gotoKnowledge: function () {
       if (!this.groupID) {
