@@ -442,73 +442,130 @@
                   <q-skeleton type="text" class="mr12"/>
                   <q-skeleton type="text" class="mr18"/>
                 </template>
-                <div v-html="wisdom.desc" class="markedView"></div>
+                <div v-html="wisdom.desc" class="markedView"
+                     style="word-break: break-word !important;"></div>
               </div>
               <div v-if="related" class="m4">
                 <div v-if="related && related.tasks && related.tasks.length > 0"
                      class="mx1 pb1 mt2">
-                  <p class="px4 text-sm fontbold">
-                    {{ taskProgress }} / {{ related.tasks.length }} Tasks completed
-                  </p>
-                  <div class="wfull flex justify-end">
-                    <q-btn flat icon="sym_o_add"
-                           align="left"
-                           no-caps dense
-                           @click="handleAddTask">
-                      <span class="ml4 text-body1">Add Task</span>
-                    </q-btn>
-                  </div>
-                  <q-slider v-model="taskProgress" :min="0" :max="related.tasks.length"
-                            readonly
-                            color="primary"
-                            track-size="16px" thumb-size="0px"
-                            class="w-full px4"/>
-                  <div class="wfull flex column gap-2 pl2">
-                    <div v-for="task in related.tasks" :key="task.uid"
-                         class="wfull fmt_border_top fmt_border_left"
-                         style="border-left-color: var(--md-sys-color-primary);
+                  <q-expansion-item default-opened class="wfull">
+                    <template v-slot:header>
+                      <div class="wfull flex items-center gap-2">
+                        <p class="text-sm fontbold">
+                          {{ taskProgress }} / {{ related.tasks.length }} Tasks completed
+                        </p>
+                      </div>
+                    </template>
+                    <div class="flex wfull justify-end pr2">
+                      <q-btn flat icon="sym_o_add"
+                             align="left"
+                             no-caps dense
+                             @click="handleAddTask">
+                        <span class="ml4 text-body1">Add Task</span>
+                      </q-btn>
+                    </div>
+                    <q-slider v-model="taskProgress" :min="0" :max="related.tasks.length"
+                              readonly
+                              color="primary"
+                              track-size="16px" thumb-size="0px"
+                              class="w-full px4"/>
+                    <div class="wfull flex column gap-2 pl2">
+                      <div v-for="task in related.tasks" :key="task.uid"
+                           class="wfull fmt_border_top fmt_border_left mb1"
+                           style="border-left-color: var(--md-sys-color-primary);
                         border-left-width: 6px">
-                      <div class="flex gap-2 items-center wfull">
-                        <q-checkbox :model-value="task.done"
-                                    @update:model-value="handleFinishTask(task.uid)"/>
-                        <div class="flex-grow">
-                          <div class="flex gap-2 items-center wfull">
-                            <p class="text-xs font-600 pt1 pl1 italic">
-                              Added {{ getHumanReadableDateText(task.ts) }}
-                            </p>
-                            <div v-if="task.done"
-                                 class="flex gap-2 items-center">
-                              <q-icon name="check"/>
-                              <p class="text-xs font-600">
-                                Completed {{ getHumanReadableDateText(task.tsd) }}
+                        <div class="flex gap-1 items-center wfull no-wrap">
+                          <q-checkbox :model-value="task.done"
+                                      class="ml1"
+                                      @update:model-value="handleFinishTask(task.uid)"/>
+                          <div class="flex-grow">
+                            <div class="flex gap-1 items-center wfull pt1 px1">
+                              <q-icon name="schedule"/>
+                              <p class="text-xs font-600 pl1 italic">
+                                {{ getHumanReadableDateText(task.ts) }}
                               </p>
+                              <div v-if="task.done"
+                                   class="flex gap-2 items-center">
+                                <q-icon name="check" class="font-900"/>
+                                <p class="text-xs font-600">
+                                  {{ getHumanReadableDateText(task.tsd) }}
+                                </p>
+                              </div>
+                              <q-btn-group class="mlauto pr1 gap-2" flat unelevated>
+                                <q-btn icon="sym_o_delete" label="Delete"
+                                       size="0.7rem"
+                                       class="font-600"
+                                       dense flat unelevated no-caps
+                                       @click="handleDeleteWisdom(task.uid)"/>
+                                <q-btn icon="north_east" label="View"
+                                       size="0.7rem"
+                                       class="font-600"
+                                       dense flat unelevated no-caps
+                                       @click="gotoTask(task.uid)"/>
+                              </q-btn-group>
                             </div>
-                            <q-btn icon="sym_o_delete" label="Delete"
-                                   size="0.7rem"
-                                   class="font-600 mlauto"
-                                   dense flat unelevated no-caps
-                                   @click="handleDeleteWisdom(task.uid)"/>
-                          </div>
-                          <div class="flex gap-2 items-center wfull">
-                            <q-btn class="text-sm fontbold cursor-text"
-                                   unelevated flat dense no-caps>
-                              {{ task.t }}
-                              <q-popup-edit v-model="task.t" buttons v-slot="scope"
-                                            @show="editingTask = task"
-                                            @save="handleTaskEdit"
-                                            color="brand-p"
-                                            class="z-top">
-                                <q-input v-model="scope.value"
-                                         class="wfull min-w-[50dvw] <md:w-screen"
-                                         dense autofocus counter
-                                         @keyup.enter="scope.set"/>
-                              </q-popup-edit>
-                            </q-btn>
+                            <div class="flex gap-2 items-center wfull">
+                              <q-btn class="text-sm fontbold cursor-text wfit"
+                                     align="left"
+                                     unelevated flat dense no-caps>
+                                <p class="text-start wfit">
+                                  {{ task.t }}
+                                </p>
+                                <q-popup-edit v-model="task.t" buttons v-slot="scope"
+                                              @show="editingTask = task"
+                                              @save="handleTaskEdit"
+                                              color="brand-p"
+                                              class="z-top">
+                                  <q-input v-model="scope.value"
+                                           class="wfull min-w-[50dvw] <md:w-screen"
+                                           dense autofocus counter
+                                           @keyup.enter="scope.set"/>
+                                </q-popup-edit>
+                              </q-btn>
+                              <q-btn v-if="!task.desc || task.desc === ''"
+                                     class="text-sm fontbold cursor-pointer wfit"
+                                     align="left"
+                                     unelevated flat dense no-caps>
+                                +
+                                <q-icon name="sym_o_description" size="1.2rem"/>
+                                <q-popup-edit v-model="task.desc" buttons v-slot="scope"
+                                              @show="editingTask = task"
+                                              @save="handleTaskEditDesc"
+                                              color="brand-p"
+                                              class="z-top">
+                                  <editor v-model="scope.value"/>
+                                </q-popup-edit>
+                              </q-btn>
+                            </div>
+                            <q-expansion-item v-if="task.desc && task.desc !== ''"
+                                              dense dense-toggle header-class="mx0 px1"
+                                              class="wfull">
+                              <template v-slot:header>
+                                <div class="flex items-center
+                                    justify-between gap-2 pr2">
+                                  <q-icon name="sym_o_description" size="1.2rem"/>
+                                </div>
+                              </template>
+                              <q-btn class="text-sm font-500 cursor-text wfit"
+                                     align="left"
+                                     unelevated flat dense no-caps>
+                                <div v-html="task.desc"
+                                     class="markedView text-start wfull"
+                                     style="word-break: break-word !important;"></div>
+                                <q-popup-edit v-model="task.desc" buttons v-slot="scope"
+                                              @show="editingTask = task"
+                                              @save="handleTaskEditDesc"
+                                              color="brand-p"
+                                              class="z-top">
+                                  <editor v-model="scope.value"/>
+                                </q-popup-edit>
+                              </q-btn>
+                            </q-expansion-item>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </q-expansion-item>
                 </div>
                 <div v-else>
                   <div class="wfull flex justify-end">
@@ -536,7 +593,8 @@
                       </span>
                     </div>
                     <div v-html="related.answers[0].desc"
-                         class="markedView"></div>
+                         class="markedView"
+                         style="word-break: break-word !important;"></div>
                   </div>
                 </template>
               </div>
@@ -591,7 +649,8 @@
                           {{ reply._ts }}
                         </span>
                         </div>
-                        <div v-html="reply.desc" class="markedView"></div>
+                        <div v-html="reply.desc" class="markedView"
+                             style="word-break: break-word !important;"></div>
                       </div>
                       <template
                         v-if="wisdom.type === 'question' && wisdom.done !== true && wisdom.usr === store.user.username">
@@ -1319,6 +1378,11 @@ export default {
       }
       this.$router.push(url)
     },
+    gotoTask: function (uid) {
+      let url = '/redir?redirect=/wisdom?id=' + uid
+      url += '&backrefurl=/wisdom?id=' + this.wisdom.uid
+      this.$router.push(url)
+    },
     checkCarouselResize: function () {
       this.slideArrows = document.body.clientWidth > 500
     },
@@ -1397,14 +1461,21 @@ export default {
         })
       })
     },
-    handleTaskEdit: function () {
+    handleTaskEdit: function (val) {
       if (!this.editingTask) {
         return
       }
-      setTimeout(() => {
-        this.handleTaskUpdate(this.editingTask)
-        this.editingTask = null
-      }, 100)
+      this.editingTask.t = val
+      this.handleTaskUpdate(this.editingTask)
+      this.editingTask = null
+    },
+    handleTaskEditDesc: function (val) {
+      if (!this.editingTask) {
+        return
+      }
+      this.editingTask.desc = val
+      this.handleTaskUpdate(this.editingTask)
+      this.editingTask = null
     },
     handleTaskUpdate: function (wisdom) {
       return new Promise((resolve) => {
@@ -1460,7 +1531,7 @@ export default {
           this.$q.notify({
             color: 'primary',
             position: 'top-right',
-            message: 'Task Finished!',
+            message: 'Progress set!',
             caption: '',
             actions: [
               {
@@ -1496,6 +1567,10 @@ export default {
       })
     },
     handleAddTask: function () {
+      let collT = []
+      if (this.wisdom.coll) {
+        collT = this.wisdom.coll
+      }
       const payload = {
         t: 'New Task',
         desc: '',
@@ -1503,6 +1578,7 @@ export default {
         pid: this.knowledge.uid,
         copy: '',
         cats: [],
+        coll: collT,
         type: 'task',
         row: 0,
         ref: this.wisdom.uid

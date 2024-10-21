@@ -13,6 +13,10 @@ export default {
         if (backref) {
           url += `&backref=${backref}`
         }
+        const backrefurl = this.$route.query.backrefurl
+        if (backrefurl) {
+          url += `&backrefurl=${backrefurl}`
+        }
         const course = this.$route.query.course
         if (course) {
           url += `&course=${course}`

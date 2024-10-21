@@ -154,7 +154,8 @@
                   <p class="fontbold text-sm">{{ opt }}</p>
                 </q-item-section>
                 <q-item-section side>
-                  <q-toggle :model-value="selected" @update:model-value="toggleOption(opt)"/>
+                  <q-checkbox :model-value="selected"
+                              @update:model-value="toggleOption(opt)"/>
                 </q-item-section>
               </q-item>
             </template>

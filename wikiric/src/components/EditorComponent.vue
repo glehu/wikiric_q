@@ -227,6 +227,9 @@ export default {
           this.$emit('update:modelValue', this.editor.getHTML())
         }
       })
+      if (!this.bc) {
+        this.bc = new BroadcastChannel('wikiric_internal')
+      }
       this.bc.onmessage = event => {
         this.handleEditorInternal(event.data)
       }

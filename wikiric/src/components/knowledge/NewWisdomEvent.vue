@@ -10,7 +10,7 @@
         <div class="background sticky top-0 z-fab px4 h-[60px]
                     fmt_border_bottom
                     flex items-center justify-between">
-          <span class="text-h5 fontbold pointer-events-none">
+          <span class="text-lg fontbold pointer-events-none">
             <template v-if="!isEdit">
               New {{ title }}
             </template>
@@ -18,36 +18,44 @@
               {{ title }}
             </template>
           </span>
-          <div class="flex gap-4">
+          <div class="flex gap-2">
             <template v-if="isEdit">
-              <q-btn color="brand-bg" text-color="brand-p"
-                     icon="delete"
-                     label="Delete" no-caps flat
-                     class="px3 py2 fontbold"
-                     @click="deleteDate"/>
+              <template v-if="deleteCounter === 0">
+                <q-btn color="brand-bg" text-color="brand-p"
+                       icon="delete"
+                       label="Delete" no-caps flat dense
+                       class="fontbold"
+                       @click="setDeleteCounter"/>
+              </template>
+              <template v-else-if="deleteCounter === 1">
+                <q-btn icon="delete" label="Confirm Delete"
+                       class="fontbold"
+                       color="negative"
+                       @click="deleteDate"/>
+              </template>
               <q-btn color="brand-bg" text-color="brand-p"
                      icon="save"
-                     label="Save" no-caps flat
-                     class="px3 py2 fontbold"
+                     label="Save" no-caps flat dense
+                     class="fontbold"
                      @click="createDate"/>
             </template>
             <template v-else>
               <q-btn color="primary"
                      icon="add"
-                     :label="'Create ' + title" no-caps
-                     class="px3 py2 fontbold"
+                     :label="'Create ' + title" no-caps dense
+                     class="fontbold"
                      @click="createDate"/>
             </template>
             <q-btn color="brand-bg" text-color="brand-p"
                    icon="close"
-                   label="Close" no-caps flat
-                   class="px3 py2 fontbold"
+                   label="Close" no-caps flat dense
+                   class="fontbold"
                    @click="handleDiscard"/>
           </div>
         </div>
         <div class="flex row gap-6 wfull px3 py2
                     background items-start justify-between">
-          <div class="flex column gap-1">
+          <div class="flex column gap-1 px1">
             <div class="flex row gap-2 items-center">
               <p class="text-subtitle2 fontbold pointer-events-none w12">
                 From
@@ -118,21 +126,21 @@
             <q-icon name="watch" size="1rem"/>
             <span class="text-body2 fontbold">{{ date._duration }}</span>
           </div>
-          <div class="flex column gap-4 items-start mt1">
+          <div class="flex column gap-4 items-start mt1 <md:ml-auto">
             <template v-if="date.uid">
-              <div class="flex column gap-2 items-center">
+              <div class="flex md:flex-col gap-2 items-center">
                 <q-btn icon="north_east" dense no-caps
                        align="left"
                        label="View Task"
                        color="brand-bg"
                        text-color="brand-p"
-                       class="text-md fontbold px4 py2 wfull"
-                       @click="gotoWisdom"/>
+                       class="text-md fontbold px4 py2 md:wfull"
+                       @click="gotoWisdom(date.uid)"/>
                 <q-btn icon="check" dense no-caps
                        align="left"
                        label="Finish Task"
                        color="primary"
-                       class="text-md fontbold px4 py2 wfull"
+                       class="text-md fontbold px4 py2 md:wfull"
                        @click="finishDate"/>
               </div>
             </template>
@@ -173,12 +181,13 @@
               <q-icon name="engineering"/>
             </template>
             <template v-slot:option="{ itemProps, opt, selected, toggleOption }">
-              <q-item v-bind="itemProps">
+              <q-item v-bind="itemProps" class="surface">
                 <q-item-section>
                   <p class="fontbold text-sm">{{ opt }}</p>
                 </q-item-section>
                 <q-item-section side>
-                  <q-toggle :model-value="selected" @update:model-value="toggleOption(opt)"/>
+                  <q-checkbox :model-value="selected"
+                              @update:model-value="toggleOption(opt)"/>
                 </q-item-section>
               </q-item>
             </template>
@@ -207,68 +216,124 @@
         </div>
         <div v-if="related && related.tasks && related.tasks.length > 0"
              class="mx1 pb1 mt2">
-          <p class="px4 text-sm fontbold">
-            {{ taskProgress }} / {{ related.tasks.length }} Tasks completed
-          </p>
-          <div class="wfull flex justify-end pr2">
-            <q-btn flat icon="sym_o_add"
-                   align="left"
-                   no-caps dense
-                   @click="handleAddTask">
-              <span class="ml4 text-body1">Add Task</span>
-            </q-btn>
-          </div>
-          <q-slider v-model="taskProgress" :min="0" :max="related.tasks.length"
-                    readonly
-                    color="primary"
-                    track-size="16px" thumb-size="0px"
-                    class="w-full px4"/>
-          <div class="wfull flex column gap-2 pl2">
-            <div v-for="task in related.tasks" :key="task.uid"
-                 class="wfull fmt_border_top fmt_border_left"
-                 style="border-left-color: var(--md-sys-color-primary);
+          <q-expansion-item default-opened class="wfull">
+            <template v-slot:header>
+              <div class="wfull flex items-center gap-2">
+                <p class="text-sm fontbold">
+                  {{ taskProgress }} / {{ related.tasks.length }} Tasks completed
+                </p>
+              </div>
+            </template>
+            <div class="flex wfull justify-end pr2">
+              <q-btn flat icon="sym_o_add"
+                     align="left"
+                     no-caps dense
+                     @click="handleAddTask">
+                <span class="ml4 text-body1">Add Task</span>
+              </q-btn>
+            </div>
+            <q-slider v-model="taskProgress" :min="0" :max="related.tasks.length"
+                      readonly
+                      color="primary"
+                      track-size="16px" thumb-size="0px"
+                      class="w-full px4"/>
+            <div class="wfull flex column gap-2 pl2">
+              <div v-for="task in related.tasks" :key="task.uid"
+                   class="wfull fmt_border_top fmt_border_left mb1"
+                   style="border-left-color: var(--md-sys-color-primary);
                         border-left-width: 6px">
-              <div class="flex gap-2 items-center wfull">
-                <q-checkbox :model-value="task.done"
-                            @update:model-value="handleFinishWisdom(task.uid)"/>
-                <div class="flex-grow">
-                  <div class="flex gap-2 items-center wfull">
-                    <p class="text-xs font-600 pt1 pl1 italic">
-                      Added {{ getHumanReadableDateText(task.ts) }}
-                    </p>
-                    <div v-if="task.done"
-                         class="flex gap-2 items-center">
-                      <q-icon name="check"/>
-                      <p class="text-xs font-600">
-                        Completed {{ getHumanReadableDateText(task.tsd) }}
+                <div class="flex gap-1 items-center wfull no-wrap">
+                  <q-checkbox :model-value="task.done"
+                              class="ml1"
+                              @update:model-value="handleFinishWisdom(task.uid)"/>
+                  <div class="flex-grow">
+                    <div class="flex gap-1 items-center wfull pt1 px1">
+                      <q-icon name="schedule"/>
+                      <p class="text-xs font-600 pl1 italic">
+                        {{ getHumanReadableDateText(task.ts) }}
                       </p>
+                      <div v-if="task.done"
+                           class="flex gap-2 items-center">
+                        <q-icon name="check" class="font-900"/>
+                        <p class="text-xs font-600">
+                          {{ getHumanReadableDateText(task.tsd) }}
+                        </p>
+                      </div>
+                      <q-btn-group class="mlauto pr1 gap-2" flat unelevated>
+                        <q-btn icon="sym_o_delete" label="Delete"
+                               size="0.7rem"
+                               class="font-600"
+                               dense flat unelevated no-caps
+                               @click="handleDeleteWisdom(task.uid)"/>
+                        <q-btn icon="north_east" label="View"
+                               size="0.7rem"
+                               class="font-600"
+                               dense flat unelevated no-caps
+                               @click="gotoWisdom(task.uid)"/>
+                      </q-btn-group>
                     </div>
-                    <q-btn icon="sym_o_delete" label="Delete"
-                           size="0.7rem"
-                           class="font-600 mlauto"
-                           dense flat unelevated no-caps
-                           @click="handleDeleteWisdom(task.uid)"/>
-                  </div>
-                  <div class="flex gap-2 items-center wfull">
-                    <q-btn class="text-sm fontbold cursor-text"
-                           unelevated flat dense no-caps>
-                      {{ task.t }}
-                      <q-popup-edit v-model="task.t" buttons v-slot="scope"
-                                    @show="editingTask = task"
-                                    @save="handleTaskEdit"
-                                    color="brand-p"
-                                    class="z-top">
-                        <q-input v-model="scope.value"
-                                 class="wfull min-w-[50dvw] <md:w-screen"
-                                 dense autofocus counter
-                                 @keyup.enter="scope.set"/>
-                      </q-popup-edit>
-                    </q-btn>
+                    <div class="flex gap-2 items-center wfull">
+                      <q-btn class="text-sm fontbold cursor-text wfit"
+                             align="left"
+                             unelevated flat dense no-caps>
+                        <p class="text-start wfit">
+                          {{ task.t }}
+                        </p>
+                        <q-popup-edit v-model="task.t" buttons v-slot="scope"
+                                      @show="editingTask = task"
+                                      @save="handleTaskEdit"
+                                      color="brand-p"
+                                      class="z-top">
+                          <q-input v-model="scope.value"
+                                   class="wfull min-w-[50dvw] <md:w-screen"
+                                   dense autofocus counter
+                                   @keyup.enter="scope.set"/>
+                        </q-popup-edit>
+                      </q-btn>
+                      <q-btn v-if="!task.desc || task.desc === ''"
+                             class="text-sm fontbold cursor-pointer wfit"
+                             align="left"
+                             unelevated flat dense no-caps>
+                        +
+                        <q-icon name="sym_o_description" size="1.2rem"/>
+                        <q-popup-edit v-model="task.desc" buttons v-slot="scope"
+                                      @show="editingTask = task"
+                                      @save="handleTaskEditDesc"
+                                      color="brand-p"
+                                      class="z-top">
+                          <editor v-model="scope.value"/>
+                        </q-popup-edit>
+                      </q-btn>
+                    </div>
+                    <q-expansion-item v-if="task.desc && task.desc !== ''"
+                                      dense dense-toggle header-class="mx0 px1"
+                                      class="wfull">
+                      <template v-slot:header>
+                        <div class="flex items-center
+                                    justify-between gap-2 pr2">
+                          <q-icon name="sym_o_description" size="1.2rem"/>
+                        </div>
+                      </template>
+                      <q-btn class="text-sm font-500 cursor-text wfit"
+                             align="left"
+                             unelevated flat dense no-caps>
+                        <div v-html="task.desc"
+                             class="markedView text-start wfull"
+                             style="word-break: break-word !important;"></div>
+                        <q-popup-edit v-model="task.desc" buttons v-slot="scope"
+                                      @show="editingTask = task"
+                                      @save="handleTaskEditDesc"
+                                      color="brand-p"
+                                      class="z-top">
+                          <editor v-model="scope.value"/>
+                        </q-popup-edit>
+                      </q-btn>
+                    </q-expansion-item>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </q-expansion-item>
         </div>
         <div v-else class="mx1 pb1 mt2">
           <div class="wfull flex justify-end pr2">
@@ -308,7 +373,8 @@
                     {{ reply._ts }}
                   </span>
                 </div>
-                <div v-html="reply.desc" class="markedView"></div>
+                <div v-html="reply.desc" class="markedView"
+                     style="word-break: break-word !important;"></div>
               </div>
             </template>
           </div>
@@ -330,7 +396,8 @@
           </template>
         </div>
       </div>
-      <div class="wfit <lg:flex-grow max-w-[700px] flex column gap-2 hfit">
+      <div class="wfit <lg:hidden max-w-[700px]
+                  flex column gap-2 hfit">
         <div class="background rounded fmt_border p2">
           <table style="margin: 0 !important;">
             <tr>
@@ -426,6 +493,8 @@ export default {
       }
     },
     newEvent (newDate) {
+      this.related = null
+      this.gotRelated = false
       this.date = newDate
       this.date = this.jsDateToQDate(this.date)
       if (this.date.keys && this.date.keys.length > 0) {
@@ -478,7 +547,8 @@ export default {
       comment: '',
       noAutoSave: true,
       editingTask: null,
-      gotRelated: false
+      gotRelated: false,
+      deleteCounter: 0
     }
   },
   methods: {
@@ -589,12 +659,23 @@ export default {
       this.$emit('finish', this.date.uid)
       this.show = false
     },
-    gotoWisdom: function () {
-      if (this.backRefUrl) {
-        this.$router.push(`/wisdom?id=${this.date.uid}&backrefurl=${this.backRefUrl.trim()}`)
+    /**
+     *
+     * @param {String} [uid=null]
+     */
+    gotoWisdom: function (uid = null) {
+      let url = '/wisdom?id='
+      if (uid) {
+        url += uid
       } else {
-        this.$router.push(`/wisdom?id=${this.date.uid}&backrefurl=/planner?id=${this.chatroom.uid.trim()}`)
+        url += this.date.uid
       }
+      if (this.backRefUrl) {
+        url += '&backrefurl=' + this.backRefUrl.trim()
+      } else {
+        url += '&backrefurl=/planner?id=' + this.chatroom.uid.trim()
+      }
+      this.$router.push(url)
     },
     updateProxyDueDate () {
       this.proxyDate = this.date._dueDate
@@ -847,6 +928,10 @@ export default {
       this.$emit('close')
     },
     handleAddTask: function () {
+      let collT = []
+      if (this.date.coll) {
+        collT = this.date.coll
+      }
       const payload = {
         t: 'New Task',
         desc: '',
@@ -854,6 +939,7 @@ export default {
         pid: this.knowledge.uid,
         copy: '',
         cats: [],
+        coll: collT,
         type: 'task',
         row: 0,
         ref: this.date.uid
@@ -882,7 +968,7 @@ export default {
           this.$q.notify({
             color: 'primary',
             position: 'top-right',
-            message: 'Task Finished!',
+            message: 'Progress set!',
             caption: '',
             actions: [
               {
@@ -917,14 +1003,21 @@ export default {
         })
       })
     },
-    handleTaskEdit: function () {
+    handleTaskEdit: function (val) {
       if (!this.editingTask) {
         return
       }
-      setTimeout(() => {
-        this.handleWisdomUpdate(this.editingTask)
-        this.editingTask = null
-      }, 100)
+      this.editingTask.t = val
+      this.handleWisdomUpdate(this.editingTask)
+      this.editingTask = null
+    },
+    handleTaskEditDesc: function (val) {
+      if (!this.editingTask) {
+        return
+      }
+      this.editingTask.desc = val
+      this.handleWisdomUpdate(this.editingTask)
+      this.editingTask = null
     },
     handleWisdomUpdate: function (wisdom) {
       return new Promise((resolve) => {
@@ -1026,6 +1119,12 @@ export default {
       if (e.target.id === 'new_task_outside') {
         this.handleClose()
       }
+    },
+    setDeleteCounter: function () {
+      this.deleteCounter = 1
+      setTimeout(() => {
+        this.deleteCounter = 0
+      }, 5000)
     }
   }
 }
