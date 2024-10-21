@@ -166,6 +166,7 @@
         <editor id="wisdom_desc"
                 ref="wisdom_desc"
                 e-id="wisdom_edit_desc"
+                :chat-id="chatId"
                 v-model="wisdom.desc"
                 @fpaste="handleEditorPaste"/>
       </div>

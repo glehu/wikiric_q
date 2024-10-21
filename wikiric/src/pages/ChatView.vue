@@ -355,6 +355,7 @@
                   <div class="wfull max-w-lg relative">
                     <editor ref="ref_editor"
                             v-model="newMessage"
+                            :chat-id="chatID"
                             e-max-height="75dvh"
                             prevent-enter
                             hide-menu
@@ -725,6 +726,7 @@
                 <editor ref="ref_editor"
                         v-model="newMessage"
                         e-max-height="75dvh"
+                        :chat-id="chatID"
                         prevent-enter
                         @kpress="handleEditorKeyDown"
                         @fpaste="handleEditorPaste"

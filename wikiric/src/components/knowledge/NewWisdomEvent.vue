@@ -146,7 +146,7 @@
             </template>
           </div>
         </div>
-        <div class="wfull">
+        <div class="wfull flex mb2 px3 gap-2">
           <q-select
             v-if="date._keys"
             for="event_keys"
@@ -160,7 +160,7 @@
             multiple dense
             input-debounce="50"
             new-value-mode="add-unique"
-            class="wfull px3 background">
+            class="background flex-grow">
             <template v-slot:prepend>
               <q-icon name="sym_o_label"/>
             </template>
@@ -176,7 +176,7 @@
             use-chips
             multiple dense
             input-debounce="50"
-            class="wfull px3 pb2 background">
+            class="background flex-grow">
             <template v-slot:prepend>
               <q-icon name="engineering"/>
             </template>
@@ -193,24 +193,27 @@
             </template>
           </q-select>
         </div>
-        <div class="mt1 surface sticky top-0 wfull z-top fmt_border_bottom">
-          <q-input
-            for="event_t"
-            ref="event_t"
-            label="Title"
-            color="brand-p"
-            input-class="fontbold"
-            borderless dense
-            label-color="brand-p"
-            v-model="date.t"
-            class="pb2 text-xl px3 pt1 fmt_border_top">
-            <template v-slot:prepend>
-              <q-icon name="sym_o_event"/>
-            </template>
-          </q-input>
+        <div class="mt1 sticky top-0 wfull z-top">
+          <div class="pb2 px3 pt1 mx1 surface rounded fmt_border">
+            <q-input
+              for="event_t"
+              ref="event_t"
+              label="Title"
+              color="brand-p"
+              input-class="fontbold"
+              borderless dense
+              label-color="brand-p"
+              v-model="date.t"
+              class="text-xl">
+              <template v-slot:prepend>
+                <q-icon name="sym_o_event"/>
+              </template>
+            </q-input>
+          </div>
         </div>
         <div class="background p1 fmt_border_bottom">
           <editor v-model="date.desc" ref="ref_editor"
+                  :chat-id="chatroom.uid"
                   @autosave="noAutoSave = false"
                   placeholder="Describe this Task…"/>
         </div>
@@ -301,7 +304,8 @@
                                       @save="handleTaskEditDesc"
                                       color="brand-p"
                                       class="z-top">
-                          <editor v-model="scope.value"/>
+                          <editor v-model="scope.value"
+                                  :chat-id="chatroom.uid"/>
                         </q-popup-edit>
                       </q-btn>
                     </div>
@@ -325,7 +329,8 @@
                                       @save="handleTaskEditDesc"
                                       color="brand-p"
                                       class="z-top">
-                          <editor v-model="scope.value"/>
+                          <editor v-model="scope.value"
+                                  :chat-id="chatroom.uid"/>
                         </q-popup-edit>
                       </q-btn>
                     </q-expansion-item>
@@ -353,6 +358,7 @@
           </p>
           <div class="mx1 my2 background">
             <editor v-model="comment" ref="ref_editor_comment" hide-menu
+                    :chat-id="chatroom.uid"
                     placeholder="Write a comment…"/>
           </div>
           <div class="flex row wfull my2 pr1">
@@ -384,6 +390,7 @@
             <p class="text-subtitle2 p2">No Comments</p>
             <div class="mx1 my2 background">
               <editor v-model="comment" ref="ref_editor_comment" hide-menu
+                      :chat-id="chatroom.uid"
                       placeholder="Write a comment…"/>
             </div>
             <div class="flex row wfull mb2 pr1">

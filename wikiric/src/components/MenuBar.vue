@@ -5,23 +5,35 @@
       <menu-item v-else :key="index" v-bind="item"/>
     </template>
   </div>
+  <EditorLinkWizard :is-open="showLinkWiz"
+                    :chat-id="chatId"
+                    @close="showLinkWiz = false"
+                    @wisdom="handleLinkWisdom"/>
 </template>
 
 <script>
 import MenuItem from './MenuItem.vue'
+import EditorLinkWizard from 'components/EditorLinkWizard.vue'
 
 export default {
   components: {
+    EditorLinkWizard,
     MenuItem
   },
   props: {
     editor: {
       type: Object,
       required: true
+    },
+    chatId: {
+      type: String,
+      default: null,
+      required: false
     }
   },
   data () {
     return {
+      showLinkWiz: false,
       items: [
         {
           icon: 'sym_o_format_bold',
@@ -87,6 +99,14 @@ export default {
           isActive: () => this.editor.isActive('blockquote')
         },
         {
+          icon: 'sym_o_add_link',
+          title: 'Link',
+          action: () => {
+            this.showLinkWiz = true
+          },
+          isActive: () => false
+        },
+        {
           type: 'divider'
         },
         {
@@ -99,6 +119,15 @@ export default {
           .run()
         }
       ]
+    }
+  },
+  methods: {
+    handleLinkWisdom: function (uid) {
+      if (!uid) {
+        return
+      }
+      const url = 'https://wikiric.xyz/#/wisdom?id=' + uid.trim()
+      this.editor.commands.setLink({ href: url })
     }
   }
 }

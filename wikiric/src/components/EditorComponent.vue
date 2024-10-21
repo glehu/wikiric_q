@@ -5,7 +5,7 @@
                 overflow-y-auto
                 fmt_border">
       <template v-if="!hideMenu">
-        <menu-bar :editor="editor"/>
+        <menu-bar :editor="editor" :chat-id="chatId"/>
       </template>
       <editor-content :editor="editor"
                       class="p3 markedView"
@@ -31,6 +31,7 @@ import Image from '@tiptap/extension-image'
 import { FileHandler } from '@tiptap-pro/extension-file-handler'
 import UniqueID from '@tiptap-pro/extension-unique-id'
 import Placeholder from '@tiptap/extension-placeholder'
+import { Link } from '@tiptap/extension-link'
 
 const lowlight = createLowlight(common)
 
@@ -75,6 +76,11 @@ export default {
     placeholder: {
       type: String,
       default: 'Write something…'
+    },
+    chatId: {
+      type: String,
+      default: null,
+      required: false
     }
   },
   emits: ['update:modelValue', 'kpress', 'fpaste', 'autosave'],
@@ -218,6 +224,9 @@ export default {
           }),
           Placeholder.configure({
             placeholder: this.placeholder
+          }),
+          Link.configure({
+            protocols: ['https']
           }),
           shiftEnterExtension
         ],

@@ -151,8 +151,8 @@ export default {
             state: 'any',
             fields: '',
             noSort: true,
-            descLen: 999_999_999,
-            withReply: true
+            descLen: 100,
+            withReply: false
           }
         })
         .then((response) => {
