@@ -290,6 +290,7 @@
                           <q-input v-model="scope.value"
                                    class="wfull min-w-[50dvw] <md:w-screen"
                                    dense autofocus counter
+                                   @focus="(input) => input.target.select()"
                                    @keyup.enter="scope.set"/>
                         </q-popup-edit>
                       </q-btn>
@@ -407,6 +408,7 @@
                   flex column gap-2 hfit">
         <div class="background rounded fmt_border p2">
           <table style="margin: 0 !important;">
+            <tbody>
             <tr>
               <td class="text-sm pr1">Created:</td>
               <td class="text-sm">
@@ -436,6 +438,7 @@
                 {{ knowledge.t }}
               </td>
             </tr>
+            </tbody>
           </table>
         </div>
         <div class="background rounded fmt_border p2">
@@ -822,7 +825,7 @@ export default {
       this.$emit('close')
       this.show = false
     },
-    getRelated: async function (onlyTasks = false) {
+    getRelated: async function () {
       if (!this.date.uid) return
       return new Promise((resolve) => {
         const guid = this.date.uid
@@ -830,57 +833,53 @@ export default {
           url: 'wisdom/private/investigate/' + guid
         })
         .then(async (response) => {
-          if (!onlyTasks) {
-            this.related = response.data
-            let dName
-            if (this.related.replies) {
-              for (let i = 0; i < this.related.replies.length; i++) {
-                this.related.replies[i]._time = DateTime.fromISO(this.related.replies[i].ts)
-                this.related.replies[i]._ts = this.getHumanReadableDateText(this.related.replies[i]._time, true, true)
-                dName = await dbGetDisplayName(this.related.replies[i].usr)
-                if (dName == null) {
-                  dName = this.related.replies[i].usr
-                }
-                this.related.replies[i].name = dName
-              }
-            }
-            if (this.related.answers) {
-              for (let i = 0; i < this.related.answers.length; i++) {
-                this.related.answers[i]._time = DateTime.fromISO(this.related.answers[i].ts)
-                this.related.answers[i]._ts = this.getHumanReadableDateText(this.related.answers[i]._time, true, true)
-                dName = await dbGetDisplayName(this.related.answers[i].usr)
-                if (dName == null) {
-                  dName = this.related.answers[i].usr
-                }
-                this.related.answers[i].name = dName
-              }
-            }
-            if (this.related.ref) {
-              this.related.ref.ts = DateTime.fromISO(this.related.ref.ts)
-              dName = await dbGetDisplayName(this.related.ref.usr)
+          const related = response.data
+          let dName
+          if (related.replies) {
+            for (let i = 0; i < related.replies.length; i++) {
+              related.replies[i]._time = DateTime.fromISO(related.replies[i].ts)
+              related.replies[i]._ts = this.getHumanReadableDateText(related.replies[i]._time, true, true)
+              dName = await dbGetDisplayName(related.replies[i].usr)
               if (dName == null) {
-                dName = this.related.ref.usr
+                dName = related.replies[i].usr
               }
-              this.related.ref.name = dName
-            }
-          } else {
-            if (response.data.tasks) {
-              this.related.tasks = []
-              let dName
-              for (let i = 0; i < response.data.tasks.length; i++) {
-                if (response.data.tasks[i].uid !== this.wisdom.uid) {
-                  response.data.tasks[i].t = this.formatTitle(response.data.tasks[i].t)
-                  response.data.tasks[i].ts = DateTime.fromISO(response.data.tasks[i].ts)
-                  dName = await dbGetDisplayName(response.data.tasks[i].usr)
-                  if (dName == null) {
-                    dName = response.data.tasks[i].usr
-                  }
-                  response.data.tasks[i].name = dName
-                  this.related.tasks.push(response.data.tasks[i])
-                }
-              }
+              related.replies[i].name = dName
             }
           }
+          if (related.answers) {
+            for (let i = 0; i < related.answers.length; i++) {
+              related.answers[i]._time = DateTime.fromISO(related.answers[i].ts)
+              related.answers[i]._ts = this.getHumanReadableDateText(related.answers[i]._time, true, true)
+              dName = await dbGetDisplayName(related.answers[i].usr)
+              if (dName == null) {
+                dName = related.answers[i].usr
+              }
+              related.answers[i].name = dName
+            }
+          }
+          if (related.ref) {
+            related.ref.ts = DateTime.fromISO(related.ref.ts)
+            dName = await dbGetDisplayName(related.ref.usr)
+            if (dName == null) {
+              dName = related.ref.usr
+            }
+            related.ref.name = dName
+          }
+          if (related.tasks) {
+            let dName
+            for (let i = 0; i < related.tasks.length; i++) {
+              related.tasks[i].t = this.formatTitle(related.tasks[i].t)
+              related.tasks[i].ts = DateTime.fromISO(related.tasks[i].ts)
+              dName = await dbGetDisplayName(related.tasks[i].usr)
+              if (dName == null) {
+                dName = related.tasks[i].usr
+              }
+              related.tasks[i].name = dName
+            }
+            related.tasks.sort(
+              (a, b) => new Date(b.ts).valueOf() - new Date(a.ts).valueOf())
+          }
+          this.related = { ...related }
           this.gotRelated = true
         }).catch((err) => {
           console.debug(err.message)
@@ -956,8 +955,6 @@ export default {
           method: 'post',
           url: 'wisdom/private/create',
           data: payload
-        }).then(() => {
-          this.getBoxes()
         }).catch((err) => {
           console.debug(err.message)
         }).finally(() => {
@@ -1132,6 +1129,20 @@ export default {
       setTimeout(() => {
         this.deleteCounter = 0
       }, 5000)
+    },
+    formatTitle: function (title) {
+      if (!title || title.length < 1) return ''
+      if (title.startsWith('#')) {
+        let cutUntil = 0
+        for (let i = 0; i < title.length; i++) {
+          if (title.substring(i, i + 1) === '#') {
+            cutUntil++
+          }
+        }
+        return title.substring(cutUntil).trim()
+      } else {
+        return title
+      }
     }
   }
 }

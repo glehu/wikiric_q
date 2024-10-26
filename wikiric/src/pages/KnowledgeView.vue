@@ -470,7 +470,7 @@ import { debounce, dom, scroll } from 'quasar'
 import WisdomEdit from 'components/knowledge/WisdomEdit.vue'
 import { DateTime } from 'luxon'
 import * as d3 from 'd3'
-import * as d3Cloud from 'd3-cloud'
+import d3Cloud from 'd3-cloud'
 import { useStore } from 'stores/wikistate'
 
 const {
