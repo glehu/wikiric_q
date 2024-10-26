@@ -189,6 +189,11 @@
                               <q-icon name="check" size="1.3rem"
                                       class="ml2"/>
                             </template>
+                            <template v-else-if="res.type === 'proposal'">
+                              <span>Proposal</span>
+                              <q-icon name="sym_o_assignment" size="1.3rem"
+                                      class="ml2"/>
+                            </template>
                           </div>
                         </q-item-label>
                         <div v-if="res.result.keys"
@@ -665,6 +670,10 @@ export default {
             this.addResults(parsedData.questions, 'question', questionsOnly, catColors)
           }
           if (!questionsOnly) {
+            if (parsedData.proposals && parsedData.proposals.length > 0) {
+              tmpNoResults = false
+              this.addResults(parsedData.proposals, 'proposal', questionsOnly, catColors)
+            }
             if (parsedData.replies && parsedData.replies.length > 0) {
               tmpNoResults = false
               this.addResults(parsedData.replies, 'reply', questionsOnly, catColors)
@@ -726,6 +735,8 @@ export default {
             this.questions.push(entry)
           } else {
             this.results.push(entry)
+            this.results.sort(
+              (a, b) => b.result.accuracy - a.result.accuracy)
           }
         } else {
           this.processes.push(entry)

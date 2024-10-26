@@ -119,7 +119,8 @@
                       @create="createNewEvent"
                       @delete="deleteEvent"
                       @update="updateEvent"
-                      @finish="finishEvent"/>
+                      @finish="finishEvent"
+                      @close="isCreatingEvent = false"/>
   </q-page>
 </template>
 

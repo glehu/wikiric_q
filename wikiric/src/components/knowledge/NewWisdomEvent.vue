@@ -146,7 +146,7 @@
             </template>
           </div>
         </div>
-        <div class="wfull flex mb2 px3 gap-2">
+        <div class="wfull flex mb2 px3 gap-1">
           <q-select
             v-if="date._keys"
             for="event_keys"
@@ -211,30 +211,176 @@
             </q-input>
           </div>
         </div>
-        <div class="background p1 fmt_border_bottom">
+        <div class="background p1">
           <editor v-model="date.desc" ref="ref_editor"
                   :chat-id="chatroom.uid"
                   @autosave="noAutoSave = false"
                   placeholder="Describe this Task…"/>
         </div>
-        <div v-if="related && related.tasks && related.tasks.length > 0"
-             class="mx1 pb1 mt2">
+        <q-toolbar class="wfull flex items-center justify-end gap-2">
+          <q-btn v-if="related && related.replies && related.replies.length > 0"
+                 no-caps dense
+                 label="View Comments"
+                 color="brand-bg"
+                 text-color="brand-p"
+                 class="px2"
+                 @click="handleGoToComments"/>
+          <q-btn icon="sym_o_assignment_add"
+                 label="Add Proposal"
+                 align="left"
+                 color="brand-bg"
+                 text-color="brand-p"
+                 class="pr2"
+                 no-caps dense
+                 @click="handleAddProposal"/>
+          <q-btn icon="sym_o_add"
+                 label="Add Task"
+                 align="left"
+                 color="brand-bg"
+                 text-color="brand-p"
+                 class="pr2"
+                 no-caps dense
+                 @click="handleAddTask"/>
+        </q-toolbar>
+        <div v-if="related && related.proposals && related.proposals.length > 0"
+             class="mx1 pb1 mt1">
           <q-expansion-item default-opened class="wfull">
             <template v-slot:header>
               <div class="wfull flex items-center gap-2">
                 <p class="text-sm fontbold">
-                  {{ taskProgress }} / {{ related.tasks.length }} Tasks completed
+                  {{ related.proposals.length }} {{ proposalWord }}
                 </p>
               </div>
             </template>
-            <div class="flex wfull justify-end pr2">
-              <q-btn flat icon="sym_o_add"
-                     align="left"
-                     no-caps dense
-                     @click="handleAddTask">
-                <span class="ml4 text-body1">Add Task</span>
-              </q-btn>
+            <div class="wfull flex column gap-2 pl2">
+              <div v-for="proposal in related.proposals" :key="proposal.uid"
+                   class="wfull fmt_border_top fmt_border_left mb1"
+                   style="border-left-color: var(--md-sys-color-primary);
+                        border-left-width: 6px">
+                <div class="flex gap-1 items-center wfull no-wrap">
+                  <template v-if="canWrite">
+                    <q-checkbox :model-value="proposal.done"
+                                class="ml1"
+                                @update:model-value="handleFinishWisdom(proposal.uid)"/>
+                  </template>
+                  <template v-else>
+                    <div class="w-2"></div>
+                  </template>
+                  <div class="flex-grow">
+                    <div class="flex gap-2 items-center wfull pt1 px1">
+                      <q-icon name="person"/>
+                      <p class="text-xs font-600">
+                        {{ proposal.name }}
+                      </p>
+                      <q-icon name="schedule"/>
+                      <p class="text-xs font-600">
+                        {{ getHumanReadableDateText(proposal.ts) }}
+                      </p>
+                      <template v-if="proposal.done">
+                        <q-icon name="check" class="font-900"/>
+                        <p class="text-xs font-600">
+                          {{ getHumanReadableDateText(proposal.tsd) }}
+                        </p>
+                      </template>
+                      <q-btn-group class="mlauto pr1 gap-2"
+                                   flat unelevated square>
+                        <q-btn icon="sym_o_delete" label="Delete"
+                               size="0.7rem"
+                               class="font-600"
+                               dense flat unelevated no-caps
+                               @click="handleDeleteWisdom(proposal.uid)"/>
+                        <q-btn icon="north_east" label="View"
+                               size="0.7rem"
+                               class="font-600"
+                               dense flat unelevated no-caps
+                               @click="gotoWisdom(proposal.uid)"/>
+                        <template v-if="canWrite && !proposal.done">
+                          <q-btn icon="sym_o_check"
+                                 label="Accept Proposal"
+                                 color="positive"
+                                 size="0.7rem"
+                                 class="font-700 pr2"
+                                 no-caps dense unelevated
+                                 @click="handleFinishWisdom(proposal.uid)"/>
+                        </template>
+                      </q-btn-group>
+                    </div>
+                    <div class="flex gap-2 items-center wfull">
+                      <q-btn class="text-sm fontbold cursor-text wfit"
+                             align="left"
+                             unelevated flat dense no-caps>
+                        <p class="text-start wfit">
+                          {{ proposal.t }}
+                        </p>
+                        <q-popup-edit v-model="proposal.t" buttons v-slot="scope"
+                                      @show="editingTask = proposal"
+                                      @save="handleTaskEdit"
+                                      color="brand-p"
+                                      class="z-top">
+                          <q-input v-model="scope.value"
+                                   class="wfull min-w-[50dvw] <md:w-screen"
+                                   dense autofocus counter
+                                   @focus="(input) => input.target.select()"
+                                   @keyup.enter="scope.set"/>
+                        </q-popup-edit>
+                      </q-btn>
+                      <q-btn v-if="!proposal.desc || proposal.desc === ''"
+                             class="text-sm fontbold cursor-pointer wfit"
+                             align="left"
+                             unelevated flat dense no-caps>
+                        +
+                        <q-icon name="sym_o_description" size="1.2rem"/>
+                        <q-popup-edit v-model="proposal.desc" buttons v-slot="scope"
+                                      @show="editingTask = proposal"
+                                      @save="handleTaskEditDesc"
+                                      color="brand-p"
+                                      class="z-top wfull">
+                          <editor v-model="scope.value"
+                                  :chat-id="chatroom.uid"/>
+                        </q-popup-edit>
+                      </q-btn>
+                    </div>
+                    <q-expansion-item v-if="proposal.desc && proposal.desc !== ''"
+                                      dense dense-toggle header-class="mx0 px1"
+                                      class="wfull">
+                      <template v-slot:header>
+                        <div class="flex items-center
+                                    justify-between gap-2 pr2">
+                          <q-icon name="sym_o_description" size="1.2rem"/>
+                        </div>
+                      </template>
+                      <q-btn class="text-sm font-500 cursor-text wfit"
+                             align="left"
+                             unelevated flat dense no-caps>
+                        <div v-html="proposal.desc"
+                             class="markedView text-start wfull"
+                             style="word-break: break-word !important;"></div>
+                        <q-popup-edit v-model="proposal.desc" buttons v-slot="scope"
+                                      @show="editingTask = proposal"
+                                      @save="handleTaskEditDesc"
+                                      color="brand-p"
+                                      class="z-top wfull">
+                          <editor v-model="scope.value"
+                                  :chat-id="chatroom.uid"/>
+                        </q-popup-edit>
+                      </q-btn>
+                    </q-expansion-item>
+                  </div>
+                </div>
+              </div>
             </div>
+          </q-expansion-item>
+        </div>
+        <div v-if="related && related.tasks && related.tasks.length > 0"
+             class="mx1 pb1 mt1">
+          <q-expansion-item default-opened class="wfull">
+            <template v-slot:header>
+              <div class="wfull flex items-center gap-2">
+                <p class="text-sm fontbold">
+                  {{ taskProgress }} / {{ related.tasks.length }} {{ taskWord }} completed
+                </p>
+              </div>
+            </template>
             <q-slider v-model="taskProgress" :min="0" :max="related.tasks.length"
                       readonly
                       color="primary"
@@ -250,18 +396,21 @@
                               class="ml1"
                               @update:model-value="handleFinishWisdom(task.uid)"/>
                   <div class="flex-grow">
-                    <div class="flex gap-1 items-center wfull pt1 px1">
+                    <div class="flex gap-2 items-center wfull pt1 px1">
+                      <q-icon name="person"/>
+                      <p class="text-xs font-600 italic">
+                        {{ task.name }}
+                      </p>
                       <q-icon name="schedule"/>
-                      <p class="text-xs font-600 pl1 italic">
+                      <p class="text-xs font-600">
                         {{ getHumanReadableDateText(task.ts) }}
                       </p>
-                      <div v-if="task.done"
-                           class="flex gap-2 items-center">
+                      <template v-if="task.done">
                         <q-icon name="check" class="font-900"/>
                         <p class="text-xs font-600">
                           {{ getHumanReadableDateText(task.tsd) }}
                         </p>
-                      </div>
+                      </template>
                       <q-btn-group class="mlauto pr1 gap-2" flat unelevated>
                         <q-btn icon="sym_o_delete" label="Delete"
                                size="0.7rem"
@@ -341,17 +490,8 @@
             </div>
           </q-expansion-item>
         </div>
-        <div v-else class="mx1 pb1 mt2">
-          <div class="wfull flex justify-end pr2">
-            <q-btn flat icon="sym_o_add"
-                   align="left"
-                   no-caps dense
-                   @click="handleAddTask">
-              <span class="ml4 text-body1">Add Task</span>
-            </q-btn>
-          </div>
-        </div>
-        <div v-if="related && related.replies && related.replies.length > 0"
+        <div id="new_wis_comments"
+             v-if="related && related.replies && related.replies.length > 0"
              class="mx1 pb1">
           <p class="mt4 mb2 mx2 text-subtitle2">
             Comments:
@@ -441,13 +581,19 @@
             </tbody>
           </table>
         </div>
-        <div class="background rounded fmt_border p2">
+        <div class="background rounded fmt_border pt2 px2 pb3">
           <q-btn label="Add Task"
                  icon="sym_o_add"
                  align="left"
                  class="wfull transparent"
                  no-caps unelevated flat
                  @click="handleAddTask"/>
+          <q-btn icon="sym_o_assignment_add"
+                 label="Add Proposal"
+                 align="left"
+                 class="wfull transparent"
+                 no-caps unelevated flat
+                 @click="handleAddProposal"/>
         </div>
       </div>
     </div>
@@ -460,6 +606,12 @@ import { DateTime } from 'luxon'
 import Editor from 'components/EditorComponent.vue'
 import { api } from 'boot/axios'
 import { dbGetDisplayName } from 'src/libs/wikistore'
+import { scroll } from 'quasar'
+import { useStore } from 'stores/wikistate'
+
+const {
+  setVerticalScrollPosition
+} = scroll
 
 export default {
   components: { Editor },
@@ -533,11 +685,32 @@ export default {
         }
       }
       return done
+    },
+    canWrite () {
+      if (this.date.usr === this.store.user.username) {
+        return true
+      }
+      return !!(this.date.coll && this.date.coll.includes(this.store.user.username))
+    },
+    proposalWord () {
+      if (this.related && this.related.proposals && this.related.proposals.length > 1) {
+        return 'Proposals'
+      } else {
+        return 'Proposal'
+      }
+    },
+    taskWord () {
+      if (this.related && this.related.tasks && this.related.tasks.length > 1) {
+        return 'Tasks'
+      } else {
+        return 'Task'
+      }
     }
   },
   data () {
     return {
       show: false,
+      store: useStore(),
       date: {
         t: '',
         desc: '',
@@ -879,6 +1052,20 @@ export default {
             related.tasks.sort(
               (a, b) => new Date(b.ts).valueOf() - new Date(a.ts).valueOf())
           }
+          if (related.proposals) {
+            let dName
+            for (let i = 0; i < related.proposals.length; i++) {
+              related.proposals[i].t = this.formatTitle(related.proposals[i].t)
+              related.proposals[i].ts = DateTime.fromISO(related.proposals[i].ts)
+              dName = await dbGetDisplayName(related.proposals[i].usr)
+              if (dName == null) {
+                dName = related.proposals[i].usr
+              }
+              related.proposals[i].name = dName
+            }
+            related.proposals.sort(
+              (a, b) => new Date(b.ts).valueOf() - new Date(a.ts).valueOf())
+          }
           this.related = { ...related }
           this.gotRelated = true
         }).catch((err) => {
@@ -932,6 +1119,39 @@ export default {
     handleDiscard: function () {
       this.noAutoSave = true
       this.$emit('close')
+    },
+    handleAddProposal: function () {
+      let collT = []
+      if (this.date.coll) {
+        collT = this.date.coll
+      }
+      if (!collT.includes(this.date.usr)) {
+        collT.push(this.date.usr)
+      }
+      const payload = {
+        t: 'New Proposal',
+        desc: '',
+        keys: '',
+        pid: this.knowledge.uid,
+        copy: '',
+        cats: [],
+        coll: collT,
+        type: 'proposal',
+        row: 0,
+        ref: this.date.uid
+      }
+      return new Promise((resolve) => {
+        api({
+          method: 'post',
+          url: 'wisdom/private/create',
+          data: payload
+        }).catch((err) => {
+          console.debug(err.message)
+        }).finally(() => {
+          this.getRelated()
+          resolve()
+        })
+      })
     },
     handleAddTask: function () {
       let collT = []
@@ -1143,6 +1363,22 @@ export default {
       } else {
         return title
       }
+    },
+    scrollToElement: function (el) {
+      const target = document.getElementById('new_task_container')
+      let offset = el.offsetTop - 64
+      if (offset < 0) {
+        offset = 0
+      }
+      const duration = 200
+      setVerticalScrollPosition(target, offset, duration)
+    },
+    handleGoToComments: function () {
+      const elem = document.getElementById('new_wis_comments')
+      if (!elem) {
+        return
+      }
+      this.scrollToElement(elem)
     }
   }
 }

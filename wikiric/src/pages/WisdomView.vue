@@ -144,7 +144,7 @@
                           rounded
                           px4 pt2 pb4">
                 <template v-if="wisdom.type === 'question' && wisdom.done !== true">
-                  <div class="wfull pb1 my2 p2
+                  <div class="wfull pb1 my2 pt2 pb2 px4
                               surface-variant
                               text-sm rounded w-fit fmt_border"
                        style="border-left: 8px solid darkorange">
@@ -165,12 +165,12 @@
                   </div>
                 </template>
                 <template v-if="wisdom.type === 'question' && wisdom.done === true">
-                  <div class="wfull pb1 my2 p2
+                  <div class="wfull pb1 my2 pt2 pb2 px4
                               surface-variant
                               text-sm rounded w-fit fmt_border"
                        style="border-left: 8px solid green">
                     <p class="fontbold text-body1">
-                      This question was answered!
+                      This question has been answered!
                     </p>
                     <ul>
                       <li>
@@ -188,6 +188,35 @@
                              class="wfit"
                              @click="gotoAnswer"/>
                     </div>
+                  </div>
+                </template>
+                <template v-if="wisdom.type === 'proposal' && wisdom.done !== true">
+                  <div class="wfull pb1 my2 pt2 pb2 px4
+                              surface-variant
+                              text-sm rounded w-fit fmt_border"
+                       style="border-left: 8px solid darkorange">
+                    <p class="fontbold text-body1">
+                      This proposal has not been accepted yet.
+                    </p>
+                    <ul class="mb2">
+                      <li>
+                        Wait for the supervisor(s) to review and accept this proposal.
+                      </li>
+                      <li>
+                        Do not forget to check the contents yourself to make sure
+                        you are delivering the best solution possible.
+                      </li>
+                    </ul>
+                  </div>
+                </template>
+                <template v-if="wisdom.type === 'proposal' && wisdom.done === true">
+                  <div class="wfull pb1 my2 pt2 pb2 px4
+                              surface-variant
+                              text-sm rounded w-fit fmt_border"
+                       style="border-left: 8px solid green">
+                    <p class="fontbold text-body1">
+                      This proposal has been accepted!
+                    </p>
                   </div>
                 </template>
                 <template v-if="isLoading">
@@ -446,13 +475,150 @@
                      style="word-break: break-word !important;"></div>
               </div>
               <div v-if="related" class="m4">
+                <div v-if="related && related.proposals && related.proposals.length > 0"
+                     class="mx1 pb1 mt1">
+                  <q-expansion-item default-opened class="wfull">
+                    <template v-slot:header>
+                      <div class="wfull flex items-center gap-2">
+                        <p class="text-sm fontbold">
+                          {{ related.proposals.length }} {{ proposalWord }}
+                        </p>
+                      </div>
+                    </template>
+                    <div class="wfull flex column gap-2 pl2">
+                      <div v-for="proposal in related.proposals" :key="proposal.uid"
+                           class="wfull fmt_border_top fmt_border_left mb1"
+                           style="border-left-color: var(--md-sys-color-primary);
+                        border-left-width: 6px">
+                        <div class="flex gap-1 items-center wfull no-wrap">
+                          <template v-if="canWrite">
+                            <q-checkbox :model-value="proposal.done"
+                                        class="ml1"
+                                        @update:model-value="handleFinishTask(proposal.uid)"/>
+                          </template>
+                          <template v-else>
+                            <div class="w-2"></div>
+                          </template>
+                          <div class="flex-grow">
+                            <div class="flex gap-2 items-center wfull pt1 px1">
+                              <q-icon name="person"/>
+                              <p class="text-xs font-600">
+                                {{ proposal.name }}
+                              </p>
+                              <q-icon name="schedule"/>
+                              <p class="text-xs font-600">
+                                {{ getHumanReadableDateText(proposal.ts) }}
+                              </p>
+                              <template v-if="proposal.done">
+                                <q-icon name="check" class="font-900"/>
+                                <p class="text-xs font-600">
+                                  {{ getHumanReadableDateText(proposal.tsd) }}
+                                </p>
+                              </template>
+                              <q-btn-group class="mlauto pr1 gap-2"
+                                           flat unelevated square>
+                                <q-btn icon="sym_o_delete" label="Delete"
+                                       size="0.7rem"
+                                       class="font-600"
+                                       dense flat unelevated no-caps
+                                       @click="handleDeleteWisdom(proposal.uid)"/>
+                                <q-btn icon="north_east" label="View"
+                                       size="0.7rem"
+                                       class="font-600"
+                                       dense flat unelevated no-caps
+                                       @click="gotoTask(proposal.uid)"/>
+                                <template v-if="canWrite && !proposal.done">
+                                  <q-btn icon="sym_o_check"
+                                         label="Accept Proposal"
+                                         color="positive"
+                                         size="0.7rem"
+                                         class="font-700 pr2"
+                                         no-caps dense unelevated
+                                         @click="handleFinishTask(proposal.uid)"/>
+                                </template>
+                              </q-btn-group>
+                            </div>
+                            <template v-if="proposal.done === true">
+                              <div class="wfit pb1 my1 pt1 pb1 px2
+                                          surface-variant
+                                          rounded w-fit fmt_border"
+                                   style="border-left: 8px solid green">
+                                <p class="fontbold text-xs">
+                                  This proposal has been accepted!
+                                </p>
+                              </div>
+                            </template>
+                            <div class="flex gap-2 items-center wfull">
+                              <q-btn class="text-sm fontbold cursor-text wfit"
+                                     align="left"
+                                     unelevated flat dense no-caps>
+                                <p class="text-start wfit">
+                                  {{ proposal.t }}
+                                </p>
+                                <q-popup-edit v-model="proposal.t" buttons v-slot="scope"
+                                              @show="editingTask = proposal"
+                                              @save="handleTaskEdit"
+                                              color="brand-p"
+                                              class="z-top">
+                                  <q-input v-model="scope.value"
+                                           class="wfull min-w-[50dvw] <md:w-screen"
+                                           dense autofocus counter
+                                           @focus="(input) => input.target.select()"
+                                           @keyup.enter="scope.set"/>
+                                </q-popup-edit>
+                              </q-btn>
+                              <q-btn v-if="!proposal.desc || proposal.desc === ''"
+                                     class="text-sm fontbold cursor-pointer wfit"
+                                     align="left"
+                                     unelevated flat dense no-caps>
+                                +
+                                <q-icon name="sym_o_description" size="1.2rem"/>
+                                <q-popup-edit v-model="proposal.desc" buttons v-slot="scope"
+                                              @show="editingTask = proposal"
+                                              @save="handleTaskEditDesc"
+                                              color="brand-p"
+                                              class="z-top wfull">
+                                  <editor v-model="scope.value"/>
+                                </q-popup-edit>
+                              </q-btn>
+                            </div>
+                            <q-expansion-item v-if="proposal.desc && proposal.desc !== ''"
+                                              dense dense-toggle header-class="mx0 px1"
+                                              class="wfull">
+                              <template v-slot:header>
+                                <div class="flex items-center
+                                    justify-between gap-2 pr2">
+                                  <q-icon name="sym_o_description" size="1.2rem"/>
+                                </div>
+                              </template>
+                              <q-btn class="text-sm font-500 cursor-text wfit"
+                                     align="left"
+                                     unelevated flat dense no-caps>
+                                <div v-html="proposal.desc"
+                                     class="markedView text-start wfull"
+                                     style="word-break: break-word !important;"></div>
+                                <q-popup-edit v-model="proposal.desc" buttons v-slot="scope"
+                                              @show="editingTask = proposal"
+                                              @save="handleTaskEditDesc"
+                                              color="brand-p"
+                                              class="z-top wfull">
+                                  <editor v-model="scope.value"/>
+                                </q-popup-edit>
+                              </q-btn>
+                            </q-expansion-item>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </q-expansion-item>
+                </div>
                 <div v-if="related && related.tasks && related.tasks.length > 0"
                      class="mx1 pb1 mt2">
                   <q-expansion-item default-opened class="wfull">
                     <template v-slot:header>
                       <div class="wfull flex items-center gap-2">
                         <p class="text-sm fontbold">
-                          {{ taskProgress }} / {{ related.tasks.length }} Tasks completed
+                          {{ taskProgress }} / {{ related.tasks.length }} {{ taskWord }} completed
                         </p>
                       </div>
                     </template>
@@ -757,6 +923,26 @@ export default {
         }
       }
       return done
+    },
+    canWrite () {
+      if (this.wisdom.usr === this.store.user.username) {
+        return true
+      }
+      return !!(this.wisdom.coll && this.wisdom.coll.includes(this.store.user.username))
+    },
+    proposalWord () {
+      if (this.related && this.related.proposals && this.related.proposals.length > 1) {
+        return 'Proposals'
+      } else {
+        return 'Proposal'
+      }
+    },
+    taskWord () {
+      if (this.related && this.related.tasks && this.related.tasks.length > 1) {
+        return 'Tasks'
+      } else {
+        return 'Task'
+      }
     }
   },
   data () {
@@ -1308,6 +1494,20 @@ export default {
               related.tasks[i].name = dName
             }
             related.tasks.sort(
+              (a, b) => new Date(b.ts).valueOf() - new Date(a.ts).valueOf())
+          }
+          if (related.proposals) {
+            let dName
+            for (let i = 0; i < related.proposals.length; i++) {
+              related.proposals[i].t = this.formatTitle(related.proposals[i].t)
+              related.proposals[i].ts = DateTime.fromISO(related.proposals[i].ts)
+              dName = await dbGetDisplayName(related.proposals[i].usr)
+              if (dName == null) {
+                dName = related.proposals[i].usr
+              }
+              related.proposals[i].name = dName
+            }
+            related.proposals.sort(
               (a, b) => new Date(b.ts).valueOf() - new Date(a.ts).valueOf())
           }
           this.related = { ...related }

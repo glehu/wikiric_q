@@ -34,8 +34,8 @@
                 <template v-else>
                   <q-icon name="add" size="2rem"/>
                 </template>
-                <div class="flex-grow">
-                  <p class="text-xs font-600 surface rounded-bl px2 py1 wfull">
+                <div class="flex-grow overflow-hidden">
+                  <p class="text-xs font-600 surface on-surface-text rounded-bl px2 py1 wfull">
                     {{ capitalizeFirstLetter(result.result.type) }}
                     from {{ result.name }}, {{ result.result._ts }}
                   </p>
