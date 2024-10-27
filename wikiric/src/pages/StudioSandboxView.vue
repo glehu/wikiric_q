@@ -10,7 +10,9 @@
         side="left"
         v-model="sidebarLeft"
         :width="300"
-        class="surface-variant hfit">
+        :breakpoint="768"
+        show-if-above
+        class="background hfit fmt_border_right">
         <q-scroll-area class="fit">
           <div ref="sidebar">
             <q-toolbar class="fmt_border_bottom md:hidden">
@@ -26,6 +28,37 @@
                    @click="clickedBack">
               <span class="ml4 text-body1">Back</span>
             </q-btn>
+            <q-btn icon="add" label="New Layout"
+                   align="left"
+                   class="wfull"
+                   no-caps flat
+                   @click="createSandbox"/>
+            <div class="p2 flex column gap-1">
+              <q-input label="Filter"
+                       v-model="sandboxFilter"
+                       dense
+                       color="brand-p"
+                       class="px2 mb1">
+                <template v-slot:prepend>
+                  <q-icon name="search"/>
+                </template>
+              </q-input>
+              <template v-for="layout in sandboxes"
+                        :key="layout">
+                <template v-if="layout.uid && sandboxValid(layout)">
+                  <q-item clickable dense
+                          @click="viewSandbox(layout)"
+                          class="flex items-center rounded
+                                 gap-2">
+                    <q-icon name="sym_o_open_in_new_down"
+                            size="1.2rem"/>
+                    <p class="text-subtitle2 font-600">
+                      {{ layout.t }}
+                    </p>
+                  </q-item>
+                </template>
+              </template>
+            </div>
           </div>
         </q-scroll-area>
       </q-drawer>
@@ -111,7 +144,7 @@
                                          background gap-2">
                             <q-icon name="sym_o_open_in_new_down"
                                     size="1.2rem"/>
-                            <p class="text-subtitle2 fontbold">
+                            <p class="text-subtitle2 font-600">
                               {{ layout.t }}
                             </p>
                           </q-item>
@@ -122,10 +155,9 @@
                 </q-btn>
                 <template v-if="currentSandbox">
                   <div class="fmt_border_left flex items-center">
-                    <q-btn icon="sym_o_expand_more"
-                           unelevated no-caps dense
+                    <q-btn unelevated no-caps dense
                            :label="currentSandbox.t"
-                           class="h-10 pl2 pr4"/>
+                           class="h-10 pl4 pr4"/>
                   </div>
                 </template>
               </template>
@@ -280,6 +312,7 @@
                           <template v-if="elem.type === 'text'">
                             <editor v-model="elem.desc" ref="ref_editor"
                                     :e-height="getDimension(elem.h, elem, 40) + 'px'"
+                                    :chat-id="groupID"
                                     @autosave="updateElement(elem)"/>
                           </template>
                           <template v-else-if="elem.type === 'knowledge'">
@@ -365,7 +398,7 @@ export default {
   },
   methods: {
     clickedBack: function () {
-      this.$router.back()
+      this.$router.push(`/chat?id=${this.groupID}`)
     },
     initFunction: async function () {
       await this.getChatroom()

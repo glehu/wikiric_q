@@ -1,8 +1,8 @@
 <template>
   <q-dialog v-model="show" class="z-top"
             @before-hide="$emit('close')">
-    <q-card class="surface px4 pt2 pb4" flat bordered>
-      <p class="text-sm fontbold">
+    <q-card class="surface px4 pb4" flat bordered>
+      <p class="text-sm fontbold pt2">
         Link Wizard
       </p>
       <q-input
@@ -12,7 +12,7 @@
         label-color="brand-p"
         v-model="query"
         @update:model-value="getWisdomEntries"
-        class="text-lg pb2 mb2">
+        class="text-lg pb2 mb2 sticky top-0 surface z-top">
         <template v-slot:prepend>
           <q-icon name="search"/>
         </template>
@@ -35,7 +35,8 @@
                   <q-icon name="add" size="2rem"/>
                 </template>
                 <div class="flex-grow overflow-hidden">
-                  <p class="text-xs font-600 surface on-surface-text rounded-bl px2 py1 wfull">
+                  <p class="text-xs font-600 surface rounded-bl px2 py1 wfull"
+                     style="color: var(--md-sys-color-on-surface) !important;">
                     {{ capitalizeFirstLetter(result.result.type) }}
                     from {{ result.name }}, {{ result.result._ts }}
                   </p>

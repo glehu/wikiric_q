@@ -261,7 +261,7 @@
                   <template v-if="canWrite">
                     <q-checkbox :model-value="proposal.done"
                                 class="ml1"
-                                @update:model-value="handleFinishWisdom(proposal.uid)"/>
+                                @update:model-value="handleFinishWisdom(proposal.uid, true)"/>
                   </template>
                   <template v-else>
                     <div class="w-2"></div>
@@ -301,7 +301,7 @@
                                  size="0.7rem"
                                  class="font-700 pr2"
                                  no-caps dense unelevated
-                                 @click="handleFinishWisdom(proposal.uid)"/>
+                                 @click="handleFinishWisdom(proposal.uid, true)"/>
                         </template>
                       </q-btn-group>
                     </div>
@@ -394,7 +394,7 @@
                 <div class="flex gap-1 items-center wfull no-wrap">
                   <q-checkbox :model-value="task.done"
                               class="ml1"
-                              @update:model-value="handleFinishWisdom(task.uid)"/>
+                              @update:model-value="handleFinishWisdom(task.uid, false)"/>
                   <div class="flex-grow">
                     <div class="flex gap-2 items-center wfull pt1 px1">
                       <q-icon name="person"/>
@@ -671,6 +671,7 @@ export default {
       if (!this.gotRelated || !this.related) {
         this.getRelated()
       }
+      this.autoFocus()
     }
   },
   computed: {
@@ -737,15 +738,8 @@ export default {
   methods: {
     handleDialogOpen: function () {
       this.gotRelated = false
-      if (this.date.t === '') {
-        setTimeout(() => {
-          const elem = this.$refs.event_t
-          if (elem) {
-            elem.focus()
-          }
-        }, 0)
-      }
       this.getMainMembers()
+      this.autoFocus()
     },
     jsDateToQDate: function (date) {
       let lux
@@ -1183,11 +1177,22 @@ export default {
         })
       })
     },
-    handleFinishWisdom: function (uid) {
+    /**
+     *
+     * @param uid
+     * @param [isAccept=false]
+     */
+    handleFinishWisdom: function (uid, isAccept = false) {
       if (uid == null || uid === '') return
+      let endpoint
+      if (isAccept) {
+        endpoint = 'accept'
+      } else {
+        endpoint = 'finish'
+      }
       return new Promise((resolve) => {
         api({
-          url: 'wisdom/private/finish/' + uid
+          url: `wisdom/private/${endpoint}/${uid}`
         }).then(() => {
           this.$q.notify({
             color: 'primary',
@@ -1379,6 +1384,16 @@ export default {
         return
       }
       this.scrollToElement(elem)
+    },
+    autoFocus: function () {
+      setTimeout(() => {
+        if (this.date.t === '') {
+          const elem = this.$refs.event_t
+          if (elem) {
+            elem.focus()
+          }
+        }
+      }, 500)
     }
   }
 }

@@ -32,6 +32,7 @@ import { FileHandler } from '@tiptap-pro/extension-file-handler'
 import UniqueID from '@tiptap-pro/extension-unique-id'
 import Placeholder from '@tiptap/extension-placeholder'
 import { Link } from '@tiptap/extension-link'
+import { debounce } from 'quasar'
 
 const lowlight = createLowlight(common)
 
@@ -94,12 +95,16 @@ export default {
   watch: {
     modelValue (value) {
       // HTML
+      this.checkLinks()
       const isSame = this.editor.getHTML() === value
       if (isSame) {
         return
       }
       this.editor.commands.setContent(value, false)
     }
+  },
+  created () {
+    this.checkLinks = debounce(this.checkLinks, 200)
   },
   mounted () {
     this.handleMounted()
@@ -226,7 +231,12 @@ export default {
             placeholder: this.placeholder
           }),
           Link.configure({
-            protocols: ['https']
+            protocols: ['https'],
+            openOnClick: false,
+            HTMLAttributes: {
+              rel: null,
+              target: null
+            }
           }),
           shiftEnterExtension
         ],
@@ -242,6 +252,9 @@ export default {
       this.bc.onmessage = event => {
         this.handleEditorInternal(event.data)
       }
+      setTimeout(() => {
+        this.checkLinks()
+      }, 100)
     },
     handleEditorInternal: function (e) {
       if (e.app !== 'editor') return
@@ -280,6 +293,34 @@ export default {
         this.$emit('autosave')
         console.debug('AUTOSAVE')
       }, 2_000)
+    },
+    checkLinks: function () {
+      const matches = document.querySelectorAll('a')
+      if (matches && matches.length > 0) {
+        matches.forEach(el => {
+          if (el.href.startsWith('https://wikiric.xyz/')) {
+            el.classList.add('internalLink')
+            el.addEventListener('click', this.interceptLink, false)
+          } else {
+            el.addEventListener('click', this.interceptRegularLink, false)
+          }
+        })
+      }
+    },
+    interceptLink: function (e) {
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      e.stopPropagation()
+      console.log(this.$router.currentRoute.value.fullPath)
+      const url = `/redir?redirect=${e.target.href.substring(21)}` +
+        `&backrefurl=${this.$router.currentRoute.value.fullPath}`
+      this.$router.push(url)
+    },
+    interceptRegularLink: function (e) {
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      e.stopPropagation()
+      window.open(e.target.href, '_blank')
     }
   }
 }

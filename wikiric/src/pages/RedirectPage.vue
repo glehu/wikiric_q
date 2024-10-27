@@ -13,8 +13,11 @@ export default {
         if (backref) {
           url += `&backref=${backref}`
         }
-        const backrefurl = this.$route.query.backrefurl
+        let backrefurl = this.$route.query.backrefurl
         if (backrefurl) {
+          if (Array.isArray(backrefurl)) {
+            backrefurl = backrefurl.join('&backrefurl=')
+          }
           url += `&backrefurl=${backrefurl}`
         }
         const course = this.$route.query.course

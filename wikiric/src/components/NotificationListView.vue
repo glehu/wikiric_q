@@ -36,18 +36,26 @@
                 <div class="wfull flex justify-end mt2 gap-2">
                   <template v-if="notification.type === 'frequest'">
                     <q-btn label="Reject" icon-right="sym_o_delete"
-                           unelevated dense
+                           unelevated dense no-caps
                            class="pl2"
                            @click="deleteNotification(notification.uid)"/>
                     <q-btn label="Accept" icon-right="check"
                            color="primary"
-                           unelevated dense
+                           unelevated dense no-caps
                            class="pl2"
                            @click="acceptFriendship(notification)"/>
                   </template>
                   <template v-else>
+                    <template v-if="notification.act === 'open' && !notification.t.includes('Deleted')">
+                      <template v-if="notification.mod === 'wisdom'">
+                        <q-btn label="View Wisdom" icon-right="north_east"
+                               unelevated dense no-caps
+                               class="pl2"
+                               @click="gotoWisdom(notification.id)"/>
+                      </template>
+                    </template>
                     <q-btn label="Mark as Read" icon-right="check"
-                           unelevated dense
+                           unelevated dense no-caps
                            class="pl2"
                            @click="deleteNotification(notification.uid)"/>
                   </template>
@@ -199,6 +207,9 @@ export default {
           this.$router.push(`/chat?id=${id}&pw=${pw}&ref=${rf}`)
         }
       }
+    },
+    gotoWisdom: function (uid) {
+      this.$router.push(`/wisdom?id=${uid}`)
     }
   }
 }

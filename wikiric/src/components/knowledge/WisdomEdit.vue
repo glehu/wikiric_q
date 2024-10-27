@@ -268,6 +268,9 @@ export default {
       }
       this.show = true
       this.handleDialogOpen()
+      setTimeout(() => {
+        this.checkLinks()
+      }, 1000)
     },
     wisdomProp () {
       this.wisdom = structuredClone(toRaw(this.wisdomProp))
@@ -666,6 +669,34 @@ export default {
         this.members = new Map()
         this.contributorOptions = []
       })
+    },
+    checkLinks: function () {
+      const matches = document.querySelectorAll('a')
+      if (matches && matches.length > 0) {
+        matches.forEach(el => {
+          if (el.href.startsWith('https://wikiric.xyz/')) {
+            el.classList.add('internalLink')
+            el.addEventListener('click', this.interceptLink, false)
+          } else {
+            el.addEventListener('click', this.interceptRegularLink, false)
+          }
+        })
+      }
+    },
+    interceptLink: function (e) {
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      e.stopPropagation()
+      console.log(this.$router.currentRoute.value.fullPath)
+      const url = `/redir?redirect=${e.target.href.substring(21)}` +
+        `&backrefurl=${this.$router.currentRoute.value.fullPath}`
+      this.$router.push(url)
+    },
+    interceptRegularLink: function (e) {
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      e.stopPropagation()
+      window.open(e.target.href, '_blank')
     }
   }
 }

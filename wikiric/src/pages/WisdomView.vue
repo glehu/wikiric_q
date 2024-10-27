@@ -1102,6 +1102,9 @@ export default {
     clickedBack: function () {
       let backrefUrl = this.$route.query.backrefurl
       if (backrefUrl) {
+        if (Array.isArray(backrefUrl)) {
+          backrefUrl = backrefUrl.join('&backrefurl=')
+        }
         if (!backrefUrl.startsWith('/')) {
           backrefUrl = '/' + backrefUrl
         }

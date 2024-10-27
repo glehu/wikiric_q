@@ -1108,6 +1108,10 @@ export default {
         this.processGetMessagesResult(response.data, lazyLoad)
       }).catch((e) => {
         console.debug(e.message)
+      }).finally(() => {
+        setTimeout(() => {
+          this.checkLinks()
+        }, 1_000)
       })
     },
     /**
@@ -3278,6 +3282,34 @@ export default {
       // User allowed activity, didn't hide it nor
       // ...disabled it for a channel... so we confirm
       return false
+    },
+    checkLinks: function () {
+      const matches = document.querySelectorAll('a')
+      if (matches && matches.length > 0) {
+        matches.forEach(el => {
+          if (el.href.startsWith('https://wikiric.xyz/')) {
+            el.classList.add('internalLink')
+            el.addEventListener('click', this.interceptLink, false)
+          } else {
+            el.addEventListener('click', this.interceptRegularLink, false)
+          }
+        })
+      }
+    },
+    interceptLink: function (e) {
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      e.stopPropagation()
+      console.log(this.$router.currentRoute.value.fullPath)
+      const url = `/redir?redirect=${e.target.href.substring(21)}` +
+        `&backrefurl=${this.$router.currentRoute.value.fullPath}`
+      this.$router.push(url)
+    },
+    interceptRegularLink: function (e) {
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      e.stopPropagation()
+      window.open(e.target.href, '_blank')
     }
   }
 }
