@@ -46,16 +46,21 @@
               <template v-for="layout in sandboxes"
                         :key="layout">
                 <template v-if="layout.uid && sandboxValid(layout)">
-                  <q-item clickable dense
-                          @click="viewSandbox(layout)"
-                          class="flex items-center rounded
-                                 gap-2">
-                    <q-icon name="sym_o_open_in_new_down"
-                            size="1.2rem"/>
-                    <p class="text-subtitle2 font-600">
-                      {{ layout.t }}
-                    </p>
-                  </q-item>
+                  <div class="flex items-center justify-between hover_field">
+                    <q-item clickable dense
+                            @click="viewSandbox(layout)"
+                            class="flex items-center rounded
+                                   gap-2 flex-grow">
+                      <q-icon name="sym_o_open_in_new_down"
+                              size="1.2rem"/>
+                      <p class="text-subtitle2 font-600">
+                        {{ layout.t }}
+                      </p>
+                    </q-item>
+                    <q-btn icon="delete" unelevated flat dense
+                           class="hover_show_o"
+                           @click="deleteSandbox(layout.uid)"/>
+                  </div>
                 </template>
               </template>
             </div>
@@ -257,12 +262,13 @@
             </template>
             <template v-else>
               <div ref="content"
-                   class="w-[4000px] h-[4000px] absolute surface-variant">
+                   class="w-[4000px] h-[4000px] absolute surface-variant z0">
                 <template v-if="elements.size > 0">
                   <template v-for="[key, elem] in elements" :key="elem.uuid">
                     <div :id="key + '_div'"
                          class="absolute hover_field"
-                         :style="{top: elem.y + 'px', left: elem.x + 'px'}">
+                         :style="{top: elem.y + 'px', left: elem.x + 'px',
+                                  zIndex: elem.z}">
                       <div class="w-full items-center justify-end absolute
                           hover_show_o flex gap-2 z-50 bottom-1 right-3">
                         <q-btn v-show="!elem.hide"
@@ -573,6 +579,7 @@ export default {
       const cellWidth = this.width / gridSize
       const cellHeight = this.height / gridSize
       const updateFun = this.updateCurrentElement
+      const getZIndex = this.getZIndex
       let scrollX
       let scrollY
       let elem
@@ -598,6 +605,7 @@ export default {
         document.onmousemove = elementDrag
         _obj = _this.get(obj.uuid)
         _obj._drag = true
+        _obj.z = getZIndex()
         _vue.currentElemID = obj.uuid
       }
 
@@ -609,6 +617,9 @@ export default {
         pos2 = (pos4 - e.clientY)
         pos3 = e.clientX
         pos4 = e.clientY
+        if (_vue.sidebarLeft && resize) {
+          pos3 -= 290
+        }
         // Set objects positional values
         if (!resize) {
           _obj.y = (element.offsetTop - pos2)
@@ -661,6 +672,22 @@ export default {
         .finally(() => resolve())
       })
     },
+    deleteSandbox: function (uid) {
+      if (!uid || uid === '') {
+        return
+      }
+      return new Promise((resolve) => {
+        api({
+          method: 'get',
+          url: `sandbox/private/delete/${uid}`
+        })
+        .catch((err) => console.debug(err.message))
+        .finally(() => {
+          this.getSandboxes()
+          resolve()
+        })
+      })
+    },
     updateElement: function (elem) {
       return new Promise((resolve) => {
         api({
@@ -676,6 +703,7 @@ export default {
       })
     },
     addElement: function (type) {
+      const zIndex = this.getZIndex()
       const container = this.$refs.content_container
       const newElem = {
         uid: '',
@@ -687,6 +715,7 @@ export default {
         y: 0,
         w: 0,
         h: 0,
+        z: zIndex,
         ref: '',
         hide: false,
         _edit: false,
@@ -736,6 +765,9 @@ export default {
       const htmlElem = document.getElementById(elem.uuid + '_transition')
       htmlElem.classList.add('transition-all')
       _elem.hide = !_elem.hide
+      if (!_elem.hide) {
+        _elem.z = this.getZIndex()
+      }
       this.elements.set(elem.uuid, _elem)
       this.updateElement(_elem)
       setTimeout(() => {
@@ -757,6 +789,19 @@ export default {
         return true
       }
       return elem.t.toLowerCase().includes(this.sandboxFilter.toLowerCase())
+    },
+    getZIndex: function () {
+      if (!this.elements || this.elements.length === 0) {
+        return 0
+      }
+      let zIndex = 0
+      for (const element of this.elements.values()) {
+        if (element.z > zIndex) {
+          zIndex = element.z
+        }
+      }
+      zIndex += 1
+      return zIndex
     }
   }
 }

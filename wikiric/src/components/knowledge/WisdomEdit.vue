@@ -687,8 +687,7 @@ export default {
       e.preventDefault()
       e.stopImmediatePropagation()
       e.stopPropagation()
-      console.log(this.$router.currentRoute.value.fullPath)
-      const url = `/redir?redirect=${e.target.href.substring(21)}` +
+      const url = `/redir?redirect=${e.currentTarget.href.substring(21)}` +
         `&backrefurl=${this.$router.currentRoute.value.fullPath}`
       this.$router.push(url)
     },
