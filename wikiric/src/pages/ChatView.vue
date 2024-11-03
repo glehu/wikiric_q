@@ -723,6 +723,13 @@
                 </template>
               </div>
               <div class="wfull max-w-3xl_custom relative">
+                <div v-if="viewNewMessages"
+                     class="wfull hfit flex items-center justify-center my1">
+                  <q-btn icon="south" label="Go to newest messages"
+                         @click="scrollToBottom"
+                         class="flex-grow font-600 rounded-lg" size="0.8rem"
+                         no-caps flat unelevated dense/>
+                </div>
                 <editor ref="ref_editor"
                         v-model="newMessage"
                         e-max-height="75dvh"
@@ -882,7 +889,8 @@ export default {
       isShowingVideoChatMessages: false,
       msgCache: '',
       chrCache: [],
-      internal: new BroadcastChannel('wikiric_internal')
+      internal: new BroadcastChannel('wikiric_internal'),
+      viewNewMessages: false
     }
   },
   mounted () {
@@ -2106,6 +2114,7 @@ export default {
       if (!y) {
         return
       }
+      this.viewNewMessages = y < -60
       // Calculate distance to top
       const scrollHeight = this.$refs.ref_messages.scrollHeight
       const clientHeight = this.$refs.ref_messages.clientHeight
@@ -2132,6 +2141,10 @@ export default {
       if (y < 200) {
         this.$refs.ref_messages.scrollTop = 0
       }
+    },
+    scrollToBottom: function () {
+      this.$refs.ref_messages.scrollTop = 0
+      this.viewNewMessages = false
     },
     /**
      *

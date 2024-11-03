@@ -222,7 +222,7 @@
           </q-page-sticky>
           <div class="pb4 flex items-center column wfull">
             <template v-if="viewingStore">
-              <div class="wfull dshadow rounded p4 flex justify-center">
+              <div class="wfull rounded p4 flex justify-center">
                 <div class="max-w-screen-lg wfull flex gap-8 <lg:gap-6
                             justify-center">
                   <div class="relative wfull
