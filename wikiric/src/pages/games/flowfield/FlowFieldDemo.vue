@@ -3097,7 +3097,7 @@ export default {
                     enemy.pos.x,
                     enemy.pos.y,
                     'text',
-                    `${projectile.dmg}`,
+                    `${projectile.dmg.toFixed(0)}`,
                     60, 0)
                   this.onHitEffects.push(tmp2)
                 }
@@ -3202,7 +3202,7 @@ export default {
                   enemy.pos.x,
                   enemy.pos.y,
                   'text',
-                  `${projectile.dmg}`,
+                  `${projectile.dmg.toFixed(0)}`,
                   60,
                   0)
                 this.onHitEffects.push(tmp2)
