@@ -674,11 +674,13 @@ export default {
       const matches = document.querySelectorAll('a')
       if (matches && matches.length > 0) {
         matches.forEach(el => {
-          if (el.href.startsWith('https://wikiric.xyz/')) {
-            el.classList.add('internalLink')
-            el.addEventListener('click', this.interceptLink, false)
-          } else {
-            el.addEventListener('click', this.interceptRegularLink, false)
+          if (el.href && el.href !== '') {
+            if (el.href.startsWith('https://wikiric.xyz/')) {
+              el.classList.add('internalLink')
+              el.addEventListener('click', this.interceptLink, false)
+            } else {
+              el.addEventListener('click', this.interceptRegularLink, false)
+            }
           }
         })
       }
