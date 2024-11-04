@@ -32,7 +32,7 @@
                  align="left" class="wfull pl4 mt2"
                  no-caps
                  @click="$router.push('/groups')">
-            <span class="ml4 text-body1">Groups</span>
+            <span class="ml4 text-sm font-700">Groups</span>
           </q-btn>
         </div>
         <div class="fit relative z1 scroll-auto scroll"
@@ -46,13 +46,13 @@
                  align="left" class="wfull pl4"
                  no-caps
                  @click="showGroupSettings">
-            <span class="ml4 text-body1">Settings</span>
+            <span class="ml4 text-sm font-700">Settings</span>
           </q-btn>
           <q-btn icon="sym_o_folder" flat no-caps
                  align="left"
                  class="wfull"
                  @click="showFiles">
-            <span class="ml4 text-body1">Files</span>
+            <span class="ml4 text-sm font-700">Files</span>
           </q-btn>
           <q-toolbar>
             <q-toolbar-title class="text-lg">
@@ -63,31 +63,31 @@
                  align="left"
                  class="wfull"
                  @click="gotoKnowledge">
-            <span class="ml4 text-body1">Knowledge</span>
+            <span class="ml4 text-sm font-700">Knowledge</span>
           </q-btn>
           <q-btn icon="sym_o_calendar_clock" flat no-caps
                  align="left"
                  class="wfull"
                  @click="gotoProjectManagement">
-            <span class="ml4 text-body1">Calendar</span>
+            <span class="ml4 text-sm font-700">Calendar</span>
           </q-btn>
           <q-btn icon="sym_o_view_week" flat no-caps
                  align="left"
                  class="wfull"
                  @click="gotoPlanner">
-            <span class="ml4 text-body1">Planner</span>
+            <span class="ml4 text-sm font-700">Planner</span>
           </q-btn>
           <q-btn icon="sym_o_dashboard_customize" flat no-caps
                  align="left"
                  class="wfull"
                  @click="gotoStudio">
-            <span class="ml4 text-body1">Studio</span>
+            <span class="ml4 text-sm font-700">Studio</span>
           </q-btn>
           <q-btn icon="sym_o_web_stories" flat no-caps
                  align="left"
                  class="wfull"
                  @click="gotoFeed">
-            <span class="ml4 text-body1">Feed</span>
+            <span class="ml4 text-sm font-700">Feed</span>
           </q-btn>
           <q-toolbar>
             <q-toolbar-title class="text-lg">
@@ -119,18 +119,26 @@
                     <template v-else-if="chat.type === 'video'">
                       <q-icon name="videocam" size="1.5rem"/>
                     </template>
-                    <span class="ml4 text-body1"
+                    <span class="ml4 text-sm font-700"
                           :class="{'fontbold': chat.uid === channel.id}">
                       {{ chat.t }}
                     </span>
                   </div>
                 </q-item-label>
+                <div v-if="msgCount > 0 && chat.uid === channel.id"
+                     class="wfull flex items-center gap-2
+                            pl1 pr4">
+                  <q-icon name="sym_o_mail"/>
+                  <p class="text-sm font-600">
+                    {{ msgCount }}
+                  </p>
+                </div>
                 <template v-if="chat._camsters && chat._camsters.length > 0">
                   <div class="px2 pt2 ml3 mb2 fmt_border_left pointer-events-none">
                     <div v-for="p in chat._camsters" :key="p"
                          class="flex gap-1 items-center surface p-0.5 rounded mb1">
                       <q-icon name="person" size="1rem"/>
-                      <p class="text-xs font-600">
+                      <p class="text-sm font-700">
                         {{ p }}
                       </p>
                     </div>
@@ -895,7 +903,8 @@ export default {
       chrCache: [],
       internal: new BroadcastChannel('wikiric_internal'),
       viewNewMessages: false,
-      gotNewMessage: false
+      gotNewMessage: false,
+      msgCount: 0
     }
   },
   mounted () {
@@ -1586,6 +1595,10 @@ export default {
         // We already have a private key
         if (!force) return
       }
+      // Is this chatroom even encrypted?
+      if (!this.chatroom.crypt) {
+        return
+      }
       // Generate key pair
       const keyPair = await window.crypto.subtle.generateKey(
         {
@@ -1728,6 +1741,7 @@ export default {
             }
             // Remove active state on member
             this.clearActivity(msg.usr, false, true)
+            this.msgCount += 1
             return
           }
         }
@@ -1758,6 +1772,7 @@ export default {
                   this.messages.splice(i, 1)
                 }
                 this.getLastMessageTime()
+                this.msgCount -= 1
               }
               done = true
               break
@@ -1836,6 +1851,7 @@ export default {
           msg._msgs = [msg]
           this.messages.unshift(msg)
         }
+        this.msgCount += 1
       }
       // Remove active state on member
       this.clearActivity(msg.usr, false, true)
@@ -2015,6 +2031,7 @@ export default {
       await this.sdk.doConnect(this.channel.id, sesh.priv, this.chatPW, this.chatReference)
       // Retrieve messages and prepare input field
       await this.getMessages()
+      this.getMessageCount()
       // if (this.$refs.ref_editor) {
       //   this.$refs.ref_editor.focus()
       // }
@@ -2110,6 +2127,7 @@ export default {
       this.activeMembers.clear()
       this.idleMembers.clear()
       this.hangup()
+      this.msgCount = 0
     },
     /**
      *
@@ -3335,6 +3353,20 @@ export default {
       e.stopImmediatePropagation()
       e.stopPropagation()
       window.open(e.target.href, '_blank')
+    },
+    getMessageCount: function () {
+      api({
+        url: 'msg/private/chat/get/' + this.channel.id + '?qcount=true'
+      }).then((response) => {
+        if (!response.data.count) {
+          this.msgCount = 0
+          return
+        }
+        this.msgCount = response.data.count
+      }).catch((e) => {
+        console.debug(e.message)
+      }).finally(() => {
+      })
     }
   }
 }

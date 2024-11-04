@@ -25,7 +25,7 @@
             </p>
           </div>
           <template v-for="result in results" :key="result">
-            <div class="mt2 pl2 rounded-2 background wfull hoverPrimary"
+            <div class="mt4 pl2 rounded-2 background wfull hoverPrimary"
                  @click="linkWisdom(result.result.uid)">
               <div class="flex items-center gap-2 wfull no-wrap">
                 <template v-if="result.result._isCourseParent">
@@ -35,7 +35,7 @@
                   <q-icon name="add" size="2rem"/>
                 </template>
                 <div class="flex-grow overflow-hidden">
-                  <p class="text-xs font-600 surface rounded-bl px2 py1 wfull"
+                  <p class="text-xs font-600 surface rounded-bl p2 wfull"
                      style="color: var(--md-sys-color-on-surface) !important;">
                     {{ capitalizeFirstLetter(result.result.type) }}
                     from {{ result.name }}, {{ result.result._ts }}
@@ -58,13 +58,13 @@
         </div>
       </template>
       <template v-else>
-        <div>
+        <template v-if="noResults">
           <div class="mt6 mb2">
             <p class="text-body1 fontbold non-selectable">
               No Courses found.
             </p>
           </div>
-        </div>
+        </template>
       </template>
     </q-card>
   </q-dialog>
