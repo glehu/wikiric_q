@@ -8,9 +8,7 @@
       <q-drawer
         side="left"
         v-model="sidebarLeft"
-        :show-if-above="!isComponent"
         :width="300"
-        :breakpoint="768"
         class="surface-variant hfit">
         <q-scroll-area class="fit">
           <q-toolbar class="fmt_border_bottom md:hidden">
@@ -28,6 +26,12 @@
               <span class="ml4 text-body1">Back</span>
             </q-btn>
           </template>
+          <q-btn flat icon="sym_o_settings"
+                 align="left" class="wfull pl4"
+                 no-caps
+                 @click="isViewingSettings = !isViewingSettings">
+            <span class="ml4 text-body1">Settings</span>
+          </q-btn>
           <q-toolbar>
             <q-toolbar-title class="text-lg">
               Apps
@@ -48,7 +52,7 @@
         </q-scroll-area>
       </q-drawer>
       <q-page-container>
-        <q-page style="padding-top: 60px" class="background">
+        <q-page style="padding-top: 60px" class="">
           <q-page-sticky position="top" expand
                          class="background z-fab">
             <q-toolbar>
@@ -68,12 +72,18 @@
               </q-toolbar-title>
             </q-toolbar>
           </q-page-sticky>
+          <template v-if="knowledge && knowledge.pburl">
+            <div class="fixed top-0 left-0 h-screen w-screen pointer-events-none -z-1 brightness-70">
+              <q-img :src="getImg(knowledge.pburl, true)"
+                     fit="cover" width="100%" height="100%"/>
+            </div>
+          </template>
           <template v-if="!isComponent">
             <q-btn flat
                    icon="sym_o_arrow_left_alt"
                    label="Back"
-                   class="md:hidden fmt_border ml4 mb3 rounded-2
-                        surface-variant"
+                   class="fmt_border ml4 mb3 rounded-2
+                          surface-variant"
                    @click="clickedBack">
             </q-btn>
           </template>
@@ -83,6 +93,7 @@
             <div class="wmax flex row gap-3 overflow-y-hidden pb10">
               <template v-for="boxEntry in boxes" :key="boxEntry.box">
                 <div class="surface-variant hfit rounded-2
+                            fmt_border
                             max-h-[calc(100dvh-175px)]
                             min-w-[200px] max-w-[300px]
                             overflow-h-auto overflow-x-hidden">
@@ -168,9 +179,8 @@
                   </div>
                 </div>
               </template>
-              <q-card id="new_box" flat class="hfit">
-                <div class="flex relative items-center px2 min-w-[200px]
-                            surface-variant">
+              <q-card id="new_box" flat class="hfit fmt_border surface-variant">
+                <div class="flex relative items-center px2 min-w-[200px]">
                   <q-input label="New Box"
                            color="brand-p"
                            borderless
@@ -200,6 +210,9 @@
                     @update="updateEvent"
                     @finish="finishEvent"
                     @close="isCreatingEvent = false"/>
+  <planner-settings :is-open="isViewingSettings"
+                    :knowledge="knowledge"
+                    @refresh="getKnowledgeFromChat"/>
 </template>
 
 <script>
@@ -208,6 +221,8 @@ import { dbGetDisplayName } from 'src/libs/wikistore'
 import draggable from 'vuedraggable'
 import NewWisdomEvent from 'components/knowledge/NewWisdomEvent.vue'
 import { DateTime } from 'luxon'
+import PlannerSettings from 'components/knowledge/PlannerSettings.vue'
+import { useStore } from 'stores/wikistate'
 
 export default {
   props: {
@@ -222,11 +237,13 @@ export default {
   },
   name: 'PlannerView',
   components: {
+    PlannerSettings,
     NewWisdomEvent,
     draggable
   },
   data () {
     return {
+      store: useStore(),
       isComponent: false,
       sidebarLeft: false,
       groupID: null,
@@ -241,6 +258,7 @@ export default {
       isLoading: false,
       isCreatingEvent: false,
       isEditingEvent: false,
+      isViewingSettings: false,
       currentBoxID: null,
       newEvent: {
         t: '',
@@ -306,6 +324,9 @@ export default {
           resolve()
         })
       })
+    },
+    getKnowledgeFromChat: async function () {
+      await this.getKnowledge(this.groupID, true)
     },
     getKnowledge: async function (guid, fromChat = false) {
       if (!guid) return
@@ -750,6 +771,15 @@ export default {
     handleIncomingConnectorMessages: function (msg) {
       if (msg.typ === '[s:CHANGE>TASK]' && msg.act === 'reload') {
         this.getBoxes()
+      }
+    },
+    getImg: function (imgGUID, get = false) {
+      if (imgGUID == null || imgGUID === '') {
+        return ''
+      } else {
+        let ret = imgGUID
+        if (get) ret = this.store.serverIP + imgGUID
+        return ret
       }
     }
   },
