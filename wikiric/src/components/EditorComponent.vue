@@ -244,6 +244,9 @@ export default {
         onUpdate: () => {
           this.handleEmitAutoSave()
           this.$emit('update:modelValue', this.editor.getHTML())
+        },
+        onPaste: (ev, slice) => {
+          // Here will be the Markdown parser part :)
         }
       })
       if (!this.bc) {

@@ -63,7 +63,7 @@ module.exports = {
 
     'import/first': 'off',
     'import/named': 'error',
-    'import/namespace': 'error',
+    'import/namespace': 'off',
     'import/default': 'error',
     'import/export': 'error',
     'import/extensions': 'off',

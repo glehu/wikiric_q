@@ -43,7 +43,7 @@
               <q-btn color="primary"
                      icon="add"
                      :label="'Create ' + title" no-caps dense
-                     class="fontbold"
+                     class="fontbold pr2"
                      @click="createDate"/>
             </template>
             <q-btn color="brand-bg" text-color="brand-p"
@@ -225,22 +225,33 @@
                  text-color="brand-p"
                  class="px2"
                  @click="handleGoToComments"/>
-          <q-btn icon="sym_o_assignment_add"
-                 label="Add Proposal"
-                 align="left"
-                 color="brand-bg"
-                 text-color="brand-p"
-                 class="pr2"
-                 no-caps dense
-                 @click="handleAddProposal"/>
-          <q-btn icon="sym_o_add"
-                 label="Add Task"
-                 align="left"
-                 color="brand-bg"
-                 text-color="brand-p"
-                 class="pr2"
-                 no-caps dense
-                 @click="handleAddTask"/>
+          <template v-if="isEdit">
+            <q-btn icon="sym_o_assignment_add"
+                   label="Add Proposal"
+                   align="left"
+                   color="brand-bg"
+                   text-color="brand-p"
+                   class="pr2"
+                   no-caps dense
+                   @click="handleAddProposal"/>
+            <q-btn icon="sym_o_add"
+                   label="Add Task"
+                   align="left"
+                   color="brand-bg"
+                   text-color="brand-p"
+                   class="pr2"
+                   no-caps dense
+                   @click="handleAddTask"/>
+          </template>
+          <template v-else>
+            <div class="p2 fmt_border rounded-lg flex gap-2
+                        items-center pointer-events-none">
+              <q-icon name="sym_o_info"/>
+              <p class="text-sm">
+                Submit to be able to add tasks etc.
+              </p>
+            </div>
+          </template>
         </q-toolbar>
         <div v-if="related && related.proposals && related.proposals.length > 0"
              class="mx1 pb1 mt1">
@@ -581,7 +592,8 @@
             </tbody>
           </table>
         </div>
-        <div class="background rounded fmt_border pt2 px2 pb3">
+        <div v-if="isEdit"
+             class="background rounded fmt_border pt2 px2 pb3">
           <q-btn label="Add Task"
                  icon="sym_o_add"
                  align="left"
@@ -1037,6 +1049,11 @@ export default {
             for (let i = 0; i < related.tasks.length; i++) {
               related.tasks[i].t = this.formatTitle(related.tasks[i].t)
               related.tasks[i].ts = DateTime.fromISO(related.tasks[i].ts)
+              if (related.tasks[i].done) {
+                related.tasks[i]._sort = 0
+              } else {
+                related.tasks[i]._sort = 1
+              }
               dName = await dbGetDisplayName(related.tasks[i].usr)
               if (dName == null) {
                 dName = related.tasks[i].usr
@@ -1044,7 +1061,7 @@ export default {
               related.tasks[i].name = dName
             }
             related.tasks.sort(
-              (a, b) => new Date(b.ts).valueOf() - new Date(a.ts).valueOf())
+              (a, b) => b._sort - a._sort)
           }
           if (related.proposals) {
             let dName

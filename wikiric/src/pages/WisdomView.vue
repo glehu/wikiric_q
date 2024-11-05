@@ -1490,6 +1490,11 @@ export default {
             for (let i = 0; i < related.tasks.length; i++) {
               related.tasks[i].t = this.formatTitle(related.tasks[i].t)
               related.tasks[i].ts = DateTime.fromISO(related.tasks[i].ts)
+              if (related.tasks[i].done) {
+                related.tasks[i]._sort = 0
+              } else {
+                related.tasks[i]._sort = 1
+              }
               dName = await dbGetDisplayName(related.tasks[i].usr)
               if (dName == null) {
                 dName = related.tasks[i].usr
@@ -1497,7 +1502,7 @@ export default {
               related.tasks[i].name = dName
             }
             related.tasks.sort(
-              (a, b) => new Date(b.ts).valueOf() - new Date(a.ts).valueOf())
+              (a, b) => b._sort - a._sort)
           }
           if (related.proposals) {
             let dName

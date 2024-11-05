@@ -32,7 +32,7 @@
                  align="left" class="wfull pl4 mt2"
                  no-caps
                  @click="$router.push('/groups')">
-            <span class="ml4 text-sm font-700">Groups</span>
+            <span class="ml4 text-body1">Groups</span>
           </q-btn>
         </div>
         <div class="fit relative z1 scroll-auto scroll"
@@ -46,13 +46,13 @@
                  align="left" class="wfull pl4"
                  no-caps
                  @click="showGroupSettings">
-            <span class="ml4 text-sm font-700">Settings</span>
+            <span class="ml4 text-body1">Settings</span>
           </q-btn>
           <q-btn icon="sym_o_folder" flat no-caps
                  align="left"
                  class="wfull"
                  @click="showFiles">
-            <span class="ml4 text-sm font-700">Files</span>
+            <span class="ml4 text-body1">Files</span>
           </q-btn>
           <q-toolbar>
             <q-toolbar-title class="text-lg">
@@ -63,31 +63,31 @@
                  align="left"
                  class="wfull"
                  @click="gotoKnowledge">
-            <span class="ml4 text-sm font-700">Knowledge</span>
+            <span class="ml4 text-body1">Knowledge</span>
           </q-btn>
           <q-btn icon="sym_o_calendar_clock" flat no-caps
                  align="left"
                  class="wfull"
                  @click="gotoProjectManagement">
-            <span class="ml4 text-sm font-700">Calendar</span>
+            <span class="ml4 text-body1">Calendar</span>
           </q-btn>
           <q-btn icon="sym_o_view_week" flat no-caps
                  align="left"
                  class="wfull"
                  @click="gotoPlanner">
-            <span class="ml4 text-sm font-700">Planner</span>
+            <span class="ml4 text-body1">Planner</span>
           </q-btn>
           <q-btn icon="sym_o_dashboard_customize" flat no-caps
                  align="left"
                  class="wfull"
                  @click="gotoStudio">
-            <span class="ml4 text-sm font-700">Studio</span>
+            <span class="ml4 text-body1">Studio</span>
           </q-btn>
           <q-btn icon="sym_o_web_stories" flat no-caps
                  align="left"
                  class="wfull"
                  @click="gotoFeed">
-            <span class="ml4 text-sm font-700">Feed</span>
+            <span class="ml4 text-body1">Feed</span>
           </q-btn>
           <q-toolbar>
             <q-toolbar-title class="text-lg">
@@ -119,7 +119,7 @@
                     <template v-else-if="chat.type === 'video'">
                       <q-icon name="videocam" size="1.5rem"/>
                     </template>
-                    <span class="ml4 text-sm font-700"
+                    <span class="ml4 text-body1"
                           :class="{'fontbold': chat.uid === channel.id}">
                       {{ chat.t }}
                     </span>
@@ -672,35 +672,38 @@
                             background">
                 <q-btn icon="south" label="Go to newest messages"
                        @click="scrollToBottom"
-                       class="flex-grow font-600 rounded-lg" size="0.8rem"
+                       class="flex-grow font-600 rounded-lg max-w-3xl_custom"
+                       size="0.8rem"
                        no-caps flat unelevated dense/>
               </div>
-              <div class="flex row justify-start items-center background
+              <template v-if="gotNewMessage || activeMembers.size > 0 || idleMembers.size > 0">
+                <div class="flex row justify-start items-center background
                           wfull max-w-3xl_custom py1 gap-4 h-[2.2rem]">
-                <template v-if="gotNewMessage">
-                  <q-badge label="New Message!" class="font-600"/>
-                </template>
-                <div v-if="activeMembers.size > 0"
-                     class="flex row justify-start items-center h-[2rem] gap2">
-                  <q-spinner-dots color="primary" size="2rem" class=""/>
-                  <template v-for="(usr, ix) of activeMembers" :key="usr">
-                    <template v-if="ix > 0">
-                      <span>|</span>
-                    </template>
-                    <p class="text-subtitle2">{{ usr[0] }}</p>
+                  <template v-if="gotNewMessage">
+                    <q-badge label="New Message!" class="font-600"/>
                   </template>
-                </div>
-                <div v-if="idleMembers.size > 0"
-                     class="flex row justify-start items-center h-[2rem] gap2">
-                  <q-icon name="visibility" size="1rem" class=""/>
-                  <template v-for="(usr, ix) of idleMembers" :key="usr">
-                    <template v-if="ix > 0">
-                      <span>|</span>
+                  <div v-if="activeMembers.size > 0"
+                       class="flex row justify-start items-center h-[2rem] gap2">
+                    <q-spinner-dots color="primary" size="2rem" class=""/>
+                    <template v-for="(usr, ix) of activeMembers" :key="usr">
+                      <template v-if="ix > 0">
+                        <span>|</span>
+                      </template>
+                      <p class="text-subtitle2">{{ usr[0] }}</p>
                     </template>
-                    <p class="text-subtitle2">{{ usr[0] }}</p>
-                  </template>
+                  </div>
+                  <div v-if="idleMembers.size > 0"
+                       class="flex row justify-start items-center h-[2rem] gap2">
+                    <q-icon name="visibility" size="1rem" class=""/>
+                    <template v-for="(usr, ix) of idleMembers" :key="usr">
+                      <template v-if="ix > 0">
+                        <span>|</span>
+                      </template>
+                      <p class="text-subtitle2">{{ usr[0] }}</p>
+                    </template>
+                  </div>
                 </div>
-              </div>
+              </template>
               <div class="flex column items-center wfull max-w-3xl_custom">
                 <template v-if="replyingMessage">
                   <div class="flex wfull px4 py2 mt2
@@ -817,6 +820,7 @@ import FilesViewer from 'components/chat/FilesViewer.vue'
 import Editor from 'components/EditorComponent.vue'
 import WikiricUtils from 'src/libs/wikiric-utils'
 import GIFViewer from 'components/GIFViewer.vue'
+import { marked } from 'marked'
 
 export default {
   name: 'ChatView',
@@ -1346,6 +1350,10 @@ export default {
           message._enlarge = true
         }
       }
+      // Is this a server leaderboard message? Prettify it!
+      if (message.usr === '_server' && message.msg.startsWith('#### Leaderboard')) {
+        message._msg = marked.parse(message.msg)
+      }
       return new Promise((resolve) => {
         resolve(message)
       })
@@ -1772,7 +1780,9 @@ export default {
                   this.messages.splice(i, 1)
                 }
                 this.getLastMessageTime()
-                this.msgCount -= 1
+                if (this.msgCount > 0) {
+                  this.msgCount -= 1
+                }
               }
               done = true
               break
@@ -1960,6 +1970,8 @@ export default {
     handleCommandMessage: function (msg) {
       if (msg.startsWith('/gif')) {
         this.handleGIFCommand(msg)
+      } else if (msg.startsWith('/leaderboard')) {
+        this.handleLeaderboardCommand()
       }
     },
     /**
@@ -2000,6 +2012,10 @@ export default {
         this.sdk.sendMessage(prefix + payload)
       }
       this.isViewingGIFs = false
+    },
+    handleLeaderboardCommand: function () {
+      this.sdk.sendMessage('[c:CMD]/leaderboard')
+      this.newMessage = ''
     },
     /**
      *
@@ -3360,11 +3376,11 @@ export default {
       api({
         url: 'msg/private/chat/get/' + this.channel.id + '?qcount=true'
       }).then((response) => {
-        if (!response.data.count) {
+        if (!response.data.msgs) {
           this.msgCount = 0
           return
         }
-        this.msgCount = response.data.count
+        this.msgCount = response.data.msgs
       }).catch((e) => {
         console.debug(e.message)
       }).finally(() => {

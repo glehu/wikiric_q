@@ -89,14 +89,15 @@
       </template>
     </q-page-container>
     <q-dialog v-model="fixed" class="z-max"
-              backdrop-filter="blur(10px)"
+              backdrop-filter="blur(4px)"
               style="background-color: transparent">
       <div ref="dialogSearchContainer"
            id="dialogSearchContainer"
            class="pt2 wfull sm:w-[75dvw] sm:max-w-xl
                   fmt_border
                   fixed top-0 sm:top-[60px]"
-           style="background-color: rgba(var(--rgb-sys-color-surface), 0.8)">
+           style="background-color: rgba(var(--rgb-sys-color-surface), 0.8);
+                  border-bottom: 2px solid var(--md-sys-color-primary) !important;">
         <q-input
           for="searchEverything"
           label="Search everything... (SPACE to show all)"
