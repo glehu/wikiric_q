@@ -104,13 +104,20 @@
                       overflow-x-auto overflow-y-hidden">
             <div class="wmax flex row gap-3 overflow-y-hidden pb10 no-wrap">
               <template v-for="(boxEntry, index) in boxes" :key="boxEntry.box">
-                <div class="surface-variant hfit rounded-2
-                            fmt_border
+                <div class="hfit rounded-2
+                            fmt_border relative
                             max-h-[calc(100dvh-175px)]
                             min-w-[200px] max-w-[300px]
                             overflow-h-auto overflow-x-hidden">
+                  <div class="absolute wfull hfull
+                              backdrop-blur-sm"></div>
+                  <div class="absolute wfull hfull
+                              surface-variant opacity-70"></div>
                   <div class="flex relative items-center p2 wfull no-wrap
                               sticky top-0 z-2 surface-variant">
+                    <template v-if="boxEntry.box._noEdit">
+                      <q-icon name="event" size="1.2rem" class="mx1"/>
+                    </template>
                     <template v-if="!boxEntry.box._noEdit && index > 1">
                       <q-btn label="<" dense round unelevated class="mr2"
                              @click="moveBox('left', boxEntry.box)"/>
@@ -124,12 +131,14 @@
                     </template>
                   </div>
                   <div class="px2 pb2">
-                    <template v-if="!boxEntry.box._noEdit">
+                    <div v-if="!boxEntry.box._noEdit"
+                         class="px1">
                       <q-btn icon="add" label="New Task" unelevated
-                             align="left" dense no-caps
-                             class="wfull mb4"
+                             align="left" dense no-caps rounded
+                             class="wfull mt2 mb1 surface-variant fmt_border
+                                    font-700 text-sm px2"
                              @click="writeTask(boxEntry.box.uid)"/>
-                    </template>
+                    </div>
                     <div v-if="boxEntry.tasks"
                          :id="'box_tasks_guid_' + boxEntry.box.uid"
                          :ref="'box_tasks_guid_' + boxEntry.box.uid"
@@ -159,11 +168,11 @@
                           </div>
                         </template>
                         <template #item="{element}">
-                          <div :key="element.uid" class="p-1 task_container"
+                          <div :key="element.uid" class="p1 task_container"
                                :ref="'taskcontainer_' + element.uid" :id="'taskcontainer_' + element.uid">
                             <div :ref="'task_' + element.uid" :id="'task_' + element.uid"
                                  class="p_task relative p2 min-w-[200px]
-                                        surface wfull hfull"
+                                        wfull hfull fmt_border surface"
                                  v-on:click="eventClicked(element.uid)">
                               <div class="text-sm wfull flex items-start
                                           justify-between pb1">
@@ -178,7 +187,7 @@
                                 <p class="text-lg fontbold">
                                   {{ element.t }}
                                 </p>
-                                <p>
+                                <p class="my1 text-sm font-600">
                                   {{ element.keys }}
                                 </p>
                               </div>
