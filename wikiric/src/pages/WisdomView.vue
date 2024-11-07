@@ -132,7 +132,7 @@
                     <q-btn icon="delete" label="Confirm Delete"
                            class="fontbold"
                            color="negative"
-                           @click="handleDeleteWisdom"/>
+                           @click="handleDeleteWisdom(wisdom.uid)"/>
                   </template>
                   <q-btn icon="share" label="Share"
                          class="mr2"
@@ -1224,7 +1224,11 @@ export default {
           })
           console.debug(err.message)
         }).finally(() => {
-          this.getRelated()
+          if (wisUID === this.wisdomId) {
+            this.clickedBack()
+          } else {
+            this.getRelated()
+          }
           resolve()
         })
       })

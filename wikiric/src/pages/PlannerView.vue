@@ -56,32 +56,48 @@
           <q-page-sticky position="top" expand
                          class="z-fab px1 pt2">
             <q-toolbar>
-              <q-btn unelevated round
+              <q-btn unelevated round size="1rem"
                      icon="sym_o_dock_to_right"
-                     class="surface-variant"
+                     class="surface-variant fmt_border"
                      @click="sidebarLeft = !sidebarLeft">
                 <q-tooltip class="text-body2">
                   Toggle&nbsp;Sidebar
                 </q-tooltip>
               </q-btn>
-              <q-toolbar-title class="text-subtitle1 wfit hfit">
+              <q-toolbar-title class="text-subtitle1 hfit flex row wfull">
                 <div class="surface-variant wfit rounded-lg p1 fmt_border
-                            flex gap-2 items-center">
+                            flex gap-2 items-center h13">
                   <template v-if="!isComponent">
-                    <q-btn flat
+                    <q-btn flat no-wrap
                            icon="sym_o_arrow_left_alt"
                            label="Back"
-                           class="fmt_border rounded-2"
+                           class="fmt_border rounded-2 text-xs font-700 hfull"
                            @click="clickedBack">
                     </q-btn>
                   </template>
                   <q-breadcrumbs active-color="brand-p"
-                                 class="surface-variant wfit rounded-lg px2">
+                                 class="surface-variant wfit rounded-lg px2
+                                        text-subtitle2 font-700">
                     <template v-if="chatroom">
                       <q-breadcrumbs-el :label="chatroom.t"/>
                     </template>
                     <q-breadcrumbs-el label="Planner"/>
                   </q-breadcrumbs>
+                </div>
+                <div class="surface-variant wfit rounded-lg p1 fmt_border
+                            flex gap-2 items-center mlauto h13">
+                  <template v-if="!isViewingAll">
+                    <q-btn label="Show All" icon="visibility"
+                           class="text-xs font-700 rounded-2 hfull"
+                           unelevated flat dense no-caps no-wrap
+                           @click="getBoxes(false,true)"/>
+                  </template>
+                  <template v-else>
+                    <q-btn label="Hide Finished" icon="visibility_off"
+                           class="text-xs font-700 rounded-2 hfull"
+                           unelevated flat dense no-caps no-wrap
+                           @click="getBoxes(false,false)"/>
+                  </template>
                 </div>
               </q-toolbar-title>
             </q-toolbar>
@@ -91,7 +107,7 @@
                         pointer-events-none -z-1 brightness-70
                         wfull hfull
                         flex justify-center">
-              <div class="rounded overflow-hidden"
+              <div class="rounded-lg overflow-hidden"
                    style="max-width: calc(100vw - 12px); max-height: calc(100vh - 56px);
                           width: calc(100vw - 12px); height: calc(100vh - 56px)">
                 <q-img :src="getImg(knowledge.pburl, true)"
@@ -112,21 +128,23 @@
                   <div class="absolute wfull hfull
                               backdrop-blur-sm"></div>
                   <div class="absolute wfull hfull
-                              surface-variant opacity-70"></div>
-                  <div class="flex relative items-center p2 wfull no-wrap
-                              sticky top-0 z-2 surface-variant">
+                              surface-variant opacity-50"></div>
+                  <div class="flex relative items-center wfull no-wrap
+                              sticky top-0 z-2">
+                    <div class="absolute wfull hfull
+                                surface-variant opacity-70 -z1"></div>
                     <template v-if="boxEntry.box._noEdit">
-                      <q-icon name="event" size="1.2rem" class="mx1"/>
+                      <q-icon name="event" size="1.4rem" class="ml3"/>
                     </template>
                     <template v-if="!boxEntry.box._noEdit && index > 1">
-                      <q-btn label="<" dense round unelevated class="mr2"
+                      <q-btn label="<" dense round unelevated class="mr2 p2"
                              @click="moveBox('left', boxEntry.box)"/>
                     </template>
-                    <p class="text-h6 fontbold pl1 flex-grow">
+                    <p class="text-h6 fontbold flex-grow on-surface-text z3 px4 py2">
                       {{ boxEntry.box.t }}
                     </p>
                     <template v-if="!boxEntry.box._noEdit && index < boxes.length - 1">
-                      <q-btn label=">" dense round unelevated class="ml2"
+                      <q-btn label=">" dense round unelevated class="ml2 p2"
                              @click="moveBox('right', boxEntry.box)"/>
                     </template>
                   </div>
@@ -135,9 +153,11 @@
                          class="px1">
                       <q-btn icon="add" label="New Task" unelevated
                              align="left" dense no-caps rounded
-                             class="wfull mt2 mb1 surface-variant fmt_border
+                             class="wfull mt2 mb2 surface-variant fmt_border
                                     font-700 text-sm px2"
                              @click="writeTask(boxEntry.box.uid)"/>
+                    </div>
+                    <div v-else class="h2">
                     </div>
                     <div v-if="boxEntry.tasks"
                          :id="'box_tasks_guid_' + boxEntry.box.uid"
@@ -187,6 +207,15 @@
                                 <p class="text-lg fontbold">
                                   {{ element.t }}
                                 </p>
+                                <template v-if="element.done">
+                                  <div class="flex items-center gap-2 my2
+                                              px2 py1 wfit rounded
+                                              background text-subtitle2"
+                                       style="border-left: 8px solid green">
+                                    <q-icon name="check"/>
+                                    <span>Done</span>
+                                  </div>
+                                </template>
                                 <p class="my1 text-sm font-600">
                                   {{ element.keys }}
                                 </p>
@@ -314,6 +343,7 @@ export default {
       isCreatingEvent: false,
       isEditingEvent: false,
       isViewingSettings: false,
+      isViewingAll: false,
       currentBoxID: null,
       newEvent: {
         t: '',
@@ -450,18 +480,14 @@ export default {
         this.isLoading = true
       }
       return new Promise((resolve) => {
-        let suffix = ''
-        // const checkbox = this.$refs.input_show_unfinished
-        // if (checkbox) {
-        //   if (showAll || checkbox.checked) {
-        //     suffix = '?state=any'
-        //     checkbox.checked = true
-        //   } else {
-        //     suffix = '?state=todo'
-        //     checkbox.checked = false
-        //   }
-        // }
-        suffix = '?state=todo'
+        let suffix
+        if (showAll) {
+          suffix = '?state=any'
+          this.isViewingAll = true
+        } else {
+          suffix = '?state=todo'
+          this.isViewingAll = false
+        }
         // Prepare category color map
         const catColors = new Map()
         if (this.knowledge.cats) {
