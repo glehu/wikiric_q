@@ -73,7 +73,7 @@
                     </q-date>
                   </q-popup-proxy>
                 </q-btn>
-                <q-btn icon="access_time" flat dense no-caps
+                <q-btn v-if="date.due" icon="access_time" flat dense no-caps
                        class="wfit text-subtitle2 fontbold" :label="date._dueTimeFmt">
                   <q-popup-proxy @before-show="updateProxyDueTime" cover transition-show="scale"
                                  transition-hide="scale">
@@ -104,7 +104,7 @@
                     </q-date>
                   </q-popup-proxy>
                 </q-btn>
-                <q-btn icon="access_time" flat dense no-caps
+                <q-btn v-if="date.duet" icon="access_time" flat dense no-caps
                        class="wfit text-subtitle2 fontbold" :label="date._dueTimeUntilFmt">
                   <q-popup-proxy @before-show="updateProxyDueTimeUntil" cover transition-show="scale"
                                  transition-hide="scale">
@@ -800,7 +800,7 @@ export default {
       if (date._dueDateUntil) {
         dateTmp = date._dueDateUntil.replaceAll('/', '-')
         if (!date._dueTimeUntil) {
-          date._dueTimeUntil = '23:59'
+          date._dueTimeUntil = '23:00'
         }
         timeTmp = date._dueTimeUntil
         date.duet = DateTime.fromISO(`${dateTmp}T${timeTmp}`)

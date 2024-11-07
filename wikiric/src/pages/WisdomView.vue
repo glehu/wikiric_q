@@ -217,6 +217,11 @@
                     <p class="fontbold text-body1">
                       This proposal has been accepted!
                     </p>
+                    <ul class="mb2">
+                      <li>
+                        Everybody is able to see the content of this proposal now.
+                      </li>
+                    </ul>
                   </div>
                 </template>
                 <template v-if="isLoading">

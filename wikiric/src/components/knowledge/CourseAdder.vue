@@ -54,9 +54,10 @@
               </div>
               <template v-for="result in results" :key="result">
                 <template v-if="result.result.uid !== wisdomProp.uid">
-                  <div class="mt2 px4 pt2 pb4 rounded-2 background wfit hoverPrimary"
+                  <div class="mt2 pl2 pr4 pt2 pb4 rounded-2 background
+                              wfit hoverPrimary overflow-hidden"
                        @click="addToCourse(result.result.uid)">
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 no-wrap">
                       <template v-if="result.result._isCourseParent">
                         <q-icon name="remove" size="2rem"/>
                       </template>
@@ -75,7 +76,7 @@
                           </q-breadcrumbs>
                         </div>
                         <div v-if="result.result._keys"
-                             class="flex items-center mt1 text-sm">
+                             class="flex items-center mt1 text-sm no-wrap">
                           <q-icon name="sym_o_tag" size="1.2rem" class="mr1.5"/>
                           <p>{{ result.result._keys }}</p>
                         </div>

@@ -52,56 +52,76 @@
         </q-scroll-area>
       </q-drawer>
       <q-page-container>
-        <q-page style="padding-top: 60px" class="">
+        <q-page style="padding-top: 70px" class="">
           <q-page-sticky position="top" expand
-                         class="background z-fab">
+                         class="z-fab px1 pt2">
             <q-toolbar>
-              <q-btn flat round dense icon="sym_o_dock_to_right"
+              <q-btn unelevated round
+                     icon="sym_o_dock_to_right"
+                     class="surface-variant"
                      @click="sidebarLeft = !sidebarLeft">
                 <q-tooltip class="text-body2">
                   Toggle&nbsp;Sidebar
                 </q-tooltip>
               </q-btn>
-              <q-toolbar-title class="text-subtitle1">
-                <q-breadcrumbs active-color="brand-p">
-                  <template v-if="chatroom">
-                    <q-breadcrumbs-el :label="chatroom.t"/>
+              <q-toolbar-title class="text-subtitle1 wfit hfit">
+                <div class="surface-variant wfit rounded-lg p1 fmt_border
+                            flex gap-2 items-center">
+                  <template v-if="!isComponent">
+                    <q-btn flat
+                           icon="sym_o_arrow_left_alt"
+                           label="Back"
+                           class="fmt_border rounded-2"
+                           @click="clickedBack">
+                    </q-btn>
                   </template>
-                  <q-breadcrumbs-el label="Planner"/>
-                </q-breadcrumbs>
+                  <q-breadcrumbs active-color="brand-p"
+                                 class="surface-variant wfit rounded-lg px2">
+                    <template v-if="chatroom">
+                      <q-breadcrumbs-el :label="chatroom.t"/>
+                    </template>
+                    <q-breadcrumbs-el label="Planner"/>
+                  </q-breadcrumbs>
+                </div>
               </q-toolbar-title>
             </q-toolbar>
           </q-page-sticky>
           <template v-if="knowledge && knowledge.pburl">
-            <div class="fixed top-0 left-0 h-screen w-screen pointer-events-none -z-1 brightness-70">
-              <q-img :src="getImg(knowledge.pburl, true)"
-                     fit="cover" width="100%" height="100%"/>
+            <div class="fixed top-0 right-0 bottom-0 left-0
+                        pointer-events-none -z-1 brightness-70
+                        wfull hfull
+                        flex justify-center">
+              <div class="rounded overflow-hidden"
+                   style="max-width: calc(100vw - 12px); max-height: calc(100vh - 56px);
+                          width: calc(100vw - 12px); height: calc(100vh - 56px)">
+                <q-img :src="getImg(knowledge.pburl, true)"
+                       fit="cover" width="100%" height="100%"/>
+              </div>
             </div>
           </template>
-          <template v-if="!isComponent">
-            <q-btn flat
-                   icon="sym_o_arrow_left_alt"
-                   label="Back"
-                   class="fmt_border ml4 mb3 rounded-2
-                          surface-variant"
-                   @click="clickedBack">
-            </q-btn>
-          </template>
           <div id="board" ref="board"
-               class="wfull h-[calc(100dvh-162px)] px4
+               class="wfull h-[calc(100dvh-126px)] px4
                       overflow-x-auto overflow-y-hidden">
-            <div class="wmax flex row gap-3 overflow-y-hidden pb10">
-              <template v-for="boxEntry in boxes" :key="boxEntry.box">
+            <div class="wmax flex row gap-3 overflow-y-hidden pb10 no-wrap">
+              <template v-for="(boxEntry, index) in boxes" :key="boxEntry.box">
                 <div class="surface-variant hfit rounded-2
                             fmt_border
                             max-h-[calc(100dvh-175px)]
                             min-w-[200px] max-w-[300px]
                             overflow-h-auto overflow-x-hidden">
-                  <div class="flex relative items-center p2 wfull
+                  <div class="flex relative items-center p2 wfull no-wrap
                               sticky top-0 z-2 surface-variant">
-                    <p class="text-h6 fontbold pl1">
+                    <template v-if="!boxEntry.box._noEdit && index > 1">
+                      <q-btn label="<" dense round unelevated class="mr2"
+                             @click="moveBox('left', boxEntry.box)"/>
+                    </template>
+                    <p class="text-h6 fontbold pl1 flex-grow">
                       {{ boxEntry.box.t }}
                     </p>
+                    <template v-if="!boxEntry.box._noEdit && index < boxes.length - 1">
+                      <q-btn label=">" dense round unelevated class="ml2"
+                             @click="moveBox('right', boxEntry.box)"/>
+                    </template>
                   </div>
                   <div class="px2 pb2">
                     <template v-if="!boxEntry.box._noEdit">
@@ -171,6 +191,32 @@
                                   {{ getHumanReadableDateText(element.due, true) }}
                                 </p>
                               </div>
+                              <div v-if="element.replies && element.replies.length > 0"
+                                   class="mt2 flex gap-2 items-center
+                                          rounded surface-variant px2 py1 wfit">
+                                <q-icon name="sym_o_mail"/>
+                                <p class="text-sm font-600">
+                                  {{ element.replies.length }}
+                                </p>
+                                <q-tooltip class="transparent">
+                                  <div class="wfull hfull">
+                                    <div v-for="reply in element.replies" :key="reply">
+                                      <div class="surface px3 pt2 pb4 rounded mb2 fmt_border">
+                                        <div class="mb2 flex justify-between items-start gap-3">
+                                          <p class="text-subtitle2">
+                                            <span class="fontbold">@{{ reply.usr }}</span>
+                                          </p>
+                                          <span class="text-subtitle2">
+                                            {{ getHumanReadableDateText(reply.ts) }}
+                                          </span>
+                                        </div>
+                                        <div v-html="reply.desc" class="markedView text-subtitle2"
+                                             style="word-break: break-word !important;"></div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </q-tooltip>
+                              </div>
                             </div>
                           </div>
                         </template>
@@ -183,7 +229,7 @@
                 <div class="flex relative items-center px2 min-w-[200px]">
                   <q-input label="New Box"
                            color="brand-p"
-                           borderless
+                           borderless rounded
                            label-color="brand-p"
                            v-model="newBox.name"
                            v-on:keydown="newBoxKeyUp">
@@ -420,6 +466,8 @@ export default {
         .then(async (response) => {
           // Retrieve all boxes and tasks from server response
           this.boxes = response.data.boxes.reverse()
+          this.boxes.sort(
+            (a, b) => a.box.row - b.box.row)
           // Iterate over all boxes
           for (let i = 0; i < this.boxes.length; i++) {
             if (this.boxes[i].box.t === '%wikiric%Events%wkrg%') {
@@ -781,6 +829,132 @@ export default {
         if (get) ret = this.store.serverIP + imgGUID
         return ret
       }
+    },
+    moveBox: async function (direction, box) {
+      // Check if boxes are equally partitioned, otherwise fix it
+      await this.checkBoxDistance()
+      // Get the position of the current box to determine what to do
+      for (let i = 0; i < this.boxes.length; i++) {
+        if (this.boxes[i].box.uid === box.uid) {
+          if (direction === 'left') {
+            // Move the box between the left two boxes
+            // This only works if we're at least at index 2 since
+            // ...the first box is immovable making the second box
+            // ...unable to move further left
+            if (i < 2) {
+              return
+            }
+            // Get the new row index
+            const rowIndexBoxBefore = this.boxes[i - 2].box.row
+            const rowIndexBoxAfter = this.boxes[i - 1].box.row
+            const newRowIndex = Math.floor(
+              (rowIndexBoxBefore + rowIndexBoxAfter) / 2)
+            await this.doMoveBox(box, newRowIndex)
+            await this.getBoxes()
+            return
+          } else if (direction === 'right') {
+            // Move the box between the right two boxes
+            // This only works if we're not targeting the last box
+            if (i >= this.boxes.length - 1) {
+              return
+            }
+            // Get the new row index
+            const rowIndexBoxBefore = this.boxes[i + 1].box.row
+            let newRowIndex
+            if (i < this.boxes.length - 2) {
+              const rowIndexBoxAfter = this.boxes[i + 2].box.row
+              newRowIndex = Math.floor(
+                (rowIndexBoxBefore + rowIndexBoxAfter) / 2)
+            } else {
+              newRowIndex = rowIndexBoxBefore + 20_000
+            }
+            await this.doMoveBox(box, newRowIndex)
+            await this.getBoxes()
+            return
+          }
+        }
+      }
+    },
+    checkBoxDistance: async function () {
+      let dist = -1
+      let doFix = false
+      // We start at 1 since the first box is immovable
+      for (let i = 1; i < this.boxes.length; i++) {
+        if (dist === -1) {
+          dist = this.boxes[i].row
+        } else {
+          // Calculate dist by subtracting a from b
+          // e.g. a = 0; b = 20_000 => 20_000 - 0 = 20_000
+          // If the distance is less than 10 we will fix all boxes
+          dist -= this.boxes[i].row
+          if (dist < 10) {
+            doFix = true
+            break
+          }
+        }
+      }
+      if (!doFix) {
+        return
+      }
+      let row = 0
+      for (let i = 1; i < this.boxes.length; i++) {
+        await this.doMoveBox(this.boxes[i].box, row)
+        row += 20_000
+      }
+    },
+    /**
+     *
+     * @param box
+     * @param {number} row
+     * @return {Promise<unknown>}
+     */
+    doMoveBox: function (box, row) {
+      return new Promise((resolve) => {
+        api({
+          method: 'post',
+          url: `wisdom/private/mod/${box.uid}?silent=1`,
+          data: {
+            type: 'edit',
+            field: 'row',
+            new: row.toString()
+          }
+        }).then(() => {
+          this.$q.notify({
+            color: 'primary',
+            position: 'top-right',
+            message: 'Box Moved!',
+            caption: '',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+        }).catch((err) => {
+          this.$q.notify({
+            color: 'negative',
+            position: 'top-right',
+            message: 'Error!',
+            caption: 'Maybe you aren\'t the owner of the Wisdom.',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          console.debug(err.message)
+        }).finally(() => {
+          resolve()
+        })
+      })
     }
   },
   computed: {

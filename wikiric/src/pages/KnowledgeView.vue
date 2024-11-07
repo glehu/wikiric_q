@@ -62,6 +62,9 @@
             <q-btn icon="sym_o_search" label="Courses"
                    no-caps flat align="left"
                    @click="filterCourses"/>
+            <q-btn icon="sym_o_search" label="Proposals"
+                   no-caps flat align="left"
+                   @click="filterProposals"/>
           </div>
           <div class="flex column wfull">
             <q-toolbar>
@@ -223,7 +226,7 @@
                         </template>
                         <template v-if="res.type === 'question'">
                           <template v-if="res.result.done">
-                            <div class="flex items-center gap-2 mt2 px2 py1
+                            <div class="flex items-center gap-2 mt2 px2 py1 wfit
                                         rounded background text-subtitle2"
                                  style="border-left: 8px solid green">
                               <q-icon name="check"/>
@@ -231,7 +234,7 @@
                             </div>
                           </template>
                           <template v-else>
-                            <div class="flex items-center gap-2 mt2 px2 py1
+                            <div class="flex items-center gap-2 mt2 px2 py1 wfit
                                         rounded background text-subtitle2"
                                  style="border-left: 8px solid darkorange">
                               <q-icon name="question_mark"/>
@@ -239,9 +242,9 @@
                             </div>
                           </template>
                         </template>
-                        <template v-else-if="res.type === 'task'">
+                        <template v-else-if="res.type === 'task' || res.type === 'proposal'">
                           <template v-if="res.result.done">
-                            <div class="flex items-center gap-2 mt2 px2 py1
+                            <div class="flex items-center gap-2 mt2 px2 py1 wfit
                                         rounded background text-subtitle2"
                                  style="border-left: 8px solid green">
                               <q-icon name="check"/>
@@ -249,7 +252,7 @@
                             </div>
                           </template>
                           <template v-else>
-                            <div class="flex items-center gap-2 mt2 px2 py1
+                            <div class="flex items-center gap-2 mt2 px2 py1 wfit
                                         rounded background text-subtitle2"
                                  style="border-left: 8px solid darkorange">
                               <q-icon name="sym_o_manufacturing"/>
@@ -1117,6 +1120,29 @@ export default {
         color: 'primary',
         position: 'top-right',
         message: 'Showing Courses!',
+        caption: 'Check search query for more information',
+        actions: [
+          {
+            icon: 'close',
+            color: 'white',
+            round: true,
+            handler: () => {
+            }
+          }
+        ]
+      })
+      const { width } = dom
+      if (width(this.$refs.toolbar_top) < 768 - 300) {
+        this.sidebarLeft = false
+      }
+    },
+    filterProposals: function () {
+      const query = 'type:proposal '
+      this.searchWisdom(query)
+      this.$q.notify({
+        color: 'primary',
+        position: 'top-right',
+        message: 'Showing Proposals!',
         caption: 'Check search query for more information',
         actions: [
           {
