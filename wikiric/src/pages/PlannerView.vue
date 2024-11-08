@@ -856,6 +856,12 @@ export default {
         this.getBoxes()
       }
     },
+    /**
+     *
+     * @param imgGUID
+     * @param get
+     * @return {*|string}
+     */
     getImg: function (imgGUID, get = false) {
       if (imgGUID == null || imgGUID === '') {
         return ''
@@ -865,9 +871,15 @@ export default {
         return ret
       }
     },
+    /**
+     *
+     * @param direction
+     * @param box
+     * @return {Promise<void>}
+     */
     moveBox: async function (direction, box) {
       // Check if boxes are equally partitioned, otherwise fix it
-      await this.checkBoxDistance()
+      await this.checkBoxDistance(false)
       // Get the position of the current box to determine what to do
       for (let i = 0; i < this.boxes.length; i++) {
         if (this.boxes[i].box.uid === box.uid) {
@@ -910,26 +922,35 @@ export default {
         }
       }
     },
-    checkBoxDistance: async function () {
-      let dist = -1
-      let doFix = false
-      // We start at 1 since the first box is immovable
-      for (let i = 1; i < this.boxes.length; i++) {
-        if (dist === -1) {
-          dist = this.boxes[i].row
-        } else {
-          // Calculate dist by subtracting a from b
-          // e.g. a = 0; b = 20_000 => 20_000 - 0 = 20_000
-          // If the distance is less than 10 we will fix all boxes
-          dist -= this.boxes[i].row
-          if (dist < 10) {
-            doFix = true
-            break
+    /**
+     *
+     * @param force
+     * @return {Promise<void>}
+     */
+    checkBoxDistance: async function (force) {
+      if (!force) {
+        let dist = -1
+        let doFix = false
+        // We start at 1 since the first box is immovable
+        for (let i = 1; i < this.boxes.length; i++) {
+          if (dist === -1) {
+            dist = this.boxes[i].box.row
+          } else {
+            // Calculate dist by subtracting a from b
+            // e.g. a = 0; b = 20_000 => 20_000 - 0 = 20_000
+            // If the distance is less than 10 we will fix all boxes
+            dist = this.boxes[i].box.row - dist
+            console.log(i, dist)
+            if (dist < 10) {
+              doFix = true
+              break
+            }
+            dist = this.boxes[i].box.row
           }
         }
-      }
-      if (!doFix) {
-        return
+        if (!doFix) {
+          return
+        }
       }
       let row = 0
       for (let i = 1; i < this.boxes.length; i++) {
