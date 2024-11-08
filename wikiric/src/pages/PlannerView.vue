@@ -446,6 +446,14 @@ export default {
       }
     },
     createBox: async function () {
+      // Find the highest row and add 20_000
+      let rowT = 0
+      for (let i = 1; i < this.boxes.length; i++) {
+        if (this.boxes[i].box.row > rowT) {
+          rowT = this.boxes[i].box.row
+        }
+      }
+      rowT += 20_000
       const categories = []
       const payload = {
         t: this.newBox.name,
@@ -455,7 +463,7 @@ export default {
         copy: '',
         cats: categories,
         type: 'box',
-        row: 0
+        row: rowT
       }
       return new Promise((resolve) => {
         api({
