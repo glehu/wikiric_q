@@ -140,9 +140,24 @@
                       <q-btn label="<" dense round unelevated class="mr2 p2"
                              @click="moveBox('left', boxEntry.box)"/>
                     </template>
-                    <p class="text-h6 fontbold flex-grow on-surface-text z3 px4 py2">
-                      {{ boxEntry.box.t }}
-                    </p>
+                    <q-btn class="text-h6 fontbold flex-grow on-surface-text z3 px4 py2"
+                           align="left"
+                           unelevated flat dense no-caps>
+                      <p class="text-start wfit">
+                        {{ boxEntry.box.t }}
+                      </p>
+                      <q-popup-edit v-model="boxEntry.box.t" buttons v-slot="scope"
+                                    @show="editingTask = boxEntry.box"
+                                    @save="handleTaskEdit"
+                                    color="brand-p"
+                                    class="z-top">
+                        <q-input v-model="scope.value"
+                                 class="sm:w-[300px] <sm:min-w-[90dvw]"
+                                 dense autofocus counter
+                                 @focus="(input) => input.target.select()"
+                                 @keyup.enter="scope.set"/>
+                      </q-popup-edit>
+                    </q-btn>
                     <template v-if="!boxEntry.box._noEdit && index < boxes.length - 1">
                       <q-btn label=">" dense round unelevated class="ml2 p2"
                              @click="moveBox('right', boxEntry.box)"/>
@@ -352,7 +367,8 @@ export default {
         duet: ''
       },
       drag: false,
-      lastDragMove: undefined
+      lastDragMove: undefined,
+      editingTask: null
     }
   },
   created () {
@@ -987,6 +1003,67 @@ export default {
             color: 'primary',
             position: 'top-right',
             message: 'Box Moved!',
+            caption: '',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+        }).catch((err) => {
+          this.$q.notify({
+            color: 'negative',
+            position: 'top-right',
+            message: 'Error!',
+            caption: 'Maybe you aren\'t the owner of the Wisdom.',
+            actions: [
+              {
+                icon: 'close',
+                color: 'white',
+                round: true,
+                handler: () => {
+                }
+              }
+            ]
+          })
+          console.debug(err.message)
+        }).finally(() => {
+          resolve()
+        })
+      })
+    },
+    handleTaskEdit: function (val) {
+      if (!this.editingTask) {
+        return
+      }
+      this.editingTask.t = val
+      this.handleBoxTitleUpdate(this.editingTask)
+      this.editingTask = null
+    },
+    /**
+     *
+     * @param box
+     * @return {Promise<unknown>}
+     */
+    handleBoxTitleUpdate: function (box) {
+      return new Promise((resolve) => {
+        api({
+          method: 'post',
+          url: `wisdom/private/mod/${box.uid}`,
+          data: {
+            type: 'edit',
+            field: 'title',
+            new: box.t
+          }
+        }).then(() => {
+          this.$q.notify({
+            color: 'primary',
+            position: 'top-right',
+            message: 'Box Updated!',
             caption: '',
             actions: [
               {
