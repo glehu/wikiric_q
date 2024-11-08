@@ -33,7 +33,7 @@
           </q-toolbar-title>
           <q-btn flat no-caps
                  class="background ml4 w40 flex justify-between text-body1"
-                 @click="openDialog()">
+                 @click="openDialog">
             <p class="m0 mrauto">Search</p>
             <kbd v-if="$q.platform.is.win || $q.platform.is.linux">
               ALT-K
@@ -43,6 +43,10 @@
             </kbd>
           </q-btn>
           <div class="relative flex mlauto">
+            <q-btn icon="person" size="1rem" unelevated dense
+                   @click="openAccount"/>
+          </div>
+          <div class="relative flex ml2">
             <q-btn icon="inbox" size="1rem" unelevated dense
                    @click="isViewingNotifications = !isViewingNotifications"/>
             <template v-if="notifications.length > 0">
@@ -442,6 +446,13 @@ export default defineComponent({
           resolve()
         })
       })
+    },
+    openAccount: function () {
+      if (!this.store.isLoggedIn) {
+        this.$router.push('/login?redirect=/account')
+      } else {
+        this.$router.push('/redir?redirect=/account?tab=settings')
+      }
     }
   },
   setup () {

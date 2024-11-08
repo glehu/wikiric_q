@@ -4,8 +4,7 @@
     <template v-if="userExists">
       <div class="m2 p2 rounded background flex gap-2 items-center">
         <q-icon name="person" size="4rem"/>
-        <div class="flex gap-2 items-start
-                    justify-between flex-grow">
+        <div class="flex gap-2 items-start flex-grow">
           <div class="wfit">
             <p class="text-h5 fontbold">
               {{ user.displayName }}
@@ -15,6 +14,7 @@
             </p>
           </div>
           <q-btn icon="logout" label="Logout"
+                 class="ml4"
                  no-caps dense flat
                  @click="handleLogout"/>
         </div>

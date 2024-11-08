@@ -109,9 +109,33 @@ export default {
       ]
     }
   },
+  mounted () {
+    this.checkTabQuery()
+  },
   methods: {
     gotoLink: function (link) {
       this.$router.push(link)
+    },
+    checkTabQuery: function () {
+      const tab = this.$route.query.tab
+      if (!tab || tab === '') {
+        return
+      }
+      // I know I could write this.tab = tab but this acts
+      // ...as a protective measurement
+      switch (tab) {
+        case 'apps':
+          this.tab = 'apps'
+          break
+        case 'desk':
+          this.tab = 'desk'
+          break
+        case 'settings':
+          this.tab = 'settings'
+          break
+        default:
+          this.tab = 'apps'
+      }
     }
   }
 }
