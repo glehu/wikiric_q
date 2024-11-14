@@ -4022,13 +4022,14 @@ export default {
             }
           } else {
             if (!this.coPlayers.has(sesh.u)) {
-              // We did not encounter this co-player yet
-              // Create peer to peer connection to this player
-              // To figure out who's impolite and who's not...
-              // ...the peers need to battle it out!
-              const rnd = Math.random()
-              this.$connector.sendSyncRoomMessage(
-                `PEFI-${sesh.u};${this.store.user.username};${rnd}`)
+              // // We did not encounter this co-player yet
+              // // Create peer to peer connection to this player
+              // // To figure out who's impolite and who's not...
+              // // ...the peers need to battle it out!
+              // const rnd = Math.random()
+              // this.$connector.sendSyncRoomMessage(
+              //   `PEFI-${sesh.u};${this.store.user.username};${rnd}`)
+
               // Set new player
               this.coPlayers.set(sesh.u, {
                 usr: sesh.u,
@@ -4036,7 +4037,7 @@ export default {
                 y: -1,
                 xo: -1,
                 yo: -1,
-                pefi: rnd
+                pefi: -1
               })
               // Request position data
               // ...simple hack: we just re-use the lag function
@@ -4636,6 +4637,10 @@ export default {
       eventChannel.onmessage = event => {
         this.handleWRTCEvent(event)
       }
+      // Connect to the backend via WebRTC
+      setTimeout(() => {
+        this.wrtc.initiatePeerConnection(null, '_server', true, false)
+      }, 1_000)
     },
     handleWRTCEvent: async function (event) {
       if (!event || !event.data) return
@@ -4666,6 +4671,8 @@ export default {
           //    UP;RIGHT;DOWN;LEFT
           const data = event.data.message.substring(4).split(';')
           this.setCoPlayerMovement(data)
+        } else {
+          console.debug('DataChannel Message:', event.data.message)
         }
       } else if (event.data.event === 'datachannel_open') {
         this.wrtc.sendDataChannelMessage(event.data.remoteName, 'N;DR')
@@ -4700,6 +4707,10 @@ export default {
       }
     },
     createOutgoingPeerConnections: async function (userId, polite) {
+      if (userId === 'server') {
+        this.wrtc.initiatePeerConnection(null, '_server', true, false)
+        return
+      }
       const calleeList = []
       if (userId) {
         calleeList.push(userId)

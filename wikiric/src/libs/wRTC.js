@@ -8,6 +8,7 @@
  */
 
 import adapter from 'webrtc-adapter'
+import wikiricSDK from 'src/libs/wikiric-sdk'
 
 /**
  * wRTC.js handles wikiric's WebRTC P2P + DataChannel needs in cooperation with the wikiric.xyz Connector.
@@ -22,20 +23,6 @@ import adapter from 'webrtc-adapter'
  * 2. Better reliability than UDP (discarding of delayed frames)
  *
  * This protocol is useful for media streaming or streaming data of no chronological importance.
- *
- * @type {{getPeerConnection: ((function(*): (RTCPeerConnection|null))|*), sendIceMessage: WRTC.sendIceMessage,
- *   doPause: WRTC.doPause, addIncomingStoredICE: ((function(*, *=): Promise<void>)|*), handleConnectionStateChange:
- *   WRTC.handleConnectionStateChange, handleIncomingDescription(*, *): Promise<void>, doLog: boolean, doLogVerbose:
- *   boolean, hangup: WRTC.hangup, logStyle: string, initiatePeerConnection: WRTC.initiatePeerConnection,
- *   peerConnections: Map<any, any>, getStream: ((function(*): (MediaStream|null))|*), worker: null,
- *   sendDataChannelMessage: ((function(String, (Object|String)): boolean)|*), broadcastDataChannelMessage:
- *   ((function((Object|String)): boolean)|*), sendNegotiationMessage: ((function(*): Promise<void>)|*),
- *   handleIncomingIce(*, *): Promise<void>, setVideo: WRTC.setVideo, eventChannel:
- *   module:worker_threads.BroadcastChannel, replaceTrack: WRTC.replaceTrack, createOffer: ((function(*):
- *   Promise<Object>)|*), setAudio: WRTC.setAudio, pause: boolean, doUnpause: WRTC.doUnpause, addStreamTracks:
- *   WRTC.addStreamTracks, iceConfig: {iceCandidatePoolSize: number, iceServers: [{urls: string[]},{urls: string,
- *   credential: string, username: string}]}, connector: module:worker_threads.BroadcastChannel, handleIncomingTrack:
- *   WRTC.handleIncomingTrack, initialize: WRTC.initialize, selfName: null, dummyStream: null}}
  */
 const WRTC = {
   pause: false,
@@ -48,6 +35,7 @@ const WRTC = {
    */
   eventChannel: new BroadcastChannel('wrtcevents'),
   connector: new BroadcastChannel('wikiric_connector'),
+  syncRoomChannel: new BroadcastChannel('wikiric_sync'),
   iceConfig: {
     iceServers: [{
       urls: ['stun:wikiric.xyz:3478']
@@ -65,7 +53,7 @@ const WRTC = {
   /***
    * Initialize wRTC.js
    *
-   * @param worker - wikiricSDK instance
+   * @param {wikiricSDK} worker - wikiricSDK instance
    * @param {string} selfName - Your username
    * @param {boolean} [doLog=true] - Enables simple logging
    * @param {boolean} [doLogVerbose=false] - Enables extensive logging
@@ -80,13 +68,22 @@ const WRTC = {
     // ### Initialize wRTC ###
     this.pause = pause
     this.worker = worker
+    if (!this.worker) {
+      // This instance is not logged in, so it will not do anything
+      // Maybe the user will replace this worker with a... working one. Heh.
+      this.worker = wikiricSDK
+    }
+    if (this.worker._syncRoom != null) {
+      this.setUpSyncRoom()
+    }
     this.selfName = selfName
     this.doLog = doLog
     this.doLogVerbose = doLogVerbose
     this.dummyStream = dummyStream
     // ###
     console.log(`%cHey, ${this.selfName}!`, this.logStyle, 'Running on', adapter.browserDetails.browser, adapter.browserDetails.version)
-    // Initialize Connector listener - this is the signaling server!
+    // Initialize Connector listener - this is the signaling server for users
+    // For the backend connection, we use the SyncRoom functionality, instead
     this.connector.onmessage = async event => {
       if (event.data.typ == null) return
       // Listen for WebRTC related data
@@ -119,7 +116,11 @@ const WRTC = {
     }
   },
   /***
-   * Initiates a Peer to Peer Connection
+   * Initiates a Peer to Peer Connection including a DataChannel if specified.
+   *
+   * ---
+   *
+   * #### Protocol
    *
    * wRTC.js uses the Partially Reliable Stream Control Transport Protocol (PR-SCTP)
    * for our WebRTC DataChannel to ensure:
@@ -131,17 +132,46 @@ const WRTC = {
    *
    * It is advised to periodically send data where a single missed frame could cause problems.
    *
+   * ---
+   *
+   * #### remoteName
+   *
+   * The peer connection will be initialized for the username being provided.
+   * The signaling happens automatically for two cases:
+   *
+   *    1. username being "_server"
+   *
+   *        In this case, a SyncRoom message will be sent to the wikiric backend to handle signaling
+   *        This only works if the user is connected to a SyncRoom to allow DataChannel messages to be
+   *        ...distributed to other peers connected to the same SyncRoom. A workaround would be just using
+   *        ...the SyncRoom's websocket connection, which would be slower, though.
+   *    2. username not being "_server"
+   *
+   *       If a user is targeted instead of the backend, a wikiric Connector message will be sent to handle signaling
+   *
    * @param {(MediaStream|null)} stream - Outgoing media stream
    * @param {string} remoteName - Remote username
    * @param {boolean} [createDataChannel=true] - Specifies if a data channel needs to be created
    * @param {boolean} [polite=false] - Impolite (false) basically means we are SENDING an offer, not expecting one
    */
   initiatePeerConnection: function (stream, remoteName, createDataChannel = true, polite = false) {
+    // Check remote name since it may be targeting the backend directly
     if (remoteName == null) {
       if (this.doLog) {
         console.log('%cInvalid Configuration', this.logStyle, 'for initiatePeerConnection!')
         console.log('---> No remoteName!')
         return
+      }
+    } else {
+      remoteName = remoteName.trim()
+      if (remoteName.toLowerCase() === '_server') {
+        remoteName = '_server'
+        // We only send offers to the backend, so we cannot be polite
+        polite = false
+        // We need to open up a data channel, otherwise the p2p connection would be useless
+        createDataChannel = true
+        // We will not send a track since this feature is not supported by the backend, yet
+        stream = null
       }
     }
     if (this.peerConnections.has(remoteName)) {
@@ -172,22 +202,22 @@ const WRTC = {
     }
     // Create and initialize P2P connection
     const peerConnection = this.peerConnections.get(remoteName)
-    peerConnection.selfName = this.selfName
-    peerConnection.remoteName = remoteName
-    peerConnection.candidates = []
-    peerConnection.incomingCandidates = []
-    peerConnection.candidateCounter = 0
-    peerConnection.stream = null
-    peerConnection.streamCounter = 0
-    peerConnection.iceAvailable = false
-    peerConnection.isAccepted = true // TODO: Check if needed to be true
-    peerConnection.isMakingOffer = false
-    peerConnection.isIgnoringOffer = false
-    peerConnection.polite = polite
-    peerConnection.hasStream = false
+    peerConnection._selfName = this.selfName
+    peerConnection._remoteName = remoteName
+    peerConnection._candidates = []
+    peerConnection._incomingCandidates = []
+    peerConnection._candidateCounter = 0
+    peerConnection._stream = null
+    peerConnection._streamCounter = 0
+    peerConnection._iceAvailable = false
+    peerConnection._isAccepted = true // TODO: Check if needed to be true
+    peerConnection._isMakingOffer = false
+    peerConnection._isIgnoringOffer = false
+    peerConnection._polite = polite
+    peerConnection._hasStream = false
     // Add tracks if present
     if (stream != null) {
-      peerConnection.hasStream = true
+      peerConnection._hasStream = true
       let sCount = 1
       stream.getTracks().forEach(track => {
         if (this.doLog) {
@@ -210,7 +240,7 @@ const WRTC = {
       if (this.doLog) {
         console.debug('%cADD DATA CHANNEL', this.logStyle, 'for', remoteName)
       }
-      if (!peerConnection.dataChannel) {
+      if (!peerConnection._dataChannel) {
         // We use the Partially Reliable Stream Control Transport Protocol (PR-SCTP)
         // ...for our WebRTC DataChannel to ensure...
         //
@@ -220,35 +250,42 @@ const WRTC = {
         // This protocol is useful for media streaming or streaming data of no chronological importance.
         //
         // It is advised to periodically send data where a single missed frame could cause problems.
-        peerConnection.dataChannel = peerConnection.createDataChannel('data', {
-          negotiated: true,
-          id: 0,
-          ordered: true,
-          maxRetransmits: 0
-        })
+        if (remoteName === '_server') {
+          peerConnection._dataChannel = peerConnection.createDataChannel('data', {
+            ordered: true,
+            maxRetransmits: 0
+          })
+        } else {
+          peerConnection._dataChannel = peerConnection.createDataChannel('data', {
+            negotiated: true,
+            id: 0,
+            ordered: true,
+            maxRetransmits: 0
+          })
+        }
         const doLog = this.doLog
         const logStyle = this.logStyle
         const eventChannel = this.eventChannel
-        peerConnection.dataChannel.addEventListener('open', _ => {
+        peerConnection._dataChannel.addEventListener('open', _ => {
           if (doLog) {
             console.debug('%c(OUT) DATA CHANNEL OPEN', logStyle, 'to', remoteName)
           }
           const payload = {
             event: 'datachannel_open',
-            selfName: peerConnection.selfName,
-            remoteName: peerConnection.remoteName
+            selfName: peerConnection._selfName,
+            remoteName: peerConnection._remoteName
           }
           eventChannel.postMessage(payload)
-          peerConnection.dataChannel.addEventListener('message', e => {
+          peerConnection._dataChannel.addEventListener('message', e => {
             const payload = {
               event: 'datachannel_message',
-              selfName: peerConnection.selfName,
-              remoteName: peerConnection.remoteName,
+              selfName: peerConnection._selfName,
+              remoteName: peerConnection._remoteName,
               message: e.data
             }
             eventChannel.postMessage(payload)
           })
-          peerConnection.dataChannel.send(`HEY from ${this.selfName}!`)
+          peerConnection._dataChannel.send(`HEY from ${this.selfName}!`)
         })
       } else {
         if (this.doLog) {
@@ -318,8 +355,8 @@ const WRTC = {
     and view this offer from their perspective
      */
     const payload = {
-      selfName: peerConnection.remoteName,
-      remoteName: peerConnection.selfName,
+      selfName: peerConnection._remoteName,
+      remoteName: peerConnection._selfName,
       offer
     }
     return new Promise((resolve) => {
@@ -349,19 +386,23 @@ const WRTC = {
       return null
     }
     const peerConnection = this.peerConnections.get(remoteName)
-    if (!peerConnection.stream) return null
-    if (this.doLog) console.log('%cRetrieving remote stream', this.logStyle, peerConnection.remoteName)
-    return peerConnection.stream
+    if (!peerConnection._stream) return null
+    if (this.doLog) console.log('%cRetrieving remote stream', this.logStyle, peerConnection._remoteName)
+    return peerConnection._stream
   },
   hangup: function (remoteName = null) {
     // Stop tracks to free up the resources
     this.setVideo(false, remoteName)
     this.setAudio(false, remoteName)
     for (const peerCon of this.peerConnections.values()) {
-      if (!remoteName || peerCon.remoteName === remoteName) {
+      if (!remoteName || peerCon._remoteName === remoteName) {
         // Close connection
         if (!remoteName) {
-          this.worker.forwardMessage('[c:hangup]' + this.selfName, 'wRTC', peerCon.remoteName)
+          if (peerCon._remoteName === '_server') {
+            this.worker.sendSyncRoomWRTC('DC', '')
+          } else {
+            this.worker.forwardMessage('[c:hangup]' + this.selfName, 'wRTC', peerCon._remoteName)
+          }
         }
         try {
           setTimeout(() => {
@@ -385,20 +426,26 @@ const WRTC = {
       console.log('%cNegotiation needed!', this.logStyle)
     }
     try {
-      peerConnection.isMakingOffer = true
+      peerConnection._isMakingOffer = true
       peerConnection.endReached = false
       await peerConnection.setLocalDescription()
       if (this.doLog) {
-        console.log(`%c${peerConnection.localDescription.type}`, this.logStyle, 'created for', peerConnection.remoteName)
+        console.log(`%c${peerConnection.localDescription.type}`, this.logStyle, 'created for', peerConnection._remoteName)
       }
       if (peerConnection.localDescription.type === 'answer') {
-        peerConnection.isAccepted = true
+        peerConnection._isAccepted = true
       }
-      const msg = {
-        description: peerConnection.localDescription,
-        remoteName: this.selfName
+      if (peerConnection._remoteName === '_server') {
+        if (peerConnection.localDescription.type === 'offer') {
+          this.worker.sendSyncRoomWRTC('OFFER', JSON.stringify(peerConnection.localDescription))
+        }
+      } else {
+        const msg = {
+          description: peerConnection.localDescription,
+          remoteName: this.selfName
+        }
+        this.worker.forwardMessage(msg, 'wRTC', peerConnection._remoteName)
       }
-      this.worker.forwardMessage(msg, 'wRTC', peerConnection.remoteName)
     } catch (e) {
       if (this.doLog) {
         console.log('%cRenegotiation Failed!', this.logStyle, e.message)
@@ -408,7 +455,7 @@ const WRTC = {
   sendIceMessage: function (peerConnection, iceEvent) {
     let candidate = iceEvent.candidate
     if (candidate && candidate.candidate !== '') {
-      peerConnection.iceAvailable = true
+      peerConnection._iceAvailable = true
       if (this.doLog && this.doLogVerbose) {
         console.log('%cICE Candidate sent', this.logStyle, candidate)
       }
@@ -417,25 +464,29 @@ const WRTC = {
       peerConnection.endReached = true
       candidate = { candidate: '' }
     }
-    const msg = {
-      candidate,
-      remoteName: this.selfName
+    if (peerConnection._remoteName === '_server') {
+      this.worker.sendSyncRoomWRTC('ICE', JSON.stringify(candidate))
+    } else {
+      const msg = {
+        candidate,
+        remoteName: this.selfName
+      }
+      this.worker.forwardMessage(msg, 'wRTC', peerConnection._remoteName)
     }
-    this.worker.forwardMessage(msg, 'wRTC', peerConnection.remoteName)
   },
   handleIncomingTrack: function (peerConnection, trackEvent) {
     if (trackEvent.streams) {
       trackEvent.track.onunmute = () => {
-        if (this.doLog) console.log('%cIncoming Track', this.logStyle, peerConnection.remoteName)
+        if (this.doLog) console.log('%cIncoming Track', this.logStyle, peerConnection._remoteName)
         trackEvent.track.onunmute = null
         // const [remoteStream] = trackEvent.streams
         const remoteStream = trackEvent.streams[0]
-        peerConnection.streamCounter += 1
-        peerConnection.stream = remoteStream
+        peerConnection._streamCounter += 1
+        peerConnection._stream = remoteStream
         const payload = {
           event: 'incoming_track',
-          selfName: peerConnection.selfName,
-          remoteName: peerConnection.remoteName
+          selfName: peerConnection._selfName,
+          remoteName: peerConnection._remoteName
         }
         this.eventChannel.postMessage(payload)
       }
@@ -444,13 +495,13 @@ const WRTC = {
   handleConnectionStateChange: function (peerConnection) {
     const payload = {
       event: 'connection_change',
-      selfName: peerConnection.selfName,
-      remoteName: peerConnection.remoteName,
+      selfName: peerConnection._selfName,
+      remoteName: peerConnection._remoteName,
       status: peerConnection.connectionState
     }
     this.eventChannel.postMessage(payload)
     if (this.doLog) {
-      console.log(`%c${peerConnection.connectionState}`, this.logStyle, peerConnection.remoteName)
+      console.log(`%c${peerConnection.connectionState}`, this.logStyle, peerConnection._remoteName)
     }
     if (peerConnection.connectionState === 'failed') {
       if (this.doLog) {
@@ -458,11 +509,11 @@ const WRTC = {
       }
       peerConnection.restartIce()
     } else if (peerConnection.connectionState === 'disconnected') {
-      this.hangup(peerConnection.remoteName)
+      this.hangup(peerConnection._remoteName)
       const payload = {
         event: 'peer_dc',
         selfName: this.selfName,
-        remoteName: peerConnection.remoteName
+        remoteName: peerConnection._remoteName
       }
       this.eventChannel.postMessage(payload)
     }
@@ -485,28 +536,28 @@ const WRTC = {
       this.initiatePeerConnection(null, remoteName, true, true)
       peerConnection = this.getPeerConnection(remoteName)
     }
-    const offerCollision = description.type === 'offer' && (peerConnection.isMakingOffer || peerConnection.signalingState !== 'stable')
-    peerConnection.isIgnoringOffer = !peerConnection.polite && offerCollision
-    if (peerConnection.isIgnoringOffer) {
+    const offerCollision = description.type === 'offer' && (peerConnection._isMakingOffer || peerConnection.signalingState !== 'stable')
+    peerConnection._isIgnoringOffer = !peerConnection._polite && offerCollision
+    if (peerConnection._isIgnoringOffer) {
       if (this.doLog) {
-        console.log('%cIgnored description', this.logStyle, peerConnection.remoteName)
+        console.log('%cIgnored description', this.logStyle, peerConnection._remoteName)
       }
       return
     }
     try {
       if (this.doLog) {
-        console.log(`%cRemote ${description.type}`, this.logStyle, 'set from', peerConnection.remoteName)
+        console.log(`%cRemote ${description.type}`, this.logStyle, 'set from', peerConnection._remoteName)
       }
       await peerConnection.setRemoteDescription(description)
     } catch (e) {
       console.debug(e.message)
     }
     if (description.type === 'offer') {
-      peerConnection.isMakingOffer = false
+      peerConnection._isMakingOffer = false
       await peerConnection.setLocalDescription()
-      peerConnection.isAccepted = true
+      peerConnection._isAccepted = true
       if (this.doLog) {
-        console.log('%cOffer accepted:', this.logStyle, peerConnection.remoteName)
+        console.log('%cOffer accepted:', this.logStyle, peerConnection._remoteName)
       }
       if (this.doLog) {
         console.log(`%c${peerConnection.localDescription.type}`, this.logStyle, 'created')
@@ -515,22 +566,22 @@ const WRTC = {
         description: peerConnection.localDescription,
         remoteName: this.selfName
       }
-      this.worker.forwardMessage(msg, 'wRTC', peerConnection.remoteName)
+      this.worker.forwardMessage(msg, 'wRTC', peerConnection._remoteName)
     } else if (description.type === 'answer') {
-      peerConnection.isMakingOffer = false
-      peerConnection.isAccepted = true
+      peerConnection._isMakingOffer = false
+      peerConnection._isAccepted = true
       if (this.doLog) {
-        console.log('%cAnswer accepted:', this.logStyle, peerConnection.remoteName)
+        console.log('%cAnswer accepted:', this.logStyle, peerConnection._remoteName)
       }
     }
   },
   async handleIncomingIce (remoteName, candidate) {
     const peerConnection = this.getPeerConnection(remoteName)
-    if (!peerConnection.isAccepted) {
+    if (!peerConnection._isAccepted) {
       if (this.doLog && this.doLogVerbose) {
         console.log('%c--> Storing ICE', this.logStyle, candidate)
       }
-      peerConnection.incomingCandidates.push(candidate)
+      peerConnection._incomingCandidates.push(candidate)
     } else {
       if (this.doLog && this.doLogVerbose) {
         console.log('%c--> Incoming ICE', this.logStyle, candidate)
@@ -539,8 +590,8 @@ const WRTC = {
     }
   },
   addIncomingStoredICE: async function (peerConnection, candidate = undefined) {
-    // const pCon = peerConnection.incomingCandidates
-    // peerConnection.incomingCandidates = []
+    // const pCon = peerConnection._incomingCandidates
+    // peerConnection._incomingCandidates = []
     // if (pCon.length > 0) {
     //   try {
     //     for (let i = 0; i < pCon.length; i++) {
@@ -550,7 +601,7 @@ const WRTC = {
     //       await peerConnection.addIceCandidate(pCon[i])
     //     }
     //   } catch (err) {
-    //     if (!peerConnection.isIgnoringOffer) {
+    //     if (!peerConnection._isIgnoringOffer) {
     //       if (this.doLog) {
     //         console.log('%cERROR addIceCandidate', this.logStyle, err.message)
     //       }
@@ -564,7 +615,7 @@ const WRTC = {
         }
         await peerConnection.addIceCandidate(candidate)
       } catch (err) {
-        if (!peerConnection.isIgnoringOffer) {
+        if (!peerConnection._isIgnoringOffer) {
           if (this.doLog) {
             console.log('%cERROR addIceCandidate', this.logStyle, err.message)
           }
@@ -574,7 +625,7 @@ const WRTC = {
   },
   setVideo: function (valueBoolean, remoteName = null) {
     for (const peerCon of this.peerConnections.values()) {
-      if (!remoteName || peerCon.remoteName === remoteName) {
+      if (!remoteName || peerCon._remoteName === remoteName) {
         const senderList = peerCon.getSenders()
         senderList.forEach((sender) => {
           if (sender.track && sender.track.kind === 'video') {
@@ -587,7 +638,7 @@ const WRTC = {
   },
   setAudio: function (valueBoolean, remoteName = null) {
     for (const peerCon of this.peerConnections.values()) {
-      if (!remoteName || peerCon.remoteName === remoteName) {
+      if (!remoteName || peerCon._remoteName === remoteName) {
         const senderList = peerCon.getSenders()
         senderList.forEach((sender) => {
           if (sender.track && sender.track.kind === 'audio') {
@@ -607,7 +658,7 @@ const WRTC = {
           sender.replaceTrack(videoTracks)
           .then(() => {
             if (this.doLog) {
-              console.log('%cReplaced track', this.logStyle, kind, peerCon.remoteName)
+              console.log('%cReplaced track', this.logStyle, kind, peerCon._remoteName)
             }
             sender.track.enabled = true
           })
@@ -627,7 +678,7 @@ const WRTC = {
       stream.getTracks().forEach(track => {
         if (!forceType || track.kind === forceType) {
           if (this.doLog) {
-            console.debug(`%cADD TRACK ${sCount}`, this.logStyle, 'for', peerConnection.remoteName, track.kind)
+            console.debug(`%cADD TRACK ${sCount}`, this.logStyle, 'for', peerConnection._remoteName, track.kind)
             sCount++
           }
           try {
@@ -654,14 +705,14 @@ const WRTC = {
       return false
     }
     const peer = this.peerConnections.get(usr)
-    if (!peer.dataChannel || peer.dataChannel.readyState !== 'open') {
+    if (!peer._dataChannel || peer._dataChannel.readyState !== 'open') {
       return false
     }
     if (typeof msg === 'object') {
       msg = JSON.stringify(msg)
     }
     try {
-      peer.dataChannel.send(msg)
+      peer._dataChannel.send(msg)
       return true
     } catch (e) {
       console.debug(e.message)
@@ -679,14 +730,14 @@ const WRTC = {
     }
     let didSend = false
     this.peerConnections.forEach((peer) => {
-      if (!peer.dataChannel || peer.dataChannel.readyState !== 'open') {
+      if (!peer._dataChannel || peer._dataChannel.readyState !== 'open') {
         return
       }
       if (typeof msg === 'object') {
         msg = JSON.stringify(msg)
       }
       try {
-        peer.dataChannel.send(msg)
+        peer._dataChannel.send(msg)
         // We cannot guarantee delivery of UDP messages
         // ...so we call it a success on any delivery made
         didSend = true
@@ -695,6 +746,30 @@ const WRTC = {
       }
     })
     return didSend
+  },
+  setUpSyncRoom: async function () {
+    // Listen for SyncRoom messages
+    const events = new BroadcastChannel('wikiric_sync')
+    events.onmessage = event => {
+      // Sanitize
+      if (!event.data || (!event.data.a && !event.data.t)) {
+        return
+      }
+      event.data.a = event.data.a.trim()
+      event.data.t = event.data.t.trim()
+      if (event.data.a.startsWith('[s:ICE]')) {
+        // Incoming ICE candidate
+        const candidate = JSON.parse(event.data.a.substring(7))
+        this.handleIncomingIce('_server', candidate)
+      } else if (event.data.a.startsWith('[s:ANSWER]')) {
+        // Incoming answer
+        const answer = JSON.parse(event.data.a.substring(10))
+        if (this.doLog) {
+          console.log('%cIncoming answer', this.logStyle, 'from the wikiric backend')
+        }
+        this.handleIncomingDescription('_server', answer)
+      }
+    }
   }
 }
 export default WRTC

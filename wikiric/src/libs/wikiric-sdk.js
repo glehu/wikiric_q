@@ -28,9 +28,13 @@ import Wikiricrypt from './wikiricrypt'
  *
  * ## Dependencies
  *
- * The only requirement to be able to use this SDK is the `wikiricrypt` library
+ * The only mandatory requirement to be able to use this SDK is the `wikiricrypt` library
  * that is being developed for wikiric, too. The library needs to be in
  * the same folder as the wikiric SDK.
+ *
+ * This SDK offers WebRTC functionality, too, though, so you might be interested in using the "wRTC" library
+ * which is also being developed for wikiric. The backend implements the WebRTC specifications by utilizing
+ * the Pion/webrtc library, which is written in GO, just like wikiric's backend itself.
  *
  * ## Private Key
  *
@@ -441,6 +445,37 @@ const wikiricSDK = {
     }
     this._syncRoom.send(txt)
     return true
+  },
+  sendSyncRoomWRTC: function (type, content) {
+    if (!content) {
+      return
+    }
+    type = type.toUpperCase()
+    let prefix
+    switch (type) {
+      case 'ICE':
+        // Sending of ICE Candidates is allowed
+        prefix = '[c:WRTC]ICE;'
+        break
+      case 'OFFER':
+        // Sending of Offers (Local Description) is allowed
+        prefix = '[c:WRTC]OFFER;'
+        break
+      case 'ANSWER':
+        // We expect Answers (Remote Description) but do not send them
+        // As of 13.11.2024 the wikiric backend would answer with "Service Unavailable" anyway
+        return
+      case 'DC':
+        // User can close the connection on his own
+        prefix = '[c:WRTC]DC'
+        break
+      default:
+        // Avoid sending unknown types (e.g. due to malformed input)
+        return
+    }
+    let msg = prefix + content
+    msg = msg.trim()
+    this.sendSyncRoomMessage(msg)
   },
   /**
    * Starts a Ping-Pong process by sending a latency request to the server.
