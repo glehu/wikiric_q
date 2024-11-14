@@ -303,8 +303,11 @@ export default {
         matches.forEach(el => {
           if (el.href && el.href !== '') {
             if (el.href.startsWith('https://wikiric.xyz/')) {
-              el.classList.add('internalLink')
-              el.addEventListener('click', this.interceptLink, false)
+              // Ignore download links
+              if (!el.download) {
+                el.classList.add('internalLink')
+                el.addEventListener('click', this.interceptLink, false)
+              }
             } else {
               el.addEventListener('click', this.interceptRegularLink, false)
             }

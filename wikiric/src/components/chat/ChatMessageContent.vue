@@ -49,7 +49,7 @@
           <template v-if="msg._isFile">
             <a :href="msg._msgURL"
                class="flex-grow"
-               download>
+               :download="msg._fileName">
               <q-btn icon="sym_o_file_download" dense unelevated size="1rem">
                 <q-tooltip class="text-subtitle2">Download</q-tooltip>
               </q-btn>
@@ -180,7 +180,7 @@
                           <template v-if="msg._isFile">
                             <a :href="msg._msgURL"
                                class="flex-grow"
-                               download>
+                               :download="msg._fileName">
                               <q-btn icon="sym_o_file_download" dense unelevated size="1rem">
                                 <q-tooltip class="text-subtitle2">Download</q-tooltip>
                               </q-btn>
