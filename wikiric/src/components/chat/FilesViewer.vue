@@ -1,5 +1,5 @@
 <template>
-  <q-dialog v-model="show" class="z-top">
+  <q-dialog v-model="show" class="z-top" @show="checkLinks">
     <q-card class="background w-[99dvw] max-w-xl hfull"
             flat bordered>
       <div class="flex column relative">
@@ -103,7 +103,7 @@
                            @click="deleteFile(file)"/>
                     <a :href="file.pth"
                        class="rounded"
-                       download>
+                       :download="file.t">
                       <q-btn icon="sym_o_file_download"
                              color="primary"
                              class="wfit"
@@ -280,6 +280,65 @@ export default {
         })
         this.getSnippets()
       })
+    },
+    checkLinks: function () {
+      const matches = document.querySelectorAll('a')
+      if (matches && matches.length > 0) {
+        matches.forEach(el => {
+          if (el.href && el.href !== '') {
+            if (el.href.startsWith('https://wikiric.xyz/')) {
+              // Ignore download links
+              if (!el.download) {
+                el.classList.add('internalLink')
+                el.addEventListener('click', this.interceptLink, false)
+              } else {
+                el.addEventListener('click', this.interceptDownload, false)
+              }
+            } else {
+              el.addEventListener('click', this.interceptRegularLink, false)
+            }
+          }
+        })
+      }
+    },
+    interceptDownload: function (e) {
+      const href = e.currentTarget.href
+      const name = e.currentTarget.download
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      e.stopPropagation()
+      api.get(
+        href,
+        {
+          responseType: 'blob'
+        }
+      ).then((response) => {
+        console.log(response.data)
+        let filename = name
+        filename = decodeURI(filename)
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
+        window.URL.revokeObjectURL(url)
+        link.remove()
+      }).catch((err) => console.debug(err.message))
+    },
+    interceptLink: function (e) {
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      e.stopPropagation()
+      const url = `/redir?redirect=${e.currentTarget.href.substring(21)}` +
+        `&backrefurl=${this.$router.currentRoute.value.fullPath}`
+      this.$router.push(url)
+    },
+    interceptRegularLink: function (e) {
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      e.stopPropagation()
+      window.open(e.target.href, '_blank')
     }
   }
 }
