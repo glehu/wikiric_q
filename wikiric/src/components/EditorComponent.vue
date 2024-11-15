@@ -33,6 +33,8 @@ import UniqueID from '@tiptap-pro/extension-unique-id'
 import Placeholder from '@tiptap/extension-placeholder'
 import { Link } from '@tiptap/extension-link'
 import { debounce } from 'quasar'
+import wikiricUtils from 'src/libs/wikiric-utils'
+import { api } from 'boot/axios'
 
 const lowlight = createLowlight(common)
 
@@ -89,7 +91,8 @@ export default {
     return {
       editor: null,
       bc: new BroadcastChannel('wikiric_internal'),
-      autoSaveTimer: -1
+      autoSaveTimer: -1,
+      utils: wikiricUtils
     }
   },
   watch: {
@@ -307,6 +310,8 @@ export default {
               if (!el.download) {
                 el.classList.add('internalLink')
                 el.addEventListener('click', this.interceptLink, false)
+              } else {
+                el.addEventListener('click', this.interceptDownload, false)
               }
             } else {
               el.addEventListener('click', this.interceptRegularLink, false)
@@ -314,6 +319,31 @@ export default {
           }
         })
       }
+    },
+    interceptDownload: function (e) {
+      const href = e.currentTarget.href
+      const name = e.currentTarget.download
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      e.stopPropagation()
+      api.get(
+        href,
+        {
+          responseType: 'blob'
+        }
+      ).then((response) => {
+        console.log(response.data)
+        let filename = name
+        filename = decodeURI(filename)
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
+        window.URL.revokeObjectURL(url)
+        link.remove()
+      }).catch((err) => console.debug(err.message))
     },
     interceptLink: function (e) {
       e.preventDefault()

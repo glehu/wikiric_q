@@ -209,6 +209,7 @@ import { DateTime } from 'luxon'
 import Editor from 'components/EditorComponent.vue'
 import FilePicker from 'components/FilePicker.vue'
 import { api } from 'boot/axios'
+import wikiricUtils from 'src/libs/wikiric-utils'
 
 export default {
   components: {
@@ -288,6 +289,7 @@ export default {
   data () {
     return {
       store: useStore(),
+      utils: wikiricUtils,
       show: false,
       wisdom: {
         t: '',
@@ -680,6 +682,8 @@ export default {
               if (!el.download) {
                 el.classList.add('internalLink')
                 el.addEventListener('click', this.interceptLink, false)
+              } else {
+                el.addEventListener('click', this.interceptDownload, false)
               }
             } else {
               el.addEventListener('click', this.interceptRegularLink, false)
@@ -687,6 +691,31 @@ export default {
           }
         })
       }
+    },
+    interceptDownload: function (e) {
+      const href = e.currentTarget.href
+      const name = e.currentTarget.download
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      e.stopPropagation()
+      api.get(
+        href,
+        {
+          responseType: 'blob'
+        }
+      ).then((response) => {
+        console.log(response.data)
+        let filename = name
+        filename = decodeURI(filename)
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
+        window.URL.revokeObjectURL(url)
+        link.remove()
+      }).catch((err) => console.debug(err.message))
     },
     interceptLink: function (e) {
       e.preventDefault()

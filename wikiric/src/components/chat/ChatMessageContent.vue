@@ -12,7 +12,8 @@
     <div class="wfull relative">
       <q-menu v-if="!noInteraction && !fullscreen"
               touch-position auto-close cover
-              class="flex">
+              class="flex"
+              @show="checkLinks">
         <q-btn-group flat class="surface flex justify-center flex-grow">
           <q-btn icon="reply" dense
                  v-on:click="$emit('reply', msg.uid)">
@@ -198,7 +199,7 @@
                           square dense color="primary"
                           class="rounded-tl"
                           :icon="fullscreen ? 'fullscreen_exit' : 'fullscreen'"
-                          @click="fullscreen = !fullscreen"
+                          @click="toggleFullScreenMode"
                         />
                       </template>
                       <template v-else>
@@ -207,7 +208,7 @@
                           text-color="brand-p"
                           class="rounded-tl"
                           :icon="fullscreen ? 'fullscreen_exit' : 'fullscreen'"
-                          @click="fullscreen = !fullscreen"
+                          @click="toggleFullScreenMode"
                         />
                       </template>
                     </q-carousel-control>
@@ -531,6 +532,69 @@ export default {
           }
       }
       return returnString
+    },
+    toggleFullScreenMode: function () {
+      this.fullscreen = !this.fullscreen
+      this.checkLinks()
+    },
+    checkLinks: function () {
+      const matches = document.querySelectorAll('a')
+      if (matches && matches.length > 0) {
+        matches.forEach(el => {
+          if (el.href && el.href !== '') {
+            if (el.href.startsWith('https://wikiric.xyz/')) {
+              // Ignore download links
+              if (!el.download) {
+                el.classList.add('internalLink')
+                el.addEventListener('click', this.interceptLink, false)
+              } else {
+                el.addEventListener('click', this.interceptDownload, false)
+              }
+            } else {
+              el.addEventListener('click', this.interceptRegularLink, false)
+            }
+          }
+        })
+      }
+    },
+    interceptDownload: function (e) {
+      const href = e.currentTarget.href
+      const name = e.currentTarget.download
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      e.stopPropagation()
+      api.get(
+        href,
+        {
+          responseType: 'blob'
+        }
+      ).then((response) => {
+        console.log(response.data)
+        let filename = name
+        filename = decodeURI(filename)
+        const url = window.URL.createObjectURL(new Blob([response.data]))
+        const link = document.createElement('a')
+        link.href = url
+        link.setAttribute('download', filename)
+        document.body.appendChild(link)
+        link.click()
+        window.URL.revokeObjectURL(url)
+        link.remove()
+      }).catch((err) => console.debug(err.message))
+    },
+    interceptLink: function (e) {
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      e.stopPropagation()
+      const url = `/redir?redirect=${e.currentTarget.href.substring(21)}` +
+        `&backrefurl=${this.$router.currentRoute.value.fullPath}`
+      this.$router.push(url)
+    },
+    interceptRegularLink: function (e) {
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      e.stopPropagation()
+      window.open(e.target.href, '_blank')
     }
   }
 }
