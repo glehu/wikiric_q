@@ -1,5 +1,6 @@
 <template>
-  <div class="wfull relative max-w-[80dvw] lg:max-w-[60dvw] xl:max-w-[45dvw]">
+  <div class="wfull relative max-w-[80dvw]
+              lg:max-w-[60dvw] xl:max-w-[45dvw]">
     <template v-if="msg._decryptionFailed">
       <div class="mb2 error p1 rounded flex gap-2 items-center">
         <q-icon left name="error"/>
@@ -9,62 +10,64 @@
         </p>
       </div>
     </template>
-    <div class="wfull relative">
-      <q-menu v-if="!noInteraction && !fullscreen"
-              touch-position auto-close cover
-              class="flex"
-              @show="checkLinks">
-        <q-btn-group flat class="surface flex justify-center flex-grow">
-          <q-btn icon="reply" dense
-                 v-on:click="$emit('reply', msg.uid)">
-            <q-tooltip class="text-subtitle2">Reply</q-tooltip>
-          </q-btn>
-          <q-btn v-if="sent" icon="edit" dense
-                 v-on:click="$emit('edit', msg.uid)">
-            <q-tooltip class="text-subtitle2">Edit</q-tooltip>
-          </q-btn>
-          <q-btn v-if="sent" icon="delete" dense
-                 v-on:click="$emit('delete', msg.uid)">
-            <q-tooltip class="text-subtitle2">Delete</q-tooltip>
-          </q-btn>
-          <q-separator vertical spaced color="transparent"
-                       class=""/>
-          <q-btn icon="thumb_up" dense
-                 v-on:click="$emit('react', msg.uid, '+')">
-            <q-tooltip class="text-subtitle2">Upvote</q-tooltip>
-          </q-btn>
-          <q-btn icon="thumb_down" dense
-                 v-on:click="$emit('react', msg.uid, '-')">
-            <q-tooltip class="text-subtitle2">Dislike</q-tooltip>
-          </q-btn>
-          <q-btn icon="star" dense
-                 v-on:click="$emit('react', msg.uid, '⭐️')">
-            <q-tooltip class="text-subtitle2">Wow!</q-tooltip>
-          </q-btn>
-          <q-separator vertical spaced color="transparent"
-                       class=""/>
-          <q-btn icon="content_copy" dense
-                 v-on:click="handleCopyMessage">
-            <q-tooltip class="text-subtitle2">Copy</q-tooltip>
-          </q-btn>
-          <template v-if="msg._isFile">
-            <a :href="msg._msgURL"
-               class="flex-grow"
-               :download="msg._fileName">
-              <q-btn icon="sym_o_file_download" dense unelevated size="1rem">
-                <q-tooltip class="text-subtitle2">Download</q-tooltip>
-              </q-btn>
-            </a>
-          </template>
-        </q-btn-group>
-      </q-menu>
+    <div class="wfull relative hover_field">
+      <template v-if="msg._mType !== 'GIF' && msg._mType !== 'Image'">
+        <q-menu v-if="!noInteraction && !fullscreen"
+                touch-position auto-close
+                class="flex"
+                @show="checkLinks">
+          <q-btn-group flat class="surface flex justify-center flex-grow">
+            <q-btn icon="reply" dense
+                   v-on:click="$emit('reply', msg.uid)">
+              <q-tooltip class="text-subtitle2">Reply</q-tooltip>
+            </q-btn>
+            <q-btn v-if="sent" icon="edit" dense
+                   v-on:click="$emit('edit', msg.uid)">
+              <q-tooltip class="text-subtitle2">Edit</q-tooltip>
+            </q-btn>
+            <q-btn v-if="sent" icon="delete" dense
+                   v-on:click="$emit('delete', msg.uid)">
+              <q-tooltip class="text-subtitle2">Delete</q-tooltip>
+            </q-btn>
+            <q-separator vertical spaced color="transparent"
+                         class=""/>
+            <q-btn icon="thumb_up" dense
+                   v-on:click="$emit('react', msg.uid, '+')">
+              <q-tooltip class="text-subtitle2">Upvote</q-tooltip>
+            </q-btn>
+            <q-btn icon="thumb_down" dense
+                   v-on:click="$emit('react', msg.uid, '-')">
+              <q-tooltip class="text-subtitle2">Dislike</q-tooltip>
+            </q-btn>
+            <q-btn icon="star" dense
+                   v-on:click="$emit('react', msg.uid, '⭐️')">
+              <q-tooltip class="text-subtitle2">Wow!</q-tooltip>
+            </q-btn>
+            <q-separator vertical spaced color="transparent"
+                         class=""/>
+            <q-btn icon="content_copy" dense
+                   v-on:click="handleCopyMessage">
+              <q-tooltip class="text-subtitle2">Copy</q-tooltip>
+            </q-btn>
+            <template v-if="msg._isFile">
+              <a :href="msg._msgURL"
+                 class="flex-grow"
+                 :download="msg._fileName">
+                <q-btn icon="sym_o_file_download" dense unelevated size="1rem">
+                  <q-tooltip class="text-subtitle2">Download</q-tooltip>
+                </q-btn>
+              </a>
+            </template>
+          </q-btn-group>
+        </q-menu>
+      </template>
       <div class="relative"
            :class="{'bg-primary': sent,
-                      'surface': !sent}">
+                    'surface': !sent}">
         <div v-if="msg._tagged"
              class="relative wfull hfull bg-orange
-                      right-0 mb2 rounded p2 no-pointer-events
-                      fontbold flex row items-center text-white">
+                    right-0 mb2 rounded p2 no-pointer-events
+                    fontbold flex row items-center text-white">
           <q-icon name="sym_o_alternate_email"
                   class="mr2"
                   size="1.5rem"/>
@@ -72,7 +75,7 @@
         <div v-if="replySrc"
              class="p1 rounded mb2"
              :class="{'bg-primary': !sent,
-                        'background': sent}">
+                      'background': sent}">
           <div class="flex row items-center gap-1 pl1 pr2">
             <q-icon name="reply" size="1rem"/>
             <div class="flex column fontbold">
@@ -83,7 +86,7 @@
           </div>
           <div class="mt2 p2 fmt_border rounded text-white"
                :class="{'bg-primary': sent,
-                          'surface': !sent}">
+                        'surface': !sent}">
             <div class="markedView" v-html="replySrc.msg"></div>
             <span class="text-xs opacity-60 text-weight-medium">
                 {{ replySrc._ts }}
@@ -94,18 +97,20 @@
           <div class="hfit">
             <div class="relative wfull hfull">
               <q-carousel
-                class="wfull hfull surface"
+                id="msg_fs_outside"
+                class="wfull hfull transparent backdrop-blur-[4px] backdrop-brightness-50"
                 swipeable
                 animated
                 v-model="slide"
                 v-model:fullscreen="fullscreen">
                 <q-carousel-slide :name="1"
                                   class="flex column
-                                           items-center
-                                           justify-center
-                                           min-w-[300px]">
+                                         items-center
+                                         justify-center
+                                         min-w-[300px]">
                   <q-img :src="msg._msgURL" fit="contain" loading="eager"
-                         style="max-height: calc(100% - 9rem)"/>
+                         style="max-height: calc(100% - 9rem)"
+                         @click="toggleFullScreenMode"/>
                 </q-carousel-slide>
                 <template v-slot:control>
                   <q-carousel-control
@@ -114,9 +119,9 @@
                     position="bottom-left"
                     :offset="[0, 0]">
                     <div class="flex row gap-2 items-center
-                                  background wfull
-                                  pl4 pr14 pt1 h-18
-                                  fmt_border_top">
+                                background wfull
+                                pl4 pr14 pt1 h-18
+                                fmt_border_top">
                       <div class="hfull">
                         <div>
                           <span class="text-subtitle2 mr2">{{ msg._ts }}:</span>
@@ -184,23 +189,59 @@
                     v-if="!noInteraction"
                     position="bottom-right"
                     :offset="[0, 0]">
-                    <template v-if="sent">
-                      <q-btn
-                        square dense color="primary"
-                        class="rounded-tl"
-                        :icon="fullscreen ? 'fullscreen_exit' : 'fullscreen'"
-                        @click="toggleFullScreenMode"
-                      />
-                    </template>
-                    <template v-else>
-                      <q-btn
-                        square dense color="brand-bg"
-                        text-color="brand-p"
-                        class="rounded-tl"
-                        :icon="fullscreen ? 'fullscreen_exit' : 'fullscreen'"
-                        @click="toggleFullScreenMode"
-                      />
-                    </template>
+                    <q-btn icon="sym_o_more_vert" unelevated dense square
+                           class="hover_show_o rounded-tl"
+                           :class="{'bg-primary': sent,
+                                    'surface': !sent}">
+                      <q-menu v-if="!noInteraction && !fullscreen"
+                              touch-position auto-close
+                              class="flex"
+                              @show="checkLinks">
+                        <q-btn-group flat class="surface flex justify-center flex-grow">
+                          <q-btn icon="reply" dense
+                                 v-on:click="$emit('reply', msg.uid)">
+                            <q-tooltip class="text-subtitle2">Reply</q-tooltip>
+                          </q-btn>
+                          <q-btn v-if="sent" icon="edit" dense
+                                 v-on:click="$emit('edit', msg.uid)">
+                            <q-tooltip class="text-subtitle2">Edit</q-tooltip>
+                          </q-btn>
+                          <q-btn v-if="sent" icon="delete" dense
+                                 v-on:click="$emit('delete', msg.uid)">
+                            <q-tooltip class="text-subtitle2">Delete</q-tooltip>
+                          </q-btn>
+                          <q-separator vertical spaced color="transparent"
+                                       class=""/>
+                          <q-btn icon="thumb_up" dense
+                                 v-on:click="$emit('react', msg.uid, '+')">
+                            <q-tooltip class="text-subtitle2">Upvote</q-tooltip>
+                          </q-btn>
+                          <q-btn icon="thumb_down" dense
+                                 v-on:click="$emit('react', msg.uid, '-')">
+                            <q-tooltip class="text-subtitle2">Dislike</q-tooltip>
+                          </q-btn>
+                          <q-btn icon="star" dense
+                                 v-on:click="$emit('react', msg.uid, '⭐️')">
+                            <q-tooltip class="text-subtitle2">Wow!</q-tooltip>
+                          </q-btn>
+                          <q-separator vertical spaced color="transparent"
+                                       class=""/>
+                          <q-btn icon="content_copy" dense
+                                 v-on:click="handleCopyMessage">
+                            <q-tooltip class="text-subtitle2">Copy</q-tooltip>
+                          </q-btn>
+                          <template v-if="msg._isFile">
+                            <a :href="msg._msgURL"
+                               class="flex-grow"
+                               :download="msg._fileName">
+                              <q-btn icon="sym_o_file_download" dense unelevated size="1rem">
+                                <q-tooltip class="text-subtitle2">Download</q-tooltip>
+                              </q-btn>
+                            </a>
+                          </template>
+                        </q-btn-group>
+                      </q-menu>
+                    </q-btn>
                   </q-carousel-control>
                 </template>
               </q-carousel>
@@ -211,7 +252,7 @@
         <template v-else-if="msg._mType === 'Audio'">
           <div class="clientMessage">
             <p class="pointer-events-none text-subtitle2
-                        font-bold">
+                      font-bold">
               {{ msg._fileName }}
             </p>
             <audio controls preload="auto"
@@ -227,7 +268,7 @@
             <div class="flex gap-2 p2 rounded background items-center">
               <q-icon name="sym_o_attachment" size="2rem"/>
               <span class="pointer-events-none text-subtitle2
-                             font-bold">
+                           font-bold">
                   {{ msg._fileName }}
                 </span>
             </div>
@@ -246,7 +287,7 @@
           <template v-else>
             <div class="surface rounded p2 markedView">
               <div class="flex row items-center text-subtitle2
-                            fontbold background rounded wfit px2 py1">
+                          fontbold background rounded wfit px2 py1">
                 <template v-if="wisdom.type === 'lesson'">
                   <q-icon name="lightbulb" size="1.3rem"
                           class="mr2"/>
@@ -296,7 +337,7 @@
                 </template>
                 <template v-else>
                   <div class="flex items-center gap-2 mt4 px2 py1
-                                        rounded background text-subtitle2"
+                              rounded background text-subtitle2"
                        style="border-left: 8px solid darkorange">
                     <q-icon name="question_mark"/>
                     <span>Help Requested</span>
@@ -306,7 +347,7 @@
               <template v-else-if="wisdom.type === 'task'">
                 <template v-if="wisdom.done">
                   <div class="flex items-center gap-2 mt4 px2 py1
-                                        rounded background text-subtitle2"
+                              rounded background text-subtitle2"
                        style="border-left: 8px solid green">
                     <q-icon name="check"/>
                     <span>Done</span>
@@ -314,7 +355,7 @@
                 </template>
                 <template v-else>
                   <div class="flex items-center gap-2 mt4 px2 py1
-                                        rounded background text-subtitle2"
+                              rounded background text-subtitle2"
                        style="border-left: 8px solid darkorange">
                     <q-icon name="sym_o_manufacturing"/>
                     <span>ToDo</span>
