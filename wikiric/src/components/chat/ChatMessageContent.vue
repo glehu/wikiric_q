@@ -101,8 +101,7 @@
                 class="wfull hfull transparent backdrop-blur-[4px] backdrop-brightness-50"
                 swipeable
                 animated
-                v-model="slide"
-                v-model:fullscreen="fullscreen">
+                v-model="slide">
                 <q-carousel-slide :name="1"
                                   class="flex column
                                          items-center
@@ -113,78 +112,6 @@
                          @click="toggleFullScreenMode"/>
                 </q-carousel-slide>
                 <template v-slot:control>
-                  <q-carousel-control
-                    class="wfull"
-                    v-if="fullscreen"
-                    position="bottom-left"
-                    :offset="[0, 0]">
-                    <div class="flex row gap-2 items-center
-                                background wfull
-                                pl4 pr14 pt1 h-18
-                                fmt_border_top">
-                      <div class="hfull">
-                        <div>
-                          <span class="text-subtitle2 mr2">{{ msg._ts }}:</span>
-                          <template v-if="msg._fileName">
-                            <span class="text-subtitle2">{{ msg._fileName }}</span>
-                          </template>
-                          <template v-else>
-                            <span class="text-subtitle2 italic">(No Filename)</span>
-                          </template>
-                        </div>
-                        <div v-if="msg.reacts && msg.reacts.length > 0"
-                             class="flex relative pt1 pb2">
-                          <div v-for="reaction in msg.reacts" :key="reaction.t"
-                               style="padding: 1px 4px 1px 4px; margin-right: 4px; border-radius: 5px"
-                               class="fmt_border cursor-pointer
-                                        flex row items-center gap-1"
-                               :title="reaction.src.toString() + ' reacted to this message.'"
-                               v-on:click="$emit('react', msg.uid, reaction.t)"
-                               :id="'react_' + msg.uid + '_' + reaction.t">
-                            <q-icon v-if="reaction.t === '+'" name="thumb_up"
-                                    class=""/>
-                            <q-icon v-else-if="reaction.t === '-'" name="thumb_down"
-                                    class=""/>
-                            <span v-else>{{ reaction.t }}</span>
-                            <span class="text-sm font-bold">
-                                {{ reaction.src.length }}
-                              </span>
-                          </div>
-                        </div>
-                      </div>
-                      <q-btn-group flat class="surface mlauto">
-                        <q-btn icon="thumb_up" dense
-                               v-on:click="$emit('react', msg.uid, '+')">
-                          <q-tooltip class="text-subtitle2">Upvote</q-tooltip>
-                        </q-btn>
-                        <q-btn icon="thumb_down" dense
-                               v-on:click="$emit('react', msg.uid, '-')">
-                          <q-tooltip class="text-subtitle2">Dislike</q-tooltip>
-                        </q-btn>
-                        <q-btn icon="star" dense
-                               v-on:click="$emit('react', msg.uid, '⭐️')">
-                          <q-tooltip class="text-subtitle2">Wow!</q-tooltip>
-                        </q-btn>
-                        <q-separator vertical spaced color="transparent"
-                                     class=""/>
-                        <q-btn icon="content_copy" dense
-                               v-on:click="$emit(
-                                             'copy',
-                                             utils.htmlToString(msg._msg))">
-                          <q-tooltip class="text-subtitle2">Copy</q-tooltip>
-                        </q-btn>
-                        <template v-if="msg._isFile">
-                          <a :href="msg._msgURL"
-                             class="flex-grow"
-                             :download="msg._fileName">
-                            <q-btn icon="sym_o_file_download" dense unelevated size="1rem">
-                              <q-tooltip class="text-subtitle2">Download</q-tooltip>
-                            </q-btn>
-                          </a>
-                        </template>
-                      </q-btn-group>
-                    </div>
-                  </q-carousel-control>
                   <q-carousel-control
                     v-if="!noInteraction"
                     position="bottom-right"
@@ -406,6 +333,8 @@
       </div>
     </div>
   </div>
+  <ChatImageViewer :msg="msg" :is-open="fullscreen"
+                   @close="fullscreen = false"/>
 </template>
 
 <script>
@@ -413,9 +342,11 @@
 import wikiricUtils from 'src/libs/wikiric-utils'
 import { api } from 'boot/axios'
 import { DateTime } from 'luxon'
+import ChatImageViewer from 'components/chat/ChatImageViewer.vue'
 
 export default {
   name: 'ChatMessageContent',
+  components: { ChatImageViewer },
   props: {
     msg: {
       type: Object,
@@ -564,7 +495,7 @@ export default {
       return returnString
     },
     toggleFullScreenMode: function () {
-      this.fullscreen = !this.fullscreen
+      this.fullscreen = true
       this.checkLinks()
     },
     checkLinks: function () {
