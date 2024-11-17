@@ -577,20 +577,20 @@
                 </div>
               </template>
               <template v-else>
-                <template v-if="isHost">
-                  <template v-if="!isSimulating">
+                <template v-if="!isSimulating">
+                  <template v-if="isHost">
                     <q-btn color="primary" no-caps rounded size="1.5rem"
                            @click="scheduleSimulation(true, true, false)"
                            icon="sym_o_network_intelligence_history"
                            :label="`Start Round ${currentRound + 1}`"/>
                   </template>
-                </template>
-                <template v-else>
-                  <div class="px2">
-                    <p class="fontbold">
-                      Waiting for Host...
-                    </p>
-                  </div>
+                  <template v-else>
+                    <div class="px2">
+                      <p class="fontbold">
+                        Waiting for Host...
+                      </p>
+                    </div>
+                  </template>
                 </template>
               </template>
             </div>
@@ -3925,6 +3925,7 @@ export default {
       if (this.isHost || !this.coPlayers || this.coPlayers.size < 1) {
         this.checkAndSpawnEnemies('skeleton', this.getEnemySkeletonAmount())
       }
+      this.healthCheck()
     },
     /**
      * Actions happening or being checked every half second
@@ -4648,7 +4649,7 @@ export default {
           this.peerCons.set(event.data.remoteName, peer)
         }
       } else if (event.data.event === 'datachannel_message') {
-        console.log('WRTC MESSAGE:', event.data.message)
+        // console.log('WRTC MESSAGE:', event.data.message)
         if (event.data.message.startsWith('POS-')) {
           // Some player sent their position
           // We can simply use this to counteract de-sync
@@ -4663,9 +4664,10 @@ export default {
           //    UP;RIGHT;DOWN;LEFT
           const data = event.data.message.substring(4).split(';')
           this.setCoPlayerMovement(data)
-        } else {
-          console.debug('DataChannel Message:', event.data.message)
         }
+        // else {
+        //   console.debug('DataChannel Message:', event.data.message)
+        // }
       } else if (event.data.event === 'datachannel_open') {
         this.wrtc.sendDataChannelMessage(event.data.remoteName, 'N;DR')
         const peer = this.peerCons.get(event.data.remoteName)
@@ -4971,11 +4973,13 @@ export default {
      */
     healthCheck: function () {
       // We do not need multiple running requests
+      let noRequest = false
       if (this.failSafe > 0) {
-        return
+        noRequest = true
       }
       // 1. Check if we have seen players so fat
       if (!this.coPlayers || this.coPlayers.size < 1) {
+        if (noRequest) return
         // Possibly missing players? Check if there is player data via SyncRoom
         // We will enter FailSafeMode=1 meaning MissingPlayerData
         this.failSafe = 1
@@ -4986,6 +4990,7 @@ export default {
       // Having no position means that player will not get rendered + unable to receive MOV commands
       this.coPlayers.forEach((player) => {
         if (!player.x || !player.y) {
+          if (noRequest) return
           // Player is missing positional data
           // We will enter FailSafeMode=2 meaning MissingPlayerPosition
           this.failSafe = 2
@@ -4993,6 +4998,7 @@ export default {
           return false
         }
       })
+      this.failSafe = 0
       return true
     }
   }
