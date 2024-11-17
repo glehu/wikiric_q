@@ -43,10 +43,10 @@
             </kbd>
           </q-btn>
           <div class="relative flex mlauto">
-            <q-btn icon="person" size="1rem" unelevated dense
+            <q-btn icon="sym_o_account_circle" size="1rem" unelevated dense
                    @click="openAccount"/>
           </div>
-          <div class="relative flex ml2">
+          <div class="relative flex">
             <q-btn icon="inbox" size="1rem" unelevated dense
                    @click="isViewingNotifications = !isViewingNotifications"/>
             <template v-if="notifications.length > 0">
@@ -226,10 +226,16 @@ const linksList = [
     link: '/'
   },
   {
-    title: 'Account & Settings',
+    title: 'Apps & Settings',
     caption: 'An overview of apps and settings',
-    icon: 'person',
+    icon: 'sym_o_apps',
     link: '/account'
+  },
+  {
+    title: 'Account',
+    caption: 'View your account information',
+    icon: 'sym_o_account_circle',
+    link: '/account?tab=settings'
   },
   {
     title: 'Chat & Friends',
@@ -410,14 +416,9 @@ export default defineComponent({
       }, 0)
     },
     gotoLink: function (link) {
-      const wasChat = this.$route.path.startsWith('/chat')
       this.fixed = false
-      if (wasChat && link.startsWith('/chat')) {
-        const url = '/redir?redirect=' + link
-        this.$router.push(url)
-      } else {
-        this.$router.push(link)
-      }
+      const url = '/redir?redirect=' + link
+      this.$router.push(url)
     },
     minimize: function () {
       window.myWindowAPI?.minimize()

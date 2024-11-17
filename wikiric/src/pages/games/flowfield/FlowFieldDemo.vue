@@ -1121,7 +1121,8 @@ export default {
       syncCount: 0,
       syncMaxCount: 999999,
       syncRound: -1,
-      syncCache: new Map()
+      syncCache: new Map(),
+      failSafe: 0
     }
   },
   mounted () {
@@ -3381,11 +3382,8 @@ export default {
     },
     srNotifyMove: function (force) {
       const v = `${this.goalUp};${this.goalRight};${this.goalDown};${this.goalLeft}`
-      let noSet = false
       if (this.lastPos === v && !force) {
         return
-      } else {
-        noSet = true
       }
       const k = `MOV-${this.store.user.username}`
       // Send message to others
@@ -3393,12 +3391,6 @@ export default {
         `${k};${v}`)
       this.lastPos = v
       this.dataMap.set(k, v)
-      if (!noSet) {
-        return
-      }
-      // Let server process data
-      this.$connector.sendSyncRoomMessage(
-        this.buildDataCommand('SET', 'DATA', k, v))
     },
     srNotifyMoveStop: function () {
       const k = `MOV-${this.store.user.username}`
@@ -4656,7 +4648,7 @@ export default {
           this.peerCons.set(event.data.remoteName, peer)
         }
       } else if (event.data.event === 'datachannel_message') {
-        // console.log('WRTC MESSAGE:', event.data.message)
+        console.log('WRTC MESSAGE:', event.data.message)
         if (event.data.message.startsWith('POS-')) {
           // Some player sent their position
           // We can simply use this to counteract de-sync
@@ -4971,6 +4963,37 @@ export default {
       this.addDeathAnimation(other, assets)
       // Track trophy progress
       this.trophyList.addProgress('kill', 1)
+    },
+    /**
+     * Checks all co-player data for missing data, possibly attempting to retrieve them
+     * ...from either the peers directly or from previous SyncRoom data commits
+     * Genius fail-safe system!
+     */
+    healthCheck: function () {
+      // We do not need multiple running requests
+      if (this.failSafe > 0) {
+        return
+      }
+      // 1. Check if we have seen players so fat
+      if (!this.coPlayers || this.coPlayers.size < 1) {
+        // Possibly missing players? Check if there is player data via SyncRoom
+        // We will enter FailSafeMode=1 meaning MissingPlayerData
+        this.failSafe = 1
+        this.handleLatencyLag(this.currentSRLatency)
+        return false
+      }
+      // 2. Check if we have positions for all players
+      // Having no position means that player will not get rendered + unable to receive MOV commands
+      this.coPlayers.forEach((player) => {
+        if (!player.x || !player.y) {
+          // Player is missing positional data
+          // We will enter FailSafeMode=2 meaning MissingPlayerPosition
+          this.failSafe = 2
+          this.handleLatencyLag(this.currentSRLatency)
+          return false
+        }
+      })
+      return true
     }
   }
 }

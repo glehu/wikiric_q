@@ -17,6 +17,7 @@
 </template>
 
 <script>
+import 'katex/dist/katex.min.css'
 import StarterKit from '@tiptap/starter-kit'
 import { Editor, EditorContent, Extension } from '@tiptap/vue-3'
 import MenuBar from 'components/MenuBar.vue'
@@ -35,6 +36,11 @@ import { Link } from '@tiptap/extension-link'
 import { debounce } from 'quasar'
 import wikiricUtils from 'src/libs/wikiric-utils'
 import { api } from 'boot/axios'
+import { Mathematics } from '@tiptap-pro/extension-mathematics'
+import Table from '@tiptap/extension-table'
+import TableCell from '@tiptap/extension-table-cell'
+import TableHeader from '@tiptap/extension-table-header'
+import TableRow from '@tiptap/extension-table-row'
 
 const lowlight = createLowlight(common)
 
@@ -174,8 +180,17 @@ export default {
           }
         },
         extensions: [
-          StarterKit,
+          StarterKit.configure({
+            codeBlock: false
+          }),
           Image,
+          Mathematics,
+          Table.configure({
+            resizable: true
+          }),
+          TableRow,
+          TableHeader,
+          TableCell,
           Emoji.configure({
             emojis: customEmotes,
             enableEmoticons: false,
@@ -524,5 +539,31 @@ export default {
   opacity: 0.7;
   pointer-events: none;
   height: 0;
+}
+
+.Tiptap-mathematics-editor {
+  background: #202020;
+  color: #fff;
+  font-family: monospace;
+  padding: 0.2rem 0.5rem;
+}
+
+.Tiptap-mathematics-render {
+  padding: 0 0.25rem;
+
+  &--editable {
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: #eee;
+    }
+  }
+}
+
+.Tiptap-mathematics-editor,
+.Tiptap-mathematics-render {
+  border-radius: 0.25rem;
+  display: inline-block;
 }
 </style>
