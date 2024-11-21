@@ -97,21 +97,24 @@
                   text-sm font-500 mt2 mb2">
                           <p>
                             Damage: {{ offer.getCalculatedDamage().toLocaleString() }}
-                            <span class="italic">( +{{ offer.dpsLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
+                            <span class="italic">( +{{ offer.dpsLevelUp }} <q-icon name="sym_o_military_tech"
+                                                                                   size="1rem"/>)</span>
                           </p>
                           <p>
                             Scaling: {{ offer.getCalculatedStat(offer.ratio, 'ratio') * 100 }}%
                           </p>
                           <p>
                             Cooldown: {{ offer.getCalculatedStat(offer.cd, 'cd').toLocaleString() }} ms
-                            <span class="italic">( -{{ offer.cdLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
+                            <span class="italic">( -{{ offer.cdLevelUp }} <q-icon name="sym_o_military_tech"
+                                                                                  size="1rem"/>)</span>
                           </p>
                           <p>
                             Amount: {{ offer.getCalculatedStat(offer.amount, 'amount') }}
                           </p>
                           <p>
                             Hits: {{ offer.getCalculatedStat(offer.pHitCount, 'hitCount') }}
-                            <span class="italic">( +{{ offer.pHitCountLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
+                            <span class="italic">( +{{ offer.pHitCountLevelUp }} <q-icon name="sym_o_military_tech"
+                                                                                         size="1rem"/>)</span>
                           </p>
                         </div>
                         <FFPowerUpDisplay :power-ups="offer.powerUps" hide-desc/>
@@ -234,6 +237,15 @@
                       <div class="overflow-x-hidden h-[290px]
                                   backdrop-brightness-25 rounded-lg
                                   overflow-y-scroll wfull p2">
+                        <div v-if="offer.isAbility"
+                             class="mb2 rounded-full px2 py1 wfit
+                                    fmt_border primary flex no-wrap
+                                    gap-2 items-center">
+                          <q-icon name="sym_o_offline_bolt" size="1rem"/>
+                          <p class="text-xs font-600">
+                            Ability
+                          </p>
+                        </div>
                         <div class="flex items-start gap-x-2 pb2 no-wrap">
                           <p class="text-start line-height-tight">
                             <span class="fontbold pr2">
@@ -272,15 +284,32 @@
                                 </q-tooltip>
                               </div>
                             </template>
-                            <p class="text-sm font-500">
-                              {{ eff.value.toLocaleString() }} {{ capitalizeFirstLetter(eff.type) }}
-                              <template v-if="eff.autoLevelUp && eff.valueLevelBonus !== 0">
-                                <span class="italic">( +{{ eff.valueLevelBonus }} / Lv.)</span>
-                              </template>
-                              <template v-if="eff.onHit">
-                                every {{ eff.hitCount }} hits
-                              </template>
-                            </p>
+                            <template v-if="eff.type === 'visual'">
+                              <p class="text-sm font-500">
+                                Type: {{ getVisualType(eff.value) }}
+                              </p>
+                            </template>
+                            <template v-else-if="eff.type === 'debuff'">
+                              <p class="text-sm font-500">
+                                Debuff: {{ getDebuffType(eff.value) }}
+                              </p>
+                            </template>
+                            <template v-else>
+                              <p class="text-sm font-500">
+                                {{ eff.value.toLocaleString() }} {{ capitalizeFirstLetter(eff.type) }}
+                                <template v-if="eff.autoLevelUp && eff.valueLevelBonus !== 0">
+                                  <span class="italic">( +{{ eff.valueLevelBonus }} / Lv.)</span>
+                                </template>
+                                <template v-if="eff.onHit">
+                                  <template v-if="eff.hitCount > 1">
+                                    every {{ eff.hitCount }} hits
+                                  </template>
+                                  <template v-else>
+                                    every hit
+                                  </template>
+                                </template>
+                              </p>
+                            </template>
                           </div>
                         </template>
                       </div>
@@ -526,6 +555,33 @@ export default {
           }
         ]
       })
+    },
+    getVisualType: function (type) {
+      const VisualTypes = {
+        Bullet: 0,
+        Fire: 1,
+        Electricity: 2
+      }
+      switch (type) {
+        case VisualTypes.Bullet:
+          return 'Bullet'
+        case VisualTypes.Fire:
+          return 'Fire'
+        case VisualTypes.Electricity:
+          return 'Electricity'
+      }
+    },
+    getDebuffType: function (type) {
+      const DebuffTypes = {
+        Slow: 0,
+        Stun: 1
+      }
+      switch (type) {
+        case DebuffTypes.Slow:
+          return 'Slow'
+        case DebuffTypes.Stun:
+          return 'Stun'
+      }
     }
   }
 }

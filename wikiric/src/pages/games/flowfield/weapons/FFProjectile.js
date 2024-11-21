@@ -19,6 +19,7 @@ import * as THREE from 'threejs-math'
  * @param {Number} radius
  * @param {String} visualType
  * @param {Number} ttl
+ * @param {FFPowerUpEffect[] || null} [effects=null]
  */
 class FFProjectile {
   /**
@@ -31,6 +32,7 @@ class FFProjectile {
    * @param {Number} radius
    * @param {String} visualType
    * @param {Number} ttl
+   * @param {FFPowerUpEffect[] || null} [effects=null]
    */
   constructor (pos,
                vec,
@@ -39,7 +41,8 @@ class FFProjectile {
                hitRange,
                radius,
                visualType,
-               ttl) {
+               ttl,
+               effects = null) {
     /**
      * This FF Projectile's Position
      * @type {THREE.Vector2}
@@ -81,6 +84,10 @@ class FFProjectile {
     }
     this.ttl = ttl
     this.expires = hasExpiration
+    /**
+     * @type {FFPowerUpEffect[] || null}
+     */
+    this.effects = effects
   }
 }
 

@@ -10,6 +10,17 @@
 import * as THREE from 'threejs-math'
 import FFProjectile from 'pages/games/flowfield/weapons/FFProjectile'
 
+const VisualTypes = {
+  Bullet: 0,
+  Fire: 1,
+  Electricity: 2
+}
+
+const DebuffTypes = {
+  Slow: 0,
+  Stun: 1
+}
+
 /**
  * An FF Weapon
  * @param {String} name
@@ -243,6 +254,10 @@ class FFWeapon {
     const hadSpeed = (speed > 0)
     // Trigger weapon effects
     const effects = this.procEffects()
+    /**
+     * @type {FFPowerUpEffect[] || null}
+     */
+    let debuffs = null
     if (effects.length > 0) {
       for (const effect of effects) {
         switch (effect.type) {
@@ -274,6 +289,31 @@ class FFWeapon {
           case 'ratio':
             ratio += effect.value
             break
+          case 'visual':
+            switch (effect.value) {
+              case VisualTypes.Bullet:
+                this.visualType = 'bullet'
+                break
+              case VisualTypes.Fire:
+                this.visualType = 'fire'
+                break
+              case VisualTypes.Electricity:
+                this.visualType = 'spark'
+                break
+            }
+            break
+          case 'debuff':
+            if (!debuffs) {
+              debuffs = []
+            }
+            switch (effect.value) {
+              case DebuffTypes.Slow:
+                debuffs.push(effect)
+                break
+              case DebuffTypes.Stun:
+                debuffs.push(effect)
+                break
+            }
         }
       }
     }
@@ -319,8 +359,10 @@ class FFWeapon {
      * @type {FFProjectile[]}
      */
     const projectiles = []
+    let pr
     for (let i = 1; i <= amt; i++) {
-      projectiles.push(this.doShootProjectile(
+      // Create projectile with provided vectors
+      pr = this.doShootProjectile(
         pos,
         vec,
         dmg,
@@ -328,7 +370,12 @@ class FFWeapon {
         hits,
         i,
         hitRange,
-        radius))
+        radius)
+      // Modify projectile before sending it back
+      if (debuffs) {
+        pr.effects = debuffs
+      }
+      projectiles.push(pr)
     }
     return projectiles
   }
@@ -384,7 +431,7 @@ class FFWeapon {
       hitRange,
       radius,
       this.visualType,
-      120)
+      this.ttl)
   }
 
   /**

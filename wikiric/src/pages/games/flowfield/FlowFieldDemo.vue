@@ -536,10 +536,17 @@
                       XP: {{ goalXP }} / {{ goalMaxXP }}
                     </p>
                   </div>
-                  <div class="flex gap-1">
+                  <div class="flex gap-1 items-center">
                     <template v-if="goalWeapons && goalWeapons.length > 0">
+                      <q-icon name="sym_o_swords" size="1.2rem" class=""/>
                       <template v-for="weapon in goalWeapons" :key="weapon">
                         <FFWeaponComp :weapon="weapon" :small="true"/>
+                      </template>
+                    </template>
+                    <template v-if="goalAbilities && goalAbilities.length > 0">
+                      <q-icon name="sym_o_offline_bolt" size="1.5rem" class="ml1"/>
+                      <template v-for="ability in goalAbilities" :key="ability">
+                        <FFAbilityComp :ability="ability" :small="true"/>
                       </template>
                     </template>
                   </div>
@@ -877,6 +884,8 @@ import FFShop from 'pages/games/flowfield/FFShop.vue'
 import FFItem from 'pages/games/flowfield/items/FFItem'
 import FFItemEffect from 'pages/games/flowfield/items/FFItemEffect'
 import FFTrophyList from 'pages/games/flowfield/trophies/FFTrophyList'
+import FFAbilityComp from 'pages/games/flowfield/powerups/FFAbility.vue'
+import wikiricUtils from 'src/libs/wikiric-utils'
 
 export default {
   name: 'FlowFieldDemo',
@@ -885,7 +894,8 @@ export default {
     FilePicker,
     FFPowerUpDisplay,
     FFWeaponDisplay,
-    FFWeaponComp
+    FFWeaponComp,
+    FFAbilityComp
   },
   data () {
     return {
@@ -1016,6 +1026,8 @@ export default {
       onHitEffects: [],
       isLevelUp: false,
       shopTab: 'shop',
+      cursorX: 0,
+      cursorY: 0,
 
       // TOYS
 
@@ -1063,6 +1075,10 @@ export default {
        */
       goalWeapons: [],
       /**
+       * @type {FFPowerUp[]}
+       */
+      goalAbilities: [],
+      /**
        * @type {FFItem[]}
        */
       goalItems: [],
@@ -1105,7 +1121,7 @@ export default {
 
       // MULTIPLAYER DATA
 
-      roomId: 'wkrg_ffa_dev',
+      roomId: 'wkrg_ffa_dev2',
       currentSRLatency: -1,
       getQueue: new Map(),
       lastPos: null,
@@ -1122,7 +1138,8 @@ export default {
       syncMaxCount: 999999,
       syncRound: -1,
       syncCache: new Map(),
-      failSafe: 0
+      failSafe: 0,
+      tcpQueue: []
     }
   },
   mounted () {
@@ -1379,9 +1396,6 @@ export default {
       let sidebarOffset
       this.$refs.ffd_main.onmousemove = (e) => {
         vueInst.ctx2.clearRect(0, 0, canvas2.width, canvas2.height)
-        if (vueInst.brush === 'cursor') {
-          return
-        }
         // subtract sidebar add scroll offset
         sidebarOffset = 0
         if (vueInst.sidebarLeft) {
@@ -1390,6 +1404,13 @@ export default {
         const posX = e.clientX - sidebarOffset + container.scrollLeft
         // subtract navbar add scroll offset
         const posY = e.clientY - 50 + container.scrollTop
+        // Set cursor position for e.g. abilities
+        vueInst.cursorX = posX
+        vueInst.cursorY = posY
+        if (vueInst.brush === 'cursor') {
+          return
+        }
+        // Calculate position on grid
         const flatX = Math.floor(posX / this.gridSize) * this.gridSize
         const flatY = Math.floor(posY / this.gridSize) * this.gridSize
         if (vueInst.isDrawing) {
@@ -2130,6 +2151,7 @@ export default {
       // Transmit weapon data
       this.distributeGoalWeapons()
       this.distributeGoalItems()
+      this.distributeGoalAbilities()
       // Notify simulation start
       if (!srSilent) {
         this.srNotifySimulation(true)
@@ -2253,6 +2275,8 @@ export default {
         // MDN Docs say it's best practice to put this here
         // ...so I guess we will just do it.
         requestAnimationFrame(step)
+        // Send queued requests until they are confirmed!
+        this.executeTCP()
         // Move the players!
         this.applyGoalMovement(endVector, timeDelta)
         this.applyCoPlayersMovement(timeDelta)
@@ -2264,7 +2288,6 @@ export default {
         this.renderCoPlayers()
         // Display walls/tiles etc.
         this.renderTiles(this.offsetVector)
-
         // Frame-Resets
         qtree = new FFQuadTree(this.xCells / 2, this.yCells / 2, this.xCells / 2, this.yCells / 2, 4)
         cacheMap.clear()
@@ -2274,9 +2297,12 @@ export default {
         if (this.goalInvincibilityFrames > 0) {
           this.goalInvincibilityFrames -= 1
         }
-        // Reduce weapon cooldown
+        // Reduce weapon and ability cooldown
         for (let i = 0; i < this.goalWeapons.length; i++) {
           this.goalWeapons[i].processTick(120 * timeDelta)
+        }
+        for (let i = 0; i < this.goalAbilities.length; i++) {
+          this.goalAbilities[i].processTick(120 * timeDelta)
         }
         this.reduceCoPlayerWeaponCooldown(timeDelta)
         // #### ENEMY ACTIONS ####
@@ -2936,11 +2962,15 @@ export default {
         return
       }
       for (const [key, val] of this.coPlayers.entries()) {
-        if (!val.weapons || val.weapons.length < 1) {
-          continue
+        if (val.weapons && val.weapons.length > 0) {
+          for (let i = 0; i < val.weapons.length; i++) {
+            val.weapons[i].processTick(120 * timeDelta)
+          }
         }
-        for (let i = 0; i < val.weapons.length; i++) {
-          val.weapons[i].processTick(120 * timeDelta)
+        if (val.abilities && val.abilities.length > 0) {
+          for (let i = 0; i < val.abilities.length; i++) {
+            val.abilities[i].processTick(120 * timeDelta)
+          }
         }
         this.coPlayers.set(key, val)
       }
@@ -2950,7 +2980,7 @@ export default {
       let tmp, tmp2, tmp3
       let projectile
       let newVec
-      for (let i = this.goalWeaponProjectiles.length - 1; i > 0; i--) {
+      for (let i = this.goalWeaponProjectiles.length - 1; i >= 0; i--) {
         projectile = this.goalWeaponProjectiles[i]
         // Does this projectile expire?
         if (projectile.expires) {
@@ -2991,56 +3021,9 @@ export default {
             2 * Math.PI)
           this.ctx3.fill()
         } else if (projectile.visualType === 'fire') {
-          let xx = ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2
-          let yy = ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
-          const twoPi = 2 * Math.PI
-          this.ctx3.fillStyle = '#f00'
-          this.ctx3.globalAlpha = 0.2
-          this.ctx3.arc(
-            xx,
-            yy,
-            20,
-            0,
-            twoPi)
-          this.ctx3.fill()
-          this.ctx3.beginPath()
-          this.ctx3.globalAlpha = 0.3
-          this.ctx3.fillStyle = '#ff9100'
-          xx += (Math.random() - Math.random()) * 10
-          yy += (Math.random() - Math.random()) * 10
-          this.ctx3.arc(
-            xx,
-            yy,
-            14,
-            0,
-            twoPi)
-          this.ctx3.fill()
-          this.ctx3.beginPath()
-          this.ctx3.globalAlpha = 0.4
-          this.ctx3.fillStyle = '#fff400'
-          xx += (Math.random() - Math.random()) * 7
-          yy += (Math.random() - Math.random()) * 7
-          this.ctx3.arc(
-            xx,
-            yy,
-            10,
-            0,
-            twoPi)
-          this.ctx3.fill()
-          this.ctx3.beginPath()
-          this.ctx3.globalAlpha = 0.7
-          this.ctx3.fillStyle = '#fffcb0'
-          xx += (Math.random() - Math.random()) * 5
-          yy += (Math.random() - Math.random()) * 5
-          this.ctx3.arc(
-            xx,
-            yy,
-            2,
-            0,
-            twoPi)
-          this.ctx3.fill()
-          this.ctx3.beginPath()
-          this.ctx3.globalAlpha = 1
+          this.renderProjectileFire(projectile)
+        } else if (projectile.visualType === 'spark') {
+          this.renderProjectileElectricity(projectile)
         }
         // Did the projectile hit something?
         if (this.enemies.size > 0) {
@@ -3122,7 +3105,114 @@ export default {
           }
         }
         this.goalWeaponProjectiles[i] = projectile
+        if (i === 0) {
+          break
+        }
       }
+    },
+    renderProjectileFire: function (projectile) {
+      let xx = ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2
+      let yy = ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
+      const twoPi = 2 * Math.PI
+      this.ctx3.fillStyle = '#f00'
+      this.ctx3.globalAlpha = 0.2
+      this.ctx3.arc(
+        xx,
+        yy,
+        20,
+        0,
+        twoPi)
+      this.ctx3.fill()
+      this.ctx3.beginPath()
+      this.ctx3.globalAlpha = 0.3
+      this.ctx3.fillStyle = '#ff9100'
+      xx += (Math.random() - Math.random()) * 10
+      yy += (Math.random() - Math.random()) * 10
+      this.ctx3.arc(
+        xx,
+        yy,
+        14,
+        0,
+        twoPi)
+      this.ctx3.fill()
+      this.ctx3.beginPath()
+      this.ctx3.globalAlpha = 0.4
+      this.ctx3.fillStyle = '#fff400'
+      xx += (Math.random() - Math.random()) * 7
+      yy += (Math.random() - Math.random()) * 7
+      this.ctx3.arc(
+        xx,
+        yy,
+        10,
+        0,
+        twoPi)
+      this.ctx3.fill()
+      this.ctx3.beginPath()
+      this.ctx3.globalAlpha = 0.7
+      this.ctx3.fillStyle = '#fffcb0'
+      xx += (Math.random() - Math.random()) * 5
+      yy += (Math.random() - Math.random()) * 5
+      this.ctx3.arc(
+        xx,
+        yy,
+        2,
+        0,
+        twoPi)
+      this.ctx3.fill()
+      this.ctx3.beginPath()
+      this.ctx3.globalAlpha = 1
+    },
+    renderProjectileElectricity: function (projectile) {
+      let xx = ((projectile.pos.x + this.offsetVector.x) * this.gridSize) + this.gridSize / 2
+      let yy = ((projectile.pos.y + this.offsetVector.y) * this.gridSize) + this.gridSize / 2
+      const twoPi = 2 * Math.PI
+      this.ctx3.fillStyle = '#f7ff00'
+      this.ctx3.globalAlpha = 0.2
+      this.ctx3.arc(
+        xx,
+        yy,
+        20,
+        0,
+        twoPi)
+      this.ctx3.fill()
+      this.ctx3.beginPath()
+      this.ctx3.globalAlpha = 0.3
+      this.ctx3.fillStyle = '#0051ff'
+      xx += (Math.random() - Math.random()) * 10
+      yy += (Math.random() - Math.random()) * 10
+      this.ctx3.arc(
+        xx,
+        yy,
+        14,
+        0,
+        twoPi)
+      this.ctx3.fill()
+      this.ctx3.beginPath()
+      this.ctx3.globalAlpha = 0.4
+      this.ctx3.fillStyle = '#00eaff'
+      xx += (Math.random() - Math.random()) * 7
+      yy += (Math.random() - Math.random()) * 7
+      this.ctx3.arc(
+        xx,
+        yy,
+        10,
+        0,
+        twoPi)
+      this.ctx3.fill()
+      this.ctx3.beginPath()
+      this.ctx3.globalAlpha = 0.7
+      this.ctx3.fillStyle = '#c9e8ff'
+      xx += (Math.random() - Math.random()) * 5
+      yy += (Math.random() - Math.random()) * 5
+      this.ctx3.arc(
+        xx,
+        yy,
+        2,
+        0,
+        twoPi)
+      this.ctx3.fill()
+      this.ctx3.beginPath()
+      this.ctx3.globalAlpha = 1
     },
     handleOnHitEffects: function (qtree, images) {
       /**
@@ -3360,6 +3450,9 @@ export default {
       switch (e.key) {
         case 'w':
           this.goalUp = true
+          // Why are we sending two messages you may ask.
+          // Since we're using a partially reliable protocol, we're sending two messages just to make sure.
+          // Since the keydown event will re-trigger anyway (at least as for 17.11.2024) we do not need more than that.
           this.srNotifyMove(true)
           this.srNotifyMove(true)
           break
@@ -3377,6 +3470,9 @@ export default {
           this.goalRight = true
           this.srNotifyMove(true)
           this.srNotifyMove(true)
+          break
+        case 'g':
+          this.handleAbilityProc('g')
           break
       }
     },
@@ -3534,11 +3630,15 @@ export default {
       this.goalLevelUps += 1
       this.goalLevelUpsOpen += 1
       this.goalMaxXP += 1000
-      if (this.goalWeapons.length < 1) {
-        return
+      if (this.goalAbilities && this.goalAbilities.length > 0) {
+        for (const ability of this.goalAbilities) {
+          ability.autoLevelUp()
+        }
       }
-      for (const weapon of this.goalWeapons) {
-        weapon.levelUp()
+      if (this.goalWeapons && this.goalWeapons.length > 0) {
+        for (const weapon of this.goalWeapons) {
+          weapon.levelUp()
+        }
       }
       if (this.goalItems && this.goalItems.length > 0) {
         for (const item of this.goalItems) {
@@ -3546,6 +3646,10 @@ export default {
         }
         this.applyGoalItems(false)
       }
+      // Distribute to the others!
+      this.distributeGoalWeapons()
+      this.distributeGoalItems()
+      this.distributeGoalAbilities()
     },
     /**
      *
@@ -3553,6 +3657,7 @@ export default {
     dismissLevelUp: function () {
       this.distributeGoalWeapons()
       this.distributeGoalItems()
+      this.distributeGoalAbilities()
       this.modifyingWeapons = false
       if (this.goalLevelUps > 0 && this.powerUpOffers.length < 1) {
         const offers = this.showLevelUpOffers(
@@ -3790,6 +3895,17 @@ export default {
      * @param {FFPowerUp} offer
      */
     handlePowerUpOffer: function (offer) {
+      // Is the received FFPowerUp an ability? If so, we will not modify a weapon
+      if (offer.isAbility) {
+        this.goalAbilities.push(offer)
+        const ix = this.powerUpList.categories.starter.indexOf(offer)
+        if (ix >= 0) {
+          this.powerUpList.categories.starter.splice(ix, 1)
+        }
+        this.powerUpOffers = []
+        this.dismissLevelUp()
+        return
+      }
       this.chosenPowerup = offer
       this.modifyingWeapons = true
     },
@@ -4099,6 +4215,12 @@ export default {
           //    PlayerName;ItemName;Type;JsonPayload
           const data = event.data.t.substring(3).split(';')
           this.setCoPlayerItemPart(data)
+        } else if (event.data.t.startsWith('AP-')) {
+          // Some player sent an ability part
+          // Format:
+          //    PlayerName;Ability;Type;JsonPayload
+          const data = event.data.t.substring(3).split(';')
+          this.setCoPlayerAbilityPart(data)
         } else if (event.data.t.startsWith('scost')) {
           // A wall (tile with collision-detection) was placed
           this.handleSetCost(event.data.t)
@@ -4346,7 +4468,8 @@ export default {
           Number(obj.id),
           Number(obj.level),
           obj.name,
-          obj.desc
+          obj.desc,
+          Number(obj.chance)
         )
         if (ix !== -1) {
           if (pId !== -1) {
@@ -4488,6 +4611,88 @@ export default {
       // Update co-player data
       this.coPlayers.set(data[0], pl)
     },
+    setCoPlayerAbilityPart: function (data) {
+      let pl = {
+        abilities: []
+      }
+      if (this.coPlayers.has(data[0])) {
+        pl = this.coPlayers.get(data[0])
+        if (!pl.abilities) {
+          pl.abilities = []
+        }
+      }
+      // Data Format:
+      //    0          1           2    3
+      //    PlayerName;AbilityName;Type;JsonPayload
+      // Find item
+      let ix = -1
+      if (pl.abilities.length > 0) {
+        for (let i = 0; i < pl.abilities.length; i++) {
+          if (pl.abilities[i].name === data[1]) {
+            ix = i
+            break
+          }
+        }
+      }
+      let obj = JSON.parse(data[3])
+      if (data[2] === '1') {
+        // Power-Up
+        obj = new FFPowerUp(
+          Number(obj.id),
+          Number(obj.level),
+          obj.name,
+          obj.desc,
+          Number(obj.chance),
+          Boolean(obj.isAbility),
+          Number(obj.cd),
+          Number(obj.cdLevelUp)
+        )
+        if (ix !== -1) {
+          // Update power-up (but not effects)
+          const effects = pl.abilities[ix].effects
+          pl.abilities[ix] = obj
+          pl.abilities[ix].effects = effects
+        } else {
+          pl.abilities.push(obj)
+        }
+      } else if (data[2] === '2') {
+        // Effect
+        obj = new FFPowerUpEffect(
+          Boolean(obj.onHit),
+          obj.type,
+          Number(obj.value),
+          Number(obj.valueLevelBonus),
+          Number(obj.hitCount),
+          Boolean(obj.floorValueOnProc),
+          Boolean(obj.autoLevelUp)
+        )
+        if (ix !== -1) {
+          let eix = -1
+          for (let i = 0; i < pl.abilities[ix].effects.length; i++) {
+            if (pl.abilities[ix].effects[i].type === obj.type) {
+              eix = i
+              break
+            }
+          }
+          if (eix !== -1) {
+            pl.abilities[ix].effects[eix] = obj
+          } else {
+            pl.abilities[ix].effects.push(obj)
+          }
+        } else {
+          if (!pl._queue) {
+            pl._queue = []
+          }
+          pl._queue.push({
+            typ: 2,
+            pup: data[1],
+            eff: obj
+          })
+        }
+      }
+      // Update co-player data
+      this.coPlayers.set(data[0], pl)
+    },
     /**
      *
      * @param {Array<String>} data
@@ -4592,11 +4797,6 @@ export default {
         }
       }
     },
-    srSendWeaponPart: function (id, pId, type, payload) {
-      // Send message to others
-      this.$connector.sendSyncRoomMessage(
-        `WP-${this.store.user.username};${id};${pId};${type};${payload}`)
-    },
     distributeGoalItems: function () {
       if (!this.goalItems || this.goalItems.length < 1) {
         return
@@ -4618,10 +4818,38 @@ export default {
         }
       }
     },
+    distributeGoalAbilities: function () {
+      if (!this.goalAbilities || this.goalAbilities.length < 1) {
+        return
+      }
+      let item, effects, effect
+      const goalAbilities = [].concat(this.goalAbilities)
+      for (let j = 0; j < goalAbilities.length; j++) {
+        item = { ...goalAbilities[j] }
+        effects = item.effects
+        item.effects = []
+        this.srSendAbilityPart(
+          item.name, '1', JSON.stringify(item))
+        if (effects.length > 0) {
+          for (let k = 0; k < effects.length; k++) {
+            effect = effects[k]
+            this.srSendAbilityPart(
+              item.name, '2', JSON.stringify(effect))
+          }
+        }
+      }
+    },
+    srSendWeaponPart: function (id, pId, type, payload) {
+      this.$connector.sendSyncRoomMessage(
+        `WP-${this.store.user.username};${id};${pId};${type};${payload}`)
+    },
     srSendItemPart: function (pId, type, payload) {
-      // Send message to others
       this.$connector.sendSyncRoomMessage(
         `IP-${this.store.user.username};${pId};${type};${payload}`)
+    },
+    srSendAbilityPart: function (pId, type, payload) {
+      this.$connector.sendSyncRoomMessage(
+        `AP-${this.store.user.username};${pId};${type};${payload}`)
     },
     initWRTC: function () {
       this.wrtc.initialize(this.$connector, this.store.user.username, true, true)
@@ -4664,6 +4892,26 @@ export default {
           //    UP;RIGHT;DOWN;LEFT
           const data = event.data.message.substring(4).split(';')
           this.setCoPlayerMovement(data)
+        } else if (event.data.message.startsWith('ABL-')) {
+          // Format:
+          //    Username;X1;Y1;X2;Y2
+          const data = event.data.message.substring(4).split(';')
+          this.handleCoPlayerAbilityProc(data)
+        } else if (event.data.message.startsWith('TCP-')) {
+          // TCP like UDP request received. We need to confirm this one.
+          // Format:
+          //    UUID;Username?payload
+          const txt = event.data.message.substring(4).split('?', 2)
+          const data = txt[0].split(';', 2)
+          this.confirmTCP(data[0], data[1])
+          this.processTCP(data[1], txt[1])
+        } else if (event.data.message.startsWith('CMF-')) {
+          // TCP like UDP confirmation received
+          // Format:
+          //    UUID;Username;RemoteUsername
+          const txt = event.data.message.substring(4)
+          const data = txt.split(';', 3)
+          this.handleConfirmTCP(data[0], data[2])
         }
         // else {
         //   console.debug('DataChannel Message:', event.data.message)
@@ -5000,6 +5248,210 @@ export default {
       })
       this.failSafe = 0
       return true
+    },
+    /**
+     * Activates the targeted ability if it exists
+     * @param {String} key
+     */
+    handleAbilityProc: function (key) {
+      if (key == null || key === '') {
+        return false
+      }
+      if (!this.goalAbilities || this.goalAbilities.length < 1) {
+        return false
+      }
+      // Calculate player position
+      const goalPos = new THREE.Vector2()
+      goalPos.copy(this.goalPosition)
+      goalPos.sub(this.offsetVector)
+      // Get current cursor position to calculate angle and distance
+      const cursorPos = new THREE.Vector2(this.cursorX / this.gridSize, this.cursorY / this.gridSize)
+      cursorPos.sub(this.offsetVector)
+      const direction = new THREE.Vector2()
+      direction.copy(cursorPos)
+      direction.sub(goalPos)
+      // Send data to other players, so they trigger the ability, too
+      // Since we're using a partially reliable protocol for our p2p data transmission,
+      // ...we are going to simulate TCP over UDP by "spamming" the message
+      // ...until we receive a confirmation by each peer!
+      // Obviously there will be a limit on how long the message is getting sent
+      // ...to avoid unnecessary CPU and network load
+      const msg = `${goalPos.x};${goalPos.y};${direction.x};${direction.y}`
+      const vThis = this
+      const func = function () {
+        // Trigger abilities
+        let projectiles
+        for (let i = 0; i < vThis.goalAbilities.length; i++) {
+          projectiles = vThis.goalAbilities[i].activateAbility(goalPos, direction)
+          if (projectiles) {
+            for (let j = 0; j < projectiles.length; j++) {
+              vThis.goalWeaponProjectiles.push(projectiles[j])
+            }
+          }
+        }
+      }
+      // Our ability will be triggered as soon as the others confirmed!
+      this.queueTCP('ABL-', msg, func)
+      return true
+    },
+    /**
+     * @param {String} username
+     * @param {String[]} data
+     */
+    handleCoPlayerAbilityProc: function (username, data) {
+      if (data.length < 4) {
+        return false
+      }
+      // Those ain't magic numbers! Those are numerical constants!!
+      // Format: X1;Y1;X2;Y2
+      const goalPos = new THREE.Vector2(Number(data[0]), Number(data[1]))
+      const direction = new THREE.Vector2(Number(data[2]), Number(data[3]))
+      // Trigger abilities
+      this.coPlayers.forEach((val) => {
+        if (val.usr === username) {
+          let projectiles
+          for (let i = 0; i < val.abilities.length; i++) {
+            projectiles = val.abilities[i].activateAbility(goalPos, direction)
+            console.log(projectiles, val.abilities[i])
+            if (projectiles) {
+              for (let j = 0; j < projectiles.length; j++) {
+                this.goalWeaponProjectiles.push(projectiles[j])
+              }
+            }
+          }
+          return true
+        }
+      })
+      return true
+    },
+    /**
+     * queueTCP queues a UDP request that needs to be confirmed by others.
+     * A function can be provided that will be called when done.
+     *
+     * Every request will receive a UUID that will be returned by others.
+     *
+     * If there are no peers available, this function returns after executing
+     * the provided function if there is one.
+     *
+     * @param {String} prefix
+     * @param {String} msg
+     * @param {Function || null} [func=null]
+     */
+    queueTCP: function (prefix, msg, func = null) {
+      // Retrieve all peer names that will get removed upon confirmation
+      // All peer names remaining will receive the queued request until
+      // ...they have sent back the UUID generated for this request
+      const peer = []
+      this.coPlayers.forEach((val) => {
+        peer.push(val.usr)
+      })
+      if (peer.length < 1) {
+        if (func) {
+          func()
+        }
+        return
+      }
+      const uuid = wikiricUtils.getUUID()
+      if (func) {
+        this.tcpQueue.push({
+          i: uuid,
+          m: `TCP-${uuid};${this.store.user.username}?${prefix}${msg}`,
+          p: peer,
+          f: func
+        })
+      } else {
+        this.tcpQueue.push({
+          i: uuid,
+          m: `TCP-${uuid};${this.store.user.username}?${prefix}${msg}`,
+          p: peer
+        })
+      }
+    },
+    /**
+     * executeTCP iterates over the TCP queue and distributes all messages
+     * ...to all peers left for each queued request
+     * Upon confirmation by the peers, they will get removed from the queue
+     */
+    executeTCP: function () {
+      if (this.tcpQueue.length < 1) {
+        return
+      }
+      for (let i = this.tcpQueue.length - 1; i > 0; i--) {
+        if (this.tcpQueue[i].p.length > 0) {
+          console.log('TCP SEND:', this.tcpQueue[i].m)
+          this.wrtc.broadcastDataChannelMessage(this.tcpQueue[i].m)
+        } else {
+          this.tcpQueue.splice(i, 1)
+        }
+      }
+    },
+    /**
+     * confirmTCP sends back the UUID provided in the
+     * ...TCP-like UDP request received
+     *
+     * @param {String} uuid
+     * @param {String} username
+     */
+    confirmTCP: function (uuid, username) {
+      const txt = `CMF-${uuid};${username};${this.store.user.username}`
+      // Life-Hack! Just send it a dozen times! Literally!
+      console.log('TCP SEND CONFIRM:', uuid, username)
+      for (let i = 0; i < 12; i++) {
+        this.wrtc.broadcastDataChannelMessage(txt)
+      }
+    },
+    /**
+     * handleConfirmTCP checks off a queued TCP-like UDP request
+     * ...for a specific peer.
+     *
+     * If all peers confirmed, the provided function (optional) gets executed.
+     *
+     * @param {String} uuid
+     * @param {String} username
+     */
+    handleConfirmTCP: function (uuid, username) {
+      if (this.tcpQueue.length < 1) {
+        return
+      }
+      console.log('TCP RECEIVE CONFIRM:', uuid, username)
+      for (let i = 0; i < this.tcpQueue.length; i++) {
+        if (this.tcpQueue[i].i === uuid) {
+          if (!this.tcpQueue[i].p || this.tcpQueue[i].p.length < 1) {
+            // No peers left -> Remove
+            if (this.tcpQueue[i].f) {
+              this.tcpQueue[i].f()
+            }
+            this.tcpQueue.splice(i, 1)
+            return
+          }
+          const ix = this.tcpQueue[i].p.indexOf(username)
+          if (ix > -1) {
+            // Remove user from queue, so they won't receive more requests
+            this.tcpQueue[i].p.splice(ix, 1)
+          }
+          // Ugly repetition!
+          if (this.tcpQueue[i].p.length < 1) {
+            // No peers left -> Remove
+            if (this.tcpQueue[i].f) {
+              this.tcpQueue[i].f()
+            }
+            this.tcpQueue.splice(i, 1)
+            return
+          }
+        }
+      }
+    },
+    /**
+     * @param {String} username
+     * @param {String} data
+     */
+    processTCP: function (username, data) {
+      if (data.startsWith('ABL-')) {
+        // Format:
+        //    X1;Y1;X2;Y2
+        const payload = data.substring(4).split(';')
+        this.handleCoPlayerAbilityProc(username, payload)
+      }
     }
   }
 }

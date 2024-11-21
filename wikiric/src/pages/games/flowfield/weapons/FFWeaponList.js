@@ -53,7 +53,8 @@ class FFWeaponList {
       0,
       1,
       'Critical Hit (Starter)',
-      '4th shot deals more damage.')
+      '4th shot deals more damage.',
+      100)
     effect = new FFPowerUpEffect(
       true,
       'dmg',
@@ -92,7 +93,8 @@ class FFWeaponList {
       0,
       1,
       'Spam (Starter)',
-      'More projectiles!')
+      'More projectiles!',
+      100)
     effect = new FFPowerUpEffect(
       false,
       'amt',
@@ -131,7 +133,8 @@ class FFWeaponList {
       0,
       1,
       'Explosion (Starter)',
-      'Projectiles explode. Radius scales with Area.')
+      'Projectiles explode. Radius scales with Area.',
+      100)
     effect = new FFPowerUpEffect(
       true,
       'radius',
@@ -242,7 +245,8 @@ class FFWeaponList {
       0,
       1,
       'Critical Hit (Starter)',
-      '4th shot deals more damage.')
+      '4th shot deals more damage.',
+      100)
     effect = new FFPowerUpEffect(
       true,
       'dmg',

@@ -11,28 +11,28 @@
  * @param {Boolean} onHit
  * @param {String} type
  * @param {Number} value
- * @param {Number} valueLevelBonus
- * @param {Number} hitCount
- * @param {Boolean} floorValueOnProc
- * @param {Boolean} autoLevelUp
+ * @param {Number} [valueLevelBonus=0]
+ * @param {Number} [hitCount=0]
+ * @param {Boolean} [floorValueOnProc=false]
+ * @param {Boolean} [autoLevelUp=false]
  */
 class FFPowerUpEffect {
   /**
    * @param {Boolean} onHit
    * @param {String} type
    * @param {Number} value
-   * @param {Number} valueLevelBonus
-   * @param {Number} hitCount
-   * @param {Boolean} floorValueOnProc
-   * @param {Boolean} autoLevelUp
+   * @param {Number} [valueLevelBonus=0]
+   * @param {Number} [hitCount=0]
+   * @param {Boolean} [floorValueOnProc=false]
+   * @param {Boolean} [autoLevelUp=false]
    */
   constructor (onHit,
                type,
                value,
-               valueLevelBonus,
-               hitCount,
-               floorValueOnProc,
-               autoLevelUp) {
+               valueLevelBonus = 0,
+               hitCount = 0,
+               floorValueOnProc = false,
+               autoLevelUp = false) {
     this.onHit = onHit
     this.type = type
     this.value = value

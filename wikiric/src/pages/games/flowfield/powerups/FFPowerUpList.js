@@ -10,6 +10,17 @@
 import FFPowerUp from 'pages/games/flowfield/powerups/FFPowerUp'
 import FFPowerUpEffect from 'pages/games/flowfield/powerups/FFPowerUpEffect'
 
+const VisualTypes = {
+  Bullet: 0,
+  Fire: 1,
+  Electricity: 2
+}
+
+const DebuffTypes = {
+  Slow: 0,
+  Stun: 1
+}
+
 class FFPowerUpList {
   constructor () {
     this.version = 1
@@ -24,6 +35,7 @@ class FFPowerUpList {
   initiatePowerUps () {
     this.initiateStarterPowerUps()
     this.initiateExpansionPowerUps()
+    this.initiateStarterAbilities()
   }
 
   initiateStarterPowerUps () {
@@ -37,7 +49,8 @@ class FFPowerUpList {
       1,
       'Critical Hit',
       'Deals more damage sometimes.',
-      100)
+      100,
+      false)
     powerUp.effects.push(new FFPowerUpEffect(
       true,
       'dmg',
@@ -56,7 +69,8 @@ class FFPowerUpList {
       1,
       'Spam',
       'More projectiles!',
-      30)
+      30,
+      false)
     powerUp.effects.push(new FFPowerUpEffect(
       false,
       'amt',
@@ -75,7 +89,8 @@ class FFPowerUpList {
       1,
       'Multi-Hit',
       'Can hit more enemies.',
-      90)
+      90,
+      false)
     powerUp.effects.push(new FFPowerUpEffect(
       false,
       'hitCount',
@@ -94,7 +109,8 @@ class FFPowerUpList {
       1,
       'Area',
       'Hits enemies further away.',
-      100)
+      100,
+      false)
     powerUp.effects.push(new FFPowerUpEffect(
       false,
       'hitRange',
@@ -113,7 +129,8 @@ class FFPowerUpList {
       1,
       'Speed',
       'Projectiles are faster.',
-      100)
+      100,
+      false)
     powerUp.effects.push(new FFPowerUpEffect(
       false,
       'speed',
@@ -132,7 +149,8 @@ class FFPowerUpList {
       1,
       'Explosion',
       'Projectiles explode. Radius scales with Area.',
-      70)
+      70,
+      false)
     powerUp.effects.push(new FFPowerUpEffect(
       true,
       'radius',
@@ -151,7 +169,8 @@ class FFPowerUpList {
       1,
       'Damage',
       'Raw damage boost for anything that damages.',
-      80)
+      80,
+      false)
     powerUp.effects.push(new FFPowerUpEffect(
       true,
       'dmg',
@@ -170,7 +189,8 @@ class FFPowerUpList {
       1,
       'Berserk Tonic',
       'More power for the wild!',
-      40)
+      40,
+      false)
     powerUp.effects.push(new FFPowerUpEffect(
       true,
       'dmg',
@@ -205,7 +225,8 @@ class FFPowerUpList {
       1,
       'Last Resort',
       'Highly increased damage with slower firing rate.',
-      30)
+      30,
+      false)
     powerUp.effects.push(new FFPowerUpEffect(
       true,
       'dmg',
@@ -244,7 +265,8 @@ class FFPowerUpList {
       2,
       'Damage 2',
       'More damage.',
-      50)
+      50,
+      false)
     powerUp.effects.push(new FFPowerUpEffect(
       true,
       'dmg',
@@ -263,7 +285,8 @@ class FFPowerUpList {
       2,
       'Scaling Damage',
       'More damage every level-up!',
-      30)
+      30,
+      false)
     powerUp.effects.push(new FFPowerUpEffect(
       false,
       'dmg',
@@ -282,7 +305,8 @@ class FFPowerUpList {
       2,
       'Ratio Plus',
       'Increases the weapon\'s damage scaling.',
-      30)
+      30,
+      false)
     powerUp.effects.push(new FFPowerUpEffect(
       false,
       'ratio',
@@ -301,7 +325,8 @@ class FFPowerUpList {
       2,
       'HE Rounds',
       'Slower shooting explosive rounds with high damage.',
-      30)
+      30,
+      false)
     powerUp.effects.push(new FFPowerUpEffect(
       true,
       'radius',
@@ -344,7 +369,8 @@ class FFPowerUpList {
       2,
       'Overdrive',
       'Heavily decreases weapon cooldown.',
-      20)
+      20,
+      false)
     powerUp.effects.push(new FFPowerUpEffect(
       false,
       'cd',
@@ -361,6 +387,55 @@ class FFPowerUpList {
       0,
       false,
       false))
+    this.categories.starter.push(powerUp)
+  }
+
+  initiateStarterAbilities () {
+    /**
+     * STARTER POWERUP: Critical Hit
+     * @type {FFPowerUp}
+     */
+    const powerUp = new FFPowerUp(
+      0,
+      1,
+      'Spark',
+      'Spawns an electric orb that can stun enemies.',
+      100,
+      true,
+      1_000,
+      5)
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'dmg',
+      100,
+      10,
+      0,
+      false,
+      true))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'visual',
+      VisualTypes.Electricity))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'debuff',
+      DebuffTypes.Stun))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'hitCount',
+      10,
+      1,
+      0,
+      false,
+      true))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'hitRange',
+      2,
+      0.2,
+      0,
+      false,
+      true))
     this.categories.starter.push(powerUp)
   }
 }

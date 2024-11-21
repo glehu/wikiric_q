@@ -26,7 +26,12 @@ class FFItem {
    * @param {Number} cost
    * @param {Number} chance
    */
-  constructor (id, level, name, desc, cost, chance) {
+  constructor (id,
+               level,
+               name,
+               desc,
+               cost,
+               chance) {
     this.id = id
     this.level = level
     this.name = name
