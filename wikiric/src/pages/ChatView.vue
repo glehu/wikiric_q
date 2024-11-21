@@ -2161,6 +2161,7 @@ export default {
       const { getVerticalScrollPosition } = scroll
       const y = getVerticalScrollPosition(this.$refs.ref_messages)
       if (!y) {
+        this.gotNewMessage = false
         return
       }
       this.viewNewMessages = y < -60
@@ -2172,7 +2173,7 @@ export default {
       const clientHeight = this.$refs.ref_messages.clientHeight
       const distance = scrollHeight - clientHeight - Math.abs(y)
       // Lazily retrieve new messages as we're approaching the top
-      if (distance < 400 && this.lazyLoadingStatus === 'idle') {
+      if (distance < 800 && this.lazyLoadingStatus === 'idle') {
         this.getMessages(true)
       }
     },

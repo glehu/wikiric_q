@@ -16,23 +16,17 @@
                      class="mr4"/>
             </div>
           </template>
-          <q-btn
-            flat
-            dense
-            round
-            icon="menu"
-            aria-label="Menu"
-            @click="toggleLeftDrawer"
-          >
+          <q-toolbar-title class="text-weight-bold text-subtitle1 ml2
+                                  <sm:hidden cursor-pointer"
+                           shrink
+                           @click="toggleLeftDrawer">
+            wikiric
             <q-tooltip class="text-body2">
               Toggle&nbsp;Sidebar
             </q-tooltip>
-          </q-btn>
-          <q-toolbar-title class="text-weight-bold text-subtitle1 <sm:hidden" shrink>
-            wikiric
           </q-toolbar-title>
           <q-btn flat no-caps
-                 class="background ml4 w40 flex justify-between text-body1"
+                 class="background ml2 w40 flex justify-between text-body1"
                  @click="openDialog">
             <p class="m0 mrauto">Search</p>
             <kbd v-if="$q.platform.is.win || $q.platform.is.linux">
