@@ -16,10 +16,17 @@
                      class="mr4"/>
             </div>
           </template>
-          <q-toolbar-title class="ml1 <sm:hidden"
+          <q-toolbar-title class="ml1"
                            shrink>
+            <q-btn @click="toggleLeftDrawer" icon="menu"
+                   class="sm:hidden"
+                   dense unelevated flat no-caps>
+              <q-tooltip class="text-body2">
+                View&nbsp;Links
+              </q-tooltip>
+            </q-btn>
             <q-btn @click="toggleLeftDrawer" label="wikiric"
-                   class="text-weight-bold text-subtitle1"
+                   class="text-weight-bold text-subtitle1 <sm:hidden"
                    size="1.2rem"
                    dense unelevated flat no-caps>
               <q-tooltip class="text-body2">
@@ -28,7 +35,7 @@
             </q-btn>
           </q-toolbar-title>
           <q-btn flat no-caps
-                 class="background ml2 w40 flex justify-between text-body1"
+                 class="background ml1 w40 flex justify-between text-body1"
                  @click="openDialog">
             <p class="m0 mrauto">Search</p>
             <kbd v-if="$q.platform.is.win || $q.platform.is.linux">
