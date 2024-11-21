@@ -3593,6 +3593,9 @@ export default {
           this.srNotifyMove(true)
           this.srNotifyMove(true)
           break
+        case 'g':
+          this.handleAbilityProc('g')
+          break
       }
     },
     /**

@@ -29,14 +29,14 @@
           <span class="italic">( +{{ weapon.dpsLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
         </p>
         <p>
-          Scaling: {{ weapon.getCalculatedStat(weapon.ratio, 'ratio') * 100 }}%
+          Scaling: {{ (weapon.getCalculatedStat(weapon.ratio, 'ratio') * 100).toFixed(0) }}%
         </p>
         <p>
-          Cooldown: {{ weapon.getCalculatedStat(weapon.cd, 'cd').toLocaleString() }} ms
+          Cooldown: {{ weapon.getCalculatedStat(weapon.cd, 'cd').toLocaleString() }}
           <span class="italic">( -{{ weapon.cdLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
         </p>
         <p>
-          Amount: {{ weapon.getCalculatedStat(weapon.amount, 'amount') }}
+          Amount: {{ weapon.getCalculatedStat(weapon.amount, 'amount').toFixed(0) }}
         </p>
         <p>
           Hits: {{ weapon.getCalculatedStat(weapon.pHitCount, 'hitCount') }}
