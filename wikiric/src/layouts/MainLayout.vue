@@ -16,14 +16,16 @@
                      class="mr4"/>
             </div>
           </template>
-          <q-toolbar-title class="text-weight-bold text-subtitle1 ml2
-                                  <sm:hidden cursor-pointer"
-                           shrink
-                           @click="toggleLeftDrawer">
-            wikiric
-            <q-tooltip class="text-body2">
-              Toggle&nbsp;Sidebar
-            </q-tooltip>
+          <q-toolbar-title class="ml1 <sm:hidden"
+                           shrink>
+            <q-btn @click="toggleLeftDrawer" label="wikiric"
+                   class="text-weight-bold text-subtitle1"
+                   size="1.2rem"
+                   dense unelevated flat no-caps>
+              <q-tooltip class="text-body2">
+                View&nbsp;Links
+              </q-tooltip>
+            </q-btn>
           </q-toolbar-title>
           <q-btn flat no-caps
                  class="background ml2 w40 flex justify-between text-body1"
