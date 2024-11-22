@@ -2161,7 +2161,7 @@ export default {
       const { getVerticalScrollPosition } = scroll
       const y = getVerticalScrollPosition(this.$refs.ref_messages)
       if (!y) {
-        this.gotNewMessage = false
+        this.viewNewMessages = false
         return
       }
       this.viewNewMessages = y < -60
