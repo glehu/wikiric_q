@@ -1,12 +1,17 @@
 <template>
   <q-btn
+    v-if="show ? show(): null"
     class="menu-item"
     unelevated dense
     size="0.8em"
     :icon="icon"
     :class="{ 'is-active': isActive ? isActive(): null }"
-    @click="action"
-  >
+    @click="action">
+    <q-tooltip class="fontbold text-sm"
+               anchor="top middle" self="bottom middle"
+               :offset="[10, 10]">
+      {{ title }}
+    </q-tooltip>
   </q-btn>
 </template>
 
@@ -28,6 +33,10 @@ export default {
     isActive: {
       type: Function,
       default: null
+    },
+    show: {
+      type: Function,
+      default: () => { return true }
     }
   },
   data () {

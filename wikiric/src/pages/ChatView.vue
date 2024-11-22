@@ -2164,8 +2164,8 @@ export default {
         this.viewNewMessages = false
         return
       }
-      this.viewNewMessages = y < -60
-      if (y > -60) {
+      this.viewNewMessages = y < -200
+      if (y > -200) {
         this.gotNewMessage = false
       }
       // Calculate distance to top

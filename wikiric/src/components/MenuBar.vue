@@ -110,6 +110,47 @@ export default {
           type: 'divider'
         },
         {
+          icon: 'sym_o_table',
+          title: 'Table',
+          action: () => this.editor.chain().focus().insertTable({
+            rows: 2,
+            cols: 2,
+            withHeaderRow: true
+          }).run(),
+          isActive: () => this.editor.isActive('table')
+        },
+        {
+          icon: 'sym_o_add_row_below',
+          title: 'Add Row',
+          action: () => this.editor.chain().focus().addRowAfter().run(),
+          isActive: () => false,
+          show: () => this.editor.isActive('table')
+        },
+        {
+          icon: 'sym_o_delete',
+          title: 'Delete Row',
+          action: () => this.editor.chain().focus().deleteRow().run(),
+          isActive: () => false,
+          show: () => this.editor.isActive('table')
+        },
+        {
+          icon: 'sym_o_add_column_right',
+          title: 'Add Column',
+          action: () => this.editor.chain().focus().addColumnAfter().run(),
+          isActive: () => false,
+          show: () => this.editor.isActive('table')
+        },
+        {
+          icon: 'sym_o_delete',
+          title: 'Remove Column',
+          action: () => this.editor.chain().focus().deleteColumn().run(),
+          isActive: () => false,
+          show: () => this.editor.isActive('table')
+        },
+        {
+          type: 'divider'
+        },
+        {
           icon: 'sym_o_format_clear',
           title: 'Clear Format',
           action: () => this.editor.chain()
