@@ -119,6 +119,41 @@ class FFUnit {
     this.offY = offY
     this.armor = armor
     this.money = money
+    /**
+     *
+     * @type {FFPowerUpEffect[]}
+     */
+    this.effects = []
+  }
+
+  /**
+   * Returns movement debuffs as their types or null
+   * @return {Number[] || null}
+   */
+  procMovementDebuffs () {
+    if (this.effects.length < 1) {
+      return null
+    }
+    /**
+     *
+     * @type {Number[]}
+     */
+    const debuffs = []
+    for (let i = this.effects.length - 1; i >= 0; i--) {
+      if (this.effects[i].type !== 'debuff') {
+        continue
+      }
+      this.effects[i].hitCount -= 1
+      if (this.effects[i].hitCount <= 0) {
+        this.effects.splice(i, 1)
+      } else {
+        debuffs.push(this.effects[i].value)
+      }
+      if (i === 0) {
+        break
+      }
+    }
+    return debuffs
   }
 }
 

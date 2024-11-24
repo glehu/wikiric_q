@@ -88,6 +88,29 @@ class FFProjectile {
      * @type {FFPowerUpEffect[] || null}
      */
     this.effects = effects
+    /**
+     * This FFUnit's hit cache. Enemies cannot be hit twice!
+     * For boomerang-like projectiles, the hit cache should be cleared
+     * ...at some point
+     *
+     * @type {Map<String, Boolean>}
+     */
+    this.hitcache = new Map()
+  }
+
+  /**
+   * Checks if a unit can be hit.
+   * If it has not been hit yet, we can mark it as hit.
+   * Duplicate hits will not work.
+   *
+   * @param {String} id
+   */
+  tryHitAndMarkEnemy (id) {
+    if (this.hitcache.has(id)) {
+      return false
+    }
+    this.hitcache.set(id, true)
+    return true
   }
 }
 

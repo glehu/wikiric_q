@@ -1110,7 +1110,7 @@ export default {
       theta: 0,
       secondInterval: null,
       secondsPassed: 0,
-      secondsMax: 30,
+      secondsMax: 40,
       currentRound: 0,
 
       // DEBUG DATA
@@ -1860,11 +1860,11 @@ export default {
     },
     /**
      *
-     * @param {FFUnit} unit
+     * @param {FFUnit} u
      * @param {String} [prefix='E0-']
      */
-    srSendEnemy: function (unit, prefix = 'E0-') {
-      const msg = `${prefix}${unit.pos.x};${unit.pos.y};${unit.maxSpeed};${unit.id};${unit.dps};${unit.maxHp};${unit.xp};${unit.visualType};${unit.dimW};${unit.dimH};${unit.offX};${unit.offY};${unit.armor};${unit.money}`
+    srSendEnemy: function (u, prefix = 'E0-') {
+      const msg = `${prefix}${u.pos.x};${u.pos.y};${u.maxSpeed};${u.id};${u.dps};${u.maxHp};${u.xp};${u.visualType};${u.dimW};${u.dimH};${u.offX};${u.offY};${u.armor};${u.money}`
       this.$connector.sendSyncRoomMessage(msg)
     },
     handleCalculation: async function () {
@@ -2344,6 +2344,8 @@ export default {
         this.handleCalculation()
         return lastPos
       }
+      // Recalculate if player has reached a new cell
+      // We save tons of CPU load because the cells are relatively big
       if (Math.round(this.goalPosition.x - this.offsetVector.x) !== lastPos.x ||
         Math.round(this.goalPosition.y - this.offsetVector.y) !== lastPos.y) {
         lastPos = new THREE.Vector2(
@@ -2636,9 +2638,43 @@ export default {
       let xy = []
       let tmpX, tmpY
       let tmp
+      /**
+       * @type {Number[]}
+       */
+      let debuffs
+      const DebuffTypes = {
+        Slow: 0,
+        Stun: 1
+      }
+      let movementDebuff
       // Calculate new position vectors for all enemies
       for (const [id, current] of this.enemies) {
         if (!id) continue
+        // Are we stunned or slowed?
+        movementDebuff = -1
+        debuffs = current.procMovementDebuffs()
+        if (debuffs) {
+          for (let i = 0; i < debuffs.length; i++) {
+            switch (debuffs[i]) {
+              case DebuffTypes.Slow:
+              case DebuffTypes.Stun:
+                if (movementDebuff > debuffs[i]) {
+                  continue
+                }
+                movementDebuff = debuffs[i]
+                break
+            }
+          }
+          if (movementDebuff === DebuffTypes.Stun) {
+            // Draw enemy
+            if (assets) {
+              this.renderEnemy(current, assets)
+            }
+            // Write back enemy
+            this.enemies.set(id, current)
+            continue
+          }
+        }
         // Get current position
         tmpX = Math.round(current.pos.x)
         tmpY = Math.round(current.pos.y)
@@ -2681,6 +2717,9 @@ export default {
         current.newPos.copy(endVector)
         endVector.sub(current.pos)
         endVector.multiplyScalar(current.maxSpeed)
+        if (movementDebuff === DebuffTypes.Slow) {
+          endVector.multiplyScalar(0.5)
+        }
         endVector.clampScalar(-current.maxSpeed, current.maxSpeed)
         endVector.multiplyScalar(timeDelta)
         current.pos.add(endVector)
@@ -2980,6 +3019,10 @@ export default {
       let tmp, tmp2, tmp3
       let projectile
       let newVec
+      const DebuffTypes = {
+        Slow: 0,
+        Stun: 1
+      }
       for (let i = this.goalWeaponProjectiles.length - 1; i >= 0; i--) {
         projectile = this.goalWeaponProjectiles[i]
         // Does this projectile expire?
@@ -3028,6 +3071,9 @@ export default {
         // Did the projectile hit something?
         if (this.enemies.size > 0) {
           dist = projectile.hitRange * 2
+          /**
+           * @type FFUnit[]
+           */
           const enemies = qtree.getContents(
             projectile.pos.x - dist,
             projectile.pos.y - dist,
@@ -3048,11 +3094,42 @@ export default {
                 continue
               }
               dist = tmp.distanceToSquared(enemy.pos)
-              if (dist <= projectile.hitRange) {
+              if (dist <= projectile.hitRange && projectile.tryHitAndMarkEnemy(enemy.id)) {
                 // Trigger hit
                 projectile.hitCount -= 1
                 enemy.hp -= projectile.dmg
                 this.trophyList.addProgress('dmg', projectile.dmg)
+                // Does the projectile come with effects e.g. debuffs?
+                if (projectile.effects && projectile.effects.length > 0) {
+                  let txt
+                  for (let j = 0; j < projectile.effects.length; j++) {
+                    switch (projectile.effects[j].type) {
+                      case 'debuff':
+                        enemy.effects.push(new FFPowerUpEffect(
+                          false,
+                          'debuff',
+                          projectile.effects[j].value,
+                          0,
+                          projectile.effects[j].hitCount))
+                        switch (projectile.effects[j].value) {
+                          case DebuffTypes.Slow:
+                            txt = 'Slowed'
+                            break
+                          case DebuffTypes.Stun:
+                            txt = 'Stunned'
+                            break
+                        }
+                        this.onHitEffects.push(new FFOnHitEffect(
+                          enemy.pos.x,
+                          enemy.pos.y,
+                          'text',
+                          txt,
+                          60, 0))
+                        break
+                    }
+                  }
+                }
+                // Did the enemy survive?
                 if (enemy.hp <= 0) {
                   this.handleEnemyDeath(enemy, assets)
                 } else {
@@ -3086,7 +3163,7 @@ export default {
                   this.onHitEffects.push(tmp2)
                 }
                 if (projectile.visualType === 'fire') {
-                  // Add fire!
+                  // Add fire on the ground!
                   this.onHitEffects.push(new FFOnHitEffect(
                     projectile.pos.x,
                     projectile.pos.y,
@@ -3219,16 +3296,26 @@ export default {
        * @type FFOnHitEffect
        */
       let effect
+      let tmpX, tmpY
       for (let i = this.onHitEffects.length - 1; i >= 0; i--) {
         effect = this.onHitEffects[i]
         if (effect.tick()) {
           if (effect.type === 'text') {
+            tmpX = (effect.x + this.offsetVector.x) * this.gridSize
+            tmpY = (effect.y + this.offsetVector.y) * this.gridSize
+            this.ctx3.font = '1rem serif'
+            this.ctx3.strokeStyle = '#000'
+            this.ctx3.strokeText(
+              effect.content,
+              tmpX,
+              tmpY
+            )
             this.ctx3.font = '1rem serif'
             this.ctx3.fillStyle = '#ffc800'
             this.ctx3.fillText(
               effect.content,
-              (effect.x + this.offsetVector.x) * this.gridSize,
-              (effect.y + this.offsetVector.y) * this.gridSize
+              tmpX,
+              tmpY
             )
           } else if (effect.type === 'explosion') {
             this.drawOnHitExplosion(effect, qtree, images)
@@ -4051,7 +4138,10 @@ export default {
      * ...are placed here.
      */
     procPerHalfSecondTriggers: function () {
+      // Send real position to avoid de-sync
       this.srNotifyMove(true)
+      // Recalculate paths since co-players move, too
+      this.handleCalculation()
     },
     /**
      *
@@ -4448,8 +4538,8 @@ export default {
           Number(obj.cd),
           Number(obj.cdLevelUp),
           Number(obj.pSpeed),
-          Number(obj.hitCount),
           Number(obj.pHitCount),
+          Number(obj.pHitCountLevelUp),
           Number(obj.hitRange),
           Number(obj.hitRangeLevelUp),
           obj.visualType,
@@ -5111,6 +5201,8 @@ export default {
       // Tell the co-players we're about to send some enemies
       // ...in synchronization mode
       this.isSyncing = true
+      // What kind of number magic is this? This code has been here for
+      // ...ages so we better not touch it, right? Right???
       this.syncRound = Math.floor(this.syncRound + 1)
       this.syncCount = 0
       this.syncMaxCount = this.coPlayers.size
@@ -5120,16 +5212,23 @@ export default {
         return
       }
       this.syncCache = new Map()
+      // 1st notify others of a new sync process
       this.$connector.sendSyncRoomMessage(
         `E1-${this.syncRound}`
       )
+      // 2nd send all units to the other peers
+      const prefix = `E2-${this.syncRound};`
       let count = 0
       for (const [id, unit] of this.enemies) {
         if (!id) continue
-        this.srSendEnemy(unit, `E2-${this.syncRound};`)
+        this.srSendEnemy(unit, prefix)
         count += 1
       }
-      // Tell the co-players when they're done collecting
+      // 3rd tell the co-players when they're done collecting
+      // Since this message could theoretically arrive out of order
+      // ...in case we switch the protocols, we also send the number
+      // ...of units to be expected for others to be able to send a
+      // ...desync message in case not all units arrived.
       this.$connector.sendSyncRoomMessage(
         `E3-${count}`
       )
@@ -5315,7 +5414,6 @@ export default {
           let projectiles
           for (let i = 0; i < val.abilities.length; i++) {
             projectiles = val.abilities[i].activateAbility(goalPos, direction)
-            console.log(projectiles, val.abilities[i])
             if (projectiles) {
               for (let j = 0; j < projectiles.length; j++) {
                 this.goalWeaponProjectiles.push(projectiles[j])
@@ -5381,7 +5479,6 @@ export default {
       }
       for (let i = this.tcpQueue.length - 1; i > 0; i--) {
         if (this.tcpQueue[i].p.length > 0) {
-          console.log('TCP SEND:', this.tcpQueue[i].m)
           this.wrtc.broadcastDataChannelMessage(this.tcpQueue[i].m)
         } else {
           this.tcpQueue.splice(i, 1)
@@ -5398,7 +5495,6 @@ export default {
     confirmTCP: function (uuid, username) {
       const txt = `CMF-${uuid};${username};${this.store.user.username}`
       // Life-Hack! Just send it a dozen times! Literally!
-      console.log('TCP SEND CONFIRM:', uuid, username)
       for (let i = 0; i < 12; i++) {
         this.wrtc.broadcastDataChannelMessage(txt)
       }
@@ -5416,7 +5512,6 @@ export default {
       if (this.tcpQueue.length < 1) {
         return
       }
-      console.log('TCP RECEIVE CONFIRM:', uuid, username)
       for (let i = 0; i < this.tcpQueue.length; i++) {
         if (this.tcpQueue[i].i === uuid) {
           if (!this.tcpQueue[i].p || this.tcpQueue[i].p.length < 1) {

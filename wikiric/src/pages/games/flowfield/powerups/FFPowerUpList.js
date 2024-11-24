@@ -407,7 +407,7 @@ class FFPowerUpList {
     powerUp.effects.push(new FFPowerUpEffect(
       false,
       'dmg',
-      100,
+      50,
       10,
       0,
       false,
@@ -419,11 +419,13 @@ class FFPowerUpList {
     powerUp.effects.push(new FFPowerUpEffect(
       false,
       'debuff',
-      DebuffTypes.Stun))
+      DebuffTypes.Stun,
+      0,
+      1000))
     powerUp.effects.push(new FFPowerUpEffect(
       false,
       'hitCount',
-      10,
+      20,
       1,
       0,
       false,
