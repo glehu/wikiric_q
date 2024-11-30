@@ -186,6 +186,13 @@
                 </div>
               </div>
             </div>
+            <q-btn class="p2 rounded wfull my4 fmt_border_top fmt_border_bottom"
+                   flat dense no-caps
+                   v-on:click="buildWordCache">
+              <p class="text-sm fontbold">
+                Build Word Cache
+              </p>
+            </q-btn>
           </div>
         </q-scroll-area>
       </q-drawer>
@@ -268,6 +275,7 @@
                         v-model="query"
                         @keyup.enter="processQuery"
                         @focus="showSuggestions"
+                        @update:model-value="handleInputChange"
                         input-class="suggestion_source"
                         class="text-lg md:rounded-t-2 fmt_border_bottom transition-all">
                         <template v-slot:prepend>
@@ -284,14 +292,29 @@
                     </q-form>
                     <div id="query_suggestions"
                          class="query_suggestions wfull pt2">
-                      <div v-if="query.trim() !== ''"
+                      <div v-if="!isRequestUndergoing && query.trim() !== ''"
                            class="max-h-60 overflow-y-scroll column no-wrap wfull">
+                        <p class="text-sm font-600 mb1 pointer-events-none">
+                          Categories: <kbd>TAB</kbd>
+                        </p>
                         <template v-for="cat in categories" :key="cat">
-                          <template v-if="cat.toLowerCase().startsWith(query.toLowerCase()) && cat !== ''">
-                            <q-btn @click="query = cat + ' '; focusQueryField()" :label="cat"
+                          <template v-if="canShowCat(cat)">
+                            <q-btn @click="setCat(cat)" :label="cat"
                                    class="wfull"
                                    flat align="left"/>
                           </template>
+                        </template>
+                      </div>
+                      <div v-if="!isRequestUndergoing && query.trim() !== ''"
+                           class="max-h-60 overflow-y-scroll column no-wrap wfull">
+                        <p class="text-sm font-600 mb1 pointer-events-none">
+                          Quick Links: <kbd>TAB</kbd>
+                        </p>
+                        <template v-for="sug in suggestions" :key="sug">
+                          <q-btn :label="sug.t"
+                                 @click="handleItemClicked(sug)"
+                                 class="wfull"
+                                 flat align="left"/>
                         </template>
                       </div>
                     </div>
@@ -576,16 +599,20 @@
   <basket-view :is-adding="false"
                :is-open="isViewingBasked"
                @close="isViewingBasked = false; getBasket()"/>
+  <store-console :is-open="isViewingConsole"
+                 @close="isViewingConsole = false"/>
 </template>
 
 <script>
 import { useStore } from 'stores/wikistate'
 import axios from 'axios'
-import { scroll } from 'quasar'
+import { debounce, scroll } from 'quasar'
 import ProductView from 'components/ecommerce/ProductView.vue'
 import { dbGetData } from 'src/libs/wikistore'
 import BasketView from 'components/ecommerce/BasketView.vue'
 import ProductEditView from 'components/ecommerce/ProductEditView.vue'
+import { api } from 'boot/axios'
+import StoreConsole from 'components/ecommerce/StoreConsole.vue'
 
 const {
   getScrollTarget,
@@ -595,6 +622,7 @@ const {
 export default {
   name: 'StoreView',
   components: {
+    StoreConsole,
     ProductEditView,
     BasketView,
     ProductView
@@ -608,6 +636,8 @@ export default {
       isViewingBasked: false,
       isViewingProduct: false,
       isViewingProductCreate: false,
+      isViewingConsole: false,
+      isBuildingIndex: false,
       viewingProductId: '',
       viewingProduct: {},
       storeID: '',
@@ -631,6 +661,7 @@ export default {
       variations: [],
       variationQuery: [],
       categories: [],
+      suggestions: [],
       brands: [],
       results: null,
       respTime: 0.0,
@@ -648,7 +679,7 @@ export default {
     }
   },
   created () {
-    // this.processQuery = debounce(this.processQuery, 400)
+    this.handleInputChange = debounce(this.handleInputChange, 400)
     this.storeID = this.$route.query.id
     this.getViewingStore()
     this.getStoreFilters()
@@ -750,6 +781,15 @@ export default {
     processQuery: async function () {
       // Avoid multiple requests at the same time
       if (this.isRequestUndergoing) return
+      // Holy moly!
+      if (this.suggestions.length > 0) {
+        this.hideSuggestions()
+        this.results = [...this.suggestions]
+        this.suggestions = []
+      }
+      if (!this.query.endsWith(' ')) {
+        this.query += ' '
+      }
       let queryText = this.query.trim()
       if (queryText === '') return
       this.isRequestUndergoing = true
@@ -796,9 +836,18 @@ export default {
         brand: this.brandQuery,
         minStock: this.minStock
       }
+      // We will use the WordSearch query if there are no categories
+      // ...to search for!
+      // The regular query would simply iterate over all entries
+      // ...which would be very slow
+      let queryUrl = `${this.store.serverIP}items/public/query/${this.storeID}?results=100`
+      if (payload.cats.length < 1) {
+        queryUrl += '&wrd=1'
+      }
+      this.suggestions = []
       return new Promise((resolve) => {
         axios.post(
-          `${this.store.serverIP}items/public/query/${this.storeID}?results=100`,
+          queryUrl,
           payload)
         .then((response) => {
           const data = response.data
@@ -1022,6 +1071,62 @@ export default {
       this.isViewingProduct = false
       this.processQuery()
       this.getBasket()
+    },
+    buildWordCache: function () {
+      this.isViewingConsole = true
+      if (this.isBuildingIndex) {
+        return
+      }
+      this.isBuildingIndex = true
+      setTimeout(() => {
+        this.isBuildingIndex = false
+      }, 30_000)
+      api({
+        url: 'items/private/index/' + this.storeID + '?wrd=1'
+      })
+    },
+    canShowCat: function (cat) {
+      if (cat == null || cat === '') {
+        return false
+      }
+      if (this.query.endsWith(' ')) {
+        return false
+      }
+      const str = this.query.toLowerCase().split(' ')
+      const len = str.length
+      if (len < 1) {
+        return false
+      }
+      return cat.toLowerCase().startsWith(str[len - 1])
+    },
+    setCat: function (cat) {
+      const str = this.query.toLowerCase().split(' ')
+      const len = str.length
+      if (len < 1) {
+        this.query = cat + ' '
+      } else {
+        str[len - 1] = cat
+        this.query = str.join(' ') + ' '
+      }
+      this.focusQueryField()
+    },
+    handleInputChange: function (newVal) {
+      const payload = {
+        query: newVal
+      }
+      const queryUrl = `${this.store.serverIP}items/public/query/${this.storeID}?results=10&wrd=1`
+      return new Promise((resolve) => {
+        axios.post(
+          queryUrl,
+          payload)
+        .then((response) => {
+          const data = response.data
+          this.suggestions = data.items
+        })
+        .finally(() => {
+          resolve()
+        })
+      })
     }
   }
 }

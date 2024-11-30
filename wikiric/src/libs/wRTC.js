@@ -15,14 +15,6 @@ import wikiricSDK from 'src/libs/wikiric-sdk'
  *
  * WebRTC allows us to communicate with other clients in near real time, making Audio/Video chat, screensharing
  * and even multiplayer games possible.
- *
- * wRTC.js uses the Partially Reliable Stream Control Transport Protocol (PR-SCTP)
- * for our WebRTC DataChannel to ensure:
- *
- * 1. Better performance than TCP (no ACK and no resending of frames)
- * 2. Better reliability than UDP (discarding of delayed frames)
- *
- * This protocol is useful for media streaming or streaming data of no chronological importance.
  */
 const WRTC = {
   pause: false,
@@ -127,8 +119,6 @@ const WRTC = {
    *
    * 1. Better performance than TCP (no ACK and no resending of frames)
    * 2. Better reliability than UDP (discarding of delayed frames)
-   *
-   * This protocol is useful for media streaming or streaming data of no chronological importance.
    *
    * It is advised to periodically send data where a single missed frame could cause problems.
    *
@@ -241,25 +231,17 @@ const WRTC = {
         console.debug('%cADD DATA CHANNEL', this.logStyle, 'for', remoteName)
       }
       if (!peerConnection._dataChannel) {
-        // We use the Partially Reliable Stream Control Transport Protocol (PR-SCTP)
-        // ...for our WebRTC DataChannel to ensure...
-        //
-        // 1. Better performance than TCP (no ACK and no resending of frames)
-        // 2. Better reliability than UDP (discarding of delayed frames)
-        //
-        // This protocol is useful for media streaming or streaming data of no chronological importance.
-        //
         // It is advised to periodically send data where a single missed frame could cause problems.
         if (remoteName === '_server') {
           peerConnection._dataChannel = peerConnection.createDataChannel('data', {
-            ordered: true,
+            ordered: false,
             maxRetransmits: 0
           })
         } else {
           peerConnection._dataChannel = peerConnection.createDataChannel('data', {
             negotiated: true,
             id: 0,
-            ordered: true,
+            ordered: false,
             maxRetransmits: 0
           })
         }
