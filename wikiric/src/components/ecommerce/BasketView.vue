@@ -221,6 +221,12 @@ export default {
       totalVat: 0.0
     }
   },
+  mounted () {
+    document.addEventListener('keydown', this.basketHandleKeydown, false)
+  },
+  beforeUnmount () {
+    document.removeEventListener('keydown', this.basketHandleKeydown, false)
+  },
   methods: {
     handleDialogOpen: function () {
       if (this.itemObj) {
@@ -415,6 +421,11 @@ export default {
       }
       // Objects match in variations and sub-variations
       return true
+    },
+    basketHandleKeydown: function (e) {
+      if (e.key === 'Escape') {
+        this.$emit('close')
+      }
     }
   }
 }

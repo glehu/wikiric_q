@@ -1,6 +1,6 @@
 <template>
-  <q-dialog v-model="show" class="z-top">
-    <q-card class="surface p4 w-[99dvw] max-w-xl" flat bordered>
+  <q-dialog v-model="show" class="z-top" @before-hide="$emit('close')">
+    <q-card class="surface p4" flat bordered>
     </q-card>
   </q-dialog>
 </template>
@@ -15,10 +15,13 @@ export default {
     }
   },
   name: 'DialogTemplate',
+  emits: ['close'],
   watch: {
-    isOpen () {
-      this.show = true
-      this.handleDialogOpen()
+    isOpen (newVal) {
+      this.show = newVal
+      if (this.show) {
+        this.handleDialogOpen()
+      }
     }
   },
   data () {

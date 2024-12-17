@@ -229,14 +229,14 @@ const linksList = [
     link: '/'
   },
   {
-    title: 'Apps & Settings',
-    caption: 'An overview of apps and settings',
+    title: 'Apps',
+    caption: 'An overview of apps',
     icon: 'sym_o_apps',
     link: '/account'
   },
   {
-    title: 'Account',
-    caption: 'View your account information',
+    title: 'Account & Settings',
+    caption: 'View your account information and settings',
     icon: 'sym_o_account_circle',
     link: '/account?tab=settings'
   },

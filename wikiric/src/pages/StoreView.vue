@@ -186,13 +186,6 @@
                 </div>
               </div>
             </div>
-            <q-btn class="p2 rounded wfull my4 fmt_border_top fmt_border_bottom"
-                   flat dense no-caps
-                   v-on:click="buildWordCache">
-              <p class="text-sm fontbold">
-                Build Word Cache
-              </p>
-            </q-btn>
           </div>
         </q-scroll-area>
       </q-drawer>
@@ -229,336 +222,606 @@
           </q-page-sticky>
           <div class="pb4 flex items-center column wfull">
             <template v-if="viewingStore">
-              <div class="wfull rounded p4 flex justify-center">
-                <div class="max-w-screen-lg wfull flex gap-8 <lg:gap-6
+              <template v-if="!isViewingJourneyStepper">
+                <div class="wfull rounded p4 flex justify-center">
+                  <div class="max-w-screen-xl wfull flex gap-8 <lg:gap-6
                             justify-center">
-                  <div class="relative wfull
+                    <div class="relative wfull
                               max-w-64 max-h-32">
-                    <template v-if="viewingStore.iurl">
-                      <q-img :src="getImg(viewingStore.iurl, true)"
-                             alt="Store" fit="contain" position="50% 0"
-                             class="hfull wfull relative rounded"/>
+                      <template v-if="viewingStore.iurl">
+                        <q-img :src="getImg(viewingStore.iurl, true)"
+                               alt="Store" fit="contain" position="50% 0"
+                               class="hfull wfull relative rounded"/>
+                      </template>
+                    </div>
+                    <div class="flex-grow flex column justify-center pr8">
+                      <p class="text-5xl <lg:text-3xl <sm:text-[6vw]
+                              fontbold wfit">
+                        {{ viewingStore.t }}
+                      </p>
+                      <p class="text-body1 <lg:text-base mt2 wfit">
+                        {{ viewingStore.desc }}
+                      </p>
+                      <div v-if="totalOffers > 0"
+                           class="mt2 rounded-2 fmt_border gap-x-2
+                                px3 py1 wfit flex items-center">
+                        <div class="w-2 h-2 rounded-full bg-green"/>
+                        <p class="text-subtitle2 fontbold">
+                          {{ totalOffers.toLocaleString() }} active offers
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div id="query_container"
+                     class="mt10 wfull max-w-screen-xl md:px4
+                            sticky top-11 z-fab">
+                  <div class="fmt_border surface dshadow
+                            hfit md:rounded-2">
+                    <div class="px3 pb2">
+                      <q-form autocomplete="off" spellcheck="false" @submit.prevent>
+                        <q-input
+                          autofocus
+                          for="storeQuery"
+                          label="Search for products and services..."
+                          color="brand-p"
+                          label-color="brand-p"
+                          v-model="query"
+                          @keyup.enter="processQuery"
+                          @focus="showSuggestions"
+                          @update:model-value="handleInputChange"
+                          input-class="suggestion_source"
+                          class="text-lg md:rounded-t-2 fmt_border_bottom transition-all">
+                          <template v-slot:prepend>
+                            <template v-if="!isRequestUndergoing">
+                              <div class="w10 flex justify-center">
+                                <q-icon name="search" size="2rem"/>
+                              </div>
+                            </template>
+                            <template v-else>
+                              <q-spinner-rings size="2.5rem"/>
+                            </template>
+                          </template>
+                        </q-input>
+                      </q-form>
+                      <div v-if="isShowingSuggestions && !isRequestUndergoing && query.trim() !== ''"
+                           class="relative wfull">
+                        <div id="query_suggestions"
+                             class="query_suggestions p2 absolute surface fmt_border wfull
+                                  flex row no-wrap gap-2 rounded-b-lg dshadow">
+                          <div class="max-h-60 overflow-y-scroll column no-wrap pr2">
+                            <p class="text-sm font-600 mb1 pointer-events-none">
+                              Categories: <kbd>TAB</kbd>
+                            </p>
+                            <template v-for="cat in categories" :key="cat">
+                              <template v-if="canShowCat(cat)">
+                                <q-btn @click="setCat(cat)"
+                                       class="wfull" size="0.8rem" no-wrap
+                                       flat align="left">
+                                  <p class="text-left text-sm line-height-tight">
+                                    {{ cat }}
+                                  </p>
+                                </q-btn>
+                              </template>
+                            </template>
+                          </div>
+                          <div class="max-h-60 overflow-y-scroll column no-wrap flex-lg flex-grow pr2">
+                            <p class="text-sm font-600 mb1 pointer-events-none">
+                              Quick Links: <kbd>TAB</kbd>
+                              <template v-if="isSubRequestUndergoing">
+                                <q-spinner-hourglass class="ml2 mr1"
+                                                     size="1rem"/>
+                              </template>
+                            </p>
+                            <template v-for="sug in suggestions" :key="sug">
+                              <q-btn @click="handleItemClicked(sug)"
+                                     class="wfull" size="0.8rem" no-wrap
+                                     flat align="left">
+                                <p class="text-left text-sm line-height-tight">
+                                  {{ sug.t }}
+                                </p>
+                              </q-btn>
+                            </template>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <template v-if="basket?.items?.length > 0">
+                      <div class="pr6 pb3 pt1 wfull flex justify-end
+                                items-center gap-4">
+                        <q-btn dense no-caps
+                               @click="isViewingBasked = true"
+                               color="primary">
+                          <q-icon name="sym_o_shopping_cart"
+                                  size="1.4rem"/>
+                          <p class="font-600 text-sm pl1">
+                            View Cart ({{ cartItemsText }})
+                          </p>
+                        </q-btn>
+                      </div>
                     </template>
                   </div>
-                  <div class="flex-grow flex column justify-center pr8">
-                    <p class="text-5xl <lg:text-3xl <sm:text-[6vw]
-                              fontbold wfit">
-                      {{ viewingStore.t }}
-                    </p>
-                    <p class="text-subtitle2 mt2 wfit">
-                      {{ viewingStore.desc }}
-                    </p>
-                    <div v-if="totalOffers > 0"
-                         class="mt2 rounded-2 fmt_border gap-x-2
-                                px3 py1 wfit flex items-center">
-                      <div class="w-2 h-2 rounded-full bg-green"/>
-                      <p class="text-subtitle2 fontbold">
-                        {{ totalOffers.toLocaleString() }} active offers
-                      </p>
-                    </div>
-                  </div>
                 </div>
-              </div>
-              <div id="query_container"
-                   class="mt20 wfull max-w-screen-lg md:px4
-                          sticky top-11 z-fab">
-                <div class="fmt_border surface dshadow
-                            hfit md:rounded-2">
-                  <div class="px3 pb2">
-                    <q-form autocomplete="off" spellcheck="false" @submit.prevent>
-                      <q-input
-                        autofocus
-                        for="storeQuery"
-                        label="Search for products and services..."
-                        color="brand-p"
-                        label-color="brand-p"
-                        v-model="query"
-                        @keyup.enter="processQuery"
-                        @focus="showSuggestions"
-                        @update:model-value="handleInputChange"
-                        input-class="suggestion_source"
-                        class="text-lg md:rounded-t-2 fmt_border_bottom transition-all">
-                        <template v-slot:prepend>
-                          <template v-if="!isRequestUndergoing">
-                            <div class="w10 flex justify-center">
-                              <q-icon name="search" size="2rem"/>
-                            </div>
-                          </template>
-                          <template v-else>
-                            <q-spinner-rings size="2.5rem" color="primary"/>
-                          </template>
-                        </template>
-                      </q-input>
-                    </q-form>
-                    <div id="query_suggestions"
-                         class="query_suggestions wfull pt2">
-                      <div v-if="!isRequestUndergoing && query.trim() !== ''"
-                           class="max-h-60 overflow-y-scroll column no-wrap wfull">
-                        <p class="text-sm font-600 mb1 pointer-events-none">
-                          Categories: <kbd>TAB</kbd>
-                        </p>
-                        <template v-for="cat in categories" :key="cat">
-                          <template v-if="canShowCat(cat)">
-                            <q-btn @click="setCat(cat)" :label="cat"
-                                   class="wfull"
-                                   flat align="left"/>
-                          </template>
-                        </template>
-                      </div>
-                      <div v-if="!isRequestUndergoing && query.trim() !== ''"
-                           class="max-h-60 overflow-y-scroll column no-wrap wfull">
-                        <p class="text-sm font-600 mb1 pointer-events-none">
-                          Quick Links: <kbd>TAB</kbd>
-                        </p>
-                        <template v-for="sug in suggestions" :key="sug">
-                          <q-btn :label="sug.t"
-                                 @click="handleItemClicked(sug)"
-                                 class="wfull"
-                                 flat align="left"/>
-                        </template>
-                      </div>
-                    </div>
-                  </div>
-                  <template v-if="basket?.items?.length > 0">
-                    <div class="px3 pb2 wfull flex justify-end
-                                items-center gap-4">
-                      <q-btn dense no-caps
-                             @click="isViewingBasked = true"
-                             color="primary">
-                        <q-icon name="sym_o_shopping_cart"
-                                size="1.5rem"/>
-                        <p>
-                          View Cart ({{ cartItemsText }})
-                        </p>
-                      </q-btn>
-                    </div>
-                  </template>
-                </div>
-              </div>
-              <div class="mt4 wfull max-w-screen-lg md:px4 flex">
-                <div v-if="results && results.length > 0"
-                     id="results_container"
-                     class="fmt_border background wfull
+                <div class="mt8 wfull max-w-screen-xl md:px4 flex">
+                  <div v-if="results && results.length > 0"
+                       id="results_container"
+                       class="fmt_border background wfull
                             hfit md:rounded-2 gap-y-1
                             flex column mb100 p1">
-                  <div class="flex my2 gap-y-2
+                    <div class="flex my2 gap-y-2
                               column px4">
-                    <div class="flex gap-x-4 gap-y-2 wfull items-center">
-                      <div class="non-selectable">
-                        <p class="text-subtitle2">
-                          {{ results.length }} Results in
-                          {{ respTime }} seconds
-                        </p>
+                      <div class="flex gap-x-4 gap-y-2 wfull items-center">
+                        <div class="non-selectable">
+                          <p class="text-subtitle2">
+                            {{ results.length }} Results in
+                            {{ respTime }} seconds
+                          </p>
+                        </div>
+                        <div class="flex gap-2 items-center mlauto">
+                          <p class="text-subtitle2 non-selectable">
+                            Sort by:
+                          </p>
+                          <q-icon name="sym_o_arrow_upward" size="1.2rem"
+                                  class="text-weight-bold"
+                                  v-on:click="sortByRelevance(false)"
+                                  v-if="sortingRelevance && !sortAsc"/>
+                          <q-icon name="sym_o_arrow_downward" size="1.2rem"
+                                  class="text-weight-bold"
+                                  v-on:click="sortByRelevance(false)"
+                                  v-if="sortingRelevance && sortAsc"/>
+                          <q-btn icon="sym_o_target" label="Relevance"
+                                 no-caps flat align="left" dense
+                                 class="text-subtitle2 rounded-2 px2"
+                                 :class="{'surface fmt_border': sortingRelevance}"
+                                 @click="sortByRelevance(false)"/>
+                          <q-icon name="sym_o_arrow_upward" size="1.2rem"
+                                  class="text-weight-bold"
+                                  v-on:click="sortByPrice(false)"
+                                  v-if="sortingPrice && !sortAsc"/>
+                          <q-icon name="sym_o_arrow_downward" size="1.2rem"
+                                  class="text-weight-bold"
+                                  v-on:click="sortByPrice(false)"
+                                  v-if="sortingPrice && sortAsc"/>
+                          <q-btn icon="payments" label="Price"
+                                 class="text-subtitle2 rounded-2 px2"
+                                 :class="{'surface fmt_border': sortingPrice}"
+                                 no-caps flat align="left" dense
+                                 @click="sortByPrice(false)"/>
+                        </div>
                       </div>
-                      <div class="flex gap-2 items-center mlauto">
-                        <p class="text-subtitle2 non-selectable">
-                          Sort by:
-                        </p>
-                        <q-icon name="sym_o_arrow_upward" size="1.2rem"
-                                class="text-weight-bold"
-                                v-on:click="sortByRelevance(false)"
-                                v-if="sortingRelevance && !sortAsc"/>
-                        <q-icon name="sym_o_arrow_downward" size="1.2rem"
-                                class="text-weight-bold"
-                                v-on:click="sortByRelevance(false)"
-                                v-if="sortingRelevance && sortAsc"/>
-                        <q-btn icon="sym_o_target" label="Relevance"
-                               no-caps flat align="left" dense
-                               class="text-subtitle2 rounded-2 px2"
-                               :class="{'surface fmt_border': sortingRelevance}"
-                               @click="sortByRelevance(false)"/>
-                        <q-icon name="sym_o_arrow_upward" size="1.2rem"
-                                class="text-weight-bold"
-                                v-on:click="sortByPrice(false)"
-                                v-if="sortingPrice && !sortAsc"/>
-                        <q-icon name="sym_o_arrow_downward" size="1.2rem"
-                                class="text-weight-bold"
-                                v-on:click="sortByPrice(false)"
-                                v-if="sortingPrice && sortAsc"/>
-                        <q-btn icon="payments" label="Price"
-                               class="text-subtitle2 rounded-2 px2"
-                               :class="{'surface fmt_border': sortingPrice}"
-                               no-caps flat align="left" dense
-                               @click="sortByPrice(false)"/>
+                      <div class="flex gap-4">
+                        <template v-if="categoryFilters && categoryFilters.length > 0">
+                          <div class="flex gap-2 items-center mt4">
+                            <p class="text-subtitle2 non-selectable">
+                              Categories:
+                            </p>
+                            <div v-for="cat in categoryFilters" :key="cat"
+                                 class="surface rounded px2 py1">
+                              <p class="text-subtitle2">
+                                {{ cat }}
+                              </p>
+                            </div>
+                          </div>
+                        </template>
+                        <template v-if="brandQuery !== ''">
+                          <div class="flex gap-2 items-center mt4">
+                            <p class="text-subtitle2 non-selectable">
+                              Brand:
+                            </p>
+                            <div class="surface rounded px2 py1 flex items-center">
+                              <p class="text-subtitle2">
+                                {{ brandQuery }}
+                              </p>
+                              <q-btn icon="close" flat dense
+                                     class="ml1"
+                                     @click="brandQuery = ''; processQuery()"/>
+                            </div>
+                          </div>
+                        </template>
                       </div>
                     </div>
-                    <div class="flex gap-4">
-                      <template v-if="categoryFilters && categoryFilters.length > 0">
-                        <div class="flex gap-2 items-center mt4">
-                          <p class="text-subtitle2 non-selectable">
-                            Categories:
-                          </p>
-                          <div v-for="cat in categoryFilters" :key="cat"
-                               class="surface rounded px2 py1">
-                            <p class="text-subtitle2">
-                              {{ cat }}
-                            </p>
-                          </div>
-                        </div>
-                      </template>
-                      <template v-if="brandQuery !== ''">
-                        <div class="flex gap-2 items-center mt4">
-                          <p class="text-subtitle2 non-selectable">
-                            Brand:
-                          </p>
-                          <div class="surface rounded px2 py1 flex items-center">
-                            <p class="text-subtitle2">
-                              {{ brandQuery }}
-                            </p>
-                            <q-btn icon="close" flat dense
-                                   class="ml1"
-                                   @click="brandQuery = ''; processQuery()"/>
-                          </div>
-                        </div>
-                      </template>
-                    </div>
-                  </div>
-                  <q-item v-for="res in results" :key="res"
-                          dense clickable class="wfull"
-                          @click="handleItemClicked(res)">
-                    <div class="wfull md:flex gap-4 surface
+                    <q-item v-for="res in results" :key="res"
+                            dense clickable class="wfull"
+                            @click="handleItemClicked(res)">
+                      <div class="wfull md:flex gap-4 surface
                                 md:rounded-2 fmt_border p2
                                 overflow-hidden hfull">
-                      <div class="w-50 min-w-50 min-h-50
+                        <div class="w-50 min-w-50 min-h-50
                                   mt4 md:ml4 md:mb4
                                   <md:w-80 <md:min-w-80 <md:min-h-80
                                   <md:wfull
                                   flex justify-center">
-                        <template v-if="res.iurls?.length > 0">
-                          <q-carousel
-                            v-model="res._iurl"
-                            transition-prev="jump-right"
-                            transition-next="jump-left"
-                            swipeable
-                            animated
-                            control-color="brand-p"
-                            prev-icon="arrow_left"
-                            next-icon="arrow_right"
-                            :thumbnails="res.iurls.length > 1"
-                            height="264px"
-                            class="rounded scaled_carousel transparent
+                          <template v-if="res.iurls?.length > 0">
+                            <q-carousel
+                              v-model="res._iurl"
+                              transition-prev="jump-right"
+                              transition-next="jump-left"
+                              swipeable
+                              animated
+                              control-color="brand-p"
+                              prev-icon="arrow_left"
+                              next-icon="arrow_right"
+                              :thumbnails="res.iurls.length > 1"
+                              height="264px"
+                              class="rounded scaled_carousel transparent
                                    w-50 min-w-50 min-h-50
                                    <md:w-80 <md:min-w-80 <md:min-h-80">
-                            <template v-for="img in res.iurls" :key="img">
-                              <q-carousel-slide :img-src="getImg(img.url, true)"
-                                                :name="img.url"
-                                                class="wfull hfull">
-                              </q-carousel-slide>
-                            </template>
-                          </q-carousel>
-                        </template>
-                        <template v-else>
-                          <div class="rounded flex items-center
+                              <template v-for="img in res.iurls" :key="img">
+                                <q-carousel-slide :img-src="getImg(img.url, true)"
+                                                  :name="img.url"
+                                                  class="wfull hfull">
+                                </q-carousel-slide>
+                              </template>
+                            </q-carousel>
+                          </template>
+                          <template v-else>
+                            <div class="rounded flex items-center
                                       background justify-center
                                       w-50 min-w-50 h-50 min-h-50
                                       <md:w-80 <md:h-80
                                       <md:min-w-80 <md:min-h-80">
-                            <p class="text-subtitle2">
-                              NO IMAGE
-                            </p>
-                          </div>
-                        </template>
-                      </div>
-                      <div class="p2 flex-grow <md:mt4 md:mt1
+                              <p class="text-subtitle2">
+                                NO IMAGE
+                              </p>
+                            </div>
+                          </template>
+                        </div>
+                        <div class="p2 flex-grow <md:mt4 md:mt1
                                   flex column gap-2">
-                        <p class="text-weight-bolder text-xl lg:text-2xl">
-                          {{ res.t }}
-                        </p>
-                        <p class="text-subtitle2 whitespace-break-spaces
+                          <p class="text-weight-bolder text-xl lg:text-2xl">
+                            {{ res.t }}
+                          </p>
+                          <p class="text-subtitle2 whitespace-break-spaces
                                 line-height-snug">
-                          {{ res.desc }}
-                        </p>
-                        <template v-if="res.attr && res.attr.length > 0">
-                          <table class="border-spacing-none
+                            {{ res.desc }}
+                          </p>
+                          <template v-if="res.attr && res.attr.length > 0">
+                            <table class="border-spacing-none
                                         text-subtitle2
                                         rounded mt2 py1 wfit">
-                            <template v-for="attr in res.attr" :key="attr">
-                              <tr>
-                                <td class="fontbold pr3">
-                                  {{ capitalizeFirstLetter(attr.t) }}:
-                                </td>
-                                <td class="pr3">
-                                  {{ attr.sval }}
-                                </td>
-                                <td class="">
-                                  {{ attr.desc }}
-                                </td>
-                              </tr>
-                            </template>
-                          </table>
-                        </template>
-                        <div class="mtauto">
-                          <div class="flex gap-6 mt4 wfull column items-end">
-                            <div class="flex column
+                              <template v-for="attr in res.attr" :key="attr">
+                                <tr>
+                                  <td class="fontbold pr3">
+                                    {{ capitalizeFirstLetter(attr.t) }}:
+                                  </td>
+                                  <td class="pr3">
+                                    {{ attr.sval }}
+                                  </td>
+                                  <td class="">
+                                    {{ attr.desc }}
+                                  </td>
+                                </tr>
+                              </template>
+                            </table>
+                          </template>
+                          <div class="mtauto">
+                            <div class="flex gap-6 mt4 wfull column items-end">
+                              <div class="flex column
                                         items-end">
-                              <p class="text-3xl <sm:text-2xl text-weight-bold">
-                                {{ res._gross }}
-                              </p>
-                              <p class="text-xs text-weight-bold">
-                                Includes {{ res._vat }} ({{ res._vatp }} %) VAT
-                              </p>
-                              <div class="flex items-start gap-4 mt4">
-                                <div v-if="showingStock"
-                                     class="flex items-center gap-2 wfit h9
+                                <p class="text-3xl <sm:text-2xl text-weight-bold">
+                                  {{ res._gross }}
+                                </p>
+                                <p class="text-xs text-weight-bold">
+                                  Includes {{ res._vat }} ({{ res._vatp }} %) VAT
+                                </p>
+                                <div class="flex items-start gap-4 mt4">
+                                  <div v-if="showingStock"
+                                       class="flex items-center gap-2 wfit h9
                                             px3 py0.5 background rounded">
-                                  <template v-if="res.stock > 0.0">
-                                    <div class="w2 h2 rounded-full bg-green"></div>
-                                    <p class="text-subtitle2">
-                                      <span class="fontbold">{{ res.stock }}</span>
-                                      available
-                                    </p>
-                                  </template>
-                                  <template v-else>
-                                    <div class="w2 h2 rounded-full bg-gray"></div>
-                                    <p class="text-subtitle2">
-                                      out of stock
-                                    </p>
-                                  </template>
+                                    <template v-if="res.stock > 0.0">
+                                      <div class="w2 h2 rounded-full bg-green"></div>
+                                      <p class="text-subtitle2">
+                                        <span class="fontbold">{{ res.stock }}</span>
+                                        available
+                                      </p>
+                                    </template>
+                                    <template v-else>
+                                      <div class="w2 h2 rounded-full bg-gray"></div>
+                                      <p class="text-subtitle2">
+                                        out of stock
+                                      </p>
+                                    </template>
+                                  </div>
+                                  <q-btn label="View Product"
+                                         icon="sym_o_search"
+                                         class="fontbold fmt_border surface"/>
                                 </div>
-                                <q-btn label="View Product"
-                                       icon="sym_o_search"
-                                       class="fontbold fmt_border surface"/>
                               </div>
                             </div>
                           </div>
                         </div>
                       </div>
+                    </q-item>
+                    <div class="mt50 wfull flex items-center p2
+                              column fmt_border_top">
+                      <p class="text-subtitle2 text-weight-bolder">
+                        Not what you were looking for?
+                      </p>
+                      <p class="text-subtitle2">
+                        Maybe include more words describing what you mean.
+                      </p>
                     </div>
-                  </q-item>
-                  <div class="mt50 wfull flex items-center p2
+                  </div>
+                  <div v-if="noResults && (!results || results.length < 1)"
+                       class="flex column wfull">
+                    <div class="mt10 wfull flex items-center p4
                               column fmt_border_top">
-                    <p class="text-subtitle2 text-weight-bolder">
-                      Not what you were looking for?
+                      <p class="text-subtitle2 text-weight-bolder">
+                        No results for your search!
+                      </p>
+                      <p class="text-subtitle2">
+                        Maybe include more words describing what you mean.
+                      </p>
+                    </div>
+                  </div>
+                  <div v-if="!isViewingJourneyStepper && journeys && journeys.length > 0"
+                       class="wfull mt4 px8 pt6 pb8 rounded-lg surface-variant">
+                    <p class="fontbold lg:text-2xl <md:text-xl">
+                      Store Journeys
                     </p>
-                    <p class="text-subtitle2">
-                      Maybe include more words describing what you mean.
+                    <p class="text-subtitle2 mt1 mb2">
+                      Step by step guides to get you going as fast as possible.
                     </p>
+                    <q-input v-model="journeySearch"
+                             label-color="brand-p"
+                             class="mt2"
+                             :label="`Filter ${journeys.length} journeys...`"/>
+                    <div class="flex gap-2 mt2">
+                      <template v-for="journey in journeys" :key="journey">
+                        <q-btn v-if="journeySearch === '' || canShowJourney(journey)"
+                               @click="viewJourney(journey)"
+                               icon="sym_o_manage_search" size="2rem"
+                               unelevated no-caps align="left"
+                               class="p6 rounded-lg surface fmt_border flex-grow">
+                          <div class="text-left ml4">
+                            <p class="font-800 text-body1">
+                              {{ journey.t }}
+                            </p>
+                            <p class="text-sm font-600">
+                              {{ journey.desc }}
+                            </p>
+                          </div>
+                        </q-btn>
+                      </template>
+                    </div>
                   </div>
                 </div>
-                <div v-if="noResults"
-                     class="flex column wfull">
-                  <div class="mt10 wfull flex items-center p4
+              </template>
+              <template v-else>
+                <div class="wfull">
+                  <div class="flex wfull no-wrap gap-5">
+                    <div id="journey_container"
+                         class="w-[30dvw] md:pl4 sticky top-13 hfit">
+                      <div class="flex wfull justify-end pb2">
+                        <q-btn label="Exit Journey"
+                               no-caps unelevated
+                               icon="close" class="surface fmt_border"
+                               @click="isViewingJourneyStepper = false"/>
+                      </div>
+                      <store-journey-stepper :journey="viewingJourney"
+                                             :store-id="storeID"
+                                             :active="isViewingJourneyStepper"
+                                             @search="handleStepperSearch"/>
+                    </div>
+                    <div class="flex-grow">
+                      <div class="wfull max-w-screen-xl md:pr4 flex">
+                        <div v-if="results && results.length > 0"
+                             id="results_container"
+                             class="fmt_border background wfull
+                                    hfit md:rounded-2 gap-y-1
+                                    flex column mb100 p1">
+                          <div class="flex my2 gap-y-2
+                              column px4">
+                            <div class="flex gap-x-4 gap-y-2 wfull items-center">
+                              <div class="non-selectable">
+                                <p class="text-subtitle2">
+                                  {{ results.length }} Results in
+                                  {{ respTime }} seconds
+                                </p>
+                              </div>
+                              <div class="flex gap-2 items-center mlauto">
+                                <p class="text-subtitle2 non-selectable">
+                                  Sort by:
+                                </p>
+                                <q-icon name="sym_o_arrow_upward" size="1.2rem"
+                                        class="text-weight-bold"
+                                        v-on:click="sortByRelevance(false)"
+                                        v-if="sortingRelevance && !sortAsc"/>
+                                <q-icon name="sym_o_arrow_downward" size="1.2rem"
+                                        class="text-weight-bold"
+                                        v-on:click="sortByRelevance(false)"
+                                        v-if="sortingRelevance && sortAsc"/>
+                                <q-btn icon="sym_o_target" label="Relevance"
+                                       no-caps flat align="left" dense
+                                       class="text-subtitle2 rounded-2 px2"
+                                       :class="{'surface fmt_border': sortingRelevance}"
+                                       @click="sortByRelevance(false)"/>
+                                <q-icon name="sym_o_arrow_upward" size="1.2rem"
+                                        class="text-weight-bold"
+                                        v-on:click="sortByPrice(false)"
+                                        v-if="sortingPrice && !sortAsc"/>
+                                <q-icon name="sym_o_arrow_downward" size="1.2rem"
+                                        class="text-weight-bold"
+                                        v-on:click="sortByPrice(false)"
+                                        v-if="sortingPrice && sortAsc"/>
+                                <q-btn icon="payments" label="Price"
+                                       class="text-subtitle2 rounded-2 px2"
+                                       :class="{'surface fmt_border': sortingPrice}"
+                                       no-caps flat align="left" dense
+                                       @click="sortByPrice(false)"/>
+                              </div>
+                            </div>
+                            <div class="flex gap-4">
+                              <template v-if="categoryFilters && categoryFilters.length > 0">
+                                <div class="flex gap-2 items-center mt4">
+                                  <p class="text-subtitle2 non-selectable">
+                                    Categories:
+                                  </p>
+                                  <div v-for="cat in categoryFilters" :key="cat"
+                                       class="surface rounded px2 py1">
+                                    <p class="text-subtitle2">
+                                      {{ cat }}
+                                    </p>
+                                  </div>
+                                </div>
+                              </template>
+                              <template v-if="brandQuery !== ''">
+                                <div class="flex gap-2 items-center mt4">
+                                  <p class="text-subtitle2 non-selectable">
+                                    Brand:
+                                  </p>
+                                  <div class="surface rounded px2 py1 flex items-center">
+                                    <p class="text-subtitle2">
+                                      {{ brandQuery }}
+                                    </p>
+                                    <q-btn icon="close" flat dense
+                                           class="ml1"
+                                           @click="brandQuery = ''; processQuery()"/>
+                                  </div>
+                                </div>
+                              </template>
+                            </div>
+                          </div>
+                          <q-item v-for="res in results" :key="res"
+                                  dense clickable class="wfull"
+                                  @click="handleItemClicked(res)">
+                            <div class="wfull md:flex gap-4 surface
+                                md:rounded-2 fmt_border p2
+                                overflow-hidden hfull">
+                              <div class="w-50 min-w-50 min-h-50
+                                  mt4 md:ml4 md:mb4
+                                  <md:w-80 <md:min-w-80 <md:min-h-80
+                                  <md:wfull
+                                  flex justify-center">
+                                <template v-if="res.iurls?.length > 0">
+                                  <q-carousel
+                                    v-model="res._iurl"
+                                    transition-prev="jump-right"
+                                    transition-next="jump-left"
+                                    swipeable
+                                    animated
+                                    control-color="brand-p"
+                                    prev-icon="arrow_left"
+                                    next-icon="arrow_right"
+                                    :thumbnails="res.iurls.length > 1"
+                                    height="264px"
+                                    class="rounded scaled_carousel transparent
+                                   w-50 min-w-50 min-h-50
+                                   <md:w-80 <md:min-w-80 <md:min-h-80">
+                                    <template v-for="img in res.iurls" :key="img">
+                                      <q-carousel-slide :img-src="getImg(img.url, true)"
+                                                        :name="img.url"
+                                                        class="wfull hfull">
+                                      </q-carousel-slide>
+                                    </template>
+                                  </q-carousel>
+                                </template>
+                                <template v-else>
+                                  <div class="rounded flex items-center
+                                      background justify-center
+                                      w-50 min-w-50 h-50 min-h-50
+                                      <md:w-80 <md:h-80
+                                      <md:min-w-80 <md:min-h-80">
+                                    <p class="text-subtitle2">
+                                      NO IMAGE
+                                    </p>
+                                  </div>
+                                </template>
+                              </div>
+                              <div class="p2 flex-grow <md:mt4 md:mt1
+                                  flex column gap-2">
+                                <p class="text-weight-bolder text-xl lg:text-2xl">
+                                  {{ res.t }}
+                                </p>
+                                <p class="text-subtitle2 whitespace-break-spaces
+                                line-height-snug">
+                                  {{ res.desc }}
+                                </p>
+                                <template v-if="res.attr && res.attr.length > 0">
+                                  <table class="border-spacing-none
+                                        text-subtitle2
+                                        rounded mt2 py1 wfit">
+                                    <template v-for="attr in res.attr" :key="attr">
+                                      <tr>
+                                        <td class="fontbold pr3">
+                                          {{ capitalizeFirstLetter(attr.t) }}:
+                                        </td>
+                                        <td class="pr3">
+                                          {{ attr.sval }}
+                                        </td>
+                                        <td class="">
+                                          {{ attr.desc }}
+                                        </td>
+                                      </tr>
+                                    </template>
+                                  </table>
+                                </template>
+                                <div class="mtauto">
+                                  <div class="flex gap-6 mt4 wfull column items-end">
+                                    <div class="flex column
+                                        items-end">
+                                      <p class="text-3xl <sm:text-2xl text-weight-bold">
+                                        {{ res._gross }}
+                                      </p>
+                                      <p class="text-xs text-weight-bold">
+                                        Includes {{ res._vat }} ({{ res._vatp }} %) VAT
+                                      </p>
+                                      <div class="flex items-start gap-4 mt4">
+                                        <div v-if="showingStock"
+                                             class="flex items-center gap-2 wfit h9
+                                            px3 py0.5 background rounded">
+                                          <template v-if="res.stock > 0.0">
+                                            <div class="w2 h2 rounded-full bg-green"></div>
+                                            <p class="text-subtitle2">
+                                              <span class="fontbold">{{ res.stock }}</span>
+                                              available
+                                            </p>
+                                          </template>
+                                          <template v-else>
+                                            <div class="w2 h2 rounded-full bg-gray"></div>
+                                            <p class="text-subtitle2">
+                                              out of stock
+                                            </p>
+                                          </template>
+                                        </div>
+                                        <q-btn label="View Product"
+                                               icon="sym_o_search"
+                                               class="fontbold fmt_border surface"/>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </q-item>
+                          <div class="mt50 wfull flex items-center p2
                               column fmt_border_top">
-                    <p class="text-subtitle2 text-weight-bolder">
-                      No results for your search!
-                    </p>
-                    <p class="text-subtitle2">
-                      Maybe include more words describing what you mean.
-                    </p>
+                            <p class="text-subtitle2 text-weight-bolder">
+                              Not what you were looking for?
+                            </p>
+                            <p class="text-subtitle2">
+                              Maybe include more words describing what you mean.
+                            </p>
+                          </div>
+                        </div>
+                        <div v-if="noResults && (!results || results.length < 1)"
+                             class="flex column wfull">
+                          <div class="mt10 wfull flex items-center p4
+                              column fmt_border_top">
+                            <p class="text-subtitle2 text-weight-bolder">
+                              No results for your search!
+                            </p>
+                            <p class="text-subtitle2">
+                              Maybe include more words describing what you mean.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </template>
             </template>
-          </div>
-          <div class="wfull flex justify-center mtauto">
-            <div class="max-w-screen-lg wfull hfull
-                        fmt_border
-                        surface-variant rounded-t-2 p4">
-              <p class="text-subtitle2 non-selectable">
-                <span class="text-weight-bolder">wikiric</span>
-                Stores v0-PreAlpha
-              </p>
-            </div>
           </div>
           <q-page-sticky position="bottom-right" :offset="[18, 18]">
             <q-fab
@@ -577,6 +840,14 @@
                               label="Add Item" label-position="left"
                               @close="isViewingProduct = false"
                               @click="startCreatingItem"/>
+                <q-fab-action color="primary" icon="sym_o_manufacturing"
+                              label="Index Words" label-position="left"
+                              @close="isViewingProduct = false"
+                              @click="buildWordCache"/>
+                <q-fab-action color="primary" icon="sym_o_shopping_bag"
+                              label="Store Journeys" label-position="left"
+                              @close="isViewingStoreJourney = false"
+                              @click="isViewingStoreJourney = true"/>
               </template>
             </q-fab>
           </q-page-sticky>
@@ -601,6 +872,9 @@
                @close="isViewingBasked = false; getBasket()"/>
   <store-console :is-open="isViewingConsole"
                  @close="isViewingConsole = false"/>
+  <store-journey-setup :store-id="storeID"
+                       :is-open="isViewingStoreJourney"
+                       @close="isViewingStoreJourney = false"/>
 </template>
 
 <script>
@@ -613,6 +887,8 @@ import BasketView from 'components/ecommerce/BasketView.vue'
 import ProductEditView from 'components/ecommerce/ProductEditView.vue'
 import { api } from 'boot/axios'
 import StoreConsole from 'components/ecommerce/StoreConsole.vue'
+import StoreJourneySetup from 'components/ecommerce/StoreJourneySetup.vue'
+import StoreJourneyStepper from 'components/ecommerce/StoreJourneyStepper.vue'
 
 const {
   getScrollTarget,
@@ -622,6 +898,8 @@ const {
 export default {
   name: 'StoreView',
   components: {
+    StoreJourneyStepper,
+    StoreJourneySetup,
     StoreConsole,
     ProductEditView,
     BasketView,
@@ -637,9 +915,13 @@ export default {
       isViewingProduct: false,
       isViewingProductCreate: false,
       isViewingConsole: false,
+      isViewingStoreJourney: false,
       isBuildingIndex: false,
+      isShowingSuggestions: true,
+      isViewingJourneyStepper: false,
       viewingProductId: '',
       viewingProduct: {},
+      viewingJourney: null,
       storeID: '',
       query: '',
       priceRange: {
@@ -662,6 +944,7 @@ export default {
       variationQuery: [],
       categories: [],
       suggestions: [],
+      sugCount: 0,
       brands: [],
       results: null,
       respTime: 0.0,
@@ -669,21 +952,26 @@ export default {
       sortingRelevance: true,
       sortingPrice: false,
       isRequestUndergoing: false,
+      isSubRequestUndergoing: false,
       basket: null,
       canEdit: false,
       noResults: false,
       categoryFilters: [],
       totalOffers: 0,
       brandQuery: '',
-      showingStock: false
+      showingStock: false,
+      mainCategory: null,
+      journeys: [],
+      journeySearch: ''
     }
   },
   created () {
-    this.handleInputChange = debounce(this.handleInputChange, 400)
+    this.handleInputChange = debounce(this.handleInputChange, 200)
     this.storeID = this.$route.query.id
     this.getViewingStore()
     this.getStoreFilters()
     this.getBasket()
+    this.getStoreJourneys()
   },
   mounted () {
     document.addEventListener('keydown', this.storeHandleKeydown, false)
@@ -793,6 +1081,7 @@ export default {
       let queryText = this.query.trim()
       if (queryText === '') return
       this.isRequestUndergoing = true
+      this.isShowingSuggestions = false
       if (this.mustIncludeWhole) {
         queryText = queryText.replaceAll(
           ' ', '\\s')
@@ -845,9 +1134,12 @@ export default {
         queryUrl += '&wrd=1'
       }
       this.suggestions = []
+      await this.sendQuery(payload, queryUrl, true)
+    },
+    sendQuery: function (payload, url, doScroll) {
       return new Promise((resolve) => {
         axios.post(
-          queryUrl,
+          url,
           payload)
         .then((response) => {
           const data = response.data
@@ -890,17 +1182,19 @@ export default {
           console.debug(e.message)
         }).finally(() => {
           // ***
-          setTimeout(() => {
-            let elem = document.getElementById(
-              'results_container')
-            if (elem) {
-              this.scrollToElement(elem)
-            }
-            elem = document.getElementById('storeQuery')
-            if (elem) {
-              elem.blur()
-            }
-          }, 0)
+          if (doScroll) {
+            setTimeout(() => {
+              let elem = document.getElementById(
+                'results_container')
+              if (elem) {
+                this.scrollToElement(elem)
+              }
+              elem = document.getElementById('storeQuery')
+              if (elem) {
+                elem.blur()
+              }
+            }, 0)
+          }
           // ***
           this.isRequestUndergoing = false
           this.showingStock = (this.minStock > 0)
@@ -1049,6 +1343,7 @@ export default {
       this.isViewingProductCreate = true
     },
     showSuggestions: function () {
+      this.isShowingSuggestions = true
       const elem = document.getElementById('query_suggestions')
       if (!elem) return
       elem.style.display = 'flex'
@@ -1058,13 +1353,14 @@ export default {
         const elem = document.getElementById('query_suggestions')
         if (!elem) return
         elem.style.display = 'none'
-      }, 200)
+      }, 0)
     },
     storeHandleKeydown: function (e) {
       if (e.key === 'Escape') {
         e.preventDefault()
         e.stopPropagation()
         this.hideSuggestions()
+        this.isViewingBasked = false
       }
     },
     handleItemDeleted: function () {
@@ -1102,31 +1398,104 @@ export default {
     setCat: function (cat) {
       const str = this.query.toLowerCase().split(' ')
       const len = str.length
+      let newVal = ''
       if (len < 1) {
-        this.query = cat + ' '
+        newVal = cat + ' '
+        this.query = newVal
       } else {
         str[len - 1] = cat
-        this.query = str.join(' ') + ' '
+        newVal = str.join(' ') + ' '
+        this.query = newVal
       }
       this.focusQueryField()
+      this.handleInputChange(newVal)
     },
     handleInputChange: function (newVal) {
+      if (newVal == null || newVal.trim() === '') {
+        this.suggestions = []
+        return
+      }
+      this.sugCount += 1
+      const sug = this.sugCount
       const payload = {
         query: newVal
       }
-      const queryUrl = `${this.store.serverIP}items/public/query/${this.storeID}?results=10&wrd=1`
+      this.isSubRequestUndergoing = true
+      const queryUrl = `${this.store.serverIP}items/public/query/${this.storeID}?results=4&wrd=1`
       return new Promise((resolve) => {
         axios.post(
           queryUrl,
           payload)
         .then((response) => {
-          const data = response.data
-          this.suggestions = data.items
+          if (!this.isRequestUndergoing && sug === this.sugCount) {
+            const data = response.data
+            this.suggestions = data.items
+            this.isSubRequestUndergoing = false
+          }
+        })
+        .catch(() => {
+          this.isSubRequestUndergoing = true
         })
         .finally(() => {
           resolve()
         })
       })
+    },
+    getStoreJourneys: function () {
+      return new Promise((resolve) => {
+        axios.get(
+          `${this.store.serverIP}stores/public/journey/get/${this.storeID}`)
+        .then((response) => {
+          if (response.data.journeys == null) {
+            this.journeys = []
+            return
+          }
+          this.journeys = response.data.journeys
+        }).catch((e) => {
+          console.debug(e.message)
+        }).finally(() => {
+          resolve()
+        })
+      })
+    },
+    canShowJourney: function (journey) {
+      const search = this.journeySearch.toLowerCase()
+      if (journey.t.toLowerCase().includes(search)) {
+        return true
+      }
+      return !!journey.desc.toLowerCase().includes(search)
+    },
+    viewJourney: function (journey) {
+      this.viewingJourney = journey
+      this.isViewingJourneyStepper = true
+      this.sidebarLeft = false
+    },
+    handleStepperSearch: async function (journey) {
+      const payload = {
+        query: journey.query,
+        type: '',
+        fields: '',
+        state: '',
+        minCost: this.priceRange.min,
+        maxCost: this.priceRange.max,
+        vars: this.variationQuery,
+        cats: journey.cats,
+        brand: this.brandQuery,
+        minStock: this.minStock
+      }
+      // We will use the WordSearch query if there are no categories
+      // ...to search for!
+      // The regular query would simply iterate over all entries
+      // ...which would be very slow
+      let queryUrl = `${this.store.serverIP}items/public/query/${this.storeID}?results=100`
+      if (payload.cats.length < 1) {
+        queryUrl += '&wrd=1'
+      }
+      this.results = [{
+        t: '',
+        desc: ''
+      }]
+      await this.sendQuery(payload, queryUrl, true)
     }
   }
 }
