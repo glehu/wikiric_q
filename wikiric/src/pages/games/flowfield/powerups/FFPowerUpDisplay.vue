@@ -9,7 +9,8 @@
         Ability
       </p>
     </div>
-    <p class="text-start mb1 text-sm">
+    <p v-if="pup.name && pup.name.trim() !== ''"
+       class="text-start mb1 text-sm">
       <span class="fontbold">
         {{ pup.name }}
       </span>

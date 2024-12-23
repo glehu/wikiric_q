@@ -4,7 +4,8 @@
           style="box-shadow: none !important">
     <div class="lg:flex">
       <q-card-section>
-        <div class="flex items-center gap-2 mb1">
+        <div v-if="weapon.name && weapon.name.trim() !== ''"
+             class="flex items-center gap-2 mb1">
           <p class="text-body1 fontbold">
             {{ weapon.name }}
           </p>
@@ -29,7 +30,8 @@
           </p>
           <p>
             Hits: {{ weapon.getCalculatedStat(weapon.pHitCount, 'hitCount') }}
-            <span class="italic">( +{{ weapon.pHitCountLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
+            <span class="italic">( +{{ weapon.pHitCountLevelUp }} <q-icon name="sym_o_military_tech"
+                                                                          size="1rem"/>)</span>
           </p>
         </div>
       </q-card-section>

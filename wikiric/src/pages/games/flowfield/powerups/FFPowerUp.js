@@ -102,6 +102,10 @@ class FFPowerUp {
    */
   autoLevelUp () {
     this.level += 1
+    if (this.wpn) {
+      this.wpn.level += 1
+      this.wpn.powerUps[0].level += 1
+    }
     if (this.effects.length < 1) {
       return
     }
@@ -170,8 +174,8 @@ class FFPowerUp {
 
   checkHelper () {
     if (!this.wpn) {
-      this.wpn = new FFWeapon('',
-        '',
+      this.wpn = new FFWeapon(this.name,
+        this.desc,
         999,
         0,
         0,
@@ -196,8 +200,8 @@ class FFPowerUp {
       const powerUp = new FFPowerUp(
         0,
         this.level,
-        '',
-        '',
+        this.name,
+        this.desc,
         100)
       this.wpn.powerUps = [powerUp]
     }

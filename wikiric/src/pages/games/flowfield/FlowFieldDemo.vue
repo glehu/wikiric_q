@@ -496,9 +496,21 @@
                       <template v-for="weapon in goalWeapons" :key="weapon">
                         <q-btn v-if="weapon.canReceivePowerUp(chosenPowerup)"
                                unelevated dense no-caps flat
-                               @click="handleWeaponModification(weapon)"
+                               @click="handleWeaponModification(weapon, false)"
                                class="wfull hfull">
                           <FFWeaponDisplay :weapon="weapon" class="flex-grow" small/>
+                        </q-btn>
+                      </template>
+                    </div>
+                  </template>
+                  <template v-if="goalAbilities">
+                    <div class="flex gap-2 wfull h-full">
+                      <template v-for="ability in goalAbilities" :key="ability">
+                        <q-btn v-if="ability.wpn.canReceivePowerUp(chosenPowerup)"
+                               unelevated dense no-caps flat
+                               @click="handleWeaponModification(ability.wpn, true, ability.name)"
+                               class="wfull hfull">
+                          <FFWeaponDisplay :weapon="ability.wpn" class="flex-grow" small/>
                         </q-btn>
                       </template>
                     </div>
@@ -3558,8 +3570,8 @@ export default {
           this.srNotifyMove(true)
           this.srNotifyMove(true)
           break
-        case 'g':
-          this.handleAbilityProc('g')
+        case 'q':
+          this.handleAbilityProc('q')
           break
       }
     },
@@ -3680,8 +3692,8 @@ export default {
           this.srNotifyMove(true)
           this.srNotifyMove(true)
           break
-        case 'g':
-          this.handleAbilityProc('g')
+        case 'q':
+          this.handleAbilityProc('q')
           break
       }
     },
@@ -3924,11 +3936,23 @@ export default {
      * @param {Array} offers
      */
     selectRandomFromArray: function (n, offers) {
-      let randomResults = []
+      const randomResults = []
       // If there are less than or n power ups,
       // ...we cannot select n random ones -> use all
       if (offers.length <= n) {
-        randomResults = [].concat(offers)
+        /**
+         * @type {Object[]}
+         */
+        const cache = []
+        for (let i = 0; i < offers.length; i++) {
+          // Did we select this already?
+          if (cache.length > 0 && cache.includes(offers[i])) {
+            i -= 1
+            continue
+          }
+          randomResults.push(offers[i])
+          cache.push(i)
+        }
         return randomResults
       }
       // Select n random power ups
@@ -4014,16 +4038,27 @@ export default {
     /**
      *
      * @param weapon
+     * @param {Boolean} isAbility
+     * @param {String} [abilityName='']
      */
-    handleWeaponModification: function (weapon) {
+    handleWeaponModification: function (weapon, isAbility, abilityName = '') {
       /**
        * @type {FFPowerUp}
        */
       const powerUp = this.chosenPowerup
-      for (let i = 0; i < this.goalWeapons.length; i++) {
-        if (this.goalWeapons[i].name === weapon.name) {
-          this.goalWeapons[i].powerUps.push(powerUp)
-          break
+      if (!isAbility) {
+        for (let i = 0; i < this.goalWeapons.length; i++) {
+          if (this.goalWeapons[i].name === weapon.name) {
+            this.goalWeapons[i].powerUps.push(powerUp)
+            break
+          }
+        }
+      } else {
+        for (let i = 0; i < this.goalAbilities.length; i++) {
+          if (this.goalAbilities[i].name === abilityName) {
+            this.goalAbilities[i].wpn.powerUps.push(powerUp)
+            break
+          }
         }
       }
       const ix = this.powerUpList.categories.starter.indexOf(powerUp)
