@@ -6,12 +6,13 @@
             flat bordered>
       <template v-if="isAdding && item">
         <div class="flex wfull justify-start items-center
-                    mb4">
+                    mb4 gap-2">
+          <q-icon name="sym_o_shopping_cart" size="2rem"/>
           <p class="text-lg fontbold">
             Item added to cart
           </p>
         </div>
-        <div class="flex gap-4 mb6 mx2">
+        <div class="flex gap-4 mb6 mx2 no-wrap">
           <div class="w-20 max-h-20 max-w-20 hauto
                       rounded
                       flex justify-center">
@@ -38,23 +39,39 @@
             </template>
             <template v-else>
               <div class="rounded flex items-center
-                                      background justify-center
-                                      w-20 h-20">
+                          background justify-center
+                          w-20 h-20">
                 <p class="text-subtitle2">
                   NO IMG
                 </p>
               </div>
             </template>
           </div>
-          <div class="rounded no-wrap
+          <div class="rounded no-wrap flex-grow
                       flex column gap-2">
-            <p class="text-weight-bolder text-lg">
+            <p class="text-weight-bolder text-md <md:text-sm
+                      fmt_border_bottom pb1">
               {{ item.t }}
             </p>
-            <p class="text-lg fontbold px4 py1 rounded-full
+            <div class="flex gap-8 items-start">
+              <p class="text-lg fontbold px4 py1 rounded-full
                       background wfit">
-              {{ amount }}
-            </p>
+                {{ customAmount }}
+              </p>
+              <div class="wfit">
+                <p class="text-subtitle2">
+                  Want more, instead?
+                </p>
+                <q-btn label="2" @click="setCurrentAmount(2)"
+                       :class="{tertiary: customAmount === 2}"/>
+                <q-btn label="3" @click="setCurrentAmount(3)"
+                       :class="{tertiary: customAmount === 3}"/>
+                <q-btn label="4" @click="setCurrentAmount(4)"
+                       :class="{tertiary: customAmount === 4}"/>
+                <q-btn label="5" @click="setCurrentAmount(5)"
+                       :class="{tertiary: customAmount === 5}"/>
+              </div>
+            </div>
           </div>
         </div>
       </template>
@@ -68,7 +85,7 @@
                 <p class="text-lg fontbold">
                   Your Cart
                 </p>
-                <q-btn label="Close Cart" v-close-popup
+                <q-btn label="Continue Shopping" v-close-popup
                        no-caps flat
                        class="w50 surface fmt_border rounded"/>
               </div>
@@ -129,7 +146,7 @@
             <div class="rounded no-wrap flex-grow
                         flex column gap-2">
               <p class="text-weight-bolder text-md <md:text-sm
-                        fmt_border_bottom pb2">
+                        fmt_border_bottom pb1">
                 {{ entry.itemObj.t }}
               </p>
               <template v-if="entry.itemObj.vars">
@@ -218,7 +235,9 @@ export default {
       basket: null,
       item: null,
       total: 0.0,
-      totalVat: 0.0
+      totalVat: 0.0,
+      hasCustomAmount: false,
+      customAmount: 0
     }
   },
   mounted () {
@@ -246,6 +265,7 @@ export default {
         }
         this.calculateGrossPrices()
         this.calculateTotal()
+        this.customAmount = this.amount
       })
     },
     initBasket: function () {
@@ -425,6 +445,19 @@ export default {
     basketHandleKeydown: function (e) {
       if (e.key === 'Escape') {
         this.$emit('close')
+      }
+    },
+    setCurrentAmount: function (amount) {
+      this.customAmount = amount
+      const payload = { ...toRaw(this.item) }
+      for (let i = 0; i < this.basket.items.length; i++) {
+        if (this.basket.items[i].itemObj.uid === payload.uid) {
+          if (this.compareVariations(this.basket.items[i].itemObj, payload)) {
+            this.basket.items[i].amount = amount
+            this.handleAmountEdit(this.basket.items[i])
+            break
+          }
+        }
       }
     }
   }

@@ -251,11 +251,17 @@
           <p class="text-xs text-weight-bold">
             Includes {{ item._vat }} ({{ item._vatp }} %) VAT
           </p>
-          <q-btn label="Add to Cart"
-                 color="primary"
-                 icon="sym_o_shopping_cart"
-                 class="fontbold mt2"
-                 @click="handleAddToCart"/>
+          <div class="flex gap-2">
+            <q-btn label="Continue Shopping"
+                   no-caps
+                   class="fontbold mt2"
+                   @click="$emit('close')"/>
+            <q-btn label="Add to Cart"
+                   color="primary"
+                   icon="sym_o_shopping_cart"
+                   class="fontbold mt2"
+                   @click="handleAddToCart"/>
+          </div>
         </div>
       </div>
     </q-card>

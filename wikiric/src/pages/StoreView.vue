@@ -195,27 +195,29 @@
           <q-page-sticky position="top" expand
                          class="background z-fab">
             <q-toolbar>
-              <q-btn flat round dense icon="sym_o_dock_to_right"
-                     @click="sidebarLeft = !sidebarLeft">
-                <q-tooltip class="text-body2">
-                  Toggle&nbsp;Sidebar
-                </q-tooltip>
-              </q-btn>
-              <q-toolbar-title class="text-subtitle1 non-selectable">
-                <q-breadcrumbs active-color="brand-p">
-                  <template v-if="sidebarLeft">
-                    <q-breadcrumbs-el label="Hide Filters"/>
-                  </template>
-                  <template v-else>
-                    <q-breadcrumbs-el label="Show Filters"/>
-                  </template>
-                </q-breadcrumbs>
-              </q-toolbar-title>
+              <template v-if="!isViewingJourneyStepper">
+                <q-btn flat round dense icon="sym_o_dock_to_right"
+                       @click="sidebarLeft = !sidebarLeft">
+                  <q-tooltip class="text-body2">
+                    Toggle&nbsp;Sidebar
+                  </q-tooltip>
+                </q-btn>
+                <q-toolbar-title class="text-subtitle1 non-selectable">
+                  <q-breadcrumbs active-color="brand-p">
+                    <template v-if="sidebarLeft">
+                      <q-breadcrumbs-el label="Hide Filters"/>
+                    </template>
+                    <template v-else>
+                      <q-breadcrumbs-el label="Show Filters"/>
+                    </template>
+                  </q-breadcrumbs>
+                </q-toolbar-title>
+              </template>
               <q-btn flat
                      icon="sym_o_arrow_left_alt"
                      label="Back"
                      class="md:hidden fmt_border ml4 rounded-2
-                        surface-variant"
+                            surface-variant"
                      @click="clickedBack">
               </q-btn>
             </q-toolbar>
@@ -223,11 +225,12 @@
           <div class="pb4 flex items-center column wfull">
             <template v-if="viewingStore">
               <template v-if="!isViewingJourneyStepper">
-                <div class="wfull rounded p4 flex justify-center">
-                  <div class="max-w-screen-xl wfull flex gap-8 <lg:gap-6
-                            justify-center">
+                <div id="store_branding"
+                     class="wfull rounded p4 flex justify-center">
+                  <div class="max-w-[80dvw] <lg:max-w-full wfull flex gap-8 <lg:gap-6
+                              justify-center">
                     <div class="relative wfull
-                              max-w-64 max-h-32">
+                                max-w-64 max-h-32">
                       <template v-if="viewingStore.iurl">
                         <q-img :src="getImg(viewingStore.iurl, true)"
                                alt="Store" fit="contain" position="50% 0"
@@ -236,7 +239,7 @@
                     </div>
                     <div class="flex-grow flex column justify-center pr8">
                       <p class="text-5xl <lg:text-3xl <sm:text-[6vw]
-                              fontbold wfit">
+                                fontbold wfit">
                         {{ viewingStore.t }}
                       </p>
                       <p class="text-body1 <lg:text-base mt2 wfit">
@@ -244,7 +247,7 @@
                       </p>
                       <div v-if="totalOffers > 0"
                            class="mt2 rounded-2 fmt_border gap-x-2
-                                px3 py1 wfit flex items-center">
+                                  px3 py1 wfit flex items-center">
                         <div class="w-2 h-2 rounded-full bg-green"/>
                         <p class="text-subtitle2 fontbold">
                           {{ totalOffers.toLocaleString() }} active offers
@@ -254,7 +257,7 @@
                   </div>
                 </div>
                 <div id="query_container"
-                     class="mt10 wfull max-w-screen-xl md:px4
+                     class="mt10 wfull max-w-[80dvw] <lg:max-w-full md:px4
                             sticky top-11 z-fab">
                   <div class="fmt_border surface dshadow
                             hfit md:rounded-2">
@@ -328,7 +331,7 @@
                     </div>
                     <template v-if="basket?.items?.length > 0">
                       <div class="pr6 pb3 pt1 wfull flex justify-end
-                                items-center gap-4">
+                                  items-center gap-4">
                         <q-btn dense no-caps
                                @click="isViewingBasked = true"
                                color="primary">
@@ -342,14 +345,14 @@
                     </template>
                   </div>
                 </div>
-                <div class="mt8 wfull max-w-screen-xl md:px4 flex">
+                <div class="mt8 wfull max-w-[80dvw] <lg:max-w-full md:px4 flex">
                   <div v-if="results && results.length > 0"
                        id="results_container"
                        class="fmt_border background wfull
-                            hfit md:rounded-2 gap-y-1
-                            flex column mb100 p1">
+                              hfit md:rounded-2 gap-y-1
+                              flex column mb100 p1">
                     <div class="flex my2 gap-y-2
-                              column px4">
+                                column px4">
                       <div class="flex gap-x-4 gap-y-2 wfull items-center">
                         <div class="non-selectable">
                           <p class="text-subtitle2">
@@ -420,120 +423,126 @@
                         </template>
                       </div>
                     </div>
-                    <q-item v-for="res in results" :key="res"
-                            dense clickable class="wfull"
-                            @click="handleItemClicked(res)">
-                      <div class="wfull md:flex gap-4 surface
-                                md:rounded-2 fmt_border p2
-                                overflow-hidden hfull">
-                        <div class="w-50 min-w-50 min-h-50
-                                  mt4 md:ml4 md:mb4
-                                  <md:w-80 <md:min-w-80 <md:min-h-80
-                                  <md:wfull
-                                  flex justify-center">
-                          <template v-if="res.iurls?.length > 0">
-                            <q-carousel
-                              v-model="res._iurl"
-                              transition-prev="jump-right"
-                              transition-next="jump-left"
-                              swipeable
-                              animated
-                              control-color="brand-p"
-                              prev-icon="arrow_left"
-                              next-icon="arrow_right"
-                              :thumbnails="res.iurls.length > 1"
-                              height="264px"
-                              class="rounded scaled_carousel transparent
-                                   w-50 min-w-50 min-h-50
-                                   <md:w-80 <md:min-w-80 <md:min-h-80">
-                              <template v-for="img in res.iurls" :key="img">
-                                <q-carousel-slide :img-src="getImg(img.url, true)"
-                                                  :name="img.url"
-                                                  class="wfull hfull">
-                                </q-carousel-slide>
-                              </template>
-                            </q-carousel>
-                          </template>
-                          <template v-else>
-                            <div class="rounded flex items-center
-                                      background justify-center
-                                      w-50 min-w-50 h-50 min-h-50
-                                      <md:w-80 <md:h-80
-                                      <md:min-w-80 <md:min-h-80">
-                              <p class="text-subtitle2">
-                                NO IMAGE
-                              </p>
-                            </div>
-                          </template>
-                        </div>
-                        <div class="p2 flex-grow <md:mt4 md:mt1
-                                  flex column gap-2">
-                          <p class="text-weight-bolder text-xl lg:text-2xl">
-                            {{ res.t }}
-                          </p>
-                          <p class="text-subtitle2 whitespace-break-spaces
-                                line-height-snug">
-                            {{ res.desc }}
-                          </p>
-                          <template v-if="res.attr && res.attr.length > 0">
-                            <table class="border-spacing-none
-                                        text-subtitle2
-                                        rounded mt2 py1 wfit">
-                              <template v-for="attr in res.attr" :key="attr">
-                                <tr>
-                                  <td class="fontbold pr3">
-                                    {{ capitalizeFirstLetter(attr.t) }}:
-                                  </td>
-                                  <td class="pr3">
-                                    {{ attr.sval }}
-                                  </td>
-                                  <td class="">
-                                    {{ attr.desc }}
-                                  </td>
-                                </tr>
-                              </template>
-                            </table>
-                          </template>
-                          <div class="mtauto">
-                            <div class="flex gap-6 mt4 wfull column items-end">
-                              <div class="flex column
-                                        items-end">
+                    <div class="grid wfull hfull 2xl:cols-2 gap-3 p3">
+                      <q-item v-for="res in results" :key="res"
+                              clickable
+                              class="flex-grow wfull
+                                     surface p2
+                                     md:rounded-2 fmt_border
+                                     overflow-hidden hfull"
+                              @click="handleItemClicked(res)">
+                        <div class="md:flex wfull hfull gap-4">
+                          <div class="w-50 min-w-50 min-h-50
+                                      mt2 md:ml2 md:mb2
+                                      <md:w-80 <md:min-w-80
+                                      <md:min-h-80
+                                      <md:wfull
+                                      flex justify-center">
+                            <template v-if="res.iurls?.length > 0">
+                              <q-carousel
+                                v-model="res._iurl"
+                                transition-prev="jump-right"
+                                transition-next="jump-left"
+                                swipeable
+                                animated
+                                control-color="brand-p"
+                                prev-icon="arrow_left"
+                                next-icon="arrow_right"
+                                :thumbnails="res.iurls.length > 1"
+                                height="264px"
+                                class="rounded scaled_carousel
+                                             transparent
+                                             w-50 min-w-50 min-h-50
+                                             <md:w-80 <md:min-w-80
+                                             <md:min-h-80">
+                                <template v-for="img in res.iurls" :key="img">
+                                  <q-carousel-slide :img-src="getImg(img.url, true)"
+                                                    :name="img.url"
+                                                    class="wfull hfull">
+                                  </q-carousel-slide>
+                                </template>
+                              </q-carousel>
+                            </template>
+                            <template v-else>
+                              <div class="rounded flex items-center
+                                          background justify-center
+                                          w-50 min-w-50 h-50 min-h-50
+                                          <md:w-80 <md:h-80
+                                          <md:min-w-80 <md:min-h-80">
+                                <p class="text-subtitle2">
+                                  NO IMAGE
+                                </p>
+                              </div>
+                            </template>
+                          </div>
+                          <div class="p1 flex-grow <md:mt2
+                                      flex column gap-2">
+                            <p class="text-weight-bolder text-xl">
+                              {{ res.t }}
+                            </p>
+                            <p class="line-height-snug whitespace-break-spaces">
+                              <span v-if="res.brand && res.brand.trim() !== ''"
+                                    class="background wfit px1.5 py0.5 rounded
+                                           text-subtitle2 mr2">
+                                {{ res.brand }}
+                              </span>
+                              <span v-if="res.desc && res.desc.trim() !== ''"
+                                    class="text-subtitle2">
+                                {{ res.desc }}
+                              </span>
+                            </p>
+                            <template v-if="res.attr && res.attr.length > 0">
+                              <table class="border-spacing-none
+                                            text-subtitle2
+                                            rounded mt2 py1 wfit">
+                                <template v-for="attr in res.attr" :key="attr">
+                                  <tr>
+                                    <td class="fontbold pr3">
+                                      {{ capitalizeFirstLetter(attr.t) }}:
+                                    </td>
+                                    <td class="pr3">
+                                      {{ attr.sval }}
+                                    </td>
+                                    <td class="">
+                                      {{ attr.desc }}
+                                    </td>
+                                  </tr>
+                                </template>
+                              </table>
+                            </template>
+                            <div class="flex gap-6 mt2 wfull column items-end">
+                              <div class="flex column items-end">
                                 <p class="text-3xl <sm:text-2xl text-weight-bold">
                                   {{ res._gross }}
                                 </p>
                                 <p class="text-xs text-weight-bold">
                                   Includes {{ res._vat }} ({{ res._vatp }} %) VAT
                                 </p>
-                                <div class="flex items-start gap-4 mt4">
-                                  <div v-if="showingStock"
-                                       class="flex items-center gap-2 wfit h9
-                                            px3 py0.5 background rounded">
-                                    <template v-if="res.stock > 0.0">
-                                      <div class="w2 h2 rounded-full bg-green"></div>
-                                      <p class="text-subtitle2">
-                                        <span class="fontbold">{{ res.stock }}</span>
-                                        available
-                                      </p>
-                                    </template>
-                                    <template v-else>
-                                      <div class="w2 h2 rounded-full bg-gray"></div>
-                                      <p class="text-subtitle2">
-                                        out of stock
-                                      </p>
-                                    </template>
-                                  </div>
-                                  <q-btn label="View Product"
-                                         icon="sym_o_search"
-                                         class="fontbold fmt_border surface"/>
+                                <div v-if="showingStock"
+                                     class="flex items-center gap-2 wfit h9
+                                              px3 py0.5 background rounded mt2">
+                                  <template v-if="res.stock > 0.0">
+                                    <div class="w2 h2 rounded-full bg-green"></div>
+                                    <p class="text-subtitle2">
+                                      <span class="fontbold">{{ res.stock }}</span>
+                                      available
+                                    </p>
+                                  </template>
+                                  <template v-else>
+                                    <div class="w2 h2 rounded-full bg-gray"></div>
+                                    <p class="text-subtitle2">
+                                      out of stock
+                                    </p>
+                                  </template>
                                 </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </q-item>
-                    <div class="mt50 wfull flex items-center p2
-                              column fmt_border_top">
+                      </q-item>
+                    </div>
+                    <div class="mt8 wfull flex items-center p2
+                                column fmt_border_top">
                       <p class="text-subtitle2 text-weight-bolder">
                         Not what you were looking for?
                       </p>
@@ -591,7 +600,9 @@
                 <div class="wfull">
                   <div class="flex wfull no-wrap gap-5">
                     <div id="journey_container"
-                         class="w-[30dvw] md:pl4 sticky top-13 hfit">
+                         class="min-w-[25dvw] w-[25dvw]
+                                <md:wfull
+                                md:pl4 sticky top-13 hfit">
                       <div class="flex wfull justify-end pb2">
                         <q-btn label="Exit Journey"
                                no-caps unelevated
@@ -604,14 +615,14 @@
                                              @search="handleStepperSearch"/>
                     </div>
                     <div class="flex-grow">
-                      <div class="wfull max-w-screen-xl md:pr4 flex">
+                      <div class="wfull max-w-[80dvw] <lg:max-w-full md:pr4 flex">
                         <div v-if="results && results.length > 0"
                              id="results_container"
                              class="fmt_border background wfull
                                     hfit md:rounded-2 gap-y-1
                                     flex column mb100 p1">
                           <div class="flex my2 gap-y-2
-                              column px4">
+                                      column px4">
                             <div class="flex gap-x-4 gap-y-2 wfull items-center">
                               <div class="non-selectable">
                                 <p class="text-subtitle2">
@@ -682,94 +693,105 @@
                               </template>
                             </div>
                           </div>
-                          <q-item v-for="res in results" :key="res"
-                                  dense clickable class="wfull"
-                                  @click="handleItemClicked(res)">
-                            <div class="wfull md:flex gap-4 surface
-                                md:rounded-2 fmt_border p2
-                                overflow-hidden hfull">
-                              <div class="w-50 min-w-50 min-h-50
-                                  mt4 md:ml4 md:mb4
-                                  <md:w-80 <md:min-w-80 <md:min-h-80
-                                  <md:wfull
-                                  flex justify-center">
-                                <template v-if="res.iurls?.length > 0">
-                                  <q-carousel
-                                    v-model="res._iurl"
-                                    transition-prev="jump-right"
-                                    transition-next="jump-left"
-                                    swipeable
-                                    animated
-                                    control-color="brand-p"
-                                    prev-icon="arrow_left"
-                                    next-icon="arrow_right"
-                                    :thumbnails="res.iurls.length > 1"
-                                    height="264px"
-                                    class="rounded scaled_carousel transparent
-                                   w-50 min-w-50 min-h-50
-                                   <md:w-80 <md:min-w-80 <md:min-h-80">
-                                    <template v-for="img in res.iurls" :key="img">
-                                      <q-carousel-slide :img-src="getImg(img.url, true)"
-                                                        :name="img.url"
-                                                        class="wfull hfull">
-                                      </q-carousel-slide>
-                                    </template>
-                                  </q-carousel>
-                                </template>
-                                <template v-else>
-                                  <div class="rounded flex items-center
-                                      background justify-center
-                                      w-50 min-w-50 h-50 min-h-50
-                                      <md:w-80 <md:h-80
-                                      <md:min-w-80 <md:min-h-80">
-                                    <p class="text-subtitle2">
-                                      NO IMAGE
-                                    </p>
-                                  </div>
-                                </template>
-                              </div>
-                              <div class="p2 flex-grow <md:mt4 md:mt1
-                                  flex column gap-2">
-                                <p class="text-weight-bolder text-xl lg:text-2xl">
-                                  {{ res.t }}
-                                </p>
-                                <p class="text-subtitle2 whitespace-break-spaces
-                                line-height-snug">
-                                  {{ res.desc }}
-                                </p>
-                                <template v-if="res.attr && res.attr.length > 0">
-                                  <table class="border-spacing-none
-                                        text-subtitle2
-                                        rounded mt2 py1 wfit">
-                                    <template v-for="attr in res.attr" :key="attr">
-                                      <tr>
-                                        <td class="fontbold pr3">
-                                          {{ capitalizeFirstLetter(attr.t) }}:
-                                        </td>
-                                        <td class="pr3">
-                                          {{ attr.sval }}
-                                        </td>
-                                        <td class="">
-                                          {{ attr.desc }}
-                                        </td>
-                                      </tr>
-                                    </template>
-                                  </table>
-                                </template>
-                                <div class="mtauto">
-                                  <div class="flex gap-6 mt4 wfull column items-end">
-                                    <div class="flex column
-                                        items-end">
-                                      <p class="text-3xl <sm:text-2xl text-weight-bold">
-                                        {{ res._gross }}
+                          <div class="grid wfull hfull 2xl:cols-2 gap-3 p3">
+                            <q-item v-for="res in results" :key="res"
+                                    clickable
+                                    class="flex-grow wfull
+                                     surface p2
+                                     md:rounded-2 fmt_border
+                                     overflow-hidden hfull"
+                                    @click="handleItemClicked(res)">
+                              <div class="md:flex wfull hfull gap-4">
+                                <div class="w-50 min-w-50 min-h-50
+                                      mt2 md:ml2 md:mb2
+                                      <md:w-80 <md:min-w-80
+                                      <md:min-h-80
+                                      <md:wfull
+                                      flex justify-center">
+                                  <template v-if="res.iurls?.length > 0">
+                                    <q-carousel
+                                      v-model="res._iurl"
+                                      transition-prev="jump-right"
+                                      transition-next="jump-left"
+                                      swipeable
+                                      animated
+                                      control-color="brand-p"
+                                      prev-icon="arrow_left"
+                                      next-icon="arrow_right"
+                                      :thumbnails="res.iurls.length > 1"
+                                      height="264px"
+                                      class="rounded scaled_carousel
+                                             transparent
+                                             w-50 min-w-50 min-h-50
+                                             <md:w-80 <md:min-w-80
+                                             <md:min-h-80">
+                                      <template v-for="img in res.iurls" :key="img">
+                                        <q-carousel-slide :img-src="getImg(img.url, true)"
+                                                          :name="img.url"
+                                                          class="wfull hfull">
+                                        </q-carousel-slide>
+                                      </template>
+                                    </q-carousel>
+                                  </template>
+                                  <template v-else>
+                                    <div class="rounded flex items-center
+                                          background justify-center
+                                          w-50 min-w-50 h-50 min-h-50
+                                          <md:w-80 <md:h-80
+                                          <md:min-w-80 <md:min-h-80">
+                                      <p class="text-subtitle2">
+                                        NO IMAGE
                                       </p>
-                                      <p class="text-xs text-weight-bold">
-                                        Includes {{ res._vat }} ({{ res._vatp }} %) VAT
-                                      </p>
-                                      <div class="flex items-start gap-4 mt4">
+                                    </div>
+                                  </template>
+                                </div>
+                                <div class="p1 flex-grow <md:mt2
+                                            flex column gap-2">
+                                  <p class="text-weight-bolder text-xl">
+                                    {{ res.t }}
+                                  </p>
+                                  <p class="line-height-snug whitespace-break-spaces">
+                                    <span v-if="res.brand && res.brand.trim() !== ''"
+                                          class="background wfit px1.5 py0.5 rounded
+                                                 text-subtitle2 mr2">
+                                      {{ res.brand }}
+                                    </span>
+                                    <span v-if="res.desc && res.desc.trim() !== ''"
+                                          class="text-subtitle2">
+                                      {{ res.desc }}
+                                    </span>
+                                  </p>
+                                  <template v-if="res.attr && res.attr.length > 0">
+                                    <table class="border-spacing-none
+                                                  text-subtitle2
+                                                  rounded mt2 py1 wfit">
+                                      <template v-for="attr in res.attr" :key="attr">
+                                        <tr>
+                                          <td class="fontbold pr3">
+                                            {{ capitalizeFirstLetter(attr.t) }}:
+                                          </td>
+                                          <td class="pr3">
+                                            {{ attr.sval }}
+                                          </td>
+                                          <td class="">
+                                            {{ attr.desc }}
+                                          </td>
+                                        </tr>
+                                      </template>
+                                    </table>
+                                  </template>
+                                  <div class="mtauto">
+                                    <div class="flex gap-6 mt2 wfull column items-end">
+                                      <div class="flex column items-end">
+                                        <p class="text-3xl <sm:text-2xl text-weight-bold">
+                                          {{ res._gross }}
+                                        </p>
+                                        <p class="text-xs text-weight-bold">
+                                          Includes {{ res._vat }} ({{ res._vatp }} %) VAT
+                                        </p>
                                         <div v-if="showingStock"
                                              class="flex items-center gap-2 wfit h9
-                                            px3 py0.5 background rounded">
+                                              px3 py0.5 background rounded mt2">
                                           <template v-if="res.stock > 0.0">
                                             <div class="w2 h2 rounded-full bg-green"></div>
                                             <p class="text-subtitle2">
@@ -784,18 +806,15 @@
                                             </p>
                                           </template>
                                         </div>
-                                        <q-btn label="View Product"
-                                               icon="sym_o_search"
-                                               class="fontbold fmt_border surface"/>
                                       </div>
                                     </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          </q-item>
-                          <div class="mt50 wfull flex items-center p2
-                              column fmt_border_top">
+                            </q-item>
+                          </div>
+                          <div class="mt8 wfull flex items-center p2
+                                      column fmt_border_top">
                             <p class="text-subtitle2 text-weight-bolder">
                               Not what you were looking for?
                             </p>
@@ -807,7 +826,7 @@
                         <div v-if="noResults && (!results || results.length < 1)"
                              class="flex column wfull">
                           <div class="mt10 wfull flex items-center p4
-                              column fmt_border_top">
+                                      column fmt_border_top">
                             <p class="text-subtitle2 text-weight-bolder">
                               No results for your search!
                             </p>
@@ -1307,7 +1326,7 @@ export default {
       if (offset < 0) {
         offset = 0
       }
-      const duration = 300
+      const duration = 20
       setVerticalScrollPosition(target, offset, duration)
     },
     handleItemClicked: function (item) {
@@ -1492,6 +1511,9 @@ export default {
         queryUrl += '&wrd=1'
       }
       this.results = [{
+        t: '',
+        desc: ''
+      }, {
         t: '',
         desc: ''
       }]

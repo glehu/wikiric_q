@@ -390,6 +390,13 @@
                     <p class="fontbold text-body1 non-selectable">
                       Nothing here, yet!
                     </p>
+                    <q-btn flat
+                           icon="sym_o_arrow_left_alt"
+                           label="Continue Shopping"
+                           class="fmt_border ml4 rounded-2
+                                  surface-variant"
+                           @click="clickedBack">
+                    </q-btn>
                   </div>
                 </template>
                 <div class="wfull flex justify-center mt10">
