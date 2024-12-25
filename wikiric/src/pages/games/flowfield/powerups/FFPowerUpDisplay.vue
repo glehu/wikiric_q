@@ -52,6 +52,11 @@
               Type: {{ getVisualType(eff.value) }}
             </p>
           </template>
+          <template v-else-if="eff.type === 'trajectory'">
+            <p class="text-sm font-500">
+              Trajectory: {{ getTrajectoryType(eff.value) }}
+            </p>
+          </template>
           <template v-else-if="eff.type === 'debuff'">
             <p class="text-sm font-500">
               Debuff: {{ getDebuffType(eff.value) }}
@@ -113,6 +118,21 @@ export default {
           return 'Fire'
         case VisualTypes.Electricity:
           return 'Electricity'
+      }
+    },
+    getTrajectoryType: function (type) {
+      const TrajectoryTypes = {
+        Projectile: 0,
+        Stream: 1,
+        Circle: 2
+      }
+      switch (type) {
+        case TrajectoryTypes.Projectile:
+          return 'Projectile'
+        case TrajectoryTypes.Stream:
+          return 'Stream'
+        case TrajectoryTypes.Circle:
+          return 'Circle'
       }
     },
     getDebuffType: function (type) {

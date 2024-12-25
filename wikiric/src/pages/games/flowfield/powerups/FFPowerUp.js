@@ -32,14 +32,7 @@ class FFPowerUp {
    * @param {Number} [cooldown=0]
    * @param {Number} [cooldownLevelUp=0]
    */
-  constructor (id,
-               level,
-               name,
-               desc,
-               chance,
-               isAbility = false,
-               cooldown = 0,
-               cooldownLevelUp = 0) {
+  constructor (id, level, name, desc, chance, isAbility = false, cooldown = 0, cooldownLevelUp = 0) {
     this.id = id
     this.level = level
     this.name = name
@@ -66,6 +59,23 @@ class FFPowerUp {
     }
   }
 
+  clone () {
+    const pup = new FFPowerUp(
+      this.id,
+      this.level,
+      this.name,
+      this.desc,
+      this.chance,
+      this.isAbility,
+      this.cd,
+      this.cdLevelUp
+    )
+    pup.effects = this.effects
+    pup._cd = this.cd
+    pup.wpn = this.wpn
+    return pup
+  }
+
   /**
    * Procs (activates) all available effects and returns them.
    * Optionally, effects can be proc'd ignoring cooldown etc.
@@ -86,7 +96,10 @@ class FFPowerUp {
       if (force || effect.proc()) {
         if (effect.floorValueOnProc) {
           // Shallow copy and floor value
-          copy = { ...effect }
+          /**
+           * @type {FFPowerUpEffect}
+           */
+          copy = effect.clone()
           copy.value = Math.floor(copy.value)
           procs.push(copy)
         } else {
@@ -174,7 +187,8 @@ class FFPowerUp {
 
   checkHelper () {
     if (!this.wpn) {
-      this.wpn = new FFWeapon(this.name,
+      this.wpn = new FFWeapon(
+        this.name,
         this.desc,
         999,
         0,
@@ -198,11 +212,7 @@ class FFPowerUp {
         this.wpn.powerUps = []
       }
       const powerUp = new FFPowerUp(
-        0,
-        this.level,
-        this.name,
-        this.desc,
-        100)
+        0, this.level, this.name, this.desc, 100)
       this.wpn.powerUps = [powerUp]
     }
   }

@@ -42,6 +42,9 @@
           Hits: {{ weapon.getCalculatedStat(weapon.pHitCount, 'hitCount') }}
           <span class="italic">( +{{ weapon.pHitCountLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
         </p>
+        <p>
+          Duration: {{ weapon.getCalculatedStat(weapon.ttl, 'ttl').toFixed(0) }}
+        </p>
       </div>
       <FFPowerUpDisplay :power-ups="weapon.powerUps" hide-desc/>
     </div>

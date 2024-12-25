@@ -21,6 +21,12 @@ const DebuffTypes = {
   Stun: 1
 }
 
+const TrajectoryTypes = {
+  Projectile: 0,
+  Stream: 1,
+  Circle: 2
+}
+
 /**
  * An FF Weapon
  * @param {String} name
@@ -64,24 +70,7 @@ class FFWeapon {
    * @param {Number} cost
    * @param {Number} chance
    */
-  constructor (name,
-               desc,
-               range,
-               dps,
-               dpsLevelUp,
-               ratio,
-               amount,
-               cooldown,
-               cooldownLevelUp,
-               projectileSpeed,
-               hitCount,
-               hitCountLevelUp,
-               hitRange,
-               hitRangeLevelUp,
-               visualType,
-               ttl,
-               cost,
-               chance) {
+  constructor (name, desc, range, dps, dpsLevelUp, ratio, amount, cooldown, cooldownLevelUp, projectileSpeed, hitCount, hitCountLevelUp, hitRange, hitRangeLevelUp, visualType, ttl, cost, chance) {
     this.level = 1
     /**
      * This FF Weapon's Name
@@ -247,6 +236,8 @@ class FFWeapon {
     let radius = 0
     let ratio = this.ratio
     let cd = this.cd
+    let ttl = this.ttl
+    let trajectory = TrajectoryTypes.Projectile
     // We have to remember if the weapon originally had projectile speed
     // ...since we might reduce it to 0 or less.
     // When sanitizing, we have to avoid setting the minimum speed to
@@ -289,6 +280,9 @@ class FFWeapon {
           case 'ratio':
             ratio += effect.value
             break
+          case 'ttl':
+            ttl += effect.value
+            break
           case 'visual':
             switch (effect.value) {
               case VisualTypes.Bullet:
@@ -299,6 +293,16 @@ class FFWeapon {
                 break
               case VisualTypes.Electricity:
                 this.visualType = 'spark'
+                break
+            }
+            break
+          case 'trajectory':
+            switch (effect.value) {
+              case TrajectoryTypes.Stream:
+                trajectory = TrajectoryTypes.Stream
+                break
+              case TrajectoryTypes.Circle:
+                trajectory = TrajectoryTypes.Circle
                 break
             }
             break
@@ -362,15 +366,13 @@ class FFWeapon {
     let pr
     for (let i = 1; i <= amt; i++) {
       // Create projectile with provided vectors
-      pr = this.doShootProjectile(
-        pos,
-        vec,
-        dmg,
-        speed,
-        hits,
-        i,
-        hitRange,
-        radius)
+      if (i > 4) {
+        ttl -= 10
+        if (ttl < 0) {
+          ttl = 10
+        }
+      }
+      pr = this.doShootProjectile(pos, vec, dmg, speed, hits, i, hitRange, radius, ttl, trajectory)
       // Modify projectile before sending it back
       if (debuffs) {
         pr.effects = debuffs
@@ -390,16 +392,11 @@ class FFWeapon {
    * @param {Number} iteration
    * @param {Number} hitRange
    * @param {Number} radius
+   * @param {Number} ttl
+   * @param {Number} trajectory
    * @return {FFProjectile}
    */
-  doShootProjectile (pos,
-                     vec,
-                     dmg,
-                     speed,
-                     hits,
-                     iteration,
-                     hitRange,
-                     radius) {
+  doShootProjectile (pos, vec, dmg, speed, hits, iteration, hitRange, radius, ttl, trajectory) {
     // Calculate projectile vector
     const vector = new THREE.Vector2(vec.x, vec.y)
     if (speed > 0) {
@@ -422,16 +419,14 @@ class FFWeapon {
     }
     vector.normalize()
     vector.multiplyScalar(speed)
+    if (trajectory === TrajectoryTypes.Stream && iteration > 4) {
+      // The first 4 projectiles will move with their original speed
+      // If more projectiles are being fired, we will introduce
+      // ...some fluctuation in speed to make things interesting!
+      vector.multiplyScalar(Math.max(0.2, Math.random()))
+    }
     // Return projectile
-    return new FFProjectile(
-      pos,
-      vector,
-      hits,
-      dmg,
-      hitRange,
-      radius,
-      this.visualType,
-      this.ttl)
+    return new FFProjectile(pos, vector, hits, dmg, hitRange, radius, this.visualType, ttl)
   }
 
   /**

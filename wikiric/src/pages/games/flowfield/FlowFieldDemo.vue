@@ -463,6 +463,7 @@
                   :player-stats="goalStats"
                   :player-items="goalItems"
                   :player-weapons="goalWeapons"
+                  :player-abilities="goalAbilities"
                   :trophies="trophyList"
                   :money="goalMoney"
                   @close="isLevelUp = false"
@@ -898,6 +899,7 @@ import FFItemEffect from 'pages/games/flowfield/items/FFItemEffect'
 import FFTrophyList from 'pages/games/flowfield/trophies/FFTrophyList'
 import FFAbilityComp from 'pages/games/flowfield/powerups/FFAbility.vue'
 import wikiricUtils from 'src/libs/wikiric-utils'
+import axios from 'axios'
 
 export default {
   name: 'FlowFieldDemo',
@@ -1389,6 +1391,7 @@ export default {
       canvas.style.maxHeight = canvas.style.minHeight
       canvas.width = this.width
       canvas.height = this.height
+      this.scaleCanvas(canvas, this.ctx)
       this.initializeCursorCanvas()
       this.drawGrid(true)
     },
@@ -1402,6 +1405,7 @@ export default {
       canvas2.style.maxHeight = canvas2.style.minHeight
       canvas2.width = this.width
       canvas2.height = this.height
+      this.scaleCanvas(canvas2, this.ctx2)
       this.ctx2.clearRect(0, 0, canvas2.width, canvas2.height)
       const vueInst = this
       const container = this.$refs.ffd_container
@@ -1490,6 +1494,7 @@ export default {
       canvas.style.maxHeight = canvas.style.minHeight
       canvas.width = this.width
       canvas.height = this.height
+      this.scaleCanvas(canvas, this.ctx3)
       this.ctx3.clearRect(0, 0, this.width, this.height)
     },
     initializePlayerCanvas: function () {
@@ -1503,7 +1508,19 @@ export default {
       canvas.style.maxHeight = canvas.style.minHeight
       canvas.width = this.width
       canvas.height = this.height
+      this.scaleCanvas(canvas, this.ctxPlayer)
       this.ctxPlayer.clearRect(0, 0, this.width, this.height)
+    },
+    scaleCanvas: function (canvas, ctx) {
+      const dpr = window.devicePixelRatio
+      const exaggeration = 20
+      const width = Math.ceil(this.width * dpr + exaggeration)
+      const height = Math.ceil(this.height * dpr + exaggeration)
+      canvas.width = width
+      canvas.height = height
+      canvas.style.width = `${width / dpr}px`
+      canvas.style.height = `${height / dpr}px`
+      ctx.scale(dpr, dpr)
     },
     initializeGridValues: function () {
       const elem = document.getElementById('ffd_size')
@@ -1786,6 +1803,7 @@ export default {
       this.ctxPlayer.clearRect(0, 0, this.width, this.height)
       this.ctxPlayer.drawImage(this.wizzard, xNew + 5, yNew + 5)
       this.ctxPlayer.fillStyle = '#FF0'
+      this.ctxPlayer.font = '12px "Open Sans"'
       this.ctxPlayer.fillText(this.store.user.username, xNew, yNew)
     },
     renderCoPlayers: function () {
@@ -1798,6 +1816,7 @@ export default {
         yNew = (val.y + this.offsetVector.y) * this.gridSize
         this.ctxPlayer.drawImage(this.wizzard, xNew + 5, yNew + 5)
         this.ctxPlayer.fillStyle = '#FF0'
+        this.ctxPlayer.font = '12px "Open Sans"'
         this.ctxPlayer.fillText(val.usr, xNew, yNew)
       })
     },
@@ -2114,22 +2133,23 @@ export default {
           return
         }
       }
-      // 3 seconds delay
-      delay = 3_000 + DateTime.now().toMillis()
+      // 2 seconds delay
+      delay = 1_000 + DateTime.now().toMillis()
       this.$connector.sendSyncRoomMessage(
         `SCSIM-${isRunning};${delay};${doShowOffers}`
       )
+      delay = 1_000 + this.currentSRLatency
       if (isRunning) {
         console.log('(LOCAL) Scheduling start...')
         this.isScheduling = true
         setTimeout(() => {
           this.handleSimulation(true)
-        }, 3_020) // Assuming 20 ms delay
+        }, delay)
       } else {
         console.log('(LOCAL) Scheduling stop...')
         setTimeout(() => {
           this.cancelSimulation(doShowOffers)
-        }, 3_020) // Assuming 20 ms delay
+        }, delay)
       }
     },
     handleSimulation: function (srSilent) {
@@ -3315,14 +3335,14 @@ export default {
           if (effect.type === 'text') {
             tmpX = (effect.x + this.offsetVector.x) * this.gridSize
             tmpY = (effect.y + this.offsetVector.y) * this.gridSize
-            this.ctx3.font = '1rem serif'
+            this.ctx3.font = '1rem "Open Sans"'
             this.ctx3.strokeStyle = '#000'
             this.ctx3.strokeText(
               effect.content,
               tmpX,
               tmpY
             )
-            this.ctx3.font = '1rem serif'
+            this.ctx3.font = '1rem "Open Sans"'
             this.ctx3.fillStyle = '#ffc800'
             this.ctx3.fillText(
               effect.content,
@@ -4442,6 +4462,7 @@ export default {
       // Connect to the SyncRoom
       console.log('Connecting to wikiric sync room:', this.roomId)
       await this.$connector.doJoinSyncRoom(this.roomId)
+      await this.getRooms()
       console.log('> Connected')
       // Calculate latency in ms (performance check)
       console.log('Periodically checking latency...')
@@ -5585,6 +5606,17 @@ export default {
         const payload = data.substring(4).split(';')
         this.handleCoPlayerAbilityProc(username, payload)
       }
+    },
+    getRooms: function () {
+      return new Promise((resolve) => {
+        axios.get(
+          `${this.store.serverIP}synced/public/rooms`
+        ).then((response) => {
+          console.log(response.data)
+        }).finally(() => {
+          resolve()
+        })
+      })
     }
   }
 }

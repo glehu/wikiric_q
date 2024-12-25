@@ -93,8 +93,8 @@
                           </p>
                         </div>
                         <div class="flex column text-start
-                  fmt_border_bottom pb2
-                  text-sm font-500 mt2 mb2">
+                                    fmt_border_bottom pb2
+                                    text-sm font-500 mt2 mb2">
                           <p>
                             Damage: {{ offer.getCalculatedDamage().toLocaleString() }}
                             <span class="italic">( +{{ offer.dpsLevelUp }} <q-icon name="sym_o_military_tech"
@@ -289,6 +289,16 @@
                                 Type: {{ getVisualType(eff.value) }}
                               </p>
                             </template>
+                            <template v-else-if="eff.type === 'trajectory'">
+                              <p class="text-sm font-500">
+                                Trajectory: {{ getTrajectoryType(eff.value) }}
+                              </p>
+                            </template>
+                            <template v-else-if="eff.type === 'ttl'">
+                              <p class="text-sm font-500">
+                                Duration: {{ eff.value }}
+                              </p>
+                            </template>
                             <template v-else-if="eff.type === 'debuff'">
                               <p class="text-sm font-500">
                                 Debuff: {{ getDebuffType(eff.value) }}
@@ -370,6 +380,19 @@
                       <div v-for="wpn in playerWeapons" :key="wpn"
                            class="mb-[10px] masonry_item">
                         <FFWeaponDisplayShiny :weapon="wpn"/>
+                      </div>
+                    </div>
+                    <template v-else>
+                      <p class="ml4 text-subtitle2">(No Equipment)</p>
+                    </template>
+                    <p class="text-body1 my2 ml1">
+                      Abilities
+                    </p>
+                    <div v-if="playerAbilities && playerAbilities.length > 0"
+                         class="masonry">
+                      <div v-for="wpn in playerAbilities" :key="wpn"
+                           class="mb-[10px] masonry_item">
+                        <FFWeaponDisplayShiny :weapon="wpn.wpn"/>
                       </div>
                     </div>
                     <template v-else>
@@ -460,6 +483,10 @@ export default {
       required: true
     },
     playerWeapons: {
+      type: Array,
+      required: true
+    },
+    playerAbilities: {
       type: Array,
       required: true
     },
@@ -581,6 +608,21 @@ export default {
           return 'Slow'
         case DebuffTypes.Stun:
           return 'Stun'
+      }
+    },
+    getTrajectoryType: function (type) {
+      const TrajectoryTypes = {
+        Projectile: 0,
+        Stream: 1,
+        Circle: 2
+      }
+      switch (type) {
+        case TrajectoryTypes.Projectile:
+          return 'Projectile'
+        case TrajectoryTypes.Stream:
+          return 'Stream'
+        case TrajectoryTypes.Circle:
+          return 'Circle'
       }
     }
   }

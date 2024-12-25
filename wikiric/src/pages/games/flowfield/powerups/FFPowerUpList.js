@@ -21,6 +21,12 @@ const DebuffTypes = {
   Stun: 1
 }
 
+const TrajectoryTypes = {
+  Projectile: 0,
+  Stream: 1,
+  Circle: 2
+}
+
 class FFPowerUpList {
   constructor () {
     this.version = 1
@@ -392,10 +398,10 @@ class FFPowerUpList {
 
   initiateStarterAbilities () {
     /**
-     * STARTER POWERUP: Critical Hit
+     * STARTER ABILITY: Spark
      * @type {FFPowerUp}
      */
-    const powerUp = new FFPowerUp(
+    let powerUp = new FFPowerUp(
       0,
       1,
       'Spark',
@@ -408,7 +414,7 @@ class FFPowerUpList {
       false,
       'dmg',
       50,
-      10,
+      25,
       0,
       false,
       true))
@@ -426,14 +432,76 @@ class FFPowerUpList {
       false,
       'hitCount',
       20,
-      1,
+      2,
       0,
       false,
       true))
     powerUp.effects.push(new FFPowerUpEffect(
       false,
       'hitRange',
-      2,
+      3,
+      0.5,
+      0,
+      false,
+      true))
+    this.categories.starter.push(powerUp)
+    /**
+     * STARTER ABILITY: Flame Nova
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      1,
+      'Flame Nova',
+      'Unleash the wrath of a thousand dragons.',
+      100,
+      true,
+      1_500,
+      5)
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'dmg',
+      75,
+      35,
+      0,
+      false,
+      true))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'visual',
+      VisualTypes.Fire))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'trajectory',
+      TrajectoryTypes.Stream))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'amt',
+      100,
+      5,
+      0,
+      true,
+      true))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'ttl',
+      400,
+      0,
+      0,
+      true,
+      false))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'hitCount',
+      10,
+      4,
+      0,
+      false,
+      true))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'hitRange',
+      1,
       0.2,
       0,
       false,

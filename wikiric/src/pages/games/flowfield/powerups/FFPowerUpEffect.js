@@ -43,6 +43,20 @@ class FFPowerUpEffect {
     this._hitCount = 0
   }
 
+  clone () {
+    const effect = new FFPowerUpEffect(
+      this.onHit,
+      this.type,
+      this.value,
+      this.valueLevelBonus,
+      this.hitCount,
+      this.floorValueOnProc,
+      this.autoLevelUp
+    )
+    effect._hitCount = this.hitCount
+    return effect
+  }
+
   proc () {
     // Return true if effect doesn't need hits
     if (!this.onHit || this.hitCount === 0) {
