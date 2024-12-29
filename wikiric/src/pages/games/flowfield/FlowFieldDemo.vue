@@ -1604,7 +1604,7 @@ export default {
           yNew = (y + this.offsetVector.y) * this.gridSize
           arrayPos = this.convertXYToArrayPos(x, y)
           if (!this.fow.has(arrayPos)) {
-            this.ctx.fillStyle = '#000'
+            this.ctx.fillStyle = '#141412'
             this.ctx.fillRect(xNew, yNew, this.gridSize, this.gridSize)
             continue
           }
@@ -2355,8 +2355,8 @@ export default {
         this.renderGoal()
         this.renderCoPlayers()
         // Display walls/tiles etc.
-        this.renderTiles(this.offsetVector)
         this.renderIllumination()
+        this.renderTiles(this.offsetVector)
         // Frame-Resets
         qtree = new FFQuadTree(this.xCells / 2, this.yCells / 2, this.xCells / 2, this.yCells / 2, 4)
         cacheMap.clear()
@@ -5264,7 +5264,7 @@ export default {
         this.drawLightsCtx(
           this.goalPosition.x - this.offsetVector.x,
           this.goalPosition.y - this.offsetVector.y,
-          100, true)
+          100, false)
       }
       if (this.coPlayers && this.coPlayers.size > 0) {
         this.coPlayers.forEach((val) => {
@@ -5318,8 +5318,8 @@ export default {
           continue
         }
         if (value < 8) {
-          this.ctx.fillStyle = '#fffc73'
-          this.ctx.globalAlpha = 0.02
+          this.ctx.fillStyle = '#fffec3'
+          this.ctx.globalAlpha = 0.08
           pos = this.convertArrayPosToXY(indices[i])
           x = (pos[0] + this.offsetVector.x) * this.gridSize - offX
           y = (pos[1] + this.offsetVector.y) * this.gridSize - offY
@@ -5329,7 +5329,7 @@ export default {
           if (!drawBackground) {
             continue
           }
-          this.ctx.fillStyle = '#000'
+          this.ctx.fillStyle = '#141412'
           this.ctx.globalAlpha = 0.3
           pos = this.convertArrayPosToXY(indices[i])
           x = (pos[0] + this.offsetVector.x) * this.gridSize
