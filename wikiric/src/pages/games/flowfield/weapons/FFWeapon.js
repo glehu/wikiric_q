@@ -28,6 +28,141 @@ const TrajectoryTypes = {
 }
 
 /**
+ * DamageCalc carries all values to be carried over to an FFProjectile
+ */
+class DamageCalc {
+  /**
+   * DamageCalc carries all values to be carried over to an FFProjectile
+   */
+  constructor () {
+    this.visual = VisualTypes.Bullet
+    this.trajectory = TrajectoryTypes.Projectile
+    this.dmg = 0
+    this.amt = 0
+    this.speed = 0
+    this.hits = 0
+    this.hitRange = 0
+    this.radius = 0
+    this.ratio = 0
+    this.cd = 0
+    this.ttl = 0
+    this.hadSpeed = false
+    /**
+     * @type {FFPowerUpEffect[] || null}
+     */
+    this.debuffs = null
+  }
+
+  useEffects (effects) {
+    if (effects.length > 0) {
+      for (const effect of effects) {
+        switch (effect.type) {
+          case 'dmg':
+            this.dmg += effect.value
+            break
+          case 'amt':
+            this.amt += effect.value
+            break
+          case 'speed':
+            this.speed += effect.value
+            break
+          case 'hitCount':
+            this.hits += effect.value
+            break
+          case 'hitRange':
+            this.hitRange += effect.value
+            break
+          case 'radius':
+            this.radius += effect.value
+            break
+          case 'cd':
+            if (effect.onHit) {
+              this._cd += effect.value
+            } else {
+              this.cd += effect.value
+            }
+            break
+          case 'ratio':
+            this.ratio += effect.value
+            break
+          case 'ttl':
+            this.ttl += effect.value
+            break
+          case 'visual':
+            switch (effect.value) {
+              case VisualTypes.Bullet:
+                this.visualType = 'bullet'
+                break
+              case VisualTypes.Fire:
+                this.visualType = 'fire'
+                break
+              case VisualTypes.Electricity:
+                this.visualType = 'spark'
+                break
+            }
+            break
+          case 'trajectory':
+            switch (effect.value) {
+              case TrajectoryTypes.Stream:
+                this.trajectory = TrajectoryTypes.Stream
+                break
+              case TrajectoryTypes.Circle:
+                this.trajectory = TrajectoryTypes.Circle
+                break
+            }
+            break
+          case 'debuff':
+            if (!this.debuffs) {
+              this.debuffs = []
+            }
+            switch (effect.value) {
+              case DebuffTypes.Slow:
+                this.debuffs.push(effect)
+                break
+              case DebuffTypes.Stun:
+                this.debuffs.push(effect)
+                break
+            }
+        }
+      }
+    }
+  }
+
+  preChecks () {
+    this.hadSpeed = (this.speed > 0)
+  }
+
+  sanitize () {
+    if (this.dmg < 1) {
+      this.dmg = 1
+    }
+    if (this.speed <= 0) {
+      if (this.hadSpeed) {
+        this.speed = 1
+      } else {
+        this.speed = 0
+      }
+    }
+    if (this.hits < 1) {
+      this.hits = 1
+    }
+    if (this.hitRange < 0.2) {
+      this.hitRange = 0.2
+    }
+    if (this.radius < 0) {
+      this.radius = 0
+    }
+    if (this.ratio < 0.1) {
+      this.ratio = 0.1
+    }
+  }
+
+  scale () {
+    this.dmg = this.dmg * this.ratio
+  }
+}
+
+/**
  * An FF Weapon
  * @param {String} name
  * @param {String} desc
@@ -70,7 +205,24 @@ class FFWeapon {
    * @param {Number} cost
    * @param {Number} chance
    */
-  constructor (name, desc, range, dps, dpsLevelUp, ratio, amount, cooldown, cooldownLevelUp, projectileSpeed, hitCount, hitCountLevelUp, hitRange, hitRangeLevelUp, visualType, ttl, cost, chance) {
+  constructor (name,
+               desc,
+               range,
+               dps,
+               dpsLevelUp,
+               ratio,
+               amount,
+               cooldown,
+               cooldownLevelUp,
+               projectileSpeed,
+               hitCount,
+               hitCountLevelUp,
+               hitRange,
+               hitRangeLevelUp,
+               visualType,
+               ttl,
+               cost,
+               chance) {
     this.level = 1
     /**
      * This FF Weapon's Name
@@ -228,131 +380,35 @@ class FFWeapon {
       return null
     }
     // Initialize projectile values
-    let dmg = this.dps
-    let amt = 1
-    let speed = this.pSpeed
-    let hits = this.pHitCount
-    let hitRange = this.hitRange
-    let radius = 0
-    let ratio = this.ratio
-    let cd = this.cd
-    let ttl = this.ttl
-    let trajectory = TrajectoryTypes.Projectile
+    const dmgCalc = new DamageCalc()
+    dmgCalc.dmg = this.dps
+    dmgCalc.amt = 1
+    dmgCalc.speed = this.pSpeed
+    dmgCalc.hits = this.pHitCount
+    dmgCalc.hitRange = this.hitRange
+    dmgCalc.ratio = this.ratio
+    dmgCalc.cd = this.cd
+    dmgCalc.ttl = this.ttl
+    dmgCalc.visualType = this.visualType
     // We have to remember if the weapon originally had projectile speed
     // ...since we might reduce it to 0 or less.
     // When sanitizing, we have to avoid setting the minimum speed to
     // ...weapons that originally did not have a projectile speed.
-    const hadSpeed = (speed > 0)
+    dmgCalc.preChecks()
     // Trigger weapon effects
     const effects = this.procEffects()
-    /**
-     * @type {FFPowerUpEffect[] || null}
-     */
-    let debuffs = null
-    if (effects.length > 0) {
-      for (const effect of effects) {
-        switch (effect.type) {
-          case 'dmg':
-            dmg += effect.value
-            break
-          case 'amt':
-            amt += effect.value
-            break
-          case 'speed':
-            speed += effect.value
-            break
-          case 'hitCount':
-            hits += effect.value
-            break
-          case 'hitRange':
-            hitRange += effect.value
-            break
-          case 'radius':
-            radius += effect.value
-            break
-          case 'cd':
-            if (effect.onHit) {
-              this._cd += effect.value
-            } else {
-              cd += effect.value
-            }
-            break
-          case 'ratio':
-            ratio += effect.value
-            break
-          case 'ttl':
-            ttl += effect.value
-            break
-          case 'visual':
-            switch (effect.value) {
-              case VisualTypes.Bullet:
-                this.visualType = 'bullet'
-                break
-              case VisualTypes.Fire:
-                this.visualType = 'fire'
-                break
-              case VisualTypes.Electricity:
-                this.visualType = 'spark'
-                break
-            }
-            break
-          case 'trajectory':
-            switch (effect.value) {
-              case TrajectoryTypes.Stream:
-                trajectory = TrajectoryTypes.Stream
-                break
-              case TrajectoryTypes.Circle:
-                trajectory = TrajectoryTypes.Circle
-                break
-            }
-            break
-          case 'debuff':
-            if (!debuffs) {
-              debuffs = []
-            }
-            switch (effect.value) {
-              case DebuffTypes.Slow:
-                debuffs.push(effect)
-                break
-              case DebuffTypes.Stun:
-                debuffs.push(effect)
-                break
-            }
-        }
-      }
-    }
+    dmgCalc.useEffects(effects)
+    this._cd += dmgCalc._cd
+    // More damage!
     if (extraDmg && extraDmg !== 0) {
-      dmg += extraDmg
+      dmgCalc.dmg += extraDmg
     }
-    // Sanitize
-    if (dmg < 1) {
-      dmg = 1
-    }
-    if (speed <= 0) {
-      if (hadSpeed) {
-        speed = 1
-      } else {
-        speed = 0
-      }
-    }
-    if (hits < 1) {
-      hits = 1
-    }
-    if (hitRange < 0.2) {
-      hitRange = 0.2
-    }
-    if (radius < 0) {
-      radius = 0
-    }
-    if (ratio < 0.1) {
-      ratio = 0.1
-    }
-    this._cdOri = cd
+    dmgCalc.sanitize()
+    dmgCalc.scale()
+    this._cdOri = dmgCalc.cd
     if (this._cdOri < 10) {
       this._cdOri = 10
     }
-    // Apply scaling
-    dmg = dmg * ratio
     // Create projectiles
     this._amount -= 1
     if (this._amount === 0) {
@@ -364,18 +420,18 @@ class FFWeapon {
      */
     const projectiles = []
     let pr
-    for (let i = 1; i <= amt; i++) {
+    for (let i = 1; i <= dmgCalc.amt; i++) {
       // Create projectile with provided vectors
       if (i > 4) {
-        ttl -= 10
-        if (ttl < 0) {
-          ttl = 10
+        dmgCalc.ttl -= 10
+        if (dmgCalc.ttl < 0) {
+          dmgCalc.ttl = 10
         }
       }
-      pr = this.doShootProjectile(pos, vec, dmg, speed, hits, i, hitRange, radius, ttl, trajectory)
+      pr = this.doShootProjectile(pos, vec, i, dmgCalc)
       // Modify projectile before sending it back
-      if (debuffs) {
-        pr.effects = debuffs
+      if (dmgCalc.debuffs) {
+        pr.effects = dmgCalc.debuffs
       }
       projectiles.push(pr)
     }
@@ -386,20 +442,17 @@ class FFWeapon {
    * Create and returns a new FF Projectile
    * @param {THREE.Vector2} pos
    * @param {THREE.Vector2} vec
-   * @param {Number} dmg
-   * @param {Number} speed
-   * @param {Number} hits
    * @param {Number} iteration
-   * @param {Number} hitRange
-   * @param {Number} radius
-   * @param {Number} ttl
-   * @param {Number} trajectory
+   * @param {DamageCalc} dmgCalc
    * @return {FFProjectile}
    */
-  doShootProjectile (pos, vec, dmg, speed, hits, iteration, hitRange, radius, ttl, trajectory) {
+  doShootProjectile (pos,
+                     vec,
+                     iteration,
+                     dmgCalc) {
     // Calculate projectile vector
     const vector = new THREE.Vector2(vec.x, vec.y)
-    if (speed > 0) {
+    if (dmgCalc.speed > 0) {
       if (vector.lengthSq() === 0) {
         vector.x = Math.random() - 0.5
         vector.y = Math.random() - 0.5
@@ -418,15 +471,21 @@ class FFWeapon {
       vector.add(spray)
     }
     vector.normalize()
-    vector.multiplyScalar(speed)
-    if (trajectory === TrajectoryTypes.Stream && iteration > 4) {
+    vector.multiplyScalar(dmgCalc.speed)
+    if (dmgCalc.trajectory === TrajectoryTypes.Stream && iteration > 4) {
       // The first 4 projectiles will move with their original speed
       // If more projectiles are being fired, we will introduce
       // ...some fluctuation in speed to make things interesting!
       vector.multiplyScalar(Math.max(0.2, Math.random()))
     }
     // Return projectile
-    return new FFProjectile(pos, vector, hits, dmg, hitRange, radius, this.visualType, ttl)
+    return new FFProjectile(pos, vector,
+      dmgCalc.hits,
+      dmgCalc.dmg,
+      dmgCalc.hitRange,
+      dmgCalc.radius,
+      dmgCalc.visualType,
+      dmgCalc.ttl)
   }
 
   /**

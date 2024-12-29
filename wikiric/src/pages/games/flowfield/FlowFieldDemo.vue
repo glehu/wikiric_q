@@ -1019,8 +1019,8 @@ export default {
        */
       ctx3: null,
       gridSize: 50,
-      width: 1500, // 1550,
-      height: 1500, // 900,
+      width: 1550, // 1550,
+      height: 1550, // 900,
       sWidth: 0,
       sHeight: 0,
       totalCells: 0,
@@ -1042,6 +1042,7 @@ export default {
       shopTab: 'shop',
       cursorX: 0,
       cursorY: 0,
+      fow: new Map(),
 
       // TOYS
 
@@ -1238,7 +1239,7 @@ export default {
       this.setUpPlayer()
       this.setUpSyncRoom()
       // QoL
-      this.addGoal(new THREE.Vector2(3, 3))
+      this.addGoal(new THREE.Vector2(1, 2))
       this.goalLevelUps = 1
       this.goalLevelUpsOpen = 1
     },
@@ -1602,9 +1603,14 @@ export default {
           xNew = (x + this.offsetVector.x) * this.gridSize
           yNew = (y + this.offsetVector.y) * this.gridSize
           arrayPos = this.convertXYToArrayPos(x, y)
-          if (this.costField[arrayPos] !== 255) {
-            this.ctx.drawImage(floor, xNew, yNew, this.gridSize, this.gridSize)
+          if (!this.fow.has(arrayPos)) {
+            this.ctx.fillStyle = '#000'
+            this.ctx.fillRect(xNew, yNew, this.gridSize, this.gridSize)
+            continue
           }
+          // if (this.costField[arrayPos] !== 255) {
+          this.ctx.drawImage(floor, xNew, yNew, this.gridSize, this.gridSize)
+          // }
         }
       }
     },
@@ -1751,7 +1757,12 @@ export default {
       let image
       const gSize = this.gridSize
       let x, y
+      let ix
       for (const tile of tiles) {
+        ix = this.convertXYToArrayPos(tile.pos.x, tile.pos.y)
+        if (!this.fow.has(ix)) {
+          continue
+        }
         image = this.getTile(tile.name)
         x = tile.posVisual.x
         y = tile.posVisual.y
@@ -2082,6 +2093,28 @@ export default {
       }
       return list
     },
+    getNeighborIndices: function (x, y, dist, includeSelf = false) {
+      // Guard
+      if (x < 0 || y < 0 || x >= this.xCells || y >= this.yCells) {
+        return []
+      }
+      const list = []
+      for (let xi = x - dist; xi <= x + dist; xi++) {
+        if (xi < 0 || xi >= this.xCells) {
+          continue
+        }
+        for (let yi = y - dist; yi <= y + dist; yi++) {
+          if (yi < 0 || yi >= this.yCells) {
+            continue
+          }
+          if (!includeSelf && xi === x && yi === y) {
+            continue
+          }
+          list.push(this.convertXYToArrayPos(xi, yi))
+        }
+      }
+      return list
+    },
     initializeEnemies: function () {
       /**
        *
@@ -2274,6 +2307,9 @@ export default {
       let lastTime = performance.now()
       let timeDelta
       let lastPos
+      /*
+      Here lies the game logic! step() will be called over and over again.
+       */
       const step = () => {
         if (!this.goalAlive) {
           this.srNotifySimulation(false)
@@ -2320,6 +2356,7 @@ export default {
         this.renderCoPlayers()
         // Display walls/tiles etc.
         this.renderTiles(this.offsetVector)
+        this.renderIllumination()
         // Frame-Resets
         qtree = new FFQuadTree(this.xCells / 2, this.yCells / 2, this.xCells / 2, this.yCells / 2, 4)
         cacheMap.clear()
@@ -4031,6 +4068,7 @@ export default {
     handlePowerUpOffer: function (offer) {
       // Is the received FFPowerUp an ability? If so, we will not modify a weapon
       if (offer.isAbility) {
+        offer.checkHelper()
         this.goalAbilities.push(offer)
         const ix = this.powerUpList.categories.starter.indexOf(offer)
         if (ix >= 0) {
@@ -4118,7 +4156,6 @@ export default {
      * @param saveState
      */
     loadMap: function (saveState) {
-      this.clearAll()
       /**
        * @type FFTile[]
        */
@@ -5141,6 +5178,14 @@ export default {
         return
       }
       this.costField[arrayPos] = 255 // TODO: Dynamic
+      // Notify FFCalcWorker
+      if (this.cWorker) {
+        this.cWorker.postMessage({
+          msg: '[c:cost]',
+          pos: arrayPos,
+          val: 255
+        })
+      }
       const tile = new FFTile(
         position.x, position.y,
         Math.round(Number(dat[3])),
@@ -5213,6 +5258,123 @@ export default {
         this.ctx.rect(x, y, this.gridSize, this.gridSize)
         this.ctx.fill()
       }
+    },
+    renderIllumination: function () {
+      if (this.goalAlive) {
+        this.drawLightsCtx(
+          this.goalPosition.x - this.offsetVector.x,
+          this.goalPosition.y - this.offsetVector.y,
+          100, true)
+      }
+      if (this.coPlayers && this.coPlayers.size > 0) {
+        this.coPlayers.forEach((val) => {
+          this.drawLightsCtx(val.x, val.y, 100, false)
+        })
+      }
+    },
+    /**
+     * drawLightsCtx draws all lights around the provided position.
+     * The pathfinding flow field is used to determine the illumination.
+     * @param {Number} xPos
+     * @param {Number} yPos
+     * @param {Number} dist
+     * @param {Boolean} drawBackground
+     */
+    drawLightsCtx: function (xPos, yPos, dist, drawBackground) {
+      if (!this.integrationField) {
+        return
+      }
+      let offX = xPos
+      let offY = yPos
+      xPos = Math.round(xPos)
+      yPos = Math.round(yPos)
+      offX = (xPos - offX) * this.gridSize
+      offY = (yPos - offY) * this.gridSize
+      // We are going to retrieve all floor positions around the provided coordinates
+      // Since the map could be huge we do not want to check all positions
+      const indices = this.getNeighborIndices(xPos, yPos, dist, true)
+      if (indices.length < 1) {
+        return
+      }
+      let pos
+      let value
+      let x, y
+      let nb
+      for (let i = 0; i < indices.length; i++) {
+        value = this.integrationField[indices[i]]
+        if (value >= 65535) {
+          // We hit a wall!
+          // Check if a neighbor is illuminated
+          pos = this.convertArrayPosToXY(indices[i])
+          nb = this.getNeighborIndices(pos[0], pos[1], 2, false)
+          for (let j = 0; j < nb.length; j++) {
+            value = this.integrationField[nb[j]]
+            if (value < 6) {
+              // Mark spot as seen!
+              this.fow.set(indices[i], true)
+              break
+            }
+          }
+          continue
+        }
+        if (value < 8) {
+          this.ctx.fillStyle = '#fffc73'
+          this.ctx.globalAlpha = 0.02
+          pos = this.convertArrayPosToXY(indices[i])
+          x = (pos[0] + this.offsetVector.x) * this.gridSize - offX
+          y = (pos[1] + this.offsetVector.y) * this.gridSize - offY
+          // Mark spot as seen!
+          this.fow.set(indices[i], true)
+        } else {
+          if (!drawBackground) {
+            continue
+          }
+          this.ctx.fillStyle = '#000'
+          this.ctx.globalAlpha = 0.3
+          pos = this.convertArrayPosToXY(indices[i])
+          x = (pos[0] + this.offsetVector.x) * this.gridSize
+          y = (pos[1] + this.offsetVector.y) * this.gridSize
+        }
+        this.ctx.beginPath()
+        this.ctx.moveTo(x, y)
+        this.ctx.rect(x, y, this.gridSize, this.gridSize)
+        this.ctx.fill()
+        this.ctx.globalAlpha = 1
+      }
+    },
+    /**
+     * drawLightCtx draws a single light for the provided position.
+     * The pathfinding flow field is used to determine the illumination.
+     * @param {Number} xPos
+     * @param {Number} yPos
+     */
+    drawLightCtx: function (xPos, yPos) {
+      if (!this.integrationField) {
+        return
+      }
+      const i = this.convertXYToArrayPos(xPos, yPos)
+      const value = this.integrationField[i]
+      if (value >= 65535) {
+        // We ignore walls since we will never be able to illuminate them
+        // Explanation: Since we are using the pathfinding to generate the illumination
+        // we cannot illuminate walls since walls are excluded from the pathfinding itself!
+        return
+      }
+      if (value < 8) {
+        this.ctx.fillStyle = '#fffc73'
+        this.ctx.globalAlpha = 0.02
+      } else {
+        this.ctx.fillStyle = '#000'
+        this.ctx.globalAlpha = 0.3
+      }
+      const pos = this.convertArrayPosToXY(i)
+      const x = (pos[0] + this.offsetVector.x) * this.gridSize
+      const y = (pos[1] + this.offsetVector.y) * this.gridSize
+      this.ctx.beginPath()
+      this.ctx.moveTo(x, y)
+      this.ctx.rect(x, y, this.gridSize, this.gridSize)
+      this.ctx.fill()
+      this.ctx.globalAlpha = 1
     },
     /**
      *
