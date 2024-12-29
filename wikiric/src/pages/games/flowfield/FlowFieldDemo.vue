@@ -1019,8 +1019,8 @@ export default {
        */
       ctx3: null,
       gridSize: 50,
-      width: 1550, // 1550,
-      height: 1550, // 900,
+      width: 2000, // 1550,
+      height: 2000, // 1550,
       sWidth: 0,
       sHeight: 0,
       totalCells: 0,
