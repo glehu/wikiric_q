@@ -54,77 +54,83 @@ class DamageCalc {
   }
 
   useEffects (effects) {
-    if (effects.length > 0) {
-      for (const effect of effects) {
-        switch (effect.type) {
-          case 'dmg':
-            this.dmg += effect.value
-            break
-          case 'amt':
-            this.amt += effect.value
-            break
-          case 'speed':
-            this.speed += effect.value
-            break
-          case 'hitCount':
-            this.hits += effect.value
-            break
-          case 'hitRange':
-            this.hitRange += effect.value
-            break
-          case 'radius':
-            this.radius += effect.value
-            break
-          case 'cd':
-            if (effect.onHit) {
-              this._cd += effect.value
-            } else {
-              this.cd += effect.value
-            }
-            break
-          case 'ratio':
-            this.ratio += effect.value
-            break
-          case 'ttl':
-            this.ttl += effect.value
-            break
-          case 'visual':
-            switch (effect.value) {
-              case VisualTypes.Bullet:
-                this.visualType = 'bullet'
-                break
-              case VisualTypes.Fire:
-                this.visualType = 'fire'
-                break
-              case VisualTypes.Electricity:
-                this.visualType = 'spark'
-                break
-            }
-            break
-          case 'trajectory':
-            switch (effect.value) {
-              case TrajectoryTypes.Stream:
-                this.trajectory = TrajectoryTypes.Stream
-                break
-              case TrajectoryTypes.Circle:
-                this.trajectory = TrajectoryTypes.Circle
-                break
-            }
-            break
-          case 'debuff':
-            if (!this.debuffs) {
-              this.debuffs = []
-            }
-            switch (effect.value) {
-              case DebuffTypes.Slow:
-                this.debuffs.push(effect)
-                break
-              case DebuffTypes.Stun:
-                this.debuffs.push(effect)
-                break
-            }
-        }
+    if (effects.length < 1) {
+      return
+    }
+    let ratioMul = 0
+    for (const effect of effects) {
+      switch (effect.type) {
+        case 'dmg':
+          this.dmg += effect.value
+          break
+        case 'amt':
+          this.amt += effect.value
+          break
+        case 'speed':
+          this.speed += effect.value
+          break
+        case 'hitCount':
+          this.hits += effect.value
+          break
+        case 'hitRange':
+          this.hitRange += effect.value
+          break
+        case 'radius':
+          this.radius += effect.value
+          break
+        case 'cd':
+          if (effect.onHit) {
+            this._cd += effect.value
+          } else {
+            this.cd += effect.value
+          }
+          break
+        case 'ratio':
+          ratioMul += effect.value
+          break
+        case 'ttl':
+          this.ttl += effect.value
+          break
+        case 'visual':
+          switch (effect.value) {
+            case VisualTypes.Bullet:
+              this.visualType = 'bullet'
+              break
+            case VisualTypes.Fire:
+              this.visualType = 'fire'
+              break
+            case VisualTypes.Electricity:
+              this.visualType = 'spark'
+              break
+          }
+          break
+        case 'trajectory':
+          switch (effect.value) {
+            case TrajectoryTypes.Stream:
+              this.trajectory = TrajectoryTypes.Stream
+              break
+            case TrajectoryTypes.Circle:
+              this.trajectory = TrajectoryTypes.Circle
+              break
+          }
+          break
+        case 'debuff':
+          if (!this.debuffs) {
+            this.debuffs = []
+          }
+          switch (effect.value) {
+            case DebuffTypes.Slow:
+              this.debuffs.push(effect)
+              break
+            case DebuffTypes.Stun:
+              this.debuffs.push(effect)
+              break
+          }
       }
+    }
+    if (ratioMul !== 0) {
+      // E.g.: Ratio 1 with RatioMul 0.5 = 1 + (1 * 0.5) = 1.5
+      this.ratio += this.ratio * ratioMul
     }
   }
 
@@ -527,6 +533,7 @@ class FFWeapon {
     let amt = 1
     let ratio = this.ratio
     let tmp = 0
+    let ratioMul = 0
     for (const effect of effects) {
       if (effect.onHit && effect.hitCount > 1) {
         tmp = effect.value / effect.hitCount
@@ -541,9 +548,12 @@ class FFWeapon {
           amt += tmp
           break
         case 'ratio':
-          ratio += tmp
+          ratioMul += tmp
           break
       }
+    }
+    if (ratioMul !== 0) {
+      ratio += ratio * ratioMul
     }
     // Apply scaling
     dmg = (dmg * ratio) * amt
@@ -571,6 +581,7 @@ class FFWeapon {
       return baseStat
     }
     let calculated = baseStat
+    let mul = 0
     let tmp = 0
     for (const effect of effects) {
       if (effect.type !== statType) {
@@ -582,6 +593,10 @@ class FFWeapon {
         tmp = effect.value
       }
       calculated += tmp
+      mul += tmp
+    }
+    if (mul !== 0 && statType === 'ratio') {
+      calculated = baseStat + (baseStat * mul)
     }
     return calculated
   }

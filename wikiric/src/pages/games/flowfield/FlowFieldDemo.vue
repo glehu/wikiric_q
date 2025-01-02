@@ -6,7 +6,7 @@
       style="height: calc(100dvh - 52px)"
       class="overflow-hidden no-scroll">
       <q-drawer
-        v-if="!isSimulating"
+        v-if="keepSidebarOpen || !isSimulating"
         side="left"
         v-model="sidebarLeft"
         behavior="desktop"
@@ -369,7 +369,11 @@
               <p class="text-body1 mb2">
                 Debugging
               </p>
+              <q-checkbox label="Enemies" v-model="spawnEnemies"/>
               <q-checkbox label="Damage Numbers" v-model="drawDamageNumbers"/>
+              <q-checkbox label="God Mode" v-model="godMode"
+                          @update:modelValue="triggerRenderStep"/>
+              <q-checkbox label="Keep Sidebar" v-model="keepSidebarOpen"/>
               <q-checkbox label="Heatmap" v-model="drawHeatmap"/>
               <q-checkbox label="Wall Collisions" v-model="drawWallCollision"/>
             </div>
@@ -1043,6 +1047,9 @@ export default {
       cursorX: 0,
       cursorY: 0,
       fow: new Map(),
+      godMode: false,
+      spawnEnemies: true,
+      keepSidebarOpen: false,
 
       // TOYS
 
@@ -1602,11 +1609,13 @@ export default {
         for (let y = yStart; y < yEnd; y++) {
           xNew = (x + this.offsetVector.x) * this.gridSize
           yNew = (y + this.offsetVector.y) * this.gridSize
-          arrayPos = this.convertXYToArrayPos(x, y)
-          if (!this.fow.has(arrayPos)) {
-            this.ctx.fillStyle = '#141412'
-            this.ctx.fillRect(xNew, yNew, this.gridSize, this.gridSize)
-            continue
+          if (!this.godMode) {
+            arrayPos = this.convertXYToArrayPos(x, y)
+            if (!this.fow.has(arrayPos)) {
+              this.ctx.fillStyle = '#141412'
+              this.ctx.fillRect(xNew, yNew, this.gridSize, this.gridSize)
+              continue
+            }
           }
           // if (this.costField[arrayPos] !== 255) {
           this.ctx.drawImage(floor, xNew, yNew, this.gridSize, this.gridSize)
@@ -1759,9 +1768,11 @@ export default {
       let x, y
       let ix
       for (const tile of tiles) {
-        ix = this.convertXYToArrayPos(tile.pos.x, tile.pos.y)
-        if (!this.fow.has(ix)) {
-          continue
+        if (!this.godMode) {
+          ix = this.convertXYToArrayPos(tile.pos.x, tile.pos.y)
+          if (!this.fow.has(ix)) {
+            continue
+          }
         }
         image = this.getTile(tile.name)
         x = tile.posVisual.x
@@ -2355,8 +2366,8 @@ export default {
         this.renderGoal()
         this.renderCoPlayers()
         // Display walls/tiles etc.
-        this.renderIllumination()
         this.renderTiles(this.offsetVector)
+        this.renderIllumination()
         // Frame-Resets
         qtree = new FFQuadTree(this.xCells / 2, this.yCells / 2, this.xCells / 2, this.yCells / 2, 4)
         cacheMap.clear()
@@ -4178,8 +4189,18 @@ export default {
       const costField = saveState.costField
       if (costField) {
         this.costField = []
+        let i = 0
         for (const value of Object.values(costField)) {
           this.costField.push(value)
+          // Notify FFCalcWorker
+          if (this.cWorker) {
+            this.cWorker.postMessage({
+              msg: '[c:cost]',
+              pos: i,
+              val: value
+            })
+          }
+          i += 1
         }
       }
       // Render
@@ -4275,6 +4296,9 @@ export default {
      * @param {Number} [amount=1]
      */
     checkAndSpawnEnemies: function (type = 'slime', amount = 2) {
+      if (!this.spawnEnemies) {
+        return
+      }
       if (amount < 1) {
         return
       }
@@ -4283,6 +4307,7 @@ export default {
       const h = (this.height / 2) - 50
       const offX = this.offsetVector.x * this.gridSize
       const offY = this.offsetVector.y * this.gridSize
+      let skip
       for (let i = 0; i < amount; i++) {
         const x = (w * Math.cos(this.theta)) + w - offX
         const y = (h * Math.sin(this.theta)) + h - offY
@@ -4290,9 +4315,44 @@ export default {
         const pos = new THREE.Vector2(
           Math.round(x / this.gridSize),
           Math.round(y / this.gridSize))
+        // Do not spawn enemies close to players
+        skip = this.checkPlayersNearby(pos, 50)
+        if (skip) {
+          amount -= 1
+          continue
+        }
         // Spawn regular enemies
         this.addEnemy(pos, type, false)
       }
+    },
+    /**
+     *
+     * @param {THREE.Vector2} pos
+     * @param {Number} threshold
+     */
+    checkPlayersNearby: function (pos, threshold) {
+      if (pos == null) {
+        return false
+      }
+      // Check local player first
+      const vec = new THREE.Vector2()
+      vec.copy(this.goalPosition)
+      vec.sub(this.offsetVector)
+      let dist = vec.distanceToSquared(pos)
+      if (dist < threshold) {
+        return true
+      }
+      // Now check remote players
+      if (this.coPlayers && this.coPlayers.size > 0) {
+        this.coPlayers.forEach((val) => {
+          vec.copy(val.pos)
+          dist = vec.distanceToSquared(pos)
+          if (dist < threshold) {
+            return true
+          }
+        })
+      }
+      return false
     },
     setUpSyncRoom: async function () {
       // Listen for SyncRoom messages
@@ -5264,7 +5324,7 @@ export default {
         this.drawLightsCtx(
           this.goalPosition.x - this.offsetVector.x,
           this.goalPosition.y - this.offsetVector.y,
-          100, false)
+          100, true)
       }
       if (this.coPlayers && this.coPlayers.size > 0) {
         this.coPlayers.forEach((val) => {
@@ -5284,12 +5344,8 @@ export default {
       if (!this.integrationField) {
         return
       }
-      let offX = xPos
-      let offY = yPos
       xPos = Math.round(xPos)
       yPos = Math.round(yPos)
-      offX = (xPos - offX) * this.gridSize
-      offY = (yPos - offY) * this.gridSize
       // We are going to retrieve all floor positions around the provided coordinates
       // Since the map could be huge we do not want to check all positions
       const indices = this.getNeighborIndices(xPos, yPos, dist, true)
@@ -5316,13 +5372,12 @@ export default {
             }
           }
           continue
-        }
-        if (value < 8) {
+        } else if (value < 8) {
           this.ctx.fillStyle = '#fffec3'
-          this.ctx.globalAlpha = 0.08
+          this.ctx.globalAlpha = 0.14 - (0.02 * value)
           pos = this.convertArrayPosToXY(indices[i])
-          x = (pos[0] + this.offsetVector.x) * this.gridSize - offX
-          y = (pos[1] + this.offsetVector.y) * this.gridSize - offY
+          x = (pos[0] + this.offsetVector.x) * this.gridSize
+          y = (pos[1] + this.offsetVector.y) * this.gridSize
           // Mark spot as seen!
           this.fow.set(indices[i], true)
         } else {
@@ -5779,6 +5834,16 @@ export default {
           resolve()
         })
       })
+    },
+    triggerRenderStep: function () {
+      // Draw environment
+      this.drawGrid(false)
+      // Display players
+      this.renderGoal()
+      this.renderCoPlayers()
+      // Display walls/tiles etc.
+      this.renderTiles(this.offsetVector)
+      this.renderIllumination()
     }
   }
 }

@@ -24,7 +24,7 @@
     </p>
     <template v-if="!small">
       <template v-for="eff in pup.effects" :key="eff">
-        <div class="flex items-center gap-x-2 gap-y-1
+        <div class="flex items-center gap-x-2 gap-y-1 ml2
                     mb1 fmt_border rounded p1 text-start">
           <div v-if="eff.onHit"
                class="primary px1 py0.5 rounded text-xs w-fit

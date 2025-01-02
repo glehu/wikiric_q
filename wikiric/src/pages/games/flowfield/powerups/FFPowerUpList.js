@@ -461,8 +461,8 @@ class FFPowerUpList {
     powerUp.effects.push(new FFPowerUpEffect(
       false,
       'dmg',
-      75,
-      35,
+      5,
+      10,
       0,
       false,
       true))
@@ -477,7 +477,7 @@ class FFPowerUpList {
     powerUp.effects.push(new FFPowerUpEffect(
       false,
       'amt',
-      100,
+      75,
       5,
       0,
       true,

@@ -166,7 +166,7 @@
                           </p>
                         </div>
                         <template v-for="eff in offer.effects" :key="eff">
-                          <div class="flex items-center gap-x-2 gap-y-1
+                          <div class="flex items-center gap-x-2 gap-y-1 ml2
                                       mb1 fmt_border rounded p1 text-start">
                             <div v-if="eff.onHit"
                                  class="primary px1 py0.5 rounded text-xs w-fit
@@ -261,7 +261,7 @@
                           </p>
                         </div>
                         <template v-for="eff in offer.effects" :key="eff">
-                          <div class="flex items-center gap-x-2 gap-y-1
+                          <div class="flex items-center gap-x-2 gap-y-1 ml2
                                       mb1 fmt_border rounded p1 text-start">
                             <div v-if="eff.onHit"
                                  class="primary px1 py0.5 rounded text-xs w-fit
