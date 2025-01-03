@@ -3224,6 +3224,21 @@ export default {
                 // Did the enemy survive?
                 if (enemy.hp <= 0) {
                   this.handleEnemyDeath(enemy, assets)
+                  if (projectile.split > 0) {
+                    for (let j = 0; j < projectile.split; j++) {
+                      tmp2 = new THREE.Vector2()
+                      tmp2.x = Math.random() - 0.5
+                      tmp2.y = Math.random() - 0.5
+                      tmp2.normalize()
+                      tmp = projectile.clone()
+                      tmp.split = 0
+                      tmp.ttl = 1000
+                      tmp.hitCount = 1
+                      tmp.vec.add(tmp2)
+                      this.goalWeaponProjectiles.push(tmp)
+                    }
+                    projectile.split = 0
+                  }
                 } else {
                   this.enemies.set(enemy.id, enemy)
                 }
@@ -3267,6 +3282,20 @@ export default {
               }
             }
             if (projectile.hitCount <= 0) {
+              // Before destroying this projectile, we may split it
+              if (projectile.split > 0) {
+                for (let j = 0; j < projectile.split; j++) {
+                  tmp2 = new THREE.Vector2()
+                  tmp2.x = Math.random() - 0.5
+                  tmp2.y = Math.random() - 0.5
+                  tmp2.normalize()
+                  tmp = projectile.clone()
+                  tmp.ttl = 1000
+                  tmp.hitCount = 1
+                  tmp.vec.add(tmp2)
+                  this.goalWeaponProjectiles.push(tmp)
+                }
+              }
               this.goalWeaponProjectiles.splice(i, 1)
               continue
             }
@@ -5896,7 +5925,7 @@ export default {
       direction.copy(ePos)
       direction.sub(pr.pos)
       direction.normalize()
-      direction.multiplyScalar(10)
+      direction.multiplyScalar(12)
       return direction
     }
   }
