@@ -51,6 +51,9 @@ class DamageCalc {
      * @type {FFPowerUpEffect[] || null}
      */
     this.debuffs = null
+    this.chain = 0
+    this.backfire = 0
+    this.split = 0
   }
 
   useEffects (effects) {
@@ -90,6 +93,15 @@ class DamageCalc {
           break
         case 'ttl':
           this.ttl += effect.value
+          break
+        case 'chain':
+          this.chain += effect.value
+          break
+        case 'backfire':
+          this.backfire += effect.value
+          break
+        case 'split':
+          this.split += effect.value
           break
         case 'visual':
           switch (effect.value) {
@@ -439,7 +451,22 @@ class FFWeapon {
       if (dmgCalc.debuffs) {
         pr.effects = dmgCalc.debuffs
       }
+      if (dmgCalc.split !== 0) {
+        pr.split = dmgCalc.split
+      }
+      if (dmgCalc.chain !== 0) {
+        pr.chain = dmgCalc.chain
+      }
       projectiles.push(pr)
+      let cl
+      if (dmgCalc.backfire > 0) {
+        for (let j = 0; j < dmgCalc.backfire; j++) {
+          cl = pr.clone()
+          cl.dmg /= 2
+          cl.vec.multiplyScalar(-1)
+          projectiles.push(cl)
+        }
+      }
     }
     return projectiles
   }
@@ -513,9 +540,10 @@ class FFWeapon {
 
   /**
    * Calculates the theoretical damage of this weapon.
+   * @param {Map||null} [playerStats=null]
    * @return {Number}
    */
-  getCalculatedDamage () {
+  getCalculatedDamage (playerStats = null) {
     if (this.powerUps.length < 1) {
       return this.dps
     }
@@ -534,6 +562,11 @@ class FFWeapon {
     let ratio = this.ratio
     let tmp = 0
     let ratioMul = 0
+    if (playerStats != null) {
+      if (playerStats.has('dmg')) {
+        dmg += playerStats.get('dmg')
+      }
+    }
     for (const effect of effects) {
       if (effect.onHit && effect.hitCount > 1) {
         tmp = effect.value / effect.hitCount

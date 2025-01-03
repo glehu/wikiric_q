@@ -98,6 +98,25 @@ class FFProjectile {
     this.hitcache = new Map()
   }
 
+  clone () {
+    const pr = new FFProjectile(
+      this.pos,
+      this.vec,
+      this.hitCount,
+      this.dmg,
+      this.hitRange,
+      this.radius,
+      this.visualType,
+      this.ttl,
+      this.effects
+    )
+    /**
+     * @type {Map<String, Boolean>}
+     */
+    pr.hitcache = new Map()
+    return pr
+  }
+
   /**
    * Checks if a unit can be hit.
    * If it has not been hit yet, we can mark it as hit.

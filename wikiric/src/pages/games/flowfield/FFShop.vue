@@ -379,7 +379,7 @@
                          class="masonry">
                       <div v-for="wpn in playerWeapons" :key="wpn"
                            class="mb-[10px] masonry_item">
-                        <FFWeaponDisplayShiny :weapon="wpn"/>
+                        <FFWeaponDisplayShiny :weapon="wpn" :player-stats="playerStats"/>
                       </div>
                     </div>
                     <template v-else>
@@ -392,11 +392,11 @@
                          class="masonry">
                       <div v-for="wpn in playerAbilities" :key="wpn"
                            class="mb-[10px] masonry_item">
-                        <FFWeaponDisplayShiny :weapon="wpn.wpn"/>
+                        <FFWeaponDisplayShiny :weapon="wpn.wpn" :player-stats="playerStats"/>
                       </div>
                     </div>
                     <template v-else>
-                      <p class="ml4 text-subtitle2">(No Equipment)</p>
+                      <p class="ml4 text-subtitle2">(No Abilities)</p>
                     </template>
                   </div>
                 </q-tab-panel>

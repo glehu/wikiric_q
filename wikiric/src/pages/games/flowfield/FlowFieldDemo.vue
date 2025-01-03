@@ -3174,9 +3174,21 @@ export default {
                 continue
               }
               dist = tmp.distanceToSquared(enemy.pos)
+              // Can we hit the enemy?
               if (dist <= projectile.hitRange && projectile.tryHitAndMarkEnemy(enemy.id)) {
-                // Trigger hit
-                projectile.hitCount -= 1
+                // If the projectile chains, we will decrement chain before hitCount
+                if (projectile.chain && projectile.chain > 0) {
+                  projectile.chain -= 1
+                  // We will find the nearest enemy to steer this projectile to
+                  tmp = this.findNearestEnemyVector(qtree, projectile, enemy.id)
+                  if (tmp) {
+                    projectile.vec = tmp
+                    projectile.dmg *= 0.9
+                    projectile.ttl += 50
+                  }
+                } else {
+                  projectile.hitCount -= 1
+                }
                 enemy.hp -= projectile.dmg
                 this.trophyList.addProgress('dmg', projectile.dmg)
                 // Does the projectile come with effects e.g. debuffs?
@@ -4071,6 +4083,7 @@ export default {
       if (ix >= 0) {
         this.weaponList.categories.starter.splice(ix, 1)
       }
+      this.trophyList.addProgress('weapons', 1)
       this.dismissLevelUp()
     },
     /**
@@ -4102,6 +4115,7 @@ export default {
       if (ix >= 0) {
         this.itemList.categories.starter.splice(ix, 1)
       }
+      this.trophyList.addProgress('items', 1)
       this.dismissLevelUp()
     },
     /**
@@ -4135,6 +4149,7 @@ export default {
         this.powerUpList.categories.starter.splice(ix, 1)
       }
       this.powerUpOffers = []
+      this.trophyList.addProgress('powerups', 1)
       this.dismissLevelUp()
     },
     refreshOffers: function (cost) {
@@ -5844,6 +5859,45 @@ export default {
       // Display walls/tiles etc.
       this.renderTiles(this.offsetVector)
       this.renderIllumination()
+    },
+    findNearestEnemyVector: function (qtree, pr, ignoreId) {
+      /**
+       * @type FFUnit[]
+       */
+      const enemies = qtree.getContents(
+        pr.pos.x - 100,
+        pr.pos.y - 100,
+        pr.pos.x + 100,
+        pr.pos.y + 100)
+      // Figure out the min dist of all enemies close
+      if (enemies == null || enemies.length <= 0) {
+        return null
+      }
+      let minDist = 999_999
+      let dist
+      /**
+       * @type THREE.Vector2
+       */
+      const ePos = new THREE.Vector2()
+      for (const enemy of enemies) {
+        if (enemy.hp < 0 || enemy.id === ignoreId || pr.hitcache.has(enemy.id)) {
+          continue
+        }
+        dist = pr.pos.distanceToSquared(enemy.pos)
+        if (dist < minDist) {
+          minDist = dist
+          ePos.copy(enemy.pos)
+        }
+      }
+      if (minDist === 999_999 || ePos == null) {
+        return null
+      }
+      const direction = new THREE.Vector2()
+      direction.copy(ePos)
+      direction.sub(pr.pos)
+      direction.normalize()
+      direction.multiplyScalar(10)
+      return direction
     }
   }
 }

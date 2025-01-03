@@ -117,8 +117,28 @@ class FFTrophyList {
     this.categories.starter.push(trophy)
     trophy = new FFTrophy(0, 'That\'s a lot of damage!',
       'Deal 10k damage.',
-      'dmg', 10_000)
+      'dmg',
+      10_000)
     trophy.addBoost('dmg', 30)
+    this.categories.starter.push(trophy)
+    trophy = new FFTrophy(0, 'One Man Army',
+      'Own 2 Weapons.',
+      'weapons',
+      2)
+    trophy.addBoost('dmg', 15)
+    this.categories.starter.push(trophy)
+    trophy = new FFTrophy(0, 'Hoarder',
+      'Own 10 Items.',
+      'items',
+      10)
+    trophy.addBoost('dmg', 50)
+    trophy.addBoost('hp+', 10)
+    this.categories.starter.push(trophy)
+    trophy = new FFTrophy(0, 'More Power!',
+      'Own 15 Power-Ups.',
+      'items',
+      10)
+    trophy.addBoost('dmg', 100)
     this.categories.starter.push(trophy)
   }
 }

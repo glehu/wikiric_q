@@ -25,7 +25,7 @@
                   fmt_border_bottom pb2
                   text-sm font-500 mt2 mb2">
         <p>
-          Damage: {{ weapon.getCalculatedDamage().toLocaleString() }}
+          Damage: {{ weapon.getCalculatedDamage(playerStats).toLocaleString() }}
           <span class="italic">( +{{ weapon.dpsLevelUp }} <q-icon name="sym_o_military_tech" size="1rem"/>)</span>
         </p>
         <p>
@@ -60,6 +60,10 @@ export default {
   props: {
     weapon: {
       type: FFWeapon,
+      required: true
+    },
+    playerStats: {
+      type: Map,
       required: true
     }
   },

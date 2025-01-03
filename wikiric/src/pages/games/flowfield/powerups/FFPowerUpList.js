@@ -39,8 +39,11 @@ class FFPowerUpList {
   }
 
   initiatePowerUps () {
+    // PowerUps
     this.initiateStarterPowerUps()
     this.initiateExpansionPowerUps()
+    this.initiateRedirectionPowerUps()
+    // Abilities
     this.initiateStarterAbilities()
   }
 
@@ -389,6 +392,70 @@ class FFPowerUpList {
       false,
       'ratio',
       -0.5,
+      0,
+      0,
+      false,
+      false))
+    this.categories.starter.push(powerUp)
+  }
+
+  initiateRedirectionPowerUps () {
+    let powerUp
+    /**
+     * REDIRECTION POWERUP: Chain
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      3,
+      'Chain',
+      'Projectiles chain to nearby enemies. Scales with area.',
+      30,
+      false)
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'chain',
+      2,
+      0,
+      0,
+      false,
+      false))
+    this.categories.starter.push(powerUp)
+    /**
+     * REDIRECTION POWERUP: Split
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      3,
+      'Split',
+      'Projectiles split into smaller ones upon impact. Scales with amount.',
+      30,
+      false)
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'split',
+      2,
+      0,
+      0,
+      false,
+      false))
+    this.categories.starter.push(powerUp)
+    /**
+     * REDIRECTION POWERUP: Backfire
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      3,
+      'Backfire',
+      'Shoots an extra but weaker projectile backwards.',
+      30,
+      false)
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'backfire',
+      1,
       0,
       0,
       false,
