@@ -22,14 +22,17 @@
         "{{ pup.desc }}"
       </span>
     </p>
-    <template v-if="!small">
+    <div v-if="!small" class="mb4">
       <template v-for="eff in pup.effects" :key="eff">
         <div class="flex items-center gap-x-2 gap-y-1 ml2
-                    mb1 fmt_border rounded p1 text-start">
+                    mb0.5 fmt_border_left rounded-l-md
+                    px2 py0.5 text-start">
           <div v-if="eff.onHit"
                class="primary px1 py0.5 rounded text-xs w-fit
                       font-bold">
-            <q-icon name="sym_o_explosion" size="1rem"/>
+            <q-icon name="sym_o_explosion"
+                    size="0.8rem"
+                    style="font-weight: bold"/>
             <q-tooltip>
               <p class="text-xs fontbold">
                 On-Hit Effect
@@ -39,7 +42,9 @@
           <template v-if="eff.autoLevelUp">
             <div class="primary px1 py0.5 rounded text-xs w-fit
                         font-bold">
-              <q-icon name="sym_o_trending_up" size="1rem"/>
+              <q-icon name="sym_o_trending_up"
+                      size="0.8rem"
+                      style="font-weight: bold"/>
               <q-tooltip>
                 <p class="text-xs fontbold">
                   Auto Level-Up
@@ -48,22 +53,22 @@
             </div>
           </template>
           <template v-if="eff.type === 'visual'">
-            <p class="text-sm font-500">
+            <p class="text-sm font-500 line-height-tight">
               Type: {{ getVisualType(eff.value) }}
             </p>
           </template>
           <template v-else-if="eff.type === 'trajectory'">
-            <p class="text-sm font-500">
+            <p class="text-sm font-500 line-height-tight">
               Trajectory: {{ getTrajectoryType(eff.value) }}
             </p>
           </template>
           <template v-else-if="eff.type === 'debuff'">
-            <p class="text-sm font-500">
+            <p class="text-sm font-500 line-height-tight">
               Debuff: {{ getDebuffType(eff.value) }}
             </p>
           </template>
           <template v-else>
-            <p class="text-sm font-500">
+            <p class="text-sm font-500 line-height-tight">
               {{ eff.value.toLocaleString() }} {{ capitalizeFirstLetter(eff.type) }}
               <template v-if="eff.autoLevelUp && eff.valueLevelBonus !== 0">
                 <span class="italic">( +{{ eff.valueLevelBonus }} <q-icon name="sym_o_military_tech"
@@ -79,7 +84,7 @@
           </template>
         </div>
       </template>
-    </template>
+    </div>
   </template>
 </template>
 

@@ -373,26 +373,32 @@
                       <p class="ml4 text-subtitle2">(No Stat Boosts)</p>
                     </template>
                     <p class="text-body1 my2 ml1">
-                      Equipment
+                      Weapons
                     </p>
+                    <q-checkbox label="Hide Details" v-model="isViewingSmallWeapons"/>
                     <div v-if="playerWeapons && playerWeapons.length > 0"
                          class="masonry">
                       <div v-for="wpn in playerWeapons" :key="wpn"
                            class="mb-[10px] masonry_item">
-                        <FFWeaponDisplayShiny :weapon="wpn" :player-stats="playerStats"/>
+                        <FFWeaponDisplayShiny :weapon="wpn"
+                                              :player-stats="playerStats"
+                                              :small-power-up="isViewingSmallWeapons"/>
                       </div>
                     </div>
                     <template v-else>
-                      <p class="ml4 text-subtitle2">(No Equipment)</p>
+                      <p class="ml4 text-subtitle2">(No Weapons)</p>
                     </template>
                     <p class="text-body1 my2 ml1">
                       Abilities
                     </p>
+                    <q-checkbox label="Hide Details" v-model="isViewingSmallAbilities"/>
                     <div v-if="playerAbilities && playerAbilities.length > 0"
                          class="masonry">
                       <div v-for="wpn in playerAbilities" :key="wpn"
                            class="mb-[10px] masonry_item">
-                        <FFWeaponDisplayShiny :weapon="wpn.wpn" :player-stats="playerStats"/>
+                        <FFWeaponDisplayShiny :weapon="wpn.wpn"
+                                              :player-stats="playerStats"
+                                              :small-power-up="isViewingSmallAbilities"/>
                       </div>
                     </div>
                     <template v-else>
@@ -517,7 +523,9 @@ export default {
       tabs: 'shop',
       tabs2: 'weapons',
       show: false,
-      refreshAmount: 0
+      refreshAmount: 0,
+      isViewingSmallWeapons: false,
+      isViewingSmallAbilities: false
     }
   },
   computed: {

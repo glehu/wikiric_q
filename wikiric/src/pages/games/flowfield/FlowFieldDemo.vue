@@ -3225,19 +3225,7 @@ export default {
                 if (enemy.hp <= 0) {
                   this.handleEnemyDeath(enemy, assets)
                   if (projectile.split > 0) {
-                    for (let j = 0; j < projectile.split; j++) {
-                      tmp2 = new THREE.Vector2()
-                      tmp2.x = Math.random() - 0.5
-                      tmp2.y = Math.random() - 0.5
-                      tmp2.normalize()
-                      tmp = projectile.clone()
-                      tmp.split = 0
-                      tmp.ttl = 1000
-                      tmp.hitCount = 1
-                      tmp.vec.add(tmp2)
-                      this.goalWeaponProjectiles.push(tmp)
-                    }
-                    projectile.split = 0
+                    this.splitProjectile(projectile)
                   }
                 } else {
                   this.enemies.set(enemy.id, enemy)
@@ -3251,23 +3239,30 @@ export default {
                 this.ctx3.lineTo(tmp2, tmp3)
                 // Does the projectile explode?
                 if (projectile.radius > 0) {
-                  tmp2 = new FFOnHitEffect(
+                  this.onHitEffects.push(new FFOnHitEffect(
                     enemy.pos.x,
                     enemy.pos.y,
                     'explosion',
-                    projectile,
-                    1, 0)
-                  this.onHitEffects.push(tmp2)
+                    projectile.clone(),
+                    5, 0))
+                  for (let j = 0; j < 4; j++) {
+                    this.onHitEffects.push(new FFOnHitEffect(
+                      projectile.pos.x,
+                      projectile.pos.y,
+                      'fire',
+                      '',
+                      5,
+                      8))
+                  }
                 }
                 // Add floating damage number
                 if (this.drawDamageNumbers) {
-                  tmp2 = new FFOnHitEffect(
+                  this.onHitEffects.push(new FFOnHitEffect(
                     enemy.pos.x,
                     enemy.pos.y,
                     'text',
                     `${projectile.dmg.toFixed(0)}`,
-                    60, 0)
-                  this.onHitEffects.push(tmp2)
+                    60, 0))
                 }
                 if (projectile.visualType === 'fire') {
                   // Add fire on the ground!
@@ -3284,17 +3279,7 @@ export default {
             if (projectile.hitCount <= 0) {
               // Before destroying this projectile, we may split it
               if (projectile.split > 0) {
-                for (let j = 0; j < projectile.split; j++) {
-                  tmp2 = new THREE.Vector2()
-                  tmp2.x = Math.random() - 0.5
-                  tmp2.y = Math.random() - 0.5
-                  tmp2.normalize()
-                  tmp = projectile.clone()
-                  tmp.ttl = 1000
-                  tmp.hitCount = 1
-                  tmp.vec.add(tmp2)
-                  this.goalWeaponProjectiles.push(tmp)
-                }
+                this.splitProjectile(projectile)
               }
               this.goalWeaponProjectiles.splice(i, 1)
               continue
@@ -3459,11 +3444,42 @@ export default {
       }
     },
     drawOnHitExplosion: function (effect, qtree, images) {
-      let dist
+      const projectile = effect.content
+      let dist = projectile.radius
+      const radius = (dist * this.gridSize) / 4
+      projectile.radius += 0.2
+      // Draw weapon effect
+      this.ctx3.globalAlpha = 0.5
+      this.ctx3.fillStyle = '#ff1100'
+      this.ctx3.arc(
+        ((effect.x + this.offsetVector.x) * this.gridSize) + 20,
+        ((effect.y + this.offsetVector.y) * this.gridSize) + 20,
+        radius * 2.5,
+        0,
+        2 * Math.PI)
+      this.ctx3.fill()
+      this.ctx3.globalAlpha = 0.7
+      this.ctx3.strokeStyle = '#ff8000'
+      this.ctx3.arc(
+        ((effect.x + this.offsetVector.x) * this.gridSize) + 20,
+        ((effect.y + this.offsetVector.y) * this.gridSize) + 20,
+        radius - 0.2,
+        0,
+        2 * Math.PI)
+      this.ctx3.stroke()
+      this.ctx3.globalAlpha = 0.6
+      this.ctx3.fillStyle = '#fff400'
+      this.ctx3.arc(
+        ((effect.x + this.offsetVector.x) * this.gridSize) + 20,
+        ((effect.y + this.offsetVector.y) * this.gridSize) + 20,
+        radius,
+        0,
+        2 * Math.PI)
+      this.ctx3.fill()
+      this.ctx3.globalAlpha = 1
+      // Find enemies nearby to damage
       let tmp, tmp2
       if (this.enemies.size > 0) {
-        const projectile = effect.content
-        dist = projectile.radius
         const enemies = qtree.getContents(
           projectile.pos.x - dist,
           projectile.pos.y - dist,
@@ -3479,14 +3495,6 @@ export default {
             }
             dist = tmp.distanceToSquared(enemy.pos)
             if (dist <= projectile.radius) {
-              this.ctx3.fillStyle = '#fff400'
-              // Draw weapon effect
-              this.ctx3.arc(
-                ((effect.x + this.offsetVector.x) * this.gridSize) + 8,
-                ((effect.y + this.offsetVector.y) * this.gridSize) + 8,
-                (dist * this.gridSize) / 4,
-                0,
-                2 * Math.PI)
               // Trigger hit
               enemy.hp -= projectile.dmg
               this.trophyList.addProgress('dmg', projectile.dmg)
@@ -3508,7 +3516,6 @@ export default {
               }
             }
           }
-          this.ctx3.fill()
         }
       }
     },
@@ -5927,6 +5934,24 @@ export default {
       direction.normalize()
       direction.multiplyScalar(12)
       return direction
+    },
+    splitProjectile: function (projectile) {
+      let pr
+      let cl
+      for (let j = 0; j < projectile.split; j++) {
+        pr = new THREE.Vector2()
+        pr.x = Math.random() - 0.5
+        pr.y = Math.random() - 0.5
+        pr.normalize()
+        cl = projectile.clone()
+        cl.split = 0
+        cl.ttl = 1000
+        cl.hitCount = 1
+        cl.hitcache = projectile.hitcache
+        cl.vec.add(pr)
+        this.goalWeaponProjectiles.push(cl)
+      }
+      projectile.split = 0
     }
   }
 }

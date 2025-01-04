@@ -286,6 +286,34 @@ class FFPowerUpList {
       false))
     this.categories.starter.push(powerUp)
     /**
+     * EXPANSION POWERUP: Spam 2
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      2,
+      'Spam 2',
+      'Even more projectiles at the cost of lower damage.',
+      50,
+      false)
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'amt',
+      2,
+      0,
+      0,
+      false,
+      false))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'ratio',
+      -0.2,
+      0,
+      0,
+      false,
+      false))
+    this.categories.starter.push(powerUp)
+    /**
      * EXPANSION POWERUP: Scaling Damage
      * @type {FFPowerUp}
      */
@@ -297,7 +325,7 @@ class FFPowerUpList {
       30,
       false)
     powerUp.effects.push(new FFPowerUpEffect(
-      false,
+      true,
       'dmg',
       5,
       1,
@@ -314,12 +342,32 @@ class FFPowerUpList {
       2,
       'Ratio Plus',
       'Increases the weapon\'s damage scaling.',
-      30,
+      50,
       false)
     powerUp.effects.push(new FFPowerUpEffect(
       false,
       'ratio',
       0.2,
+      0,
+      0,
+      false,
+      false))
+    this.categories.starter.push(powerUp)
+    /**
+     * EXPANSION POWERUP: Ratio Plus 2
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      2,
+      'Ratio Plus 2',
+      'Increases the weapon\'s damage scaling even more.',
+      30,
+      false)
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'ratio',
+      0.3,
       0,
       0,
       false,
@@ -397,6 +445,50 @@ class FFPowerUpList {
       false,
       false))
     this.categories.starter.push(powerUp)
+    /**
+     * EXPANSION POWERUP: Powerful Shots
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      2,
+      'Powerful Shots',
+      'Stronger projectiles that pierce units and split upon impact.',
+      50,
+      false)
+    powerUp.effects.push(new FFPowerUpEffect(
+      true,
+      'dmg',
+      20,
+      0,
+      0,
+      false,
+      false))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'speed',
+      4,
+      0,
+      0,
+      false,
+      false))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'hitCount',
+      4,
+      0,
+      0,
+      false,
+      false))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'split',
+      2,
+      0,
+      0,
+      false,
+      false))
+    this.categories.starter.push(powerUp)
   }
 
   initiateRedirectionPowerUps () {
@@ -413,9 +505,37 @@ class FFPowerUpList {
       30,
       false)
     powerUp.effects.push(new FFPowerUpEffect(
-      false,
+      true,
       'chain',
       2,
+      0.1,
+      0,
+      true,
+      true))
+    this.categories.starter.push(powerUp)
+    /**
+     * REDIRECTION POWERUP: Chain
+     * @type {FFPowerUp}
+     */
+    powerUp = new FFPowerUp(
+      0,
+      3,
+      'Virus',
+      'Projectiles spread to a lot of enemies but does way less damage.',
+      30,
+      false)
+    powerUp.effects.push(new FFPowerUpEffect(
+      true,
+      'chain',
+      20,
+      0,
+      0,
+      false,
+      false))
+    powerUp.effects.push(new FFPowerUpEffect(
+      false,
+      'ratio',
+      -0.7,
       0,
       0,
       false,
@@ -433,7 +553,7 @@ class FFPowerUpList {
       30,
       false)
     powerUp.effects.push(new FFPowerUpEffect(
-      false,
+      true,
       'split',
       2,
       0,
@@ -478,7 +598,7 @@ class FFPowerUpList {
       1_000,
       5)
     powerUp.effects.push(new FFPowerUpEffect(
-      false,
+      true,
       'dmg',
       50,
       25,
@@ -490,7 +610,7 @@ class FFPowerUpList {
       'visual',
       VisualTypes.Electricity))
     powerUp.effects.push(new FFPowerUpEffect(
-      false,
+      true,
       'debuff',
       DebuffTypes.Stun,
       0,
@@ -526,7 +646,7 @@ class FFPowerUpList {
       1_500,
       5)
     powerUp.effects.push(new FFPowerUpEffect(
-      false,
+      true,
       'dmg',
       5,
       10,

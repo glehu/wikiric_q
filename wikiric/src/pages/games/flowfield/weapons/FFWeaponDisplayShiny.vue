@@ -46,7 +46,8 @@
           Duration: {{ weapon.getCalculatedStat(weapon.ttl, 'ttl').toFixed(0) }}
         </p>
       </div>
-      <FFPowerUpDisplay :power-ups="weapon.powerUps" hide-desc/>
+      <FFPowerUpDisplay :power-ups="weapon.powerUps" hide-desc
+                        :small="smallPowerUp"/>
     </div>
   </div>
 </template>
@@ -65,6 +66,11 @@ export default {
     playerStats: {
       type: Map,
       required: true
+    },
+    smallPowerUp: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   },
   name: 'FFWeaponDisplayShiny',
