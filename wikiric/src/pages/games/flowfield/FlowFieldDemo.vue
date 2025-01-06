@@ -375,6 +375,7 @@
                           @update:modelValue="triggerRenderStep"/>
               <q-checkbox label="Keep Sidebar" v-model="keepSidebarOpen"/>
               <q-checkbox label="Heatmap" v-model="drawHeatmap"/>
+              <q-checkbox label="Heatmap (Light)" v-model="drawIlluminationHeatmap"/>
               <q-checkbox label="Wall Collisions" v-model="drawWallCollision"/>
             </div>
           </div>
@@ -484,19 +485,21 @@
                       class="wfull hfull">
                 <q-card-section>
                   <p class="fontbold text-3xl text-center pt2">
-                    Weapon Modification
+                    Weapon/Ability Modification
                   </p>
                 </q-card-section>
                 <template v-if="chosenPowerup">
-                  <div class="fmt_border rounded p2 m2">
-                    <FFPowerUpDisplay :power-ups="[chosenPowerup]"/>
+                  <div class="wfull flex justify-center mb2 px2">
+                    <div class="fmt_border rounded p2 max-w-xl surface">
+                      <FFPowerUpDisplay :power-ups="[chosenPowerup]"/>
+                    </div>
                   </div>
                 </template>
                 <q-card-section>
-                  <p class="text-body1 fontbold mb2">
-                    Choose a weapon to modify:
-                  </p>
-                  <template v-if="goalWeapons">
+                  <template v-if="goalWeapons && goalWeapons.length > 0">
+                    <p class="text-body1 fontbold mb2">
+                      Choose a weapon to modify:
+                    </p>
                     <div class="flex gap-2 wfull h-full">
                       <template v-for="weapon in goalWeapons" :key="weapon">
                         <q-btn v-if="weapon.canReceivePowerUp(chosenPowerup)"
@@ -508,7 +511,10 @@
                       </template>
                     </div>
                   </template>
-                  <template v-if="goalAbilities">
+                  <template v-if="goalAbilities && goalAbilities.length > 0">
+                    <p class="text-body1 fontbold my2">
+                      Choose an ability to modify:
+                    </p>
                     <div class="flex gap-2 wfull h-full">
                       <template v-for="ability in goalAbilities" :key="ability">
                         <q-btn v-if="ability.wpn.canReceivePowerUp(chosenPowerup)"
@@ -1032,6 +1038,7 @@ export default {
       yCells: 0,
       costField: undefined,
       integrationField: undefined,
+      illuminationField: undefined,
       /**
        * @type {Map<String, FFUnit>}
        */
@@ -1047,9 +1054,9 @@ export default {
       cursorX: 0,
       cursorY: 0,
       fow: new Map(),
-      godMode: false,
+      godMode: true,
       spawnEnemies: true,
-      keepSidebarOpen: false,
+      keepSidebarOpen: true,
 
       // TOYS
 
@@ -1138,6 +1145,7 @@ export default {
       // DEBUG DATA
 
       drawHeatmap: false,
+      drawIlluminationHeatmap: false,
       drawDamageNumbers: true,
       drawWallCollision: false,
 
@@ -1154,7 +1162,10 @@ export default {
       coPlayers: new Map(),
       peerCons: new Map(),
       wrtc: WRTC,
+      // Calculation Worker
       cWorker: null,
+      // Illumination Worker
+      iWorker: null,
       isSyncing: false,
       syncCount: 0,
       syncMaxCount: 999999,
@@ -1221,6 +1232,7 @@ export default {
       this.goalWeapons = []
       this.goalWeaponProjectiles = []
       this.setUpCalcWorker()
+      this.setUpIlluminationWorker()
       this.initializeGridValues()
       this.initializeEnemies()
       this.initializeCanvas()
@@ -1246,7 +1258,7 @@ export default {
       this.setUpPlayer()
       this.setUpSyncRoom()
       // QoL
-      this.addGoal(new THREE.Vector2(1, 2))
+      this.addGoal(new THREE.Vector2(3, 4))
       this.goalLevelUps = 1
       this.goalLevelUpsOpen = 1
     },
@@ -1546,12 +1558,19 @@ export default {
       // Calculate amount of cells
       const xCells = Math.ceil((this.width / this.gridSize))
       const yCells = Math.ceil((this.height / this.gridSize))
+      const xCellsI = xCells * 2
+      const yCellsI = yCells * 2
       // Notify FFCalcWorker
       if (this.cWorker) {
         this.cWorker.postMessage({
           msg: '[c:cell]',
           x: xCells,
           y: yCells
+        })
+        this.iWorker.postMessage({
+          msg: '[c:cell]',
+          x: xCellsI,
+          y: yCellsI
         })
       }
       const totalCells = xCells * yCells
@@ -1561,17 +1580,27 @@ export default {
       // Initialize grid arrays
       this.costField = new Uint16Array(totalCells)
       this.integrationField = new Uint16Array(totalCells)
+      this.illuminationField = new Uint16Array(totalCells * 2)
       // Fill with default values
-      for (let i = 0; i < this.totalCells; i++) {
+      for (let i = 0; i < totalCells; i++) {
         this.costField[i] = 1
         this.integrationField[i] = 65535
       }
+      for (let i = 0; i < totalCells * 2; i++) {
+        this.illuminationField[i] = 65535
+      }
       console.log('> Grid initialized!')
-      console.log(`\tX(${this.xCells}) * Y(${this.yCells}) = ${this.totalCells} Cells`)
+      console.log(`\tX(${xCells}) * Y(${yCells}) = ${totalCells} Cells`)
+      console.log(`\tXI(${xCellsI}) * YI(${yCellsI}) = ${totalCells * 2} Cells`)
     },
     initializeIntegrationGrid: function () {
       for (let i = 0; i < this.totalCells; i++) {
         this.integrationField[i] = 65535
+      }
+    },
+    initializeIlluminationGrid: function () {
+      for (let i = 0; i < this.totalCells * 2; i++) {
+        this.illuminationField[i] = 65535
       }
     },
     /**
@@ -1682,6 +1711,21 @@ export default {
           pos: arrayPos,
           val: 255
         })
+        // We will need to add 4 positions as the illumination field
+        // ...has double precision.
+        // Basically, it retrieves 3 more coordinates.
+        const positions = this.convertXYPosToDPositions(
+          position.x, position.y)
+        let tmpArrayPos
+        for (let i = 0; i < positions.length; i++) {
+          tmpArrayPos = this.convertXYToArrayDPos(
+            positions[i][0], positions[i][1])
+          this.iWorker.postMessage({
+            msg: '[c:cost]',
+            pos: tmpArrayPos,
+            val: 255
+          })
+        }
       }
       // Check if there is the same tile present already
       const contents = this.tileTree.getContents(
@@ -1927,19 +1971,8 @@ export default {
       let calcSelf = true
       if (this.cWorker) {
         calcSelf = false
-        this.cWorker.postMessage({
-          msg: '[c:setp]',
-          x: this.goalPosition.x,
-          y: this.goalPosition.y
-        })
-        this.cWorker.postMessage({
-          msg: '[c:seto]',
-          x: this.offsetVector.x,
-          y: this.offsetVector.y
-        })
-        this.cWorker.postMessage({
-          msg: '[c:calc]'
-        })
+        this.triggerFlowFieldCalculation()
+        this.triggerIlluminationCalculation()
         if (this.drawHeatmap) {
           this.drawHeatmapCtx()
         }
@@ -1950,6 +1983,7 @@ export default {
       // this.ctx.clearRect(0, 0, this.width, this.height)
       // Integration grid always needs to be initialized
       this.initializeIntegrationGrid()
+      this.initializeIlluminationGrid()
       // Check if there is a goal
       if (this.goalPosition.x === -1 || this.goalPosition.y === -1) {
         return
@@ -2035,6 +2069,36 @@ export default {
       }
       this.isCalculating = false
     },
+    triggerFlowFieldCalculation: function () {
+      this.cWorker.postMessage({
+        msg: '[c:setp]',
+        x: this.goalPosition.x,
+        y: this.goalPosition.y
+      })
+      this.cWorker.postMessage({
+        msg: '[c:seto]',
+        x: this.offsetVector.x,
+        y: this.offsetVector.y
+      })
+      this.cWorker.postMessage({
+        msg: '[c:calc]'
+      })
+    },
+    triggerIlluminationCalculation: function () {
+      this.iWorker.postMessage({
+        msg: '[c:setp]',
+        x: this.goalPosition.x * 2,
+        y: this.goalPosition.y * 2
+      })
+      this.iWorker.postMessage({
+        msg: '[c:seto]',
+        x: this.offsetVector.x * 2,
+        y: this.offsetVector.y * 2
+      })
+      this.iWorker.postMessage({
+        msg: '[c:calc]'
+      })
+    },
     heatMapColorForValue: function (value) {
       const h = value * 240
       return `hsl(${h}, 100%, 25%)`
@@ -2042,9 +2106,57 @@ export default {
     convertXYToArrayPos: function (x, y) {
       return this.xCells * y + x
     },
+    convertXYToArrayDPos: function (x, y) {
+      return (this.xCells * 2) * y + x
+    },
     convertArrayPosToXY: function (pos) {
       const x = Math.floor(pos % this.xCells)
       const y = Math.floor(pos / this.xCells)
+      return [x, y]
+    },
+    convertArrayDPosToXY: function (pos) {
+      const x = Math.floor(pos % (this.xCells * 2))
+      const y = Math.floor(pos / (this.xCells * 2))
+      return [x, y]
+    },
+    /**
+     * For each position on the regular grid there are 4 positions
+     * ...on the double precision grid.
+     *
+     * A regular position results in 4 coordinates.
+     */
+    convertXYPosToDPositions: function (x, y) {
+      x *= 2
+      y *= 2
+      return [
+        [x, y], // TL
+        [x + 1, y], // TR
+        [x, y + 1], // BL
+        [x + 1, y + 1] // BR
+      ]
+    },
+    /**
+     * For each position on the regular grid there are 4 positions
+     * ...on the double precision grid.
+     *
+     * A double precision position gets reduced to its regular position.
+     */
+    convertDPosToXYPos: function (x, y) {
+      if (x < 0 && y < 0) {
+        return [0, 0]
+      }
+      // Coordinate system of the double precision grid:
+      //
+      // 0,0 1,0 2,0
+      // 0,1 1,1 2,1
+      // 0,2 1,2 2,2
+      //
+      // If we convert e.g. 1,1, the regular position should be 0,0
+      // ...since regular pos 0,0 results in the following double
+      // ...precision coordinates:
+      // 0,0 + 1,0 + 0,1 + 1,1
+      x = Math.floor(x / 2)
+      y = Math.floor(y / 2)
       return [x, y]
     },
     /**
@@ -2122,6 +2234,28 @@ export default {
             continue
           }
           list.push(this.convertXYToArrayPos(xi, yi))
+        }
+      }
+      return list
+    },
+    getNeighborPositions: function (x, y, dist, includeSelf = false) {
+      // Guard
+      if (x < 0 || y < 0 || x >= this.xCells || y >= this.yCells) {
+        return []
+      }
+      const list = []
+      for (let xi = x - dist; xi <= x + dist; xi++) {
+        if (xi < 0 || xi >= this.xCells) {
+          continue
+        }
+        for (let yi = y - dist; yi <= y + dist; yi++) {
+          if (yi < 0 || yi >= this.yCells) {
+            continue
+          }
+          if (!includeSelf && xi === x && yi === y) {
+            continue
+          }
+          list.push([xi, yi])
         }
       }
       return list
@@ -2366,8 +2500,8 @@ export default {
         this.renderGoal()
         this.renderCoPlayers()
         // Display walls/tiles etc.
-        this.renderTiles(this.offsetVector)
         this.renderIllumination()
+        this.renderTiles(this.offsetVector)
         // Frame-Resets
         qtree = new FFQuadTree(this.xCells / 2, this.yCells / 2, this.xCells / 2, this.yCells / 2, 4)
         cacheMap.clear()
@@ -2417,20 +2551,17 @@ export default {
         this.handleCalculation()
         return lastPos
       }
+      const x = Math.round(((this.goalPosition.x + this.offsetVector.x) * 2))
+      const y = Math.round(((this.goalPosition.y + this.offsetVector.y) * 2))
       if (!lastPos) {
-        lastPos = new THREE.Vector2(
-          Math.round(this.goalPosition.x - this.offsetVector.x),
-          Math.round(this.goalPosition.y - this.offsetVector.y))
+        lastPos = new THREE.Vector2(x, y)
         this.handleCalculation()
         return lastPos
       }
       // Recalculate if player has reached a new cell
       // We save tons of CPU load because the cells are relatively big
-      if (Math.round(this.goalPosition.x - this.offsetVector.x) !== lastPos.x ||
-        Math.round(this.goalPosition.y - this.offsetVector.y) !== lastPos.y) {
-        lastPos = new THREE.Vector2(
-          Math.round(this.goalPosition.x - this.offsetVector.x),
-          Math.round(this.goalPosition.y - this.offsetVector.y))
+      if (x !== lastPos.x || y !== lastPos.y) {
+        lastPos = new THREE.Vector2(x, y)
         // Calculate new paths
         this.handleCalculation()
       }
@@ -2577,6 +2708,16 @@ export default {
             x: this.offsetVector.x,
             y: this.offsetVector.y
           })
+          this.iWorker.postMessage({
+            msg: '[c:setp]',
+            x: this.goalPosition.x * 2,
+            y: this.goalPosition.y * 2
+          })
+          this.iWorker.postMessage({
+            msg: '[c:seto]',
+            x: this.offsetVector.x * 2,
+            y: this.offsetVector.y * 2
+          })
         }
       }
     },
@@ -2594,6 +2735,12 @@ export default {
             usr: key,
             x: posObj.x - posObj.xo,
             y: posObj.y - posObj.yo
+          })
+          this.iWorker.postMessage({
+            msg: '[c:copo]',
+            usr: key,
+            x: (posObj.x - posObj.xo) * 2,
+            y: (posObj.y - posObj.yo) * 2
           })
         }
         this.coPlayers.set(key, posObj)
@@ -3743,6 +3890,16 @@ export default {
           x: this.offsetVector.x,
           y: this.offsetVector.y
         })
+        this.iWorker.postMessage({
+          msg: '[c:setp]',
+          x: this.goalPosition.x * 2,
+          y: this.goalPosition.y * 2
+        })
+        this.iWorker.postMessage({
+          msg: '[c:seto]',
+          x: this.offsetVector.x * 2,
+          y: this.offsetVector.y * 2
+        })
       }
       const v = JSON.stringify({
         x: this.goalPosition.x,
@@ -4241,6 +4398,9 @@ export default {
       if (costField) {
         this.costField = []
         let i = 0
+        let tmpPos
+        let tmpArrayPos
+        let positions
         for (const value of Object.values(costField)) {
           this.costField.push(value)
           // Notify FFCalcWorker
@@ -4250,6 +4410,18 @@ export default {
               pos: i,
               val: value
             })
+            tmpPos = this.convertArrayPosToXY(i)
+            positions = this.convertXYPosToDPositions(
+              tmpPos[0], tmpPos[1])
+            for (let i = 0; i < positions.length; i++) {
+              tmpArrayPos = this.convertXYToArrayDPos(
+                positions[i][0], positions[i][1])
+              this.iWorker.postMessage({
+                msg: '[c:cost]',
+                pos: tmpArrayPos,
+                val: value
+              })
+            }
           }
           i += 1
         }
@@ -4304,8 +4476,6 @@ export default {
     procPerHalfSecondTriggers: function () {
       // Send real position to avoid de-sync
       this.srNotifyMove(true)
-      // Recalculate paths since co-players move, too
-      this.handleCalculation()
     },
     /**
      *
@@ -4396,10 +4566,12 @@ export default {
       // Now check remote players
       if (this.coPlayers && this.coPlayers.size > 0) {
         this.coPlayers.forEach((val) => {
-          vec.copy(val.pos)
-          dist = vec.distanceToSquared(pos)
-          if (dist < threshold) {
-            return true
+          if (val.pos != null) {
+            vec.copy(val.pos)
+            dist = vec.distanceToSquared(pos)
+            if (dist < threshold) {
+              return true
+            }
           }
         })
       }
@@ -4617,7 +4789,7 @@ export default {
       this.$connector.calculateSyncRoomLatency()
       setInterval(() => {
         this.$connector.calculateSyncRoomLatency()
-      }, 10_000)
+      }, 1_000)
       // Are there any other users here, yet?
       this.$connector.sendSyncRoomMessage(
         this.buildDataCommand('GET', 'SESH', 'DIST'))
@@ -4651,6 +4823,12 @@ export default {
             x: pl.x,
             y: pl.y
           })
+          this.iWorker.postMessage({
+            msg: '[c:copo]',
+            usr: data[0],
+            x: pl.x * 2,
+            y: pl.y * 2
+          })
         }
         return
       }
@@ -4666,6 +4844,12 @@ export default {
           usr: data[0],
           x: pl.x,
           y: pl.y
+        })
+        this.iWorker.postMessage({
+          msg: '[c:copo]',
+          usr: data[0],
+          x: pl.x * 2,
+          y: pl.y * 2
         })
       }
     },
@@ -5277,6 +5461,47 @@ export default {
         g: this.gridSize
       })
     },
+    setUpIlluminationWorker: function () {
+      this.iWorker = new Worker(
+        new URL('FFCalcWorker.js', import.meta.url),
+        { type: 'module' })
+      this.iWorker.onmessage = e => {
+        this.illuminationField = new Uint16Array(e.data)
+      }
+      // We will be working in double precision!
+      // Later, we might convert both the "real" and double precisions
+      // ...to fit each other
+      //
+      // E.g.: Real Positions
+      //
+      //    |x| | | | |         | | | | | |
+      //    | | | | | |         | | |x| | |
+      //    | | | | | |         | | | | | |
+      //
+      // ...would result in the DOUBLE Positions
+      //    |x| |x| | |         | | | | | |
+      //    |x| |x| | |         | | |x| |x|
+      //    | | | | | |         | | |x| |x|
+      //
+      // The players move on the regular grid since pathfinding
+      // ...gets interpolated anyway. The illumination however
+      // ...should be on double precision to avoid having the lights
+      // ...look like big boxes.
+      // Effects may also use the double precision grid to allow for
+      // ...fine-tuning.
+      //
+      this.iWorker.postMessage({
+        msg: '[c:init]',
+        w: this.width,
+        h: this.height,
+        g: Math.floor(this.gridSize / 2)
+      })
+      // We set a calculation limit to avoid calculating too much
+      this.iWorker.postMessage({
+        msg: '[c:setlm]',
+        l: 50
+      })
+    },
     handleSetCost: function (data) {
       // scost;${position.x};${position.y};${xNew};${yNew};${this.tile}
       const dat = data.split(';')
@@ -5296,6 +5521,18 @@ export default {
           pos: arrayPos,
           val: 255
         })
+        const positions = this.convertXYPosToDPositions(
+          position.x, position.y)
+        let tmpArrayPos
+        for (let i = 0; i < positions.length; i++) {
+          tmpArrayPos = this.convertXYToArrayDPos(
+            positions[i][0], positions[i][1])
+          this.iWorker.postMessage({
+            msg: '[c:cost]',
+            pos: tmpArrayPos,
+            val: 255
+          })
+        }
       }
       const tile = new FFTile(
         position.x, position.y,
@@ -5370,17 +5607,44 @@ export default {
         this.ctx.fill()
       }
     },
+    drawHeatmapCtxIllumination: function () {
+      if (!this.illuminationField) {
+        return
+      }
+      let pos
+      let value
+      let x, y
+      const halfGrid = this.gridSize / 2
+      for (let i = 0; i < this.illuminationField.length; i++) {
+        pos = this.convertArrayDPosToXY(i)
+        value = this.illuminationField[i]
+        x = (pos[0] + this.offsetVector.x * 2) * halfGrid
+        y = (pos[1] + this.offsetVector.y * 2) * halfGrid
+        if (value < 32) {
+          this.ctx.fillStyle = this.heatMapColorForValue((value / 32))
+        } else {
+          this.ctx.fillStyle = this.heatMapColorForValue(1)
+        }
+        this.ctx.beginPath()
+        this.ctx.moveTo(x, y)
+        this.ctx.rect(x, y, halfGrid, halfGrid)
+        this.ctx.fill()
+      }
+    },
     renderIllumination: function () {
       if (this.goalAlive) {
         this.drawLightsCtx(
           this.goalPosition.x - this.offsetVector.x,
           this.goalPosition.y - this.offsetVector.y,
-          100, true)
+          20, false)
       }
       if (this.coPlayers && this.coPlayers.size > 0) {
         this.coPlayers.forEach((val) => {
-          this.drawLightsCtx(val.x, val.y, 100, false)
+          this.drawLightsCtx(val.x, val.y, 20, false)
         })
+      }
+      if (this.drawIlluminationHeatmap) {
+        this.drawHeatmapCtxIllumination()
       }
     },
     /**
@@ -5392,60 +5656,122 @@ export default {
      * @param {Boolean} drawBackground
      */
     drawLightsCtx: function (xPos, yPos, dist, drawBackground) {
-      if (!this.integrationField) {
+      if (!this.illuminationField || dist === 0) {
         return
       }
-      xPos = Math.round(xPos)
-      yPos = Math.round(yPos)
+      const grid = this.gridSize
+      const halfGrid = grid / 2
+      const offX = this.offsetVector.x
+      const offY = this.offsetVector.y
+      // We will round the coordinates since the regular grid only contains
+      // ...integer values. Since the double precision grid can handle
+      // ...double the coordinates, though, we will check if the rounded
+      // ...coordinates got floor or ceil rounding.
+      // This way we can basically tell in which quadrant of one coordinate
+      // ...the double precision position needs to be.
+      const xPosR = Math.round(xPos)
+      const yPosR = Math.round(yPos)
+      let xShift = 0
+      let yShift = 0
+      if (xPosR > xPos) {
+        // We are on the right side
+        xShift = 1
+      } else {
+        // We are on the left side (default)
+      }
+      if (yPosR > yPos) {
+        // We are on the bottom side
+        yShift = 1
+      } else {
+        // We are on the top side (default)
+      }
       // We are going to retrieve all floor positions around the provided coordinates
       // Since the map could be huge we do not want to check all positions
-      const indices = this.getNeighborIndices(xPos, yPos, dist, true)
+      const indices = this.getNeighborPositions(
+        xPosR, yPosR, dist, true)
       if (indices.length < 1) {
         return
       }
-      let pos
+      let positions
       let value
       let x, y
-      let nb
+      // let nb
+      let tmpArrayPos
+      let tmp
       for (let i = 0; i < indices.length; i++) {
-        value = this.integrationField[indices[i]]
-        if (value >= 65535) {
-          // We hit a wall!
-          // Check if a neighbor is illuminated
-          pos = this.convertArrayPosToXY(indices[i])
-          nb = this.getNeighborIndices(pos[0], pos[1], 2, false)
-          for (let j = 0; j < nb.length; j++) {
-            value = this.integrationField[nb[j]]
-            if (value < 6) {
-              // Mark spot as seen!
-              this.fow.set(indices[i], true)
-              break
-            }
-          }
-          continue
-        } else if (value < 8) {
-          this.ctx.fillStyle = '#fffec3'
-          this.ctx.globalAlpha = 0.14 - (0.02 * value)
-          pos = this.convertArrayPosToXY(indices[i])
-          x = (pos[0] + this.offsetVector.x) * this.gridSize
-          y = (pos[1] + this.offsetVector.y) * this.gridSize
-          // Mark spot as seen!
-          this.fow.set(indices[i], true)
-        } else {
-          if (!drawBackground) {
+        positions = this.convertXYPosToDPositions(
+          indices[i][0], indices[i][1])
+
+        // // *** DEBUG
+        // const dbX = Math.floor((indices[i][0] + offX) * grid)
+        // const dbY = Math.floor((indices[i][1] + offY) * grid)
+        // this.ctx.beginPath()
+        // this.ctx.strokeStyle = '#db3cff'
+        // this.ctx.rect(dbX, dbY, grid, grid)
+        // this.ctx.stroke()
+        // this.ctx.fillStyle = '#ffff00'
+        // this.ctx.fillText(`${indices[i][0]}:${indices[i][1]}`,
+        //   dbX, dbY + 10)
+        // // *** DEBUG
+
+        for (let j = 0; j < positions.length; j++) {
+          // Add sub-grid shift
+          positions[j][0] += xShift
+          positions[j][1] += yShift
+          x = (positions[j][0] + (offX * 2)) * halfGrid
+          y = (positions[j][1] + (offY * 2)) * halfGrid
+          // Retrieve double precision positions
+          tmpArrayPos = this.convertXYToArrayDPos(
+            positions[j][0], positions[j][1])
+          value = this.illuminationField[tmpArrayPos]
+
+          // // *** DEBUG
+          // this.ctx.beginPath()
+          // this.ctx.strokeStyle = '#9923b3'
+          // this.ctx.rect(x, y, halfGrid, halfGrid)
+          // this.ctx.stroke()
+          // this.ctx.fillStyle = '#0dbf00'
+          // this.ctx.fillText(`${value}`,
+          //   x, y + 20)
+          // // *** DEBUG
+
+          if (value >= 65535) {
+            // // We hit a wall!
+            // // Check if a neighbor is illuminated
+            // tmp = this.convertDPosToXYPos(positions[j][0], positions[j][1])
+            // nb = this.getNeighborIndices(
+            //   tmp[0], tmp[1], 2, false)
+            // for (let j = 0; j < nb.length; j++) {
+            //   value = this.integrationField[nb[j]]
+            //   if (value < 6) {
+            //     // Mark spot as seen!
+            //     // this.markCellSeen(indices[i])
+            //     break
+            //   }
+            // }
             continue
+          } else if (value < 20) {
+            this.ctx.fillStyle = '#fffec3'
+            tmp = 0.3 - (0.02 * value)
+            if (tmp < 0) {
+              tmp = 0
+            }
+            this.ctx.globalAlpha = tmp
+            // Mark spot as seen!
+            // this.markCellSeen(indices[i])
+          } else {
+            if (!drawBackground) {
+              continue
+            }
+            this.ctx.fillStyle = '#141412'
+            this.ctx.globalAlpha = 0.3
           }
-          this.ctx.fillStyle = '#141412'
-          this.ctx.globalAlpha = 0.3
-          pos = this.convertArrayPosToXY(indices[i])
-          x = (pos[0] + this.offsetVector.x) * this.gridSize
-          y = (pos[1] + this.offsetVector.y) * this.gridSize
+          this.ctx.beginPath()
+          this.ctx.moveTo(x, y)
+          this.ctx.rect(x, y, halfGrid, halfGrid)
+          this.ctx.fill()
+          this.ctx.globalAlpha = 1
         }
-        this.ctx.beginPath()
-        this.ctx.moveTo(x, y)
-        this.ctx.rect(x, y, this.gridSize, this.gridSize)
-        this.ctx.fill()
-        this.ctx.globalAlpha = 1
       }
     },
     /**
@@ -5651,7 +5977,7 @@ export default {
       if (this.failSafe > 0) {
         noRequest = true
       }
-      // 1. Check if we have seen players so fat
+      // 1. Check if we have seen players so far
       if (!this.coPlayers || this.coPlayers.size < 1) {
         if (noRequest) return
         // Possibly missing players? Check if there is player data via SyncRoom
@@ -5873,6 +6199,8 @@ export default {
         //    X1;Y1;X2;Y2
         const payload = data.substring(4).split(';')
         this.handleCoPlayerAbilityProc(username, payload)
+      } else if (data.startsWith('VIS-')) {
+        this.fow.set(Number(data.substring(4)), true)
       }
     },
     getRooms: function () {
@@ -5952,6 +6280,22 @@ export default {
         this.goalWeaponProjectiles.push(cl)
       }
       projectile.split = 0
+    },
+    /**
+     *
+     * @param cell
+     * @param [transmit=true]
+     */
+    markCellSeen: function (cell, transmit = true) {
+      if (this.fow.has(cell)) {
+        return
+      }
+      this.fow.set(cell, true)
+      if (!transmit) {
+        return
+      }
+      // Transmit the visited cell to others
+      this.queueTCP('VIS-', cell)
     }
   }
 }

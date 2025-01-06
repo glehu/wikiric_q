@@ -33,6 +33,7 @@ import * as THREE from 'threejs-math'
   let isCalculating = false
   let coPlayers = new Map()
   let calcTime = 0
+  let calcLimit = -1
 
   onmessage = (e) => {
     if (!e.data.msg) return
@@ -65,10 +66,10 @@ import * as THREE from 'threejs-math'
         setCost(e.data.pos, e.data.val)
         break
       case '[c:mtrc]':
-        postMessage({
-          typ: 'mtrc',
-          rsp: calcTime
-        })
+        console.log(calcTime)
+        break
+      case '[c:setlm]':
+        calcLimit = e.data.l
         break
       default:
         console.debug('[FFCalcWorker] Unknown Command')
@@ -106,14 +107,20 @@ import * as THREE from 'threejs-math'
    * @return {Promise<void>}
    */
   async function handleCalculation () {
-    const tsStart = performance.now()
-    // Integration grid always needs to be initialized
-    initializeIntegrationGrid()
+    if (isCalculating) {
+      return
+    }
     // Check if there is a goal
     if (goalPosition.x === -1 || goalPosition.y === -1) {
       return
     }
     isCalculating = true
+    const tsStart = performance.now()
+    // Integration grid always needs to be initialized
+    initializeIntegrationGrid()
+    /**
+     * @type {THREE.Vector2[]}
+     */
     const open = []
     let vec = new THREE.Vector2(
       Math.round(goalPosition.x - offsetVector.x),
@@ -138,11 +145,12 @@ import * as THREE from 'threejs-math'
     let current
     let neighbors
     // let x, y
-    let value
+    let value = -1
     let arrayPos, currentArrayPos
-    let dist
     // Enter calculation loop...
     let debugFirst = true
+    let closed = false
+    const limit = calcLimit > 0
     while (open.length > 0) {
       current = open.pop()
       currentArrayPos = convertXYToArrayPos(current.x, current.y)
@@ -157,18 +165,19 @@ import * as THREE from 'threejs-math'
           continue
         }
         // Calculate the new value by first taking the current
-        // ...element's value...
-        value = integrationField[currentArrayPos]
-        // ...and then adding the neighbor's cost
-        value += costField[arrayPos]
-        // ...punish diagonal movement
-        dist = current.manhattanDistanceTo(neighbors[i])
-        value += dist - 1
+        // ...element's value then adding the neighbor's cost
+        value = integrationField[currentArrayPos] + costField[arrayPos]
+        // ...and punishing diagonal movement
+        value += (current.manhattanDistanceTo(neighbors[i]) - 1)
         // Now we compare the value with its old one
         if (value < integrationField[arrayPos]) {
           // Add neighbor to open list
-          if (!open.includes(neighbors[i])) {
-            open.unshift(neighbors[i])
+          if (!closed && !open.includes(neighbors[i])) {
+            if (limit && value > calcLimit) {
+              closed = true
+            } else {
+              open.unshift(neighbors[i])
+            }
           }
           // Set new value
           integrationField[arrayPos] = value

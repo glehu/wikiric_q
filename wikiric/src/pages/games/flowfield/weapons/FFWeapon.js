@@ -462,7 +462,7 @@ class FFWeapon {
       if (dmgCalc.backfire > 0) {
         for (let j = 0; j < dmgCalc.backfire; j++) {
           cl = pr.clone()
-          cl.dmg /= 2
+          cl.dmg = cl.dmg / 2
           cl.vec.multiplyScalar(-1)
           projectiles.push(cl)
         }

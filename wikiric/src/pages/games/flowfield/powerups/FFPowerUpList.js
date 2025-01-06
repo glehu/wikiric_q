@@ -610,7 +610,7 @@ class FFPowerUpList {
       'visual',
       VisualTypes.Electricity))
     powerUp.effects.push(new FFPowerUpEffect(
-      true,
+      false,
       'debuff',
       DebuffTypes.Stun,
       0,
