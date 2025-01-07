@@ -61,7 +61,7 @@ class FFOnHitEffect {
   tick () {
     this.ttl -= 1
     if (this.type === 'text') {
-      this.y -= 0.001
+      this.y -= 0.002
     }
     // If there are repetitions left, we will reset the ttl
     if (this.ttl <= 0 && this.reps > 0) {

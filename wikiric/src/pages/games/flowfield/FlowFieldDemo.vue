@@ -1054,9 +1054,9 @@ export default {
       cursorX: 0,
       cursorY: 0,
       fow: new Map(),
-      godMode: true,
+      godMode: false,
       spawnEnemies: true,
-      keepSidebarOpen: true,
+      keepSidebarOpen: false,
 
       // TOYS
 
@@ -1261,6 +1261,9 @@ export default {
       this.addGoal(new THREE.Vector2(3, 4))
       this.goalLevelUps = 1
       this.goalLevelUpsOpen = 1
+      setTimeout(() => {
+        this.addBorderWalls()
+      }, 3000)
     },
     manageKeyListeners: function (forceRemove = false) {
       document.removeEventListener('keydown', this.handleFFKeyDown, false)
@@ -1690,6 +1693,7 @@ export default {
     },
     addWall: function (position, notifyOthers) {
       const arrayPos = this.convertXYToArrayPos(position.x, position.y)
+      console.log(position, arrayPos)
       if (arrayPos > this.costField.length) {
         return
       }
@@ -2500,8 +2504,8 @@ export default {
         this.renderGoal()
         this.renderCoPlayers()
         // Display walls/tiles etc.
-        this.renderIllumination()
         this.renderTiles(this.offsetVector)
+        this.renderIllumination()
         // Frame-Resets
         qtree = new FFQuadTree(this.xCells / 2, this.yCells / 2, this.xCells / 2, this.yCells / 2, 4)
         cacheMap.clear()
@@ -3409,7 +3413,7 @@ export default {
                     enemy.pos.y,
                     'text',
                     `${projectile.dmg.toFixed(0)}`,
-                    60, 0))
+                    40, 0))
                 }
                 if (projectile.visualType === 'fire') {
                   // Add fire on the ground!
@@ -3558,6 +3562,9 @@ export default {
             tmpY = (effect.y + this.offsetVector.y) * this.gridSize
             this.ctx3.font = '1rem "Open Sans"'
             this.ctx3.strokeStyle = '#000'
+            this.ctx3.lineWidth = 6
+            this.ctx3.lineJoin = 'miter'
+            this.ctx3.miterLimit = 2
             this.ctx3.strokeText(
               effect.content,
               tmpX,
@@ -3657,7 +3664,7 @@ export default {
                   enemy.pos.y,
                   'text',
                   `${projectile.dmg.toFixed(0)}`,
-                  60,
+                  40,
                   0)
                 this.onHitEffects.push(tmp2)
               }
@@ -5695,12 +5702,14 @@ export default {
       let positions
       let value
       let x, y
-      // let nb
+      let nb
       let tmpArrayPos
       let tmp
+      let hasVisible
       for (let i = 0; i < indices.length; i++) {
         positions = this.convertXYPosToDPositions(
           indices[i][0], indices[i][1])
+        hasVisible = false
 
         // // *** DEBUG
         // const dbX = Math.floor((indices[i][0] + offX) * grid)
@@ -5736,29 +5745,24 @@ export default {
           // // *** DEBUG
 
           if (value >= 65535) {
-            // // We hit a wall!
-            // // Check if a neighbor is illuminated
-            // tmp = this.convertDPosToXYPos(positions[j][0], positions[j][1])
-            // nb = this.getNeighborIndices(
-            //   tmp[0], tmp[1], 2, false)
-            // for (let j = 0; j < nb.length; j++) {
-            //   value = this.integrationField[nb[j]]
-            //   if (value < 6) {
-            //     // Mark spot as seen!
-            //     // this.markCellSeen(indices[i])
-            //     break
-            //   }
-            // }
+            // We hit a wall!
+            // Check if a neighbor is illuminated
+            tmp = this.convertDPosToXYPos(positions[j][0], positions[j][1])
+            nb = this.getNeighborIndices(
+              tmp[0], tmp[1], 2, false)
+            for (let j = 0; j < nb.length; j++) {
+              value = this.integrationField[nb[j]]
+              if (value < 6) {
+                hasVisible = true
+                break
+              }
+            }
             continue
-          } else if (value < 20) {
+          } else if (value < 16) {
             this.ctx.fillStyle = '#fffec3'
             tmp = 0.3 - (0.02 * value)
-            if (tmp < 0) {
-              tmp = 0
-            }
             this.ctx.globalAlpha = tmp
-            // Mark spot as seen!
-            // this.markCellSeen(indices[i])
+            hasVisible = true
           } else {
             if (!drawBackground) {
               continue
@@ -5771,6 +5775,11 @@ export default {
           this.ctx.rect(x, y, halfGrid, halfGrid)
           this.ctx.fill()
           this.ctx.globalAlpha = 1
+        }
+        if (hasVisible) {
+          // Mark spot as seen!
+          this.markCellSeen(this.convertXYToArrayPos(
+            indices[i][0], indices[i][1]))
         }
       }
     },
@@ -6296,6 +6305,20 @@ export default {
       }
       // Transmit the visited cell to others
       this.queueTCP('VIS-', cell)
+    },
+    addBorderWalls: function () {
+      this.tile = 'wall_inner'
+      for (let yP = 0; yP < this.yCells; yP++) {
+        for (let xP = 0; xP < this.xCells; xP++) {
+          if ((yP === 0 || yP === this.yCells - 1) ||
+            (xP === 0 || xP === this.xCells - 1)) {
+            this.addWall({
+              x: xP,
+              y: yP
+            }, false)
+          }
+        }
+      }
     }
   }
 }
