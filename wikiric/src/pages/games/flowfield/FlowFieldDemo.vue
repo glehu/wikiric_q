@@ -1179,6 +1179,7 @@ export default {
     setTimeout(() => {
       this.initFunction()
       this.useLevelUp()
+      this.tinyRic()
     }, 0)
   },
   beforeUnmount () {
@@ -1693,7 +1694,6 @@ export default {
     },
     addWall: function (position, notifyOthers) {
       const arrayPos = this.convertXYToArrayPos(position.x, position.y)
-      console.log(position, arrayPos)
       if (arrayPos > this.costField.length) {
         return
       }
@@ -5643,11 +5643,11 @@ export default {
         this.drawLightsCtx(
           this.goalPosition.x - this.offsetVector.x,
           this.goalPosition.y - this.offsetVector.y,
-          20, false)
+          40, false)
       }
       if (this.coPlayers && this.coPlayers.size > 0) {
         this.coPlayers.forEach((val) => {
-          this.drawLightsCtx(val.x, val.y, 20, false)
+          this.drawLightsCtx(val.x, val.y, 40, false)
         })
       }
       if (this.drawIlluminationHeatmap) {
@@ -6319,6 +6319,15 @@ export default {
           }
         }
       }
+    },
+    tinyRic: function () {
+      const go = new global.Go()
+      const runWasm = async () => {
+        const importObject = go.importObject
+        const wasmModule = await wikiricUtils.wasmBrowserInstantiate('./main.wasm', importObject)
+        go.run(wasmModule.instance)
+      }
+      runWasm()
     }
   }
 }
