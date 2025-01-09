@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 //
 // This file has been modified for use by the TinyGo compiler.
+// This file has been modified by Luca Goldhausen because of linter problems...
 
 (() => {
   // Map multiple JavaScript environments to a single common API,

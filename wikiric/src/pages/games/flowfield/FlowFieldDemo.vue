@@ -6324,8 +6324,10 @@ export default {
       const go = new global.Go()
       const runWasm = async () => {
         const importObject = go.importObject
-        const wasmModule = await wikiricUtils.wasmBrowserInstantiate('./main.wasm', importObject)
+        const wasmModule = await wikiricUtils.wasmBrowserInstantiate(
+          './main.wasm', importObject)
         go.run(wasmModule.instance)
+        wasmModule.instance.exports.helloWorld()
       }
       runWasm()
     }
