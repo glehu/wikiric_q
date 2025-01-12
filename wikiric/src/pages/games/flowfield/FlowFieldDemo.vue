@@ -402,6 +402,8 @@
           <div class="ffd_container" ref="ffd_container">
             <canvas id="ffd_canvas" ref="ffd_canvas"
                     class="ffd_canvas"></canvas>
+            <canvas id="ffd_canvas_worker" ref="ffd_canvas_worker"
+                    class="ffd_canvas"></canvas>
             <canvas id="ffd_canvas_player" ref="ffd_canvas_player"
                     class="ffd_canvas"></canvas>
             <canvas id="ffd_canvas_enemy" ref="ffd_canvas_enemy"
@@ -1054,9 +1056,9 @@ export default {
       cursorX: 0,
       cursorY: 0,
       fow: new Map(),
-      godMode: false,
-      spawnEnemies: true,
-      keepSidebarOpen: false,
+      godMode: true,
+      spawnEnemies: false,
+      keepSidebarOpen: true,
 
       // TOYS
 
@@ -1166,6 +1168,10 @@ export default {
       cWorker: null,
       // Illumination Worker
       iWorker: null,
+      // Rendering Worker
+      rWorker: null,
+      iOffset: -1,
+      iLen: -1,
       isSyncing: false,
       syncCount: 0,
       syncMaxCount: 999999,
@@ -1179,7 +1185,6 @@ export default {
     setTimeout(() => {
       this.initFunction()
       this.useLevelUp()
-      this.tinyRic()
     }, 0)
   },
   beforeUnmount () {
@@ -1222,6 +1227,8 @@ export default {
       this.$router.back()
     },
     initFunction: function () {
+      this.setUpCalcWorker()
+      this.setUpIlluminationWorker()
       this.isCalculating = false
       this.isSimulating = false
       this.goalHP = 1000
@@ -1232,8 +1239,6 @@ export default {
       this.offsetVector = new THREE.Vector2()
       this.goalWeapons = []
       this.goalWeaponProjectiles = []
-      this.setUpCalcWorker()
-      this.setUpIlluminationWorker()
       this.initializeGridValues()
       this.initializeEnemies()
       this.initializeCanvas()
@@ -1259,12 +1264,13 @@ export default {
       this.setUpPlayer()
       this.setUpSyncRoom()
       // QoL
-      this.addGoal(new THREE.Vector2(3, 4))
       this.goalLevelUps = 1
       this.goalLevelUpsOpen = 1
       setTimeout(() => {
+        this.addGoal(new THREE.Vector2(3, 4))
         this.addBorderWalls()
-      }, 3000)
+        this.setUpRenderingWorker()
+      }, 1_500)
     },
     manageKeyListeners: function (forceRemove = false) {
       document.removeEventListener('keydown', this.handleFFKeyDown, false)
@@ -1418,6 +1424,16 @@ export default {
       this.scaleCanvas(canvas, this.ctx)
       this.initializeCursorCanvas()
       this.drawGrid(true)
+      // Also initialize basically the same canvas again
+      // ...but for the FFRenderWorker!
+      const canvasWorker = this.$refs.ffd_canvas_worker
+      canvasWorker.style.minWidth = this.width + 'px'
+      canvasWorker.style.maxWidth = canvasWorker.style.minWidth
+      canvasWorker.style.minHeight = this.height + 'px'
+      canvasWorker.style.maxHeight = canvasWorker.style.minHeight
+      canvasWorker.width = this.width
+      canvasWorker.height = this.height
+      this.scaleCanvasWorker(canvasWorker)
     },
     initializeCursorCanvas: function () {
       // Initialize Canvas (Cursor)
@@ -1535,6 +1551,11 @@ export default {
       this.scaleCanvas(canvas, this.ctxPlayer)
       this.ctxPlayer.clearRect(0, 0, this.width, this.height)
     },
+    /**
+     * scaleCanvas prevents text from being blurry
+     * @param canvas
+     * @param ctx
+     */
     scaleCanvas: function (canvas, ctx) {
       const dpr = window.devicePixelRatio
       const exaggeration = 20
@@ -1545,6 +1566,20 @@ export default {
       canvas.style.width = `${width / dpr}px`
       canvas.style.height = `${height / dpr}px`
       ctx.scale(dpr, dpr)
+    },
+    /**
+     * scaleCanvasWorker prevents text from being blurry
+     * @param canvas
+     */
+    scaleCanvasWorker: function (canvas) {
+      const dpr = window.devicePixelRatio
+      const exaggeration = 20
+      const width = Math.ceil(this.width * dpr + exaggeration)
+      const height = Math.ceil(this.height * dpr + exaggeration)
+      canvas.width = width
+      canvas.height = height
+      canvas.style.width = `${width / dpr}px`
+      canvas.style.height = `${height / dpr}px`
     },
     initializeGridValues: function () {
       const elem = document.getElementById('ffd_size')
@@ -5460,6 +5495,10 @@ export default {
         { type: 'module' })
       this.cWorker.onmessage = e => {
         this.integrationField = new Uint16Array(e.data)
+        this.rWorker.postMessage({
+          msg: '[c:integ]',
+          f: this.integrationField
+        })
       }
       this.cWorker.postMessage({
         msg: '[c:init]',
@@ -5472,8 +5511,23 @@ export default {
       this.iWorker = new Worker(
         new URL('FFCalcWorker.js', import.meta.url),
         { type: 'module' })
+      // The following code seems lunatic, but it actually is kind of genius.
+      // We will eliminate any if statements with the following code!
+      // After the first two messages, any further message will automatically
+      // ...be registered as an array for the illumination field! Sweet!
       this.iWorker.onmessage = e => {
-        this.illuminationField = new Uint16Array(e.data)
+        this.iOffset = e.data
+        this.iWorker.onmessage = e => {
+          this.iLen = e.data
+          this.iWorker.onmessage = e => {
+            this.illuminationField = new Uint16Array(
+              e.data, this.iOffset, this.iLen)
+            this.rWorker.postMessage({
+              msg: '[c:illum]',
+              f: this.illuminationField
+            })
+          }
+        }
       }
       // We will be working in double precision!
       // Later, we might convert both the "real" and double precisions
@@ -5494,20 +5548,57 @@ export default {
       // ...gets interpolated anyway. The illumination however
       // ...should be on double precision to avoid having the lights
       // ...look like big boxes.
+
       // Effects may also use the double precision grid to allow for
       // ...fine-tuning.
+      //
+      // As of 11.01.2025 FFCalcWorker also has WASM support.
+      // This means that TinyRic (the TinyGo compiled WASM module)
+      // ...will calculate the flow field for us.
+      // The benefits will be greater performance as its statically
+      // ...typed and written with almost no allocations other than
+      // ...loop variables. Also, the game loop might also run on the
+      // ...backend later on (e.g. anti-cheat/competitive play) so it
+      // ...needs to be written in Go anyway.
       //
       this.iWorker.postMessage({
         msg: '[c:init]',
         w: this.width,
         h: this.height,
-        g: Math.floor(this.gridSize / 2)
+        g: Math.floor(this.gridSize / 2),
+        tiny: true
       })
-      // We set a calculation limit to avoid calculating too much
-      this.iWorker.postMessage({
-        msg: '[c:setlm]',
-        l: 50
+      setTimeout(() => {
+        // We set a calculation limit to avoid calculating too much
+        this.iWorker.postMessage({
+          msg: '[c:setlm]',
+          l: 40
+        })
+      }, 1_500)
+    },
+    setUpRenderingWorker: function () {
+      this.rWorker = new Worker(
+        new URL('FFRenderWorker.js', import.meta.url),
+        { type: 'module' })
+      this.rWorker.postMessage({
+        msg: '[c:vals]',
+        g: this.gridSize,
+        x: this.xCells,
+        y: this.yCells,
+        d: false,
+        w: this.width,
+        h: this.height
       })
+      /**
+       * @type {HTMLCanvasElement}
+       */
+      const canvas = this.$refs.ffd_canvas_worker
+      const offscreen = canvas.transferControlToOffscreen()
+      this.rWorker.postMessage({
+        msg: '[c:canvas]',
+        c: offscreen,
+        d: window.devicePixelRatio
+      }, [offscreen])
     },
     handleSetCost: function (data) {
       // scost;${position.x};${position.y};${xNew};${yNew};${this.tile}
@@ -5639,19 +5730,50 @@ export default {
       }
     },
     renderIllumination: function () {
+      if (this.rWorker) {
+        this.renderIlluminationWorker()
+        return
+      }
+      if (this.drawIlluminationHeatmap) {
+        this.drawHeatmapCtxIllumination()
+      }
       if (this.goalAlive) {
         this.drawLightsCtx(
           this.goalPosition.x - this.offsetVector.x,
           this.goalPosition.y - this.offsetVector.y,
-          40, false)
+          10, false)
       }
       if (this.coPlayers && this.coPlayers.size > 0) {
         this.coPlayers.forEach((val) => {
-          this.drawLightsCtx(val.x, val.y, 40, false)
+          this.drawLightsCtx(val.x, val.y, 10, false)
         })
       }
-      if (this.drawIlluminationHeatmap) {
-        this.drawHeatmapCtxIllumination()
+    },
+    renderIlluminationWorker: function () {
+      this.rWorker.postMessage({
+        msg: '[c:off]',
+        x: this.offsetVector.x,
+        y: this.offsetVector.y
+      })
+      if (this.goalAlive) {
+        this.rWorker.postMessage({
+          msg: '[c:render]',
+          x: this.goalPosition.x - this.offsetVector.x,
+          y: this.goalPosition.y - this.offsetVector.y,
+          d: 10,
+          b: false
+        })
+      }
+      if (this.coPlayers && this.coPlayers.size > 0) {
+        this.coPlayers.forEach((val) => {
+          this.rWorker.postMessage({
+            msg: '[c:render]',
+            x: val.x,
+            y: val.y,
+            d: 10,
+            b: false
+          })
+        })
       }
     },
     /**
@@ -5666,6 +5788,7 @@ export default {
       if (!this.illuminationField || dist === 0) {
         return
       }
+      const isDebug = this.drawIlluminationHeatmap
       const grid = this.gridSize
       const halfGrid = grid / 2
       const offX = this.offsetVector.x
@@ -5711,17 +5834,19 @@ export default {
           indices[i][0], indices[i][1])
         hasVisible = false
 
-        // // *** DEBUG
-        // const dbX = Math.floor((indices[i][0] + offX) * grid)
-        // const dbY = Math.floor((indices[i][1] + offY) * grid)
-        // this.ctx.beginPath()
-        // this.ctx.strokeStyle = '#db3cff'
-        // this.ctx.rect(dbX, dbY, grid, grid)
-        // this.ctx.stroke()
-        // this.ctx.fillStyle = '#ffff00'
-        // this.ctx.fillText(`${indices[i][0]}:${indices[i][1]}`,
-        //   dbX, dbY + 10)
-        // // *** DEBUG
+        // *** DEBUG
+        if (isDebug) {
+          const dbX = Math.floor((indices[i][0] + offX) * grid)
+          const dbY = Math.floor((indices[i][1] + offY) * grid)
+          this.ctx.beginPath()
+          this.ctx.strokeStyle = '#db3cff'
+          this.ctx.rect(dbX, dbY, grid, grid)
+          this.ctx.stroke()
+          this.ctx.fillStyle = '#ffff00'
+          this.ctx.fillText(`${indices[i][0]}:${indices[i][1]}`,
+            dbX, dbY + 10)
+        }
+        // *** DEBUG
 
         for (let j = 0; j < positions.length; j++) {
           // Add sub-grid shift
@@ -5734,15 +5859,17 @@ export default {
             positions[j][0], positions[j][1])
           value = this.illuminationField[tmpArrayPos]
 
-          // // *** DEBUG
-          // this.ctx.beginPath()
-          // this.ctx.strokeStyle = '#9923b3'
-          // this.ctx.rect(x, y, halfGrid, halfGrid)
-          // this.ctx.stroke()
-          // this.ctx.fillStyle = '#0dbf00'
-          // this.ctx.fillText(`${value}`,
-          //   x, y + 20)
-          // // *** DEBUG
+          // *** DEBUG
+          if (isDebug) {
+            this.ctx.beginPath()
+            this.ctx.strokeStyle = '#9923b3'
+            this.ctx.rect(x, y, halfGrid, halfGrid)
+            this.ctx.stroke()
+            this.ctx.fillStyle = '#0dbf00'
+            this.ctx.fillText(`${value}`,
+              x, y + 20)
+          }
+          // *** DEBUG
 
           if (value >= 65535) {
             // We hit a wall!
@@ -5758,9 +5885,14 @@ export default {
               }
             }
             continue
-          } else if (value < 16) {
-            this.ctx.fillStyle = '#fffec3'
-            tmp = 0.3 - (0.02 * value)
+          } else if (value < 30) {
+            this.ctx.fillStyle = '#ffeba7'
+            tmp = 0.3 - (0.002 * (value * value)) / 2
+            if (tmp < 0.01) {
+              tmp = 0
+            } else {
+              tmp *= 0.8
+            }
             this.ctx.globalAlpha = tmp
             hasVisible = true
           } else {
@@ -6319,17 +6451,6 @@ export default {
           }
         }
       }
-    },
-    tinyRic: function () {
-      const go = new global.Go()
-      const runWasm = async () => {
-        const importObject = go.importObject
-        const wasmModule = await wikiricUtils.wasmBrowserInstantiate(
-          './main.wasm', importObject)
-        go.run(wasmModule.instance)
-        wasmModule.instance.exports.helloWorld()
-      }
-      runWasm()
     }
   }
 }

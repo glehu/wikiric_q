@@ -10,8 +10,14 @@
 'use strict'
 
 import * as THREE from 'threejs-math'
+import wikiricUtils from 'src/libs/wikiric-utils'
+import 'pages/games/flowfield/wasm_exec.js'
 
 {
+  // ######################
+  // ### VARIABLE STUFF ###
+  // ######################
+
   // Can be set externally
   let gridSize = 50
   let width = 1000 // 1550
@@ -34,53 +40,92 @@ import * as THREE from 'threejs-math'
   let coPlayers = new Map()
   let calcTime = 0
   let calcLimit = -1
+  let punishDiagonal = true
+
+  // #########################
+  // ### WebAssembly STUFF ###
+  // #########################
+
+  // TinyGo compiled TinyRic
+  let go = null
+
+  // WASM Module of TinyRic
+  let wasm = null
+  let prefWasm = false
+
+  // #####################
+  // ### MESSAGE STUFF ###
+  // #####################
 
   onmessage = (e) => {
     if (!e.data.msg) return
     switch (e.data.msg) {
       case '[c:init]':
-        width = e.data.w
-        height = e.data.h
-        gridSize = e.data.g
-        initializeGridValues()
+        width = Number(e.data.w)
+        height = Number(e.data.h)
+        gridSize = Number(e.data.g)
+        if (Boolean(e.data.tiny)) {
+          // WASM support!
+          tinyRic().then(() => {
+            prefWasm = true
+            console.debug('[FFCalcWorker] Initialized TinyRic WASM Module')
+          })
+        } else {
+          initializeGridValues()
+          console.debug('[FFCalcWorker] Initialized')
+        }
         break
       case '[c:cell]':
-        xCells = e.data.x
-        yCells = e.data.y
+        xCells = Number(e.data.x)
+        yCells = Number(e.data.y)
         break
       case '[c:calc]':
         handleCalculation()
         break
       case '[c:setp]':
-        goalPosition.x = e.data.x
-        goalPosition.y = e.data.y
+        goalPosition.x = Number(e.data.x)
+        goalPosition.y = Number(e.data.y)
         break
       case '[c:seto]':
-        offsetVector.x = e.data.x
-        offsetVector.y = e.data.y
+        offsetVector.x = Number(e.data.x)
+        offsetVector.y = Number(e.data.y)
         break
       case '[c:copo]':
-        setCoPlayerPosition(e.data.usr, e.data.x, e.data.y)
+        setCoPlayerPosition(e.data.usr, Number(e.data.x), Number(e.data.y))
         break
       case '[c:cost]':
-        setCost(e.data.pos, e.data.val)
+        setCost(Number(e.data.pos), Number(e.data.val))
         break
       case '[c:mtrc]':
         console.log(calcTime)
         break
       case '[c:setlm]':
-        calcLimit = e.data.l
+        calcLimit = Number(e.data.l)
+        if (prefWasm) {
+          wasm.instance.exports.setCalcLimit(calcLimit)
+        }
+        break
+      case '[c:setdia]':
+        punishDiagonal = Boolean(e.data.d)
         break
       default:
         console.debug('[FFCalcWorker] Unknown Command')
     }
   }
 
+  // ###################
+  // ### LOGIC STUFF ###
+  // ###################
+
   /**
    * Initializes the integration and cost grid with the provided
    * ... values for width, height and grid size
    */
   function initializeGridValues () {
+    if (prefWasm) {
+      tinyInitializeGridValues()
+      return
+    }
     // Calculate amount of cells
     totalCells = xCells * yCells
     // Initialize grid arrays
@@ -90,6 +135,29 @@ import * as THREE from 'threejs-math'
       init = true
     }
     integrationField = new Uint16Array(totalCells)
+    // Fill with default values
+    for (let i = 0; i < totalCells; i++) {
+      if (init) {
+        costField[i] = 1
+      }
+      integrationField[i] = 65535
+    }
+  }
+
+  /**
+   * Initializes the integration and cost grid with the provided
+   * ... values for width, height and grid size
+   */
+  function tinyInitializeGridValues () {
+    // Calculate amount of cells
+    totalCells = 80 * 80
+    // Initialize grid arrays
+    let init = false
+    if (!costField || costField.length < 1) {
+      costField = new Uint16Array(6_400)
+      init = true
+    }
+    integrationField = new Uint16Array(6_400)
     // Fill with default values
     for (let i = 0; i < totalCells; i++) {
       if (init) {
@@ -114,6 +182,14 @@ import * as THREE from 'threejs-math'
     if (goalPosition.x === -1 || goalPosition.y === -1) {
       return
     }
+    // Is there a WebAssembly module loaded?
+    if (prefWasm) {
+      // TinyRic (TinyGo compiled WASM Module) will calculate the
+      // ...flow-field almost allocation-free!
+      tinyHandleCalculation()
+      return
+    }
+    // Lock this worker until completion
     isCalculating = true
     const tsStart = performance.now()
     // Integration grid always needs to be initialized
@@ -122,9 +198,7 @@ import * as THREE from 'threejs-math'
      * @type {THREE.Vector2[]}
      */
     const open = []
-    let vec = new THREE.Vector2(
-      Math.round(goalPosition.x - offsetVector.x),
-      Math.round(goalPosition.y - offsetVector.y))
+    let vec = new THREE.Vector2(Math.round(goalPosition.x - offsetVector.x), Math.round(goalPosition.y - offsetVector.y))
     // Set integration value of goal's position to zero
     let goalArrayPos = convertXYToArrayPos(vec.x, vec.y)
     integrationField[goalArrayPos] = 0
@@ -149,7 +223,7 @@ import * as THREE from 'threejs-math'
     let arrayPos, currentArrayPos
     // Enter calculation loop...
     let debugFirst = true
-    let closed = false
+    let closed
     const limit = calcLimit > 0
     while (open.length > 0) {
       current = open.pop()
@@ -158,6 +232,7 @@ import * as THREE from 'threejs-math'
       if (debugFirst) {
         debugFirst = false
       }
+      closed = false
       for (let i = 0; i < neighbors.length; i++) {
         arrayPos = convertXYToArrayPos(neighbors[i].x, neighbors[i].y)
         // Ignore this neighbor if it is a wall (255)
@@ -168,7 +243,11 @@ import * as THREE from 'threejs-math'
         // ...element's value then adding the neighbor's cost
         value = integrationField[currentArrayPos] + costField[arrayPos]
         // ...and punishing diagonal movement
-        value += (current.manhattanDistanceTo(neighbors[i]) - 1)
+        if (punishDiagonal) {
+          value += (current.manhattanDistanceTo(neighbors[i]) - 1)
+        } else {
+          value += (current.manhattanDistanceTo(neighbors[i]))
+        }
         // Now we compare the value with its old one
         if (value < integrationField[arrayPos]) {
           // Add neighbor to open list
@@ -184,6 +263,36 @@ import * as THREE from 'threejs-math'
         }
       }
     }
+    // Free worker and send back integration field
+    isCalculating = false
+    calcTime = performance.now() - tsStart
+    zeroCopyTransferIntegrationBuffer()
+  }
+
+  function tinyHandleCalculation () {
+    if (isCalculating) {
+      return
+    }
+    // Lock this worker
+    isCalculating = true
+    const tsStart = performance.now()
+    // First, we need to add the player position to the
+    // ...WASM's buffer
+    wasm.instance.exports.setPlayerX(Math.round(goalPosition.x - offsetVector.x))
+    wasm.instance.exports.setPlayerY(Math.round(goalPosition.y - offsetVector.y))
+    // Set co-players, too
+    if (coPlayers && coPlayers.size > 0) {
+      let n = 0
+      coPlayers.forEach((val) => {
+        wasm.instance.exports.setCoPlayerX(n, Math.round(val.x) - 1)
+        wasm.instance.exports.setCoPlayerY(n, Math.round(val.y) - 1)
+        n += 1
+      })
+    }
+    // Let the WASM module calculate for us
+    wasm.instance.exports.calculate()
+    integrationField = tinyGetGrid()
+    // Free worker and send back integration field
     isCalculating = false
     calcTime = performance.now() - tsStart
     zeroCopyTransferIntegrationBuffer()
@@ -308,5 +417,45 @@ import * as THREE from 'threejs-math'
       return
     }
     costField[pos] = val
+    if (prefWasm) {
+      tinySetCost(pos, val)
+    }
+  }
+
+  /**
+   *
+   * @param pos
+   * @param val
+   */
+  function tinySetCost (pos, val) {
+    wasm.instance.exports.setCost(pos, val)
+  }
+
+  /**
+   *
+   * @return {Promise<unknown>}
+   */
+  async function tinyRic () {
+    go = new global.Go()
+    wasm = await wikiricUtils.wasmBrowserInstantiate('./main.wasm', go.importObject)
+    initializeGridValues()
+    return new Promise((resolve) => {
+      go.run(wasm.instance)
+      // Tell the host about the offset and length for the grid buffer!
+      postMessage(wasm.instance.exports.getGridIx())
+      postMessage(wasm.instance.exports.getGridLen())
+      resolve()
+    })
+  }
+
+  /**
+   *
+   * @return {Uint16Array}
+   */
+  function tinyGetGrid () {
+    return new Uint16Array(
+      wasm.instance.exports.memory.buffer,
+      wasm.instance.exports.getGridIx(),
+      wasm.instance.exports.getGridLen())
   }
 }
