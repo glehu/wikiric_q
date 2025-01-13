@@ -383,22 +383,6 @@
       </q-drawer>
       <q-page-container>
         <q-page style="padding-top: 60px" class="background pb20">
-          <q-page-sticky position="top" expand
-                         class="background z-fab">
-            <q-toolbar>
-              <q-btn flat round dense icon="sym_o_dock_to_right"
-                     @click="sidebarLeft = !sidebarLeft">
-                <q-tooltip class="text-body2">
-                  Toggle&nbsp;Sidebar
-                </q-tooltip>
-              </q-btn>
-              <q-toolbar-title class="text-subtitle1 hidden">
-                <q-breadcrumbs active-color="brand-p">
-                  <q-breadcrumbs-el label="Flow Field Demo"/>
-                </q-breadcrumbs>
-              </q-toolbar-title>
-            </q-toolbar>
-          </q-page-sticky>
           <div class="ffd_container" ref="ffd_container">
             <canvas id="ffd_canvas" ref="ffd_canvas"
                     class="ffd_canvas"></canvas>
@@ -416,7 +400,7 @@
                class="min-w-[100dvw] max-w-[100dvw]
                       min-h-[100dvh] max-h-[100dvh]
                       fixed top-0 left-0 pointer-events-none"></div>
-          <q-page-sticky position="top" :offset="[0, 38]">
+          <q-page-sticky position="top" :offset="[0, 0]">
             <div id="ffd_exp_gui"
                  class="flex wfull px2
                         min-w-[100dvw] max-w-[100dvw]
@@ -426,12 +410,12 @@
                           justify-center
                           flex items-start">
                 <q-slider v-model="goalXP" :min="0" :max="goalMaxXP"
-                          readonly
+                          readonly dense
                           color="blue"
                           track-size="16px" thumb-size="18px"
                           class="w-full"/>
                 <div class="flex wfull justify-end px2 fontbold
-                            -translate-y-2">
+                            -translate-y-1">
                   <div class="text-right">
                     <p class="text-sm cursor-default">
                       {{ gameMetaText }}
@@ -1056,8 +1040,8 @@ export default {
       cursorX: 0,
       cursorY: 0,
       fow: new Map(),
-      godMode: true,
-      spawnEnemies: false,
+      godMode: false,
+      spawnEnemies: true,
       keepSidebarOpen: true,
 
       // TOYS
@@ -3850,9 +3834,9 @@ export default {
       this.initFunction()
     },
     handleFFKeyDown: function (e) {
-      if (!this.canMove) return
       switch (e.key) {
         case 'w':
+          if (!this.canMove) return
           this.goalUp = true
           // Why are we sending two messages you may ask.
           // Since we're using a partially reliable protocol, we're sending two messages just to make sure.
@@ -3861,22 +3845,29 @@ export default {
           this.srNotifyMove(true)
           break
         case 'a':
+          if (!this.canMove) return
           this.goalLeft = true
           this.srNotifyMove(true)
           this.srNotifyMove(true)
           break
         case 's':
+          if (!this.canMove) return
           this.goalDown = true
           this.srNotifyMove(true)
           this.srNotifyMove(true)
           break
         case 'd':
+          if (!this.canMove) return
           this.goalRight = true
           this.srNotifyMove(true)
           this.srNotifyMove(true)
           break
         case 'q':
+          if (!this.canMove) return
           this.handleAbilityProc('q')
+          break
+        case ',':
+          this.sidebarLeft = !this.sidebarLeft
           break
       }
     },
@@ -3985,29 +3976,33 @@ export default {
      * @param e
      */
     handleFFKeyUp: function (e) {
-      if (!this.canMove) return
       switch (e.key) {
         case 'w':
+          if (!this.canMove) return
           this.goalUp = false
           this.srNotifyMove(true)
           this.srNotifyMove(true)
           break
         case 'a':
+          if (!this.canMove) return
           this.goalLeft = false
           this.srNotifyMove(true)
           this.srNotifyMove(true)
           break
         case 's':
+          if (!this.canMove) return
           this.goalDown = false
           this.srNotifyMove(true)
           this.srNotifyMove(true)
           break
         case 'd':
+          if (!this.canMove) return
           this.goalRight = false
           this.srNotifyMove(true)
           this.srNotifyMove(true)
           break
         case 'q':
+          if (!this.canMove) return
           this.handleAbilityProc('q')
           break
       }
@@ -5576,10 +5571,20 @@ export default {
         })
       }, 1_500)
     },
+    // Who said only calculation can be put to a different thread?
+    // Modern browsers allow workers to even render graphics! Nice!
     setUpRenderingWorker: function () {
       this.rWorker = new Worker(
         new URL('FFRenderWorker.js', import.meta.url),
         { type: 'module' })
+      this.rWorker.onmessage = e => {
+        if (!e.data.msg) return
+        switch (e.data.msg) {
+          case '[c:vis]':
+            this.markCellSeen(Number(e.data.i), true)
+            break
+        }
+      }
       this.rWorker.postMessage({
         msg: '[c:vals]',
         g: this.gridSize,
@@ -5750,6 +5755,9 @@ export default {
       }
     },
     renderIlluminationWorker: function () {
+      /*
+TODO: Interpolate lightening between current and future cell
+       */
       this.rWorker.postMessage({
         msg: '[c:off]',
         x: this.offsetVector.x,
@@ -5760,7 +5768,7 @@ export default {
           msg: '[c:render]',
           x: this.goalPosition.x - this.offsetVector.x,
           y: this.goalPosition.y - this.offsetVector.y,
-          d: 10,
+          d: 20,
           b: false
         })
       }

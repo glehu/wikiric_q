@@ -25,6 +25,7 @@
   let dpr = 0
   let width = 0
   let height = 0
+  const fow = new Map()
 
   // ### Canvas
   let canvas = null
@@ -184,8 +185,8 @@
           }
           continue
         } else if (value < 30) {
-          ctx.fillStyle = '#ffeba7'
-          tmp = 0.3 - (0.002 * (value * value)) / 2
+          ctx.fillStyle = '#fff3c8'
+          tmp = 0.3 - (0.0005 * (value * value))
           if (tmp < 0.01) {
             tmp = 0
           } else {
@@ -311,5 +312,13 @@
   }
 
   function markCellSeen (index) {
+    if (fow.has(index)) {
+      return
+    }
+    fow.set(index, true)
+    postMessage({
+      msg: '[c:vis]',
+      i: index
+    })
   }
 }

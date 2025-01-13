@@ -4,7 +4,7 @@
               wfull max-w-[100dvw] top-0 overflow-hidden
               max-h-[calc(100dvh-50px)]
               backdrop-blur-lg
-              z-99 fixed hfull pt_nav overflow-y-scroll">
+              z-99 fixed hfull overflow-y-scroll">
     <q-card flat style="background: transparent"
             class="wfull hfull pt2 overflow-hidden">
       <div class="rounded-md wfull hfull px2 py1 tab_no_pad">
