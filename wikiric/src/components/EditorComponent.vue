@@ -463,7 +463,7 @@ export default {
   pre {
     background: #0D0D0D;
     color: #FFF;
-    font-family: 'JetBrainsMono', monospace;
+    font-family: 'JetBrains Mono', monospace;
     padding: 0.75rem 1rem;
     border-radius: 0.5rem;
 

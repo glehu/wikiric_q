@@ -97,6 +97,12 @@ export default {
           desc: 'Find or create a store for services or products',
           icon: 'sym_o_store',
           link: '/stores'
+        },
+        {
+          t: 'Code Editor',
+          desc: 'Work in progress IDE',
+          icon: 'sym_o_frame_source',
+          link: '/codeeditor'
         }
       ],
       games: [

@@ -50,6 +50,12 @@ const routes = [{
     path: 'mockingbird',
     component: () => import('pages/MockingbirdView.vue')
   }, {
+    path: 'codeeditor',
+    component: () => import('components/codeeditor/CodeEditorHome.vue')
+  }, {
+    path: 'code',
+    component: () => import('components/codeeditor/CodeEditor.vue')
+  }, {
     path: 'flowfielddemo',
     component: () => import('pages/games/flowfield/FlowFieldDemo.vue')
   }, {

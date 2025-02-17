@@ -7,29 +7,33 @@
       <div class="absolute top-0 left-0 wfull hfull">
         <img src='../assets/account/pexels-marek-piwnicki-10050567.jpg' alt="Banner"
              style="object-fit: fill; object-position: top"
-             class="wfull hfull">
+             class="wfull hfull opacity-20">
         <div class="backdrop-blur
                     absolute top-0 left-0 wfull hfull"></div>
       </div>
-      <div class="flex column py28 <sm:px4 px8 z1">
-        <div class="q-pb-md md:text-start">
-          <p class="<sm:text-[10vw] <md:text-6xl
-                    text-7xl text-white mb2">
-            Open Source
-          </p>
-          <p class="<sm:text-[10vw] <md:text-7xl text-8xl
-                    text-weight-bold text-white">
-            Collaboration
-          </p>
-        </div>
-        <p class="no-pointer-events mt4
+      <div class="flex column py28 <sm:px4 px8 z1 items-center">
+        <div class="q-pb-md md:text-start lg:flex lg:flex-row gap-10">
+          <img src='../assets/wikiric/wikiric-logo-big.webp' alt="Logo"
+               class="pointer-events-none non-selectable"
+               style="max-width: 14dvw; max-height: 14dvw; object-fit: contain">
+          <div>
+            <p class="<sm:text-[10vw] <md:text-6xl
+                    text-7xl mb2">
+              Open Source
+            </p>
+            <p class="<sm:text-[10vw] <md:text-7xl text-8xl
+                    text-weight-bold">
+              Collaboration
+            </p>
+            <p class="no-pointer-events mt4
                   sm:block
                   <sm:text-subtitle2 <sm:px4
-                  md:text-lg md:text-start
-                  text-white">
-          {{ $t("home.title") }}
-          <br>Powered by <span class="font-bold">wikiric</span>.
-        </p>
+                  md:text-lg md:text-start">
+              {{ $t("home.title") }}
+              <br>Powered by <span class="font-bold">wikiric</span>.
+            </p>
+          </div>
+        </div>
         <div class="relative mt16 flex justify-center
                     <sm:px4
                     md:justify-start">
@@ -38,7 +42,10 @@
                         <sm:wfull"
                  v-on:click="gotoLogin()">
             <div class="column text-left q-pa-md">
-              <p class="text-h5 text-weight-bold q-ma-none">Sign In</p>
+              <p class="text-h5 text-weight-bold q-ma-none
+                        on-primary-text">
+                Sign In
+              </p>
             </div>
           </q-btn>
           <q-btn color="transparent" no-caps
@@ -46,7 +53,10 @@
                         fmt_border <sm:wfull p2"
                  v-on:click="gotoRegistration()">
             <div class="column text-left q-pa-md">
-              <p class="text-h5 text-weight-bold q-ma-none">Register</p>
+              <p class="text-h5 text-weight-bold q-ma-none
+                        on-surface-text">
+                Register
+              </p>
             </div>
           </q-btn>
         </div>

@@ -73,7 +73,7 @@
       id="left_drawer"
       class="surface"
       v-model="leftDrawerOpen"
-      :breakpoint="1023"
+      behavior="mobile"
       no-swipe-open>
       <q-toolbar>
         <q-toolbar-title class="text-lg">
@@ -263,6 +263,12 @@ const linksList = [
     caption: 'Find or create a store for services or products',
     icon: 'sym_o_store',
     link: '/stores'
+  },
+  {
+    title: 'Code Editor',
+    caption: 'W.I.P.',
+    icon: 'sym_o_frame_source',
+    link: '/codeeditor'
   }
 ]
 
@@ -382,7 +388,7 @@ export default defineComponent({
           })
         }
       }
-      // Check if user has searched for a group
+      // Check if a user has searched for a group
       const groups = await dbGetGroups()
       const groupResults = groups.filter((group) =>
         group.t
