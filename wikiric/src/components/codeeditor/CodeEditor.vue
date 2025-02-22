@@ -189,6 +189,7 @@ import './wasm_exec'
 import { debounce } from 'quasar'
 import { DateTime } from 'luxon'
 import { SearchCursor } from '@codemirror/search'
+import { setDiagnostics } from '@codemirror/lint'
 
 // #######################################################################
 // *** VUE Internal ***
@@ -303,29 +304,49 @@ endproc
     },
     handleEditChange: async function (txt) {
       return new Promise((resolve) => {
+        // Turn words into tokens
         const resp = window.wPreCompile(txt, true)
-        console.log(resp)
         this.tokenList = []
         if (!resp.success) {
           return
         }
         this.errors = resp.errors
         this.warnings = 0
+        // Receive all tokens
+        const diagnostics = []
         let tk
         for (let i = 0; i < resp.tokens; i++) {
           tk = window.wGetToken(i, true)
           if (!tk.v) {
             this.warnings += 1
+            diagnostics.push({
+              from: tk.p,
+              to: tk.p + tk.len,
+              severity: 'warning',
+              message: `Invalid: "${tk.str}"`
+            })
+          } else if (tk.typ === 2) {
+            diagnostics.push({
+              from: tk.p,
+              to: tk.p + tk.len,
+              severity: 'warning',
+              message: `Unresolved: "${tk.str}"`
+            })
           }
           this.tokenList.push(tk)
           tokenMap.set(tk.str, tk)
         }
-        console.log(this.tokenList)
-        for (let i = 0; i < resp.errors; i++) {
-          tk = window.wGetErrors(i)
-        }
+        // for (let i = 0; i < resp.errors; i++) {
+        //   tk = window.wGetErrors(i)
+        // }
         this.hasChanged = true
+        // Apply syntax highlighting
         this.clr()
+        // Show syntax errors and warnings
+        this.view.dispatch(
+          setDiagnostics(this.view.state, diagnostics
+          ))
+        console.log(this.tokenList)
         resolve()
       })
     },
