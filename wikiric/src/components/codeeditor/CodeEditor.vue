@@ -411,7 +411,12 @@ endproc
     handleEditChange: async function (txt, doClr) {
       return new Promise((resolve) => {
         // Turn words into tokens
-        const resp = window.wPreCompile(txt, true)
+        let resp
+        if (txt) {
+          resp = window.wPreCompile(txt)
+        } else {
+          resp = window.wPreCompile()
+        }
         this.tokenList = []
         if (!resp.success) {
           return
@@ -845,23 +850,20 @@ ${value.replaceAll('\n', '<br>')
       if (!v.docChanged || v.changedRanges.length < 1) {
         return
       }
-      // console.log(v)
-      // const cr = v.changedRanges[0]
-      // let ins = ''
-      // let del = false
-      // if (v.changes.inserted.length > 0) {
-      //   for (let i = 0; i < v.changes.inserted.length; i++) {
-      //     ins += v.changes.inserted[i].text.toString()
-      //   }
-      // } else {
-      //   del = true
-      // }
-      // console.log('SENDING:', ins)
-      // // Tell tinyPreC about the editor changes
-      // const resp = window.wChangeDoc(del, cr.fromA, cr.toA, ins)
-      // console.log(resp)
+      const cr = v.changedRanges[0]
+      let ins = ''
+      let del = false
+      if (v.changes.inserted.length > 0) {
+        for (let i = 0; i < v.changes.inserted.length; i++) {
+          ins += v.changes.inserted[i].text.toString()
+        }
+      } else {
+        del = true
+      }
+      // Tell tinyPreC about the editor changes
+      window.wChangeDoc(del, cr.fromA, cr.toA, ins)
       // Run pre-compilation and update syntax highlighting
-      this.handleEditChange(this.code, true)
+      this.handleEditChange(null, true)
     },
     toggleTerminal: function () {
       if (this.vertSplitter < 90) {
@@ -1257,7 +1259,7 @@ WebAssembly.instantiateStreaming(fetch('./main.wasm'),
 <style>
 
 .big_border_left {
-  border-left: 4px solid var(--md-sys-color-primary-dark);
+  border-left: 3px solid var(--md-sys-color-primary-dark);
 }
 
 .ͼo {
