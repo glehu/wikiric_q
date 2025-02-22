@@ -189,7 +189,7 @@ import './wasm_exec'
 import { debounce } from 'quasar'
 import { DateTime } from 'luxon'
 import { SearchCursor } from '@codemirror/search'
-import { setDiagnostics } from '@codemirror/lint'
+import { lintGutter, setDiagnostics } from '@codemirror/lint'
 
 // #######################################################################
 // *** VUE Internal ***
@@ -244,6 +244,7 @@ endproc
         this.injectExtension(this.view, wordHover)
         this.injectExtension(this.view, underlineKeymap)
         this.injectExtension(this.view, highlightKeymap)
+        this.injectExtension(this.view, lintGutter())
         this.injectExtension(this.view, EditorView.updateListener.of(
           (v) => {
             this.evalDocChange(v)
@@ -253,7 +254,7 @@ endproc
           preventDefault: true,
           run: this.showSearchAnything
         }]))
-        this.handleEditChange(this.code)
+        this.handleEditChange(this.code, true)
       },
       internal: new BroadcastChannel('wikiric_internal'),
       tokenList: [],
@@ -302,10 +303,11 @@ endproc
       //   tiny: true
       // })
     },
-    handleEditChange: async function (txt) {
+    handleEditChange: async function (txt, doClr) {
       return new Promise((resolve) => {
         // Turn words into tokens
         const resp = window.wPreCompile(txt, true)
+        console.log(resp)
         this.tokenList = []
         if (!resp.success) {
           return
@@ -315,6 +317,7 @@ endproc
         // Receive all tokens
         const diagnostics = []
         let tk
+        let er
         for (let i = 0; i < resp.tokens; i++) {
           tk = window.wGetToken(i, true)
           if (!tk.v) {
@@ -322,7 +325,7 @@ endproc
             diagnostics.push({
               from: tk.p,
               to: tk.p + tk.len,
-              severity: 'warning',
+              severity: 'error', // "error" | "hint" | "info" | "warning"
               message: `Invalid: "${tk.str}"`
             })
           } else if (tk.typ === 2) {
@@ -330,23 +333,33 @@ endproc
               from: tk.p,
               to: tk.p + tk.len,
               severity: 'warning',
-              message: `Unresolved: "${tk.str}"`
+              message: `Unresolved: "${tk.str}"\n  (Check nearby Syntax Errors)`
             })
           }
           this.tokenList.push(tk)
           tokenMap.set(tk.str, tk)
         }
-        // for (let i = 0; i < resp.errors; i++) {
-        //   tk = window.wGetErrors(i)
-        // }
+        for (let i = 0; i < resp.errors; i++) {
+          er = window.wGetError(i)
+          if (er.from == null || er.to == null) {
+            continue
+          }
+          diagnostics.push({
+            from: er.from,
+            to: er.to,
+            severity: 'error',
+            message: er.msg
+          })
+        }
         this.hasChanged = true
-        // Apply syntax highlighting
-        this.clr()
         // Show syntax errors and warnings
         this.view.dispatch(
           setDiagnostics(this.view.state, diagnostics
           ))
         console.log(this.tokenList)
+        if (doClr) {
+          this.clr()
+        }
         resolve()
       })
     },
@@ -401,6 +414,26 @@ endproc
             detail: '| Template'
           },
           {
+            label: 'eraseall',
+            type: 'text',
+            apply: 'eraseall sFilename ',
+            detail: '| Template'
+          },
+          {
+            label: 'eraseall',
+            type: 'keyword'
+          },
+          {
+            label: 'replacetext',
+            type: 'text',
+            apply: 'replacetext sContent from \'a\' to \'b\' ',
+            detail: '| Template'
+          },
+          {
+            label: 'replacetext',
+            type: 'keyword'
+          },
+          {
             label: 'magic',
             type: 'text',
             apply: '⠁⭒*.✩.*⭒⠁',
@@ -419,8 +452,11 @@ endproc
         effects: StateEffect.reconfigure.of(extension)
       })
     },
-    clr: function () {
-      this.highlightTokens(this.view)
+    clr: async function () {
+      return new Promise((resolve) => {
+        this.highlightTokens(this.view)
+        resolve()
+      })
     },
     highlightTokens: function (view) {
       const effects = []
@@ -701,7 +737,7 @@ ${value.replaceAll('\n', '<br>')
       // // Tell tinyPreC about the editor changes
       // window.wChangeDoc(del, cr.fromA, cr.toA, ins)
       // Run pre-compilation and update syntax highlighting
-      this.handleEditChange(this.code)
+      this.handleEditChange(this.code, true)
     }
   }
 }
@@ -731,6 +767,7 @@ export const wordHover = hoverTooltip((view, pos, side) => {
     above: false,
     create (view) {
       const dom = document.createElement('div')
+      dom.style.padding = '4px'
       // Show the targeted Word/Token
       const token = document.createElement('div')
       token.style.padding = '4px 8px 4px 8px'
@@ -748,17 +785,29 @@ export const wordHover = hoverTooltip((view, pos, side) => {
         info.style.fontFamily = 'JetBrains Mono, monospace'
         const ref = tokenMap.get(tkString)
         let infString = `Type: ${ref.typName}`
-        if (ref.sTypName !== '') {
-          infString += ` ${ref.sTypName}`
+        if (ref.sTypName !== '' && ref.sTypName !== ref.typName) {
+          infString += ` (${ref.sTypName})`
         }
         info.textContent = infString
         dom.appendChild(info)
+        // Is there rule information?
+        if (ref.rs && ref.rs !== '') {
+          const rules = document.createElement('div')
+          rules.style.borderTop = '1px solid var(--md-sys-color-outline-variant)'
+          rules.style.padding = '4px 8px 4px 8px'
+          rules.style.fontSize = '0.8rem'
+          rules.style.fontFamily = 'JetBrains Mono, monospace'
+          rules.textContent = `{${ref.rs}}`
+          dom.appendChild(rules)
+        }
         // Buttons!
         const buttons = document.createElement('div')
+        buttons.style.borderBottom = '1px solid var(--md-sys-color-outline-variant)'
         buttons.style.display = 'flex'
         buttons.style.flexDirection = 'row'
+        buttons.style.justifyContent = 'end'
         buttons.style.gap = '0.25rem'
-        buttons.style.padding = '16px 8px 4px 8px'
+        buttons.style.padding = '14px 8px 8px 8px'
         buttons.style.fontFamily = 'JetBrains Mono, monospace'
         // -> Jump to source
         let btn = document.createElement('button')
@@ -1077,6 +1126,11 @@ WebAssembly.instantiateStreaming(fetch('./main.wasm'),
 .cm-line * {
   font-family: 'JetBrains Mono', monospace !important;
   font-variant-ligatures: normal !important;
+}
+
+.cm-diagnosticText,
+.cm-diagnosticText * {
+  font-size: 13px !important;
 }
 
 @media (min-width: 640px) {
