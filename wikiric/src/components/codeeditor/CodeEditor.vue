@@ -7,30 +7,8 @@
   - (where one would expect it without having to be visible on a screen under heavy use by the viewer).
   -->
 <template>
-  <div class="w-screen h-screen absolute">
-    <div class="fixed top_nav wfull h12 px4 gap-2
-                flex row items-center justify-between"
-         style="background-color: var(--md-sys-color-background-dark);
-                color: var(--md-sys-color-on-background-dark);
-                font-family: 'JetBrains Mono', monospace;
-                font-size: 0.8rem; font-weight: bolder">
-      <div class="flex row items-center gap-2">
-        <div>
-          <p>Last Save: {{ lastSave }}</p>
-          <p>{{ showChange }}{{ docName }}</p>
-        </div>
-      </div>
-      <div class="flex row gap-2">
-        <q-btn label="Save" icon="sym_o_save" dense no-caps
-               @click="saveDocument"
-               class="text-xs fontbold"/>
-        <q-btn label="Compile" icon="sym_o_memory" dense no-caps
-               class="text-xs fontbold"/>
-        <q-btn label="Fmt" icon="sym_o_mop" dense no-caps
-               class="text-xs fontbold"/>
-      </div>
-    </div>
-    <div class="z-top fixed right-0 pt4 mt_nav
+  <div class="z1 w-screen h-screen absolute">
+    <div class="z3 fixed right-0 top-[calc(2*50px)]
                 flex row justify-end pr3 gap-2">
       <div v-if="errors > 0"
            class="background rounded-md px2 py1 fontbold
@@ -70,24 +48,127 @@
         </template>
       </div>
     </div>
-    <div class="wfull mt_nav absolute overflow-hidden"
-         style="max-height: calc(100dvh - 110px);
-                transform: translateY(10px)">
-      <codemirror
-        v-model="code"
-        placeholder="Code goes here..."
-        :style="{ width: '100%', height: 'calc(100dvh - 100px)',
-                fontFamily: 'JetBrains Mono, monospace',
-                fontVariantLigatures: 'normal',
-                fontSize: '0.9rem', fontWeight: 'bold'
-      }"
-        :autofocus="true"
-        :indent-with-tab="true"
-        :tab-size="2"
-        :extensions="extensions"
-        @ready="handleReady"
-      />
-    </div>
+    <q-splitter
+      v-model="horiSplitter"
+      :separator-style="{backgroundColor: 'var(--md-sys-color-outline-variant)'}"
+      class="z1 wfull hfull overflow-hidden fixed"
+      style="max-height: calc(100dvh - var(--h_nav));
+             max-width: 100dvw;
+             top: calc(var(--h_nav))">
+      <template v-slot:before>
+        <div class="surface-variant hfull wfull flex row no-wrap"
+             style="max-height: calc(100dvh - var(--h_nav)); overflow-y: auto">
+          <div class="hfull w-[40px] fmt_border_right flex column no-wrap
+                      items-center justify-end pb3 gap-1">
+            <q-tabs class="text-subtitle2 no-wrap wfull"
+                    v-model="leftTab"
+                    dense no-caps vertical switch-indicator
+                    active-class="surface fmt_border_bottom fmt_border_top">
+              <q-tab name="files" icon="folder" style="fill: #de3730 !important;"/>
+              <q-tab name="compare" icon="compare_arrows"/>
+              <q-tab name="settings" icon="sym_o_settings"/>
+            </q-tabs>
+            <q-btn icon="sym_o_bookmarks" dense unelevated size="0.9rem" disable
+                   class="w-[39px] h-[40px] flex items-center justify-center"/>
+            <q-btn icon="sym_o_search" dense unelevated size="0.9rem"
+                   class="w-[39px] h-[40px] flex items-center justify-center" @click="showSearchAnything"/>
+            <q-btn icon="sym_o_terminal" dense unelevated size="0.9rem"
+                   class="w-[39px] h-[40px] flex items-center justify-center" @click="toggleTerminal"
+                   :class="{ background: vertSplitter < 95, big_border_left: vertSplitter < 95 }"/>
+            <q-btn icon="sym_o_wifi_off" dense unelevated size="0.8rem"
+                   class="w-[39px] h-[40px] flex items-center justify-center" disable/>
+          </div>
+          <div class="flex-grow hfull">
+            <div class="flex column gap-1.5 px3 pt1 pb3
+                        wfull fmt_border_bottom">
+              <q-btn label="Save" icon="sym_o_save" dense no-caps unelevated
+                     @click="saveDocument"
+                     class="fontbold wfull" size="0.8rem" align="left"/>
+              <q-btn label="Compile" icon="sym_o_memory" dense no-caps unelevated
+                     class="fontbold wfull" size="0.8rem" align="left"/>
+              <q-btn label="Fmt" icon="sym_o_mop" dense no-caps unelevated
+                     class="fontbold wfull" size="0.8rem" align="left"/>
+            </div>
+            <div class="px4 pt2 pb10 wfull hfull">
+              <p class="fontbold text-subtitle2 mb2 pointer-events-none">Project</p>
+              <q-tree
+                :nodes="simple"
+                v-model:selected="selected"
+                class="text-subtitle2"
+                dense default-expand-all
+                node-key="label"
+              />
+            </div>
+          </div>
+        </div>
+      </template>
+      <template v-slot:after>
+        <q-tabs class="z2 text-subtitle2 no-wrap fmt_border_bottom"
+                style="height: 40px !important;"
+                v-model="tab"
+                dense no-caps switch-indicator
+                active-class="surface"
+                align="left">
+          <q-tab name="Help" icon="sym_o_data_info_alert" class="no-wrap w-10"/>
+          <q-tab name="Untitled" label="Untitled"/>
+          <q-btn icon="sym_o_add" class="w-10 hfull" dense no-caps unelevated square/>
+        </q-tabs>
+        <q-splitter
+          v-model="vertSplitter"
+          :limits="[ 1, 99 ]"
+          :separator-style="{backgroundColor: 'var(--md-sys-color-outline-variant)'}"
+          horizontal
+          class="z1 wfull overflow-hidden fixed"
+          style="max-height: calc(100dvh - 40px - var(--h_nav));
+                 top: calc(40px + var(--h_nav))">
+          <template v-slot:before>
+            <div class="wfull hfull">
+              <codemirror
+                v-model="code"
+                placeholder="Code goes here..."
+                :style="{ width: '100%', height: '100%',
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontVariantLigatures: 'normal',
+                      fontSize: '0.9rem', fontWeight: 'bold'}"
+                :autofocus="true"
+                :indent-with-tab="true"
+                :tab-size="2"
+                :extensions="extensions"
+                @ready="handleReady"
+              />
+            </div>
+          </template>
+          <template v-slot:after>
+            <div class="wfull hfull relative">
+              <div class="z1 wfull surface-variant px2 row gap-2
+                          items-center h-[36px] sticky top-0">
+                <template v-if="vertSplitter < 90">
+                  <q-btn icon="sym_o_check_indeterminate_small"
+                         @click="vertSplitter = 95"
+                         dense unelevated/>
+                </template>
+                <template v-else>
+                  <q-btn icon="sym_o_expand_content"
+                         @click="vertSplitter = 60"
+                         dense unelevated/>
+                </template>
+                <p class="fontbold text-xs pointer-events-none">Terminal</p>
+              </div>
+              <div class="wfull hfull p4 background">
+                <q-timeline color="primary" side="right" class="my0">
+                  <q-timeline-entry v-for="entry in terminalEntries" :key="entry"
+                                    :subtitle="entry.time + '&nbsp;(' + entry.duration + ')'">
+                    <div>
+                      <p class="text-xs fontbold">{{ entry.description }}</p>
+                    </div>
+                  </q-timeline-entry>
+                </q-timeline>
+              </div>
+            </div>
+          </template>
+        </q-splitter>
+      </template>
+    </q-splitter>
   </div>
   <q-dialog v-model="searchAnything" class="z-max"
             style="background-color: transparent">
@@ -190,6 +271,7 @@ import { debounce } from 'quasar'
 import { DateTime } from 'luxon'
 import { SearchCursor } from '@codemirror/search'
 import { lintGutter, setDiagnostics } from '@codemirror/lint'
+import { ref } from 'vue'
 
 // #######################################################################
 // *** VUE Internal ***
@@ -205,35 +287,31 @@ export default {
         oneDark
       ],
       view: null,
-      code: `:procedure Sample
+      code: `"===================
+  proc Sax
+"===================
+end
+
+:procedure Sax
 var
-  nZaehler : number
-  nMax     : number
-  sStr     : string
+  st : string
 beginproc
-  nMax = xml.structcount('test')
-  xfor nZaehler = 0 to nMax
-    sStr : xml.getvalue('val')
-    xml.nextstruct('test')
-  next nZaehler
+  proc Sample(st)
 endproc
 
-:procedure structcount
+:procedure Sample
 par
-  structname = string
+  input : string = ''
 beginproc
+  proc EraseAll(input)
 endproc
 
-:procedure nextstruct
+:procedure EraseAll
 par
-  structname = string
+  filename : string
 beginproc
-endproc
-
-:procedure getvalue
-par
-  structname = string
-beginproc
+  halt              only not fileexist filename " This should never happen!
+  eraseall filename only     fileexist filename
 endproc
 `,
       handleReady: (payload) => {
@@ -267,7 +345,34 @@ endproc
       resultTxt: '',
       replaceText: '',
       errors: 0,
-      warnings: 0
+      warnings: 0,
+      horiSplitter: ref(20),
+      vertSplitter: ref(70),
+      showTerminal: true,
+      terminalEntries: [{
+        duration: '0s',
+        time: DateTime.now().toLocaleString(DateTime.TIME_SIMPLE),
+        description: 'Console Ready'
+      }],
+      leftTab: ref('files'),
+      tab: ref('Untitled'),
+      selected: ref('Untitled'),
+      simple: [
+        {
+          label: 'Untitled Project',
+          icon: 'folder',
+          children: [
+            {
+              label: 'Untitled',
+              icon: 'description'
+            },
+            {
+              label: 'Untitled 2',
+              icon: 'description'
+            }
+          ]
+        }
+      ]
     }
   },
   created () {
@@ -307,7 +412,6 @@ endproc
       return new Promise((resolve) => {
         // Turn words into tokens
         const resp = window.wPreCompile(txt, true)
-        console.log(resp)
         this.tokenList = []
         if (!resp.success) {
           return
@@ -339,6 +443,16 @@ endproc
           this.tokenList.push(tk)
           tokenMap.set(tk.str, tk)
         }
+        this.terminalEntries.unshift({
+          duration: resp.duration,
+          time: DateTime.now().toLocaleString({
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+          }),
+          description: `Pre-Compile DONE with ${this.errors} errors | ${this.warnings} warnings`
+        })
         for (let i = 0; i < resp.errors; i++) {
           er = window.wGetError(i)
           if (er.from == null || er.to == null) {
@@ -431,6 +545,14 @@ endproc
           },
           {
             label: 'replacetext',
+            type: 'keyword'
+          },
+          {
+            label: 'only fileexist ',
+            type: 'keyword'
+          },
+          {
+            label: 'only not fileexist ',
             type: 'keyword'
           },
           {
@@ -723,7 +845,7 @@ ${value.replaceAll('\n', '<br>')
       if (!v.docChanged || v.changedRanges.length < 1) {
         return
       }
-      console.log(v)
+      // console.log(v)
       // const cr = v.changedRanges[0]
       // let ins = ''
       // let del = false
@@ -734,10 +856,19 @@ ${value.replaceAll('\n', '<br>')
       // } else {
       //   del = true
       // }
+      // console.log('SENDING:', ins)
       // // Tell tinyPreC about the editor changes
-      // window.wChangeDoc(del, cr.fromA, cr.toA, ins)
+      // const resp = window.wChangeDoc(del, cr.fromA, cr.toA, ins)
+      // console.log(resp)
       // Run pre-compilation and update syntax highlighting
       this.handleEditChange(this.code, true)
+    },
+    toggleTerminal: function () {
+      if (this.vertSplitter < 90) {
+        this.vertSplitter = 100
+      } else {
+        this.vertSplitter = 70
+      }
     }
   }
 }
@@ -767,12 +898,14 @@ export const wordHover = hoverTooltip((view, pos, side) => {
     above: false,
     create (view) {
       const dom = document.createElement('div')
-      dom.style.padding = '4px'
+      dom.style.padding = '8px'
       // Show the targeted Word/Token
       const token = document.createElement('div')
       token.style.padding = '4px 8px 4px 8px'
+      token.style.color = 'var(--md-sys-color-on-background)'
       token.style.fontSize = '1rem'
       token.style.fontFamily = 'JetBrains Mono, monospace'
+      token.style.backgroundColor = 'var(--md-sys-color-background)'
       const tkString = text.slice(start - from, end - from)
       token.textContent = tkString
       dom.appendChild(token)
@@ -797,7 +930,7 @@ export const wordHover = hoverTooltip((view, pos, side) => {
           rules.style.padding = '4px 8px 4px 8px'
           rules.style.fontSize = '0.8rem'
           rules.style.fontFamily = 'JetBrains Mono, monospace'
-          rules.textContent = `{${ref.rs}}`
+          rules.textContent = `Syntax: {${ref.rs}}`
           dom.appendChild(rules)
         }
         // Buttons!
@@ -1122,6 +1255,25 @@ WebAssembly.instantiateStreaming(fetch('./main.wasm'),
 </script>
 
 <style>
+
+.big_border_left {
+  border-left: 4px solid var(--md-sys-color-primary-dark);
+}
+
+.ͼo {
+  background-color: var(--md-sys-color-background-dark) !important;
+}
+
+.ͼo .cm-activeLine {
+}
+
+.ͼo .cm-gutters {
+  background-color: var(--md-sys-color-background-dark) !important;
+}
+
+.ͼo .cm-activeLineGutter {
+  background-color: var(--md-sys-color-surface-variant-dark) !important;
+}
 
 .cm-line * {
   font-family: 'JetBrains Mono', monospace !important;
