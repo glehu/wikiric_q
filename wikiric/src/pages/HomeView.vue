@@ -2,7 +2,7 @@
   <q-page class="wfull hfull background
                  flex justify-center">
     <div class="flex column wfull relative overflow-hidden
-                text-center items-center
+                text-center items-center justify-center
                 non-selectable">
       <div class="absolute top-0 left-0 wfull hfull">
         <img src='../assets/account/pexels-marek-piwnicki-10050567.jpg' alt="Banner"

@@ -8,9 +8,11 @@
   -->
 <template>
   <div class="w-screen h-screen absolute">
-    <div class="h12 px4 flex row gap-2 items-center justify-between
-                relative"
-         style="font-family: 'JetBrains Mono', monospace;
+    <div class="fixed top_nav wfull h12 px4 gap-2
+                flex row items-center justify-between"
+         style="background-color: var(--md-sys-color-background-dark);
+                color: var(--md-sys-color-on-background-dark);
+                font-family: 'JetBrains Mono', monospace;
                 font-size: 0.8rem; font-weight: bolder">
       <div class="flex row items-center gap-2">
         <div>
@@ -28,20 +30,64 @@
                class="text-xs fontbold"/>
       </div>
     </div>
-    <codemirror
-      v-model="code"
-      placeholder="Code goes here..."
-      :style="{ width: '100%', height: '100%',
+    <div class="z-top fixed right-0 pt4 mt_nav
+                flex row justify-end pr3 gap-2">
+      <div v-if="errors > 0"
+           class="background rounded-md px2 py1 fontbold
+                  flex items-center no-wrap">
+        <p class="mr2 text-sm">{{ errors }}</p>
+        <q-icon name="sym_o_error" size="1.4rem"
+                style="color: rgb(220, 100, 100)">
+          <q-tooltip>
+            <p class="text-xs fontbold">
+              {{ errors }}&nbsp;Errors&nbsp;found!
+            </p>
+          </q-tooltip>
+        </q-icon>
+      </div>
+      <div class="background rounded-md px2 py1 fontbold
+                  flex items-center no-wrap">
+        <template v-if="warnings > 0">
+          <p class="mr2 text-sm">{{ warnings }}</p>
+          <q-icon name="sym_o_warning" size="1.4rem"
+                  style="color: #ffb648">
+            <q-tooltip>
+              <p class="text-xs fontbold">
+                {{ warnings }}&nbsp;Warnings&nbsp;found!
+              </p>
+            </q-tooltip>
+          </q-icon>
+        </template>
+        <template v-else>
+          <q-icon name="sym_o_done_outline" size="1.4rem"
+                  style="color: #06a386">
+            <q-tooltip>
+              <p class="text-xs fontbold">
+                No&nbsp;Warnings
+              </p>
+            </q-tooltip>
+          </q-icon>
+        </template>
+      </div>
+    </div>
+    <div class="wfull mt_nav absolute overflow-hidden"
+         style="max-height: calc(100dvh - 110px);
+                transform: translateY(10px)">
+      <codemirror
+        v-model="code"
+        placeholder="Code goes here..."
+        :style="{ width: '100%', height: 'calc(100dvh - 100px)',
                 fontFamily: 'JetBrains Mono, monospace',
                 fontVariantLigatures: 'normal',
                 fontSize: '0.9rem', fontWeight: 'bold'
       }"
-      :autofocus="true"
-      :indent-with-tab="true"
-      :tab-size="2"
-      :extensions="extensions"
-      @ready="handleReady"
-    />
+        :autofocus="true"
+        :indent-with-tab="true"
+        :tab-size="2"
+        :extensions="extensions"
+        @ready="handleReady"
+      />
+    </div>
   </div>
   <q-dialog v-model="searchAnything" class="z-max"
             style="background-color: transparent">
@@ -170,6 +216,24 @@ beginproc
     xml.nextstruct('test')
   next nZaehler
 endproc
+
+:procedure structcount
+par
+  structname = string
+beginproc
+endproc
+
+:procedure nextstruct
+par
+  structname = string
+beginproc
+endproc
+
+:procedure getvalue
+par
+  structname = string
+beginproc
+endproc
 `,
       handleReady: (payload) => {
         this.view = payload.view
@@ -199,7 +263,9 @@ endproc
       searchMode: 'search',
       queryText: '',
       resultTxt: '',
-      replaceText: ''
+      replaceText: '',
+      errors: 0,
+      warnings: 0
     }
   },
   created () {
@@ -238,12 +304,25 @@ endproc
     handleEditChange: async function (txt) {
       return new Promise((resolve) => {
         const resp = window.wPreCompile(txt, true)
+        console.log(resp)
         this.tokenList = []
+        if (!resp.success) {
+          return
+        }
+        this.errors = resp.errors
+        this.warnings = 0
         let tk
         for (let i = 0; i < resp.tokens; i++) {
           tk = window.wGetToken(i, true)
+          if (!tk.v) {
+            this.warnings += 1
+          }
           this.tokenList.push(tk)
           tokenMap.set(tk.str, tk)
+        }
+        console.log(this.tokenList)
+        for (let i = 0; i < resp.errors; i++) {
+          tk = window.wGetErrors(i)
         }
         this.hasChanged = true
         this.clr()
@@ -314,6 +393,11 @@ endproc
         effects: StateEffect.appendConfig.of(extension)
       })
     },
+    reconfigureExtension: function (view, extension) {
+      view.dispatch({
+        effects: StateEffect.reconfigure.of(extension)
+      })
+    },
     clr: function () {
       this.highlightTokens(this.view)
     },
@@ -338,6 +422,14 @@ endproc
           continue
         }
         switch (tk.typ) {
+          case 2:
+            // Error
+            effects.push(addHighlightError.of({
+              from: tk.p,
+              to: (tk.p + tk.len)
+            }))
+            amt += 1
+            continue
           case 5:
             // Number
             effects.push(addHighlightNumber.of({
@@ -571,12 +663,22 @@ ${value.replaceAll('\n', '<br>')
      * @param {ViewUpdate} v
      */
     evalDocChange: function (v) {
-      console.log(v)
-      if (!v.docChanged) {
+      if (!v.docChanged || v.changedRanges.length < 1) {
         return
       }
-      // Tell tinyPreC about the editor changes
-
+      console.log(v)
+      // const cr = v.changedRanges[0]
+      // let ins = ''
+      // let del = false
+      // if (v.changes.inserted.length > 0) {
+      //   for (let i = 0; i < v.changes.inserted.length; i++) {
+      //     ins += v.changes.inserted[i].text.toString()
+      //   }
+      // } else {
+      //   del = true
+      // }
+      // // Tell tinyPreC about the editor changes
+      // window.wChangeDoc(del, cr.fromA, cr.toA, ins)
       // Run pre-compilation and update syntax highlighting
       this.handleEditChange(this.code)
     }

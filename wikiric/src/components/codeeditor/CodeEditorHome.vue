@@ -10,7 +10,8 @@
   <div class="w-screen hfull relative pb20
               flex column no-wrap items-center"
        style="font-family: 'JetBrains Mono', monospace !important;">
-    <div class="wfull flex row no-wrap overflow-x-clip surface fontbold my1 py1">
+    <div class="wfull flex row no-wrap overflow-x-clip surface fontbold
+                my1 py1 pointer-events-none select-none">
       <template v-for="amt in 150" :key="amt">
         <p>&nbsp;***&nbsp;wkr&nbsp;IDE</p>
       </template>
@@ -21,11 +22,12 @@
            class="pointer-events-none non-selectable z2 absolute"
            style="max-width: 380px; max-height: 380px; object-fit: contain">
     </div>
-    <p class="text-size-[max(2rem,6dvw)] z2 mt2 mb0"
+    <p class="text-size-[max(2rem,6dvw)] z2 mt2 mb0
+              pointer-events-none select-none"
        style="font-weight: bolder">
       wikiric IDE
     </p>
-    <div class="max-h-500px md:max-w-[80dvw] wfull hfull z2
+    <div class="max-h-600px md:max-w-[80dvw] wfull hfull z2
                 overflow-x-hidden overflow-y-auto rounded-xl">
       <codemirror
         disabled
@@ -39,12 +41,12 @@
         @ready="handleReady"
       />
     </div>
-    <div class="absolute h300 w300 tertiary rounded-full"
-         style="transform: translateY(1000px)
-                           translateX(calc(0px - 50vw - 150px))"/>
-    <div class="absolute h300 w300 primary rounded-full"
-         style="transform: translateY(600px)
-                           translateX(calc(50vw + 150px))"/>
+    <div class="absolute h-[64dvw] w-[64dvw] tertiary rounded-full"
+         style="transform: translateY(80dvw)
+                           translateX(calc(0px - 60dvw))"/>
+    <div class="absolute h-[64dvw] w-[64dvw] primary rounded-full"
+         style="transform: translateY(calc(60dvw))
+                           translateX(calc(60dvw))"/>
     <div class="surface px6 py4 rounded-xl z2 mt10
                 md:max-w-[80dvw] wfull
                 flex justify-center items-center gap-x-4 gap-y-2">
@@ -110,6 +112,14 @@
              class="pointer-events-none non-selectable"
              style="max-width: 500px; object-fit: contain">
       </div>
+    </div>
+    <div class="surface px6 py4 rounded-xl z2 mt10
+                md:max-w-[80dvw] wfull
+                flex justify-center items-center gap-x-4 gap-y-2">
+      <q-btn label="Try it out!" color="primary"
+             class="fontbold px8 py4 rounded-xl"
+             @click="$router.push('/code')"/>
+      <p>Warning: Work in progress, unfinished product.</p>
     </div>
   </div>
 </template>
