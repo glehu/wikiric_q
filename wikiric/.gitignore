@@ -29,6 +29,9 @@ yarn-error.log*
 *.njsproj
 *.sln
 
+# WASM (it's big!)
+**/*.wasm
+
 # local .env files
 .env.local*
 

@@ -850,18 +850,33 @@ ${value.replaceAll('\n', '<br>')
       if (!v.docChanged || v.changedRanges.length < 1) {
         return
       }
+      console.log(v)
       const cr = v.changedRanges[0]
       let ins = ''
       let del = false
+      let lines = 0
       if (v.changes.inserted.length > 0) {
         for (let i = 0; i < v.changes.inserted.length; i++) {
-          ins += v.changes.inserted[i].text.toString()
+          lines = v.changes.inserted[i].lines
+          for (let j = 0; j < v.changes.inserted[i].text.length; j++) {
+            if (v.changes.inserted[i].text[j] && v.changes.inserted[i].text[j].length > 0) {
+              ins += v.changes.inserted[i].text[j]
+            }
+            if (lines > 1) {
+              ins += '\n'
+              lines -= 1
+            }
+          }
         }
       } else {
         del = true
       }
+      if (ins === '') {
+        del = true
+      }
       // Tell tinyPreC about the editor changes
-      window.wChangeDoc(del, cr.fromA, cr.toA, ins)
+      const resp = window.wChangeDoc(del, cr.fromA, cr.toA, ins)
+      console.log(resp)
       // Run pre-compilation and update syntax highlighting
       this.handleEditChange(null, true)
     },
