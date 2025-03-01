@@ -374,7 +374,9 @@
           'syscall/js.finalizeRef': (vRef) => {
             // Note: TinyGo does not support finalizers so this should never be
             // called.
-            console.error('syscall/js.finalizeRef not implemented')
+            //
+            // Luca: This error was annoying, so I removed it!
+            // console.error('syscall/js.finalizeRef not implemented')
           },
 
           // func stringVal(value string) ref

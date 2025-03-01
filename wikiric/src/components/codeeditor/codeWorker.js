@@ -10,7 +10,7 @@
 'use strict'
 
 import wikiricUtils from 'src/libs/wikiric-utils'
-import '../../../public/wasm_exec'
+import './wasm_exec'
 
 {
   // #########################
@@ -37,8 +37,8 @@ import '../../../public/wasm_exec'
           tinyPreC().then(() => {
             prefWasm = true
             console.debug('[codeWorker] Initialized TinyPreC WASM Module')
-            const resp = go.wPreCompile("str : 'hey'", true)
-            console.log(resp)
+            // const resp = self.wPreCompile("str : 'hey'", true)
+            // console.log(resp)
           })
         }
         break

@@ -59,27 +59,28 @@
         <div class="surface-variant hfull wfull flex row no-wrap"
              style="max-height: calc(100dvh - var(--h_nav)); overflow-y: auto">
           <div class="hfull w-[40px] fmt_border_right flex column no-wrap
-                      items-center justify-end pb3 gap-1">
+                      items-center justify-end pb2 gap-1 fixed"
+               style="max-height: calc(100dvh - var(--h_nav))">
             <q-tabs class="text-subtitle2 no-wrap wfull"
                     v-model="leftTab"
                     dense no-caps vertical switch-indicator
                     active-class="surface fmt_border_bottom fmt_border_top">
-              <q-tab name="files" icon="folder" style="fill: #de3730 !important;"/>
+              <q-tab name="files" icon="folder"/>
               <q-tab name="compare" icon="compare_arrows"/>
               <q-tab name="settings" icon="sym_o_settings"/>
             </q-tabs>
-            <q-btn icon="sym_o_bookmarks" dense unelevated size="0.9rem" disable
+            <q-btn icon="sym_o_bookmarks" dense square unelevated size="0.9rem" disable
                    class="w-[39px] h-[40px] flex items-center justify-center"/>
-            <q-btn icon="sym_o_search" dense unelevated size="0.9rem"
+            <q-btn icon="sym_o_search" dense square unelevated size="0.9rem"
                    class="w-[39px] h-[40px] flex items-center justify-center" @click="showSearchAnything"/>
-            <q-btn icon="sym_o_terminal" dense unelevated size="0.9rem"
+            <q-btn icon="sym_o_terminal" dense square unelevated size="0.9rem"
                    class="w-[39px] h-[40px] flex items-center justify-center" @click="toggleTerminal"
-                   :class="{ background: vertSplitter < 95, big_border_left: vertSplitter < 95 }"/>
-            <q-btn icon="sym_o_wifi_off" dense unelevated size="0.8rem"
+                   :class="{ surface: vertSplitter < 95, big_border_left: vertSplitter < 95 }"/>
+            <q-btn icon="sym_o_wifi_off" dense square unelevated size="0.8rem"
                    class="w-[39px] h-[40px] flex items-center justify-center" disable/>
           </div>
-          <div class="flex-grow hfull">
-            <div class="flex column gap-1.5 px3 pt1 pb3
+          <div class="flex-grow hfull pl-[40px]">
+            <div class="flex column gap-1.5 px3 pt2 pb3
                         wfull fmt_border_bottom">
               <q-btn label="Save" icon="sym_o_save" dense no-caps unelevated
                      @click="saveDocument"
@@ -89,10 +90,33 @@
               <q-btn label="Fmt" icon="sym_o_mop" dense no-caps unelevated
                      class="fontbold wfull" size="0.8rem" align="left"/>
             </div>
-            <div class="px4 pt2 pb10 wfull hfull">
-              <p class="fontbold text-subtitle2 mb2 pointer-events-none">Project</p>
+            <div class="px4 pt4 pb10 wfull hfull whitespace-nowrap">
+              <q-input v-model="treeQuery"
+                       class="surface rounded-md px4"
+                       label="Search Files"
+                       label-color="brand-p"
+                       dense borderless>
+                <template v-slot:append>
+                  <q-icon v-if="treeQuery !== ''" name="clear" class="cursor-pointer" @click="resetFilter"/>
+                </template>
+              </q-input>
+              <p class="fontbold text-subtitle2 mt4 mb2 pointer-events-none">
+                Recent Files
+              </p>
               <q-tree
-                :nodes="simple"
+                :nodes="cacheTree"
+                :filter="treeQuery"
+                v-model:selected="selectedCache"
+                class="text-subtitle2"
+                dense default-expand-all
+                node-key="label"
+              />
+              <p class="fontbold text-subtitle2 mt4 mb2 pointer-events-none">
+                Project
+              </p>
+              <q-tree
+                :nodes="projectTree"
+                :filter="treeQuery"
                 v-model:selected="selected"
                 class="text-subtitle2"
                 dense default-expand-all
@@ -127,9 +151,9 @@
                 v-model="code"
                 placeholder="Code goes here..."
                 :style="{ width: '100%', height: '100%',
-                      fontFamily: 'JetBrains Mono, monospace',
-                      fontVariantLigatures: 'normal',
-                      fontSize: '0.9rem', fontWeight: 'bold'}"
+                          fontFamily: 'JetBrains Mono, monospace',
+                          fontVariantLigatures: 'normal',
+                          fontSize: '0.9rem', fontWeight: 'bold'}"
                 :autofocus="true"
                 :indent-with-tab="true"
                 :tab-size="2"
@@ -271,7 +295,8 @@ import { debounce } from 'quasar'
 import { DateTime } from 'luxon'
 import { SearchCursor } from '@codemirror/search'
 import { lintGutter, setDiagnostics } from '@codemirror/lint'
-import { ref } from 'vue'
+import { ref, toRaw } from 'vue'
+import { dbGetAllDataKeys, dbGetData, dbSetData } from 'src/libs/wikistore'
 
 // #######################################################################
 // *** VUE Internal ***
@@ -332,10 +357,15 @@ endproc
           preventDefault: true,
           run: this.showSearchAnything
         }]))
-        this.handleEditChange(this.code, true)
+        this.initializeEditor()
       },
+      cWorker: null,
       internal: new BroadcastChannel('wikiric_internal'),
+      initialized: false,
+      isRendering: false,
+      preCompResp: null,
       tokenList: [],
+      projectName: 'Untitled Project',
       docName: 'Untitled',
       hasChanged: false,
       lastSave: 'None',
@@ -356,18 +386,28 @@ endproc
       }],
       leftTab: ref('files'),
       tab: ref('Untitled'),
+      selectedCache: ref('Untitled'),
+      treeQuery: '',
+      cacheTree: [
+        {
+          label: 'Cached',
+          icon: 'sync',
+          children: [
+            {
+              label: 'Untitled',
+              icon: 'file_copy'
+            }
+          ]
+        }
+      ],
       selected: ref('Untitled'),
-      simple: [
+      projectTree: [
         {
           label: 'Untitled Project',
           icon: 'folder',
           children: [
             {
               label: 'Untitled',
-              icon: 'description'
-            },
-            {
-              label: 'Untitled 2',
               icon: 'description'
             }
           ]
@@ -397,38 +437,36 @@ endproc
       this.setUpPReCWorker()
     },
     setUpPReCWorker: function () {
-      // this.cWorker = new Worker(
-      //   new URL('codeWorker.js', import.meta.url),
-      //   { type: 'module' })
-      // this.cWorker.onmessage = e => {
-      //   console.log(e.data)
-      // }
-      // this.cWorker.postMessage({
-      //   msg: '[c:init]',
-      //   tiny: true
-      // })
+      this.cWorker = new Worker(
+        new URL('codeWorker.js', import.meta.url),
+        { type: 'module' })
+      this.cWorker.onmessage = e => {
+        console.log(e.data)
+      }
+      this.cWorker.postMessage({
+        msg: '[c:init]',
+        tiny: true
+      })
     },
-    handleEditChange: async function (txt, doClr) {
-      return new Promise((resolve) => {
-        // Turn words into tokens
-        let resp
-        if (txt) {
-          resp = window.wPreCompile(txt)
-        } else {
-          resp = window.wPreCompile()
-        }
+    initializeEditor: async function () {
+      if (this.initialized) {
+        return
+      }
+      await this.getDocumentContent()
+      window.wSetDoc(this.code)
+      await this.getSyntaxInformation()
+      if (this.tokenList.length === 1 && !this.tokenList[0].success) {
         this.tokenList = []
-        if (!resp.success) {
-          return
-        }
-        this.errors = resp.errors
-        this.warnings = 0
-        // Receive all tokens
+      }
+      const noContent = this.code.trim() === ''
+      if (noContent) {
+        this.tokenList = []
+      }
+      if (this.tokenList.length > 0) {
         const diagnostics = []
         let tk
-        let er
-        for (let i = 0; i < resp.tokens; i++) {
-          tk = window.wGetToken(i, true)
+        for (let i = 0; i < this.tokenList.length; i++) {
+          tk = this.tokenList[i]
           if (!tk.v) {
             this.warnings += 1
             diagnostics.push({
@@ -445,9 +483,45 @@ endproc
               message: `Unresolved: "${tk.str}"\n  (Check nearby Syntax Errors)`
             })
           }
-          this.tokenList.push(tk)
           tokenMap.set(tk.str, tk)
         }
+        // Show syntax errors and warnings
+        this.view.dispatch(
+          setDiagnostics(this.view.state, diagnostics
+          ))
+        await this.clr(true)
+        this.initialized = true
+      }
+      this.terminalEntries.unshift({
+        duration: '0s',
+        time: DateTime.now().toLocaleString({
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        }),
+        description: `Document INIT with ${this.warnings} warnings`
+      })
+      if (noContent) {
+        return
+      }
+      this.handleEditChange(this.code, true)
+    },
+    handleEditChange: async function (txt, doClr) {
+      return new Promise((resolve) => {
+        // Turn words into tokens
+        let resp
+        if (txt) {
+          resp = window.wPreCompile(txt)
+        } else {
+          resp = window.wPreCompile()
+        }
+        this.preCompResp = resp
+        // this.tokenList = []
+        if (!resp.success) {
+          return
+        }
+        this.errors = resp.errors
         this.terminalEntries.unshift({
           duration: resp.duration,
           time: DateTime.now().toLocaleString({
@@ -456,10 +530,48 @@ endproc
             second: '2-digit',
             hour12: false
           }),
-          description: `Pre-Compile DONE with ${this.errors} errors | ${this.warnings} warnings`
+          description: `Pre-Compile DONE with ${this.errors} errors, ${this.warnings} warnings`
         })
-        for (let i = 0; i < resp.errors; i++) {
-          er = window.wGetError(i)
+        if (this.terminalEntries.length > 50) {
+          this.terminalEntries.pop()
+        }
+        let startIndex = -1
+        // Diff token states
+        resp = window.wCompareResults()
+        const ranges = []
+        let tmp
+        for (let i = 0; i < resp.changes + resp.additions + resp.deletions; i++) {
+          tmp = window.wGetChanges(i)
+          if (tmp == null || !tmp.success) {
+            continue
+          }
+          ranges.push(tmp)
+        }
+        if (ranges.length > 0) {
+          ranges.sort((a, b) => a.fromA - b.fromA)
+          startIndex = ranges[0].fromA
+          for (let i = 0; i < ranges.length; i++) {
+            console.log(ranges[i])
+          }
+        } else {
+          // Initial run
+          this.warnings = 0
+          this.tokenList = []
+        }
+        // The following function is recursive!
+        const diagnostics = []
+        setTimeout(() => {
+          this.processPreCompResponse(startIndex, doClr, diagnostics, ranges)
+        }, 0)
+        resolve()
+      })
+    },
+    processPreCompResponse: async function (i, doClr, diagnostics, ranges) {
+      let er
+      if (i >= this.preCompResp.tokens) {
+        // We are done collecting Tokens!
+        for (let j = 0; j < this.preCompResp.errors; j++) {
+          er = window.wGetError(j)
           if (er.from == null || er.to == null) {
             continue
           }
@@ -470,17 +582,86 @@ endproc
             message: er.msg
           })
         }
-        this.hasChanged = true
+        await this.submitSyntaxInformation()
         // Show syntax errors and warnings
         this.view.dispatch(
           setDiagnostics(this.view.state, diagnostics
           ))
-        console.log(this.tokenList)
-        if (doClr) {
-          this.clr()
+        const bc = new BroadcastChannel('wikiric_internal')
+        bc.postMessage({
+          app: 'codeeditor',
+          type: 'render',
+          noreset: true
+        })
+        return
+      }
+      // Receive all tokens
+      const tk = window.wGetToken(i, true)
+      if (!tk.success) {
+        // We are done here (canceled by WASM)
+        return
+      }
+      if (!tk.v) {
+        this.warnings += 1
+        diagnostics.push({
+          from: tk.p,
+          to: tk.p + tk.len,
+          severity: 'error', // "error" | "hint" | "info" | "warning"
+          message: `Invalid: "${tk.str}"`
+        })
+      } else if (tk.typ === 2) {
+        diagnostics.push({
+          from: tk.p,
+          to: tk.p + tk.len,
+          severity: 'warning',
+          message: `Unresolved: "${tk.str}"\n  (Check nearby Syntax Errors)`
+        })
+      }
+      tokenMap.set(tk.str, tk)
+      this.hasChanged = true
+      // Are there ranges?
+      // We can save a lot of time when only getting the tokens
+      // ...that were actually changed!
+      if (ranges.length > 0) {
+        console.log('BOUNDS CHECK', i)
+        let inBounds = true
+        if (i > ranges[0].toB) {
+          // Remove already seen range
+          ranges.splice(0, 1)
+          inBounds = false
         }
-        resolve()
-      })
+        // Are there still ranges present?
+        if (ranges.length < 1) {
+          console.log('EOL', i)
+          // Done!
+          setTimeout(() => {
+            this.processPreCompResponse(
+              this.preCompResp.tokens, doClr, diagnostics, ranges)
+          }, 0)
+          return
+        }
+        if (i < ranges[0].fromA) {
+          // Set i to the index before the next changed token
+          i = ranges[0].fromA - 1
+          inBounds = false
+        }
+        if (inBounds) {
+          // Insert/Change/Delete Tokens
+          if (i > this.tokenList.length) {
+            this.tokenList.push(tk)
+            console.log('IN BOUNDS ADD', i, ranges[0])
+          } else {
+            this.tokenList[i] = tk
+            console.log('IN BOUNDS MOD', i, ranges[0])
+          }
+        }
+      } else {
+        this.tokenList.push(tk)
+      }
+      // Start next iteration
+      setTimeout(() => {
+        this.processPreCompResponse(i + 1, doClr, diagnostics, ranges)
+      }, 0)
     },
     myCompletions: function (context) {
       const word = context.matchBefore(/\w*/)
@@ -579,18 +760,21 @@ endproc
         effects: StateEffect.reconfigure.of(extension)
       })
     },
-    clr: async function () {
+    clr: async function (reset) {
       return new Promise((resolve) => {
-        this.highlightTokens(this.view)
+        this.highlightTokens(this.view, reset)
+        this.isRendering = false
         resolve()
       })
     },
-    highlightTokens: function (view) {
+    highlightTokens: function (view, reset) {
       const effects = []
-      effects.push(removeHighlight.of({
-        from: 0,
-        to: 1
-      }))
+      if (reset) {
+        effects.push(removeHighlight.of({
+          from: 0,
+          to: 1
+        }))
+      }
       let amt = 0
       for (const tk of this.tokenList) {
         if (tk.len <= 0) {
@@ -670,8 +854,27 @@ endproc
       return true
     },
     saveDocument: function () {
+      if (this.code.trim() === '') {
+        this.code = ''
+        this.tokenList = []
+        this.errors = 0
+        this.warnings = 0
+        tokenMap.clear()
+      }
+      this.submitDocumentContent()
+      this.submitSyntaxInformation()
       this.lastSave = DateTime.now().toHTTP()
       this.hasChanged = false
+      this.terminalEntries.unshift({
+        duration: '0s',
+        time: DateTime.now().toLocaleString({
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        }),
+        description: 'Document Saved'
+      })
     },
     renameToken: function (query, newText) {
       if (!newText || newText === '') {
@@ -742,6 +945,17 @@ endproc
           break
         case 'search':
           this.searchToken(e.query)
+          break
+        case 'render':
+          if (this.isRendering) {
+            break
+          }
+          this.isRendering = true
+          if (e.noreset) {
+            this.clr(false)
+          } else {
+            this.clr(true)
+          }
           break
       }
     },
@@ -843,31 +1057,19 @@ ${value.replaceAll('\n', '<br>')
       this.searchAnything = false
     },
     /**
-     *
+     * evalDocChange analyzes the ViewUpdate to retrieve changes made to the document.
+     * We cannot have this be async since the changes act as transactions.
      * @param {ViewUpdate} v
      */
     evalDocChange: function (v) {
       if (!v.docChanged || v.changedRanges.length < 1) {
         return
       }
-      console.log(v)
       const cr = v.changedRanges[0]
       let ins = ''
       let del = false
-      let lines = 0
       if (v.changes.inserted.length > 0) {
-        for (let i = 0; i < v.changes.inserted.length; i++) {
-          lines = v.changes.inserted[i].lines
-          for (let j = 0; j < v.changes.inserted[i].text.length; j++) {
-            if (v.changes.inserted[i].text[j] && v.changes.inserted[i].text[j].length > 0) {
-              ins += v.changes.inserted[i].text[j]
-            }
-            if (lines > 1) {
-              ins += '\n'
-              lines -= 1
-            }
-          }
-        }
+        ins = this.getTextFromChange(v)
       } else {
         del = true
       }
@@ -875,16 +1077,132 @@ ${value.replaceAll('\n', '<br>')
         del = true
       }
       // Tell tinyPreC about the editor changes
-      const resp = window.wChangeDoc(del, cr.fromA, cr.toA, ins)
-      console.log(resp)
+      window.wChangeDoc(del, cr.fromA, cr.toA, ins)
       // Run pre-compilation and update syntax highlighting
       this.handleEditChange(null, true)
+    },
+    getTextFromChange: function (v) {
+      let lines = 0
+      let ins = ''
+      for (let i = 0; i < v.changes.inserted.length; i++) {
+        if (v.changes.inserted[i].children != null) {
+          lines = v.changes.inserted[i].lines
+          for (let j = 0; j < v.changes.inserted[i].children.length; j++) {
+            for (let k = 0; k < v.changes.inserted[i].children[j].text.length; k++) {
+              if (v.changes.inserted[i].children[j].text[k] &&
+                v.changes.inserted[i].children[j].text[k].length > 0) {
+                ins += v.changes.inserted[i].children[j].text[k]
+              }
+              if (lines > 1) {
+                ins += '\n'
+                lines -= 1
+              }
+            }
+          }
+          continue
+        }
+        lines = v.changes.inserted[i].lines
+        for (let j = 0; j < v.changes.inserted[i].text.length; j++) {
+          if (v.changes.inserted[i].text[j] && v.changes.inserted[i].text[j].length > 0) {
+            ins += v.changes.inserted[i].text[j]
+          }
+          if (lines > 1) {
+            ins += '\n'
+            lines -= 1
+          }
+        }
+      }
+      return ins
     },
     toggleTerminal: function () {
       if (this.vertSplitter < 90) {
         this.vertSplitter = 100
       } else {
         this.vertSplitter = 70
+      }
+    },
+    resetFilter () {
+      this.treeQuery = ''
+    },
+    submitSyntaxInformation: async function () {
+      const key = `syntax_${btoa(this.projectName)}_${btoa(this.docName)}`
+      const keys = await dbGetAllDataKeys()
+      if (!keys || keys.length < 1) {
+        // Set (initial data)
+        const data = {
+          tokenList: toRaw(this.tokenList)
+        }
+        await dbSetData(key, data)
+        return
+      }
+      for (let i = 0; i < keys.length; i++) {
+        if (keys[i] !== key) {
+          continue
+        }
+        let data = await dbGetData(keys[i])
+        if (data != null) {
+          // Update (found and valid)
+          data.tokenList = toRaw(this.tokenList)
+          await dbSetData(keys[i], data)
+          return
+        }
+        // Set (found but invalid)
+        data = {
+          tokenList: toRaw(this.tokenList)
+        }
+        await dbSetData(keys[i], data)
+        return
+      }
+      // Set (not found)
+      const data = {
+        tokenList: toRaw(this.tokenList)
+      }
+      await dbSetData(key, data)
+    },
+    submitDocumentContent: async function () {
+      const key = `code_doc_${btoa(this.projectName)}_${btoa(this.docName)}`
+      await dbSetData(key, this.code)
+    },
+    getSyntaxInformation: async function () {
+      const key = `syntax_${btoa(this.projectName)}_${btoa(this.docName)}`
+      const keys = await dbGetAllDataKeys()
+      if (!keys || keys.length < 1) {
+        this.tokenList = []
+        return
+      }
+      for (let i = 0; i < keys.length; i++) {
+        if (keys[i] !== key) {
+          continue
+        }
+        const data = await dbGetData(keys[i])
+        if (data != null && data.tokenList != null && data.tokenList.length > 0) {
+          // Retrieve (found and valid)
+          this.tokenList = data.tokenList
+          return
+        }
+        // Invalid
+        this.tokenList = []
+        return
+      }
+    },
+    getDocumentContent: async function () {
+      const key = `code_doc_${btoa(this.projectName)}_${btoa(this.docName)}`
+      const keys = await dbGetAllDataKeys()
+      if (!keys || keys.length < 1) {
+        return
+      }
+      for (let i = 0; i < keys.length; i++) {
+        if (keys[i] !== key) {
+          continue
+        }
+        const data = await dbGetData(keys[i])
+        if (data != null && typeof data === 'string') {
+          // Retrieve (found and valid)
+          this.code = data
+          return
+        }
+        // Invalid
+        return
       }
     }
   }
@@ -1274,7 +1592,7 @@ WebAssembly.instantiateStreaming(fetch('./main.wasm'),
 <style>
 
 .big_border_left {
-  border-left: 3px solid var(--md-sys-color-primary-dark);
+  border-left: 2px solid white;
 }
 
 .ͼo {
