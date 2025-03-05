@@ -66,8 +66,8 @@
                     dense no-caps vertical switch-indicator
                     active-class="surface fmt_border_bottom fmt_border_top">
               <q-tab name="files" icon="folder"/>
-              <q-tab name="compare" icon="compare_arrows"/>
-              <q-tab name="settings" icon="sym_o_settings"/>
+              <q-tab name="compare" icon="compare_arrows" disable/>
+              <q-tab name="settings" icon="sym_o_settings" disable/>
             </q-tabs>
             <q-btn icon="sym_o_bookmarks" dense square unelevated size="0.9rem" disable
                    class="w-[39px] h-[40px] flex items-center justify-center"/>
@@ -86,29 +86,35 @@
                      @click="saveDocument"
                      class="fontbold wfull" size="0.8rem" align="left"/>
               <q-btn label="Compile" icon="sym_o_memory" dense no-caps unelevated
+                     disable
                      class="fontbold wfull" size="0.8rem" align="left"/>
               <q-btn label="Fmt" icon="sym_o_mop" dense no-caps unelevated
+                     disable
                      class="fontbold wfull" size="0.8rem" align="left"/>
             </div>
-            <div class="px4 pt4 pb10 wfull hfull whitespace-nowrap">
+            <div class="px4 pt2 pb10 wfull hfull whitespace-nowrap">
               <q-input v-model="treeQuery"
-                       class="surface rounded-md px4"
+                       class="rounded-md"
                        label="Search Files"
                        label-color="brand-p"
                        dense borderless>
+                <template v-slot:before>
+                  <q-icon name="search"/>
+                </template>
                 <template v-slot:append>
                   <q-icon v-if="treeQuery !== ''" name="clear" class="cursor-pointer" @click="resetFilter"/>
                 </template>
               </q-input>
-              <p class="fontbold text-subtitle2 mt4 mb2 pointer-events-none">
-                Recent Files
+              <p class="fontbold text-subtitle2 mt2 mb2 pointer-events-none">
+                Recent Files – {{ cacheTree[0].children.length }}
               </p>
               <q-tree
                 :nodes="cacheTree"
                 :filter="treeQuery"
                 v-model:selected="selectedCache"
+                selected-color="brand-p"
                 class="text-subtitle2"
-                dense default-expand-all
+                dense
                 node-key="label"
               />
               <p class="fontbold text-subtitle2 mt4 mb2 pointer-events-none">
@@ -118,6 +124,7 @@
                 :nodes="projectTree"
                 :filter="treeQuery"
                 v-model:selected="selected"
+                selected-color="brand-p"
                 class="text-subtitle2"
                 dense default-expand-all
                 node-key="label"
@@ -131,11 +138,100 @@
                 style="height: 40px !important;"
                 v-model="tab"
                 dense no-caps switch-indicator
-                active-class="surface"
+                active-class="background"
                 align="left">
-          <q-tab name="Help" icon="sym_o_data_info_alert" class="no-wrap w-10"/>
-          <q-tab name="Untitled" label="Untitled"/>
-          <q-btn icon="sym_o_add" class="w-10 hfull" dense no-caps unelevated square/>
+          <q-btn-dropdown auto-close flat
+                          menu-self="top left"
+                          menu-anchor="bottom left"
+                          content-class="surface-variant pb2
+                                         shadow-none rounded-0
+                                         fmt_border_top
+                                         fmt_border_right
+                                         fmt_border_bottom">
+            <template v-slot:label>
+              <q-icon name="sym_o_menu"/>
+            </template>
+            <q-list class="on-background-text" dense>
+              <q-item>
+                <q-item-section>
+                  <q-item-label caption lines="2">
+                    <span class="fontbold">Editor</span>
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item clickable disable>
+                <q-item-section>
+                  <q-item-label lines="2">
+                    <q-icon name="sym_o_question_mark" size="1.2rem"/>
+                    Help Center
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item clickable disable>
+                <q-item-section>
+                  <q-item-label lines="2">
+                    <q-icon name="sym_o_settings" size="1.2rem"/>
+                    Preferences
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item clickable @click="$router.push('/redir?redirect=/code')">
+                <q-item-section>
+                  <q-item-label lines="2">
+                    <q-icon name="sym_o_restart_alt" size="1.2rem"/>
+                    Restart IDE
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item>
+                <q-item-section>
+                  <q-item-label caption lines="2">
+                    <span class="fontbold">Project</span>
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+            <q-item clickable disable>
+              <q-item-section>
+                <q-item-label lines="2">
+                  <q-icon name="sym_o_add" size="1.2rem"/>
+                  New Project
+                </q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-btn-dropdown>
+          <template v-for="t in tabs" :key="t">
+            <q-tab :name="t.docName"
+                   :label="t.docName"
+                   class="no-wrap">
+              <q-menu touch-position context-menu auto-close
+                      class="surface-variant
+                             fmt_border
+                             shadow-none rounded-0">
+                <q-list class="on-background-text text-sm" dense>
+                  <q-item clickable disable>
+                    <q-item-section>
+                      <q-item-label lines="2">
+                        <q-icon name="sym_o_edit_note" size="1.2rem"/>
+                        Rename
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                  <q-item clickable disable>
+                    <q-item-section>
+                      <q-item-label lines="2">
+                        <q-icon name="sym_o_delete" size="1.2rem"/>
+                        Delete
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-menu>
+            </q-tab>
+          </template>
+          <q-btn icon="sym_o_add" class="w-10 hfull"
+                 @click="createNewFile"
+                 dense no-caps unelevated square/>
         </q-tabs>
         <q-splitter
           v-model="vertSplitter"
@@ -158,8 +254,56 @@
                 :indent-with-tab="true"
                 :tab-size="2"
                 :extensions="extensions"
-                @ready="handleReady"
-              />
+                @ready="handleReady"/>
+              <q-menu touch-position context-menu auto-close
+                      class="surface-variant
+                             fmt_border
+                             shadow-none rounded-0">
+                <q-list class="on-background-text text-sm" dense>
+                  <q-item clickable disable>
+                    <q-item-section>
+                      <q-item-label lines="2">
+                        <q-icon name="sym_o_content_copy" size="1.2rem"/>
+                        Copy
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                  <q-item clickable disable>
+                    <q-item-section>
+                      <q-item-label lines="2">
+                        <q-icon name="sym_o_content_cut" size="1.2rem"/>
+                        Cut
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                  <q-item clickable disable>
+                    <q-item-section>
+                      <q-item-label lines="2">
+                        <q-icon name="sym_o_content_paste" size="1.2rem"/>
+                        Paste
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                  <div class="wfull my2 fmt_border_top"></div>
+                  <q-item clickable @click="showSearchAnything">
+                    <q-item-section>
+                      <q-item-label lines="2">
+                        <q-icon name="sym_o_search" size="1.2rem"/>
+                        Search
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                  <div class="wfull my2 fmt_border_top"></div>
+                  <q-item clickable @click="saveDocument">
+                    <q-item-section>
+                      <q-item-label lines="2">
+                        <q-icon name="sym_o_save" size="1.2rem"/>
+                        Save File
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-menu>
             </div>
           </template>
           <template v-slot:after>
@@ -295,7 +439,7 @@ import { debounce } from 'quasar'
 import { DateTime } from 'luxon'
 import { SearchCursor } from '@codemirror/search'
 import { lintGutter, setDiagnostics } from '@codemirror/lint'
-import { ref, toRaw } from 'vue'
+import { toRaw } from 'vue'
 import { dbGetAllDataKeys, dbGetData, dbSetData } from 'src/libs/wikistore'
 
 // #######################################################################
@@ -312,33 +456,7 @@ export default {
         oneDark
       ],
       view: null,
-      code: `"===================
-  proc Sax
-"===================
-end
-
-:procedure Sax
-var
-  st : string
-beginproc
-  proc Sample(st)
-endproc
-
-:procedure Sample
-par
-  input : string = ''
-beginproc
-  proc EraseAll(input)
-endproc
-
-:procedure EraseAll
-par
-  filename : string
-beginproc
-  halt              only not fileexist filename " This should never happen!
-  eraseall filename only     fileexist filename
-endproc
-`,
+      code: '',
       handleReady: (payload) => {
         this.view = payload.view
         this.injectExtension(this.view, autocompletion({
@@ -360,8 +478,12 @@ endproc
         this.initializeEditor()
       },
       cWorker: null,
+      wasm: false,
+      wasmDiagnostics: [],
+      wasmRanges: [],
       internal: new BroadcastChannel('wikiric_internal'),
       initialized: false,
+      wasReset: false,
       isRendering: false,
       preCompResp: null,
       tokenList: [],
@@ -376,47 +498,40 @@ endproc
       replaceText: '',
       errors: 0,
       warnings: 0,
-      horiSplitter: ref(20),
-      vertSplitter: ref(70),
+      horiSplitter: 20,
+      vertSplitter: 70,
       showTerminal: true,
       terminalEntries: [{
         duration: '0s',
         time: DateTime.now().toLocaleString(DateTime.TIME_SIMPLE),
         description: 'Console Ready'
       }],
-      leftTab: ref('files'),
-      tab: ref('Untitled'),
-      selectedCache: ref('Untitled'),
+      leftTab: 'files',
+      tab: 'Untitled',
+      tabs: [],
+      selectedCache: 'Untitled',
       treeQuery: '',
       cacheTree: [
         {
           label: 'Cached',
           icon: 'sync',
-          children: [
-            {
-              label: 'Untitled',
-              icon: 'file_copy'
-            }
-          ]
+          selectable: false,
+          children: []
         }
       ],
-      selected: ref('Untitled'),
+      selected: 'Untitled',
       projectTree: [
         {
           label: 'Untitled Project',
           icon: 'folder',
-          children: [
-            {
-              label: 'Untitled',
-              icon: 'description'
-            }
-          ]
+          selectable: false,
+          children: []
         }
       ]
     }
   },
   created () {
-    this.handleEditChange = debounce(this.handleEditChange, 750)
+    this.handleEditChange = debounce(this.handleEditChange, 1000)
   },
   mounted () {
     this.initFunction()
@@ -434,7 +549,6 @@ endproc
       this.internal.onmessage = event => {
         this.handleCodeEditorInternal(event.data)
       }
-      this.setUpPReCWorker()
     },
     setUpPReCWorker: function () {
       this.cWorker = new Worker(
@@ -452,8 +566,16 @@ endproc
       if (this.initialized) {
         return
       }
+      this.createNewFile()
       await this.getDocumentContent()
-      window.wSetDoc(this.code)
+      if (this.wasm) {
+        this.cWorker.postMessage({
+          msg: '[c:sdoc]',
+          c: this.code
+        })
+      } else {
+        window.wSetDoc(this.code)
+      }
       await this.getSyntaxInformation()
       if (this.tokenList.length === 1 && !this.tokenList[0].success) {
         this.tokenList = []
@@ -502,13 +624,18 @@ endproc
         }),
         description: `Document INIT with ${this.warnings} warnings`
       })
-      if (noContent) {
-        return
-      }
-      this.handleEditChange(this.code, true)
+      this.setUpPReCWorker()
     },
     handleEditChange: async function (txt, doClr) {
       return new Promise((resolve) => {
+        // Can we redirect this to the worker?
+        if (this.wasm) {
+          this.cWorker.postMessage({
+            msg: '[c:prec]'
+          })
+          resolve()
+          return
+        }
         // Turn words into tokens
         let resp
         if (txt) {
@@ -516,6 +643,12 @@ endproc
         } else {
           resp = window.wPreCompile()
         }
+        this.receiveWasmPreCompileResult(resp, doClr)
+        resolve()
+      })
+    },
+    receiveWasmPreCompileResult: async function (resp, doClr) {
+      return new Promise((resolve) => {
         this.preCompResp = resp
         // this.tokenList = []
         if (!resp.success) {
@@ -530,39 +663,136 @@ endproc
             second: '2-digit',
             hour12: false
           }),
-          description: `Pre-Compile DONE with ${this.errors} errors, ${this.warnings} warnings`
+          description: `Pre-Compile DONE with ${this.errors} errors`
         })
         if (this.terminalEntries.length > 50) {
           this.terminalEntries.pop()
         }
-        let startIndex = -1
-        // Diff token states
-        resp = window.wCompareResults()
-        const ranges = []
-        let tmp
-        for (let i = 0; i < resp.changes + resp.additions + resp.deletions; i++) {
-          tmp = window.wGetChanges(i)
-          if (tmp == null || !tmp.success) {
-            continue
+        // Can we redirect this?
+        if (this.wasm) {
+          this.cWorker.postMessage({
+            msg: '[c:diff]'
+          })
+        } else {
+          // Diff token states
+          resp = window.wCompareResults()
+          const max = resp.changes +
+            resp.additions +
+            resp.deletions
+          const ranges = []
+          let tmp
+          for (let i = 0; i < max; i++) {
+            tmp = window.wGetChanges(i)
+            if (tmp == null || !tmp.success) {
+              continue
+            }
+            ranges.push(tmp)
           }
-          ranges.push(tmp)
+          this.receiveWasmDiffResult(ranges, doClr)
         }
-        if (ranges.length > 0) {
-          ranges.sort((a, b) => a.fromA - b.fromA)
+        resolve()
+      })
+    },
+    receiveWasmDiffResult: async function (ranges, doClr) {
+      return new Promise((resolve) => {
+        let startIndex = -1
+        if (ranges && ranges.length > 0) {
+          if (ranges.length > 1) {
+            ranges.sort((a, b) => a.fromA - b.fromA)
+          }
+          this.wasmRanges = ranges
           startIndex = ranges[0].fromA
           for (let i = 0; i < ranges.length; i++) {
-            console.log(ranges[i])
+            if (ranges[i].typ === 'change' &&
+              ranges[i].fromA === ranges[i].toB) {
+              ranges[i].toB += 1
+            }
           }
         } else {
+          if (!this.wasReset) {
+            // Initial run
+            this.warnings = 0
+            this.tokenList = []
+          }
+          this.wasmRanges = []
+        }
+        // Can we redirect this?
+        if (this.wasm) {
+          this.cWorker.postMessage({
+            msg: '[c:get]',
+            i: startIndex,
+            c: doClr
+          })
+        } else {
+          const diagnostics = []
+          // The following function is recursive!
+          setTimeout(() => {
+            this.processPreCompResponse(startIndex, doClr, diagnostics, ranges)
+          }, 0)
+        }
+        resolve()
+      })
+    },
+    receiveWasmDiagnostics: async function (diagnostics) {
+      return new Promise((resolve) => {
+        this.wasmDiagnostics = diagnostics
+        this.view.dispatch(setDiagnostics(this.view.state, diagnostics))
+        // We have the tokens and ranges, so we can update our token list accordingly
+        if (this.wasmRanges.length > 0) {
+          if (this.wasmRanges.length > 1) {
+            this.wasmRanges.sort((a, b) => a.fromA - b.fromA)
+          }
+          for (let i = 0; i < this.wasmRanges.length; i++) {
+            this.cWorker.postMessage({
+              msg: '[c:read]',
+              f: this.wasmRanges[i].fromA,
+              t: this.wasmRanges[i].toB,
+              c: i === this.wasmRanges.length - 1
+            })
+          }
+        } else if (!this.wasReset) {
           // Initial run
           this.warnings = 0
           this.tokenList = []
         }
-        // The following function is recursive!
-        const diagnostics = []
-        setTimeout(() => {
-          this.processPreCompResponse(startIndex, doClr, diagnostics, ranges)
-        }, 0)
+        resolve()
+      })
+    },
+    receiveWasmTokenList: async function (list, doClr) {
+      return new Promise((resolve) => {
+        for (let i = 0; i < list.length; i++) {
+          // Insert/Change/Delete Tokens
+          if (list[i].ix > this.tokenList.length) {
+            // Currently: 0123_ (length 4)
+            // New Index: ____4 (length 5) => 4-4=0
+            // No buffer token will be inserted.
+            //
+            // Currently: 0123___ (length 4)
+            // New Index: ______6 (length 7) => 6-2=2
+            // Two buffer tokens will be inserted.
+            //
+            const buf = list[i].ix - this.tokenList.length
+            // E.g. 6 - 4 = 2
+            for (let j = 0; j < buf; j++) {
+              this.tokenList.push({
+                len: 0,
+                typ: 0,
+                styp: 0
+              })
+            }
+            this.tokenList.push(list[i].t)
+          } else {
+            this.tokenList[list[i].ix] = list[i].t
+          }
+        }
+        if (doClr) {
+          if (!this.wasReset) {
+            this.wasReset = true
+            this.clr(true)
+          } else if (this.wasmRanges.length > 0) {
+            this.clr(true)
+          }
+        }
         resolve()
       })
     },
@@ -584,9 +814,7 @@ endproc
         }
         await this.submitSyntaxInformation()
         // Show syntax errors and warnings
-        this.view.dispatch(
-          setDiagnostics(this.view.state, diagnostics
-          ))
+        this.view.dispatch(setDiagnostics(this.view.state, diagnostics))
         const bc = new BroadcastChannel('wikiric_internal')
         bc.postMessage({
           app: 'codeeditor',
@@ -595,10 +823,14 @@ endproc
         })
         return
       }
-      // Receive all tokens
+      // Receive token by token
       const tk = window.wGetToken(i, true)
       if (!tk.success) {
         // We are done here (canceled by WASM)
+        setTimeout(() => {
+          this.processPreCompResponse(
+            this.preCompResp.tokens, doClr, diagnostics, ranges)
+        }, 0)
         return
       }
       if (!tk.v) {
@@ -623,7 +855,6 @@ endproc
       // We can save a lot of time when only getting the tokens
       // ...that were actually changed!
       if (ranges.length > 0) {
-        console.log('BOUNDS CHECK', i)
         let inBounds = true
         if (i > ranges[0].toB) {
           // Remove already seen range
@@ -632,7 +863,6 @@ endproc
         }
         // Are there still ranges present?
         if (ranges.length < 1) {
-          console.log('EOL', i)
           // Done!
           setTimeout(() => {
             this.processPreCompResponse(
@@ -649,10 +879,8 @@ endproc
           // Insert/Change/Delete Tokens
           if (i > this.tokenList.length) {
             this.tokenList.push(tk)
-            console.log('IN BOUNDS ADD', i, ranges[0])
           } else {
             this.tokenList[i] = tk
-            console.log('IN BOUNDS MOD', i, ranges[0])
           }
         }
       } else {
@@ -769,16 +997,44 @@ endproc
     },
     highlightTokens: function (view, reset) {
       const effects = []
-      if (reset) {
-        effects.push(removeHighlight.of({
-          from: 0,
-          to: 1
-        }))
-      }
       let amt = 0
-      for (const tk of this.tokenList) {
-        if (tk.len <= 0) {
+      const docLen = this.code.length
+      const ranges = [].concat(this.wasmRanges)
+      console.log(this.wasmRanges)
+      let tk
+      for (let i = 0; i < this.tokenList.length; i++) {
+        if (ranges.length > 0) {
+          if (i < ranges[0].fromA) {
+            // Too early!
+            i = ranges[0].fromA
+          }
+          if (i >= ranges[0].toB) {
+            // Too late!
+            ranges.splice(0, 1)
+            if (ranges.length < 1) {
+              // Done
+              break
+            }
+            // Check if we need to skip some tokens
+            if (i < ranges[0].fromA) {
+              i = ranges[0].fromA - 1
+              continue
+            }
+          }
+        }
+        tk = this.tokenList[i]
+        if (tk == null || tk.len == null || tk.len <= 0) {
           continue
+        }
+        // Guard out of bounds
+        if (tk.p >= docLen || tk.p + tk.len >= docLen) {
+          continue
+        }
+        if (reset) {
+          effects.push(removeHighlight.of({
+            from: tk.p,
+            to: (tk.p + tk.len)
+          }))
         }
         if (!tk.v) {
           // Error
@@ -957,6 +1213,37 @@ endproc
             this.clr(true)
           }
           break
+        case 'wasm':
+          this.wasm = true
+          this.cWorker.postMessage({
+            msg: '[c:sdoc]',
+            c: this.code
+          })
+          this.terminalEntries.unshift({
+            duration: '0s',
+            time: DateTime.now().toLocaleString({
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false
+            }),
+            description: 'Instantiated Pre-Compiler Go WebAssembly Module'
+          })
+          // this.handleEditChange(this.code, true)
+          break
+        case 'prec':
+          this.receiveWasmPreCompileResult(structuredClone(e.r))
+          break
+        case 'diff':
+          this.receiveWasmDiffResult(structuredClone(e.r), true)
+          break
+        case 'done':
+          this.receiveWasmDiagnostics(structuredClone(e.d))
+          break
+        case 'token':
+          if (e.s != null && e.s) {
+            this.receiveWasmTokenList(structuredClone(e.tl), e.c)
+          }
       }
     },
     showSearchAnything: function () {
@@ -1023,6 +1310,10 @@ endproc
       tmp += '</p>'
       str += tmp
       const resp = window.wGetTokenUsages(query)
+      this.cWorker.postMessage({
+        msg: '[c:gus]',
+        q: query
+      })
       if (!resp || !resp.success) {
         str += '</div>'
         this.resultTxt = str
@@ -1077,7 +1368,17 @@ ${value.replaceAll('\n', '<br>')
         del = true
       }
       // Tell tinyPreC about the editor changes
-      window.wChangeDoc(del, cr.fromA, cr.toA, ins)
+      if (this.wasm) {
+        this.cWorker.postMessage({
+          msg: '[c:cdoc]',
+          d: del,
+          f: cr.fromA,
+          t: cr.toA,
+          i: ins
+        })
+      } else {
+        window.wChangeDoc(del, cr.fromA, cr.toA, ins)
+      }
       // Run pre-compilation and update syntax highlighting
       this.handleEditChange(null, true)
     },
@@ -1204,6 +1505,61 @@ ${value.replaceAll('\n', '<br>')
         // Invalid
         return
       }
+    },
+    createNewFile: function () {
+      let name = 'Untitled'
+      let ix
+      let highestIx = 0
+      let usIx
+      for (let i = 0; i < this.tabs.length; i++) {
+        usIx = this.tabs[i].docName.lastIndexOf('_')
+        if ((usIx === -1 && this.tabs[i].docName === name) ||
+          (this.tabs[i].docName.substring(0, usIx) === name)) {
+          ix = this.getFileNumber(this.tabs[i].docName)
+          if (ix > highestIx) {
+            highestIx = ix + 1
+          } else {
+            highestIx += 1
+          }
+        }
+      }
+      if (highestIx > 0) {
+        name += `_${highestIx}`
+      }
+      this.tabs.push({
+        docName: name
+      })
+      const vThis = this
+      this.cacheTree[0].children.push({
+        label: name,
+        icon: 'description',
+        handler: function () {
+          vThis.tab = name
+        }
+      })
+      this.projectTree[0].children.push({
+        label: name,
+        icon: 'description',
+        handler: function () {
+          vThis.tab = name
+        }
+      })
+      this.tab = name
+    },
+    /**
+     *
+     * @param {String} docName
+     */
+    getFileNumber: function (docName) {
+      const dotIx = docName.lastIndexOf('.')
+      if (dotIx !== -1) {
+        docName = docName.substring(0, dotIx)
+      }
+      const usIx = docName.lastIndexOf('_')
+      if (usIx === -1 || usIx === docName.length - 1) {
+        return 0
+      }
+      return parseInt(docName.substring(usIx + 1), 10)
     }
   }
 }
@@ -1434,7 +1790,9 @@ const highlightField = StateField.define({
         })
       } else if (e.is(removeHighlight)) {
         highlights = highlights.update({
-          filter: (f, t, value) => value.class === 'XYZ'
+          filter: (from, to) => {
+            return from < e.value.from || to > e.value.to
+          }
         })
       }
     }
@@ -1592,7 +1950,7 @@ WebAssembly.instantiateStreaming(fetch('./main.wasm'),
 <style>
 
 .big_border_left {
-  border-left: 2px solid white;
+  border-left: 2px solid var(--md-sys-color-on-surface);
 }
 
 .ͼo {
