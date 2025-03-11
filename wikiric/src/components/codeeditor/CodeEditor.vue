@@ -531,7 +531,7 @@ export default {
     }
   },
   created () {
-    this.handleEditChange = debounce(this.handleEditChange, 1000)
+    this.handleEditChange = debounce(this.handleEditChange, 500)
   },
   mounted () {
     this.initFunction()
@@ -783,6 +783,9 @@ export default {
             this.tokenList.push(list[i].t)
           } else {
             this.tokenList[list[i].ix] = list[i].t
+          }
+          if (list[i].t != null && list[i].t.str != null) {
+            tokenMap.set(list[i].t.str, list[i].t)
           }
         }
         if (doClr) {
@@ -1938,7 +1941,7 @@ if (!WebAssembly.instantiateStreaming) { // polyfill
 }
 const go = new global.Go()
 let mod, inst
-WebAssembly.instantiateStreaming(fetch('./main.wasm'),
+WebAssembly.instantiateStreaming(fetch('main.wasm'),
   go.importObject).then((result) => {
   mod = result.module
   inst = result.instance

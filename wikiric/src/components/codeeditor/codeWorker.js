@@ -84,7 +84,7 @@ import './wasm_exec'
    */
   async function tinyPreC () {
     go = new global.Go()
-    wasm = await wikiricUtils.wasmBrowserInstantiate('./main.wasm', go.importObject)
+    wasm = await wikiricUtils.wasmBrowserInstantiate('main.wasm', go.importObject)
     return new Promise((resolve) => {
       go.run(wasm.instance)
       resolve()

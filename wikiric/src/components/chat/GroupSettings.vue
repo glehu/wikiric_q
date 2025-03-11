@@ -91,6 +91,21 @@
         </template>
         <q-card class="background">
           <q-card-section>
+            <p class="text-h6 fontbold mb4">
+              Max Width
+            </p>
+            <div class="mb2">
+              <p>Currently: <span class="fontbold">{{ chatMaxWidth }}</span></p>
+              <div class="wfull flex justify-evenly mt2">
+                <q-radio size="xl" v-model="chatMaxWidthSelection" val="md" label="Medium"/>
+                <q-radio size="xl" v-model="chatMaxWidthSelection" val="lg" label="Large'"/>
+                <q-radio size="xl" v-model="chatMaxWidthSelection" val="xl" label="Ultra Wide"/>
+              </div>
+            </div>
+          </q-card-section>
+        </q-card>
+        <q-card class="background">
+          <q-card-section>
             <p class="mb4 fmt_border_bottom pb4">
               Choose a nice look for your group here.
             </p>
@@ -370,6 +385,19 @@ export default {
     },
     group (newVal) {
       this.newGroup = newVal
+    },
+    chatMaxWidthSelection (newVal) {
+      switch (newVal) {
+        case 'md':
+          this.changeChatMaxWidth('50rem')
+          break
+        case 'lg':
+          this.changeChatMaxWidth('64rem')
+          break
+        case 'xl':
+          this.changeChatMaxWidth('76rem')
+          break
+      }
     }
   },
   data () {
@@ -401,7 +429,9 @@ export default {
         showCAct: true,
         hideNewCAct: false,
         cSet: []
-      }
+      },
+      chatMaxWidth: '64rem',
+      chatMaxWidthSelection: 'lg'
     }
   },
   methods: {
@@ -683,7 +713,7 @@ export default {
       })
     },
     setSettingsData: async function () {
-      const key = `groupset-${this.group.uid}`
+      let key = `groupset-${this.group.uid}`
       let set = await dbGetData(key)
       if (set == null) {
         set = {
@@ -717,9 +747,73 @@ export default {
         }
       }
       this.settingsDat = set
+      // Check chat max width stored settings
+      key = 'chatwidth'
+      set = await dbGetData(key)
+      if (set != null) {
+        this.chatMaxWidth = set.maxWidth
+        this.chatMaxWidthSelection = set.selection
+        await this.changeChatMaxWidth(set.maxWidth)
+      }
+      this.readChatMaxWidth(false)
     },
     updateGroupCAct: async function () {
       await dbSetData(`groupset-${this.group.uid}`, this.settingsDat)
+    },
+    /**
+     *
+     * @param name
+     * @return {CSSRule|null}
+     */
+    getStyle: function (name) {
+      let styleList
+      let rule
+      for (let i = 0; i < document.styleSheets.length; i++) {
+        styleList = document.styleSheets[i]
+        for (let j = 0; j < styleList.cssRules.length; j++) {
+          rule = document.styleSheets[i].cssRules[j]
+          if (rule.selectorText === name) {
+            return rule
+          }
+        }
+      }
+      return null
+    },
+    readChatMaxWidth: function (ignoreSelection) {
+      const rule = this.getStyle('.max-w-3xl_custom')
+      if (rule != null) {
+        this.chatMaxWidth = rule.style.maxWidth
+        if (ignoreSelection) {
+          return
+        }
+        if (this.chatMaxWidth === '50rem') {
+          this.chatMaxWidthSelection = 'md'
+        } else if (this.chatMaxWidth === '64rem') {
+          this.chatMaxWidthSelection = 'lg'
+        } else if (this.chatMaxWidth === '76rem') {
+          this.chatMaxWidthSelection = 'xl'
+        }
+      }
+    },
+    changeChatMaxWidth: async function (size) {
+      const rule = this.getStyle('.max-w-3xl_custom')
+      if (rule != null) {
+        rule.style.maxWidth = size
+        this.readChatMaxWidth(true)
+        // Update stored settings
+        const key = 'chatwidth'
+        let set = await dbGetData(key)
+        if (set == null) {
+          set = {
+            maxWidth: this.chatMaxWidth,
+            selection: this.chatMaxWidthSelection
+          }
+        } else {
+          set.maxWidth = this.chatMaxWidth
+          set.selection = this.chatMaxWidthSelection
+        }
+        await dbSetData(key, set)
+      }
     }
   }
 }

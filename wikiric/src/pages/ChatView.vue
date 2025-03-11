@@ -990,6 +990,12 @@ export default {
         }
         this.broadcastToGroupMembers(msg, 'subchat_join')
       }
+      // Check chat max width stored settings
+      const key = 'chatwidth'
+      const set = await dbGetData(key)
+      if (set != null) {
+        await this.changeChatMaxWidth(set.maxWidth)
+      }
     },
     /**
      *
@@ -2078,7 +2084,7 @@ export default {
         this.channel.t = 'General'
       }
       await dbSetSession(this.chatID, sesh)
-      // Get active members + send online message
+      // Get active members and send an online message
       await this.getActiveMembers()
       await this.addTimestampRead()
       await this.hasUnread(this.channel.id)
@@ -2639,6 +2645,7 @@ export default {
       this.pickingFile = false
       this.selectedImage = undefined
       this.isSelectingEmote = false
+      this.isViewingGIFs = false
       setTimeout(() => {
         this.inputResize()
       }, 0)
@@ -3425,6 +3432,31 @@ export default {
       e.stopImmediatePropagation()
       e.stopPropagation()
       window.open(e.target.href, '_blank')
+    },
+    /**
+     *
+     * @param name
+     * @return {CSSRule|null}
+     */
+    getStyle: function (name) {
+      let styleList
+      let rule
+      for (let i = 0; i < document.styleSheets.length; i++) {
+        styleList = document.styleSheets[i]
+        for (let j = 0; j < styleList.cssRules.length; j++) {
+          rule = document.styleSheets[i].cssRules[j]
+          if (rule.selectorText === name) {
+            return rule
+          }
+        }
+      }
+      return null
+    },
+    changeChatMaxWidth: async function (size) {
+      const rule = this.getStyle('.max-w-3xl_custom')
+      if (rule != null) {
+        rule.style.maxWidth = size
+      }
     }
   }
 }
@@ -3514,7 +3546,7 @@ export default {
 }
 
 .max-w-3xl_custom {
-  max-width: 52rem;
+  max-width: 64rem;
 }
 
 .tab_no_pad .q-tab-panel {
